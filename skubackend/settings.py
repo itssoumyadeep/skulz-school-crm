@@ -36,11 +36,20 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-wp0$9zpyur7(r6f2fra=f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+# Build ALLOWED_HOSTS
+_default_allowed_hosts = 'localhost,127.0.0.1,*.onrender.com,skulz-school-crm.onrender.com'
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,*.onrender.com',
+    default=_default_allowed_hosts,
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
+
+# Ensure critical hosts are always included for production
+if not DEBUG:
+    if 'skulz-school-crm.onrender.com' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('skulz-school-crm.onrender.com')
+    if '*' not in ALLOWED_HOSTS and '*.onrender.com' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('*.onrender.com')
 
 
 # Application definition
@@ -160,6 +169,7 @@ if not DEBUG:
     # Static files
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     STATIC_URL = '/static/'
+    os.makedirs(STATIC_ROOT, exist_ok=True)
     
     # WhiteNoise middleware for static files
     if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
