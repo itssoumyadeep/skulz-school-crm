@@ -1,0 +1,291 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ student.first_name }} {{ student.last_name }} - School CRM{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header py-2">
+                <h5 class="mb-0">Student Details</h5>
+            </div>
+            <div class="card-body p-3">
+                <div class="row">
+                    <!-- Left Column: Photo -->
+                    {% if student.photo %}
+                    <div class="col-md-3 text-center">
+                        <div class="student-photo-container">
+                            <img src="{{ student.photo.url }}" alt="Student Photo" class="student-photo-circular">
+                        </div>
+                    </div>
+                    <!-- Right Column: Info -->
+                    <div class="col-md-9">
+                        {% else %}
+                        <div class="col-md-12">
+                            {% endif %}
+                            <div class="mb-1">
+                                <h5 class="mb-1">{{ student.first_name }} {{ student.last_name }}</h5>
+                                <p class="text-muted small mb-1">{{ student.email }}</p>
+                                <div>
+                                    {% if student.is_active %}
+                                    <span class="badge bg-success small">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-danger small">Inactive</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-2">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <small><strong>Date of Birth:</strong><br>{{ student.date_of_birth }}</small>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <small><strong>Phone:</strong><br>{{ student.phone_number|default:"N/A" }}</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <small><strong>Grade:</strong><br>{{ student.grade|default:"N/A" }}</small>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <small><strong>Enrollment Date:</strong><br>{{ student.enrollment_date }}</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-2">
+
+                    <div class="mb-2">
+                        <small><strong>Address:</strong>
+                            {% if student.address %}
+                            <br>{{ student.address.street_address }}<br>{{ student.address.city }}, {{
+                            student.address.state }} {{ student.address.postal_code }}<br>{{ student.address.country }}
+                            {% else %}
+                            <br><span class="text-muted">N/A</span>
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <div class="mb-2">
+                        <small><strong>Bus Assignment:</strong>
+                            {% if student.bus %}
+                            <br>{{ student.bus.bus_number }} ({{ student.bus.route }})
+                            {% else %}
+                            <br><span class="text-muted">N/A</span>
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <hr class="my-2">
+
+                    <div class="mb-2">
+                        <small><strong>Subjects:</strong>
+                            {% if student.subjects.all %}
+                            <div>
+                                {% for subject in student.subjects.all %}
+                                <span class="badge bg-info small">{{ subject }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">No subjects assigned</span>
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <div class="mb-2">
+                        <small><strong>Parents:</strong>
+                            {% if student.parents.all %}
+                            <ul class="small mb-0 ps-3">
+                                {% for parent in student.parents.all %}
+                                <li>{{ parent.first_name }} {{ parent.last_name }} ({{ parent.get_parent_type_display
+                                    }}) - {{ parent.email }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <span class="text-muted">No parents assigned</span>
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <hr class="my-2">
+
+                    <div class="mt-2">
+                        <a href="{% url 'student_update' student.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{% url 'student_delete' student.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                        <a href="{% url 'student_list' %}" class="btn btn-secondary btn-sm">Back</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header py-2">
+                    <h6 class="mb-0">Recent Attendance (Last 10)</h6>
+                </div>
+                <div class="card-body p-2">
+                    {% if attendance_records %}
+                    <table class="table table-sm table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="small">Date</th>
+                                <th class="small">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td class="small">{{ record.date }}</td>
+                                <td>
+                                    {% if record.status == 'present' %}
+                                    <span class="badge bg-success small">Present</span>
+                                    {% elif record.status == 'absent' %}
+                                    <span class="badge bg-danger small">Absent</span>
+                                    {% elif record.status == 'late' %}
+                                    <span class="badge bg-warning small">Late</span>
+                                    {% elif record.status == 'excused' %}
+                                    <span class="badge bg-info small">Excused</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted small mb-0">No attendance records</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Records & Attachments Card -->
+        <div class="card mt-3">
+            <div class="card-header py-2 bg-success">
+                <h6 class="mb-0 text-white">📎 Records & Attachments</h6>
+            </div>
+            <div class="card-body p-3">
+                {% if records %}
+                <div class="list-group mb-3">
+                    {% for record in records %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ record.get_record_type_display }}</h6>
+                                {% if record.description %}
+                                    <p class="mb-1 small text-muted">{{ record.description }}</p>
+                                {% endif %}
+                                <small class="text-muted">Uploaded: {{ record.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <a href="{{ record.file.url }}" target="_blank" class="btn btn-primary btn-sm" download>
+                                ⬇️ Download
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-3">No records uploaded yet</p>
+                {% endif %}
+
+                <!-- Add Record Form -->
+                <div class="border-top pt-3">
+                    <h6 class="mb-3">Add New Record</h6>
+                    <form method="post" enctype="multipart/form-data" class="small">
+                        {% csrf_token %}
+                        <input type="hidden" name="add_record" value="1">
+                        
+                        <div class="mb-2">
+                            <label class="form-label">Record Type *</label>
+                            {{ record_form.record_type }}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label class="form-label">Upload File *</label>
+                            {{ record_form.file }}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label class="form-label">Description</label>
+                            {{ record_form.description }}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success btn-sm">Upload Record</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header py-2">
+                    <h6 class="mb-0">Recent Attendance (Last 10)</h6>
+                </div>
+                <div class="card-body p-2">
+                    {% if attendance_records %}
+                    <table class="table table-sm table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="small">Date</th>
+                                <th class="small">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td class="small">{{ record.date }}</td>
+                                <td>
+                                    {% if record.status == 'present' %}
+                                    <span class="badge bg-success small">Present</span>
+                                    {% elif record.status == 'absent' %}
+                                    <span class="badge bg-danger small">Absent</span>
+                                    {% elif record.status == 'late' %}
+                                    <span class="badge bg-warning small">Late</span>
+                                    {% elif record.status == 'excused' %}
+                                    <span class="badge bg-info small">Excused</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted small mb-0">No attendance records</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .student-photo-container {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .student-photo-circular {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            object-position: center;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.01);
+            background: #fff;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .student-photo-circular:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08),
+                0 0 0 1px rgba(0, 0, 0, 0.02);
+        }
+    </style>
+{% endblock %}

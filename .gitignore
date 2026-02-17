@@ -1,0 +1,55 @@
+# Python & Virtual Environment
+skenv/
+venv/
+env/
+*.py[cod]
+__pycache__/
+*.egg-info/
+dist/
+build/
+
+# Django
+*.sqlite3
+db.sqlite3
+/media/
+/static/
+.env
+.env.local
+.env.*.local
+
+# IDE & Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node & Frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+.next/
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+*$py.class
+
+# Celery
+celerybeat-schedule
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+.pytest_cache/

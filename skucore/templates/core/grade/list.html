@@ -1,0 +1,42 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Grades - School CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Grades/Classes</h1>
+    <a href="{% url 'grade_create' %}" class="btn btn-primary">+ Add Grade</a>
+</div>
+
+{% if grades %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Grade Name</th>
+                    <th>Students</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for grade in grades %}
+                <tr>
+                    <td><strong>{{ grade.grade_name }}</strong></td>
+                    <td><span class="badge bg-primary">{{ grade.students.count }}</span></td>
+                    <td>
+                        <a href="{% url 'grade_update' grade.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{% url 'grade_delete' grade.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    No grades found. <a href="{% url 'grade_create' %}" class="alert-link">Create one now</a>
+</div>
+{% endif %}
+{% endblock %}

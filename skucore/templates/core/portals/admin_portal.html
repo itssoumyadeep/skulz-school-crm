@@ -1,0 +1,139 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Administrator Portal - School CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">🔐 Administrator Portal</h1>
+
+    <div class="alert alert-danger">
+        <strong>Full System Access:</strong> You have complete control over the system.
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">👥 Users</h6>
+                    <h2>{{ total_users }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">👨‍🎓 Students</h6>
+                    <h2>{{ total_students }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">👨‍👩‍👧 Parents</h6>
+                    <h2>{{ total_parents }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">⏳ Pending Approvals</h6>
+                    <h2 class="text-warning">{{ pending_onboarding.count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">⏳ Pending Onboarding Requests</h5>
+        </div>
+        <div class="card-body">
+            {% if pending_onboarding %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Email</th>
+                            <th>Requested By</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in pending_onboarding %}
+                        <tr>
+                            <td><strong>{{ req.first_name }} {{ req.last_name }}</strong></td>
+                            <td>{{ req.email }}</td>
+                            <td>{{ req.requested_by.first_name }} {{ req.requested_by.last_name }}</td>
+                            <td>{{ req.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'onboarding_request_detail' req.pk %}"
+                                    class="btn btn-sm btn-info">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-success">No pending requests.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header" style="color: #f1e9e9;">
+                    <h5 class="mb-0">System Management</h5>
+                </div>
+                <div class="card-body">
+                    <a href="/admin/" class="btn btn-danger btn-block mb-2">Django Admin Panel</a>
+                    <a href="{% url 'student_list' %}" class="btn btn-primary btn-block mb-2">Manage Students</a>
+                    <a href="{% url 'parent_list' %}" class="btn btn-primary btn-block mb-2">Manage Parents</a>
+                    <a href="{% url 'bus_list' %}" class="btn btn-primary btn-block">Manage Buses</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Onboarding Activity</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in recent_onboarding %}
+                            <tr>
+                                <td>{{ req.first_name }} {{ req.last_name }}</td>
+                                <td>
+                                    {% if req.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif req.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% elif req.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ req.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Operator Portal - School CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-dark">⚙️ Operator Portal</h1>
+            <p class="text-dark">Welcome, {{ request.user.first_name }}!</p>
+        </div>
+        <a href="{% url 'onboarding_request_create' %}" class="btn btn-primary">+ Request Student Onboarding</a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Students</h6>
+                    <h2>{{ total_students }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Active Students</h6>
+                    <h2 class="text-success">{{ active_students }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Pending Approvals</h6>
+                    <h2 class="text-warning">{{ pending_onboarding.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">My Requests</h6>
+                    <h2 class="text-info">{{ my_requests.count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header" style="color: #f1e9e9;">
+                    <h5 class="mb-0">My Onboarding Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% if my_requests %}
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in my_requests %}
+                            <tr>
+                                <td>{{ req.first_name }} {{ req.last_name }}</td>
+                                <td>
+                                    {% if req.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif req.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% elif req.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'onboarding_request_detail' req.pk %}"
+                                        class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">No requests created yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0 text-light">Recent Requests (System-wide)</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Requester</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in recent_requests %}
+                            <tr>
+                                <td>{{ req.first_name }} {{ req.last_name }}</td>
+                                <td>{{ req.requested_by.first_name }} {{ req.requested_by.last_name }}</td>
+                                <td>
+                                    {% if req.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif req.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0 text-light">Quick Actions</h5>
+        </div>
+        <div class="card-body">
+            <a href="{% url 'student_list' %}" class="btn btn-primary">Manage Students</a>
+            <a href="{% url 'parent_list' %}" class="btn btn-primary">Manage Parents</a>
+            <a href="{% url 'attendance_list' %}" class="btn btn-primary">Attendance Records</a>
+            <a href="{% url 'onboarding_request_list' %}" class="btn btn-info">View All Requests</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Attendance - School CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Attendance Records</h1>
+    <a href="{% url 'attendance_create' %}" class="btn btn-primary">+ Record Attendance</a>
+</div>
+
+<!-- Empty State Alert - Positioned at Top Center -->
+{% if not attendance %}
+<div class="alert alert-info alert-dismissible fade show mb-4" role="alert"
+    style="max-width: 600px; margin-left: auto; margin-right: auto;">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <strong>No attendance records for {{ selected_date|date:"M d, Y" }}.</strong>
+            <a href="{% url 'attendance_create' %}" class="alert-link">Record attendance now</a>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"
+            style="flex-shrink: 0; margin-left: 1rem;"></button>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Calendar Section -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-dark text-light p-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'attendance_list' %}?month={{ prev_month }}&year={{ prev_year }}"
+                        class="btn btn-sm btn-light btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">←
+                        Prev</a>
+                    <h6 class="mb-0 text-light">{{ month_name }} {{ current_year }}</h6>
+                    <a href="{% url 'attendance_list' %}?month={{ next_month }}&year={{ next_year }}"
+                        class="btn btn-sm btn-light btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Next
+                        →</a>
+                </div>
+            </div>
+            <div class="card-body p-2">
+                <!-- Date Picker -->
+                <div class="mb-2">
+                    <input type="date" id="datePicker" class="form-control form-control-sm" style="font-size: 0.85rem;"
+                        value="{{ selected_date|date:'Y-m-d' }}">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm text-center attendance-calendar"
+                        style="margin-bottom: 0; font-size: 0.75rem;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 2px;">S</th>
+                                <th style="padding: 2px;">M</th>
+                                <th style="padding: 2px;">T</th>
+                                <th style="padding: 2px;">W</th>
+                                <th style="padding: 2px;">T</th>
+                                <th style="padding: 2px;">F</th>
+                                <th style="padding: 2px;">S</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for week in calendar %}
+                            <tr>
+                                {% for day in week %}
+                                {% if day == 0 %}
+                                <td class="text-muted" style="padding: 2px;"></td>
+                                {% else %}
+                                <td style="padding: 2px;">
+                                    <a href="{% url 'attendance_list' %}?date={{ current_year }}-{% if current_month < 10 %}0{% endif %}{{ current_month }}-{% if day < 10 %}0{% endif %}{{ day }}"
+                                        class="attendance-date-link {% if day|add:0 == selected_date.day and current_month == selected_date.month and current_year == selected_date.year %}bg-primary text-light{% endif %}"
+                                        style="display: block; padding: 4px 2px; border-radius: 3px; text-decoration: none;">
+                                        {{ day }}
+                                    </a>
+                                </td>
+                                {% endif %}
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Legend -->
+                <div class="mt-2 pt-2 border-top">
+                    <small class="text-muted">
+                        <p class="mb-0" style="font-size: 0.75rem;"><strong>Selected:</strong> {{ selected_date|date:"M
+                            d, Y" }}</p>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance List Section -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-dark text-light">
+                <h5 class="mb-0 text-light">Attendance for {{ selected_date|date:"M d, Y" }}</h5>
+            </div>
+            <div class="card-body">
+                {% if attendance %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Grade</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'student_detail' record.student.pk %}">
+                                        {{ record.student.first_name }} {{ record.student.last_name }}
+                                    </a>
+                                </td>
+                                <td>{{ record.student.grade }}</td>
+                                <td>
+                                    {% if record.status == 'present' %}
+                                    <span class="badge bg-success">Present</span>
+                                    {% elif record.status == 'absent' %}
+                                    <span class="badge bg-danger">Absent</span>
+                                    {% elif record.status == 'late' %}
+                                    <span class="badge bg-warning text-dark">Late</span>
+                                    {% elif record.status == 'excused' %}
+                                    <span class="badge bg-info">Excused</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.remarks|truncatewords:5 }}</td>
+                                <td>
+                                    <a href="{% url 'attendance_update' record.pk %}"
+                                        class="btn btn-sm btn-warning">Edit</a>
+                                    <a href="{% url 'attendance_delete' record.pk %}"
+                                        class="btn btn-sm btn-danger">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .attendance-date-link {
+        color: #333;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .attendance-date-link:hover {
+        background-color: #f0f0f0 !important;
+        color: #000 !important;
+    }
+
+    .attendance-calendar td {
+        padding: 5px 0;
+    }
+</style>
+
+<script>
+    document.getElementById('datePicker').addEventListener('change', function () {
+        if (this.value) {
+            window.location.href = "{% url 'attendance_list' %}?date=" + this.value;
+        }
+    });
+</script>
+{% endblock %}

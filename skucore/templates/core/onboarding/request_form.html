@@ -1,0 +1,541 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ title }} - School CRM{% endblock %}
+
+{% block content %}
+<!-- Mapbox CSS -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css" rel="stylesheet" />
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
+    rel="stylesheet" />
+
+<div class="card">
+    <div class="card-header bg-dark">
+        <h4 class="mb-0 text-light">{{ title }}</h4>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info alert-dismissible fade show" role="alert" id="onboarding-alert"
+            style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <strong>Note:</strong> This student onboarding request will be sent to the Principal or Vice Principal
+            for approval before the student record is created in the system.
+        </div>
+
+        <form method="post" class="student-form" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name *</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                        <div class="invalid-feedback d-block">{{ form.first_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name *</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                        <div class="invalid-feedback d-block">{{ form.last_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">Email *</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone Number</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                        <div class="invalid-feedback d-block">{{ form.phone_number.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">Date of Birth *</label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}
+                        <div class="invalid-feedback d-block">{{ form.date_of_birth.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.grade.id_for_label }}" class="form-label">Grade</label>
+                        {{ form.grade }}
+                        {% if form.grade.errors %}
+                        <div class="invalid-feedback d-block">{{ form.grade.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.photo.id_for_label }}" class="form-label">Student Photo</label>
+                        {{ form.photo }}
+                        <small class="text-muted d-block mt-1">Upload a photo (JPG, PNG, etc.)</small>
+                        {% if form.photo.errors %}
+                        <div class="invalid-feedback d-block">{{ form.photo.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.address_text.id_for_label }}" class="form-label">Address</label>
+                        {{ form.address_text }}
+                        <small class="text-muted d-block mt-1">Start typing to search for addresses using Mapbox</small>
+                        <div id="address-suggestions" class="mt-2"
+                            style="display: none; border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                        </div>
+                        {% if form.address_text.errors %}
+                        <div class="invalid-feedback d-block">{{ form.address_text.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.bus.id_for_label }}" class="form-label">Bus</label>
+                        {{ form.bus }}
+                        {% if form.bus.errors %}
+                        <div class="invalid-feedback d-block">{{ form.bus.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Subjects</label>
+                <div class="border p-3 rounded">
+                    {{ form.subjects }}
+                </div>
+                {% if form.subjects.errors %}
+                <div class="invalid-feedback d-block">{{ form.subjects.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Parents/Guardians
+                    <button type="button" class="btn btn-sm btn-success ms-2" data-bs-toggle="modal"
+                        data-bs-target="#createParentModal" id="addParentBtn">
+                        <i class="bi bi-plus-circle"></i> Add New Parent
+                    </button>
+                </label>
+                <div class="border p-3 rounded">
+                    <div id="newParentsList">
+                        <p class="text-muted" id="noParentsMsg">No parents added yet. Click "Add New Parent" to add one.
+                        </p>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-2">Add up to 3 new parents for this student</small>
+                <!-- Hidden form.parents field for form submission -->
+                <div style="display: none;">
+                    {% if form.parents %}
+                    {{ form.parents }}
+                    {% endif %}
+                </div>
+                {% if form.parents.errors %}
+                <div class="invalid-feedback d-block">{{ form.parents.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Records/Attachments Section -->
+            <div class="card mt-4 mb-4">
+                <div class="card-header bg-success">
+                    <h5 class="mb-0 text-white">📎 Records & Attachments</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Add important documents like birth certificates, vaccination records, etc.</p>
+
+                    <div id="recordsList" class="mb-3">
+                        <!-- Records will be added here dynamically -->
+                    </div>
+
+                    <button type="button" class="btn btn-success btn-sm" id="addRecordBtn">
+                        <strong>+</strong> Add Record
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Submit for Approval</button>
+                <a href="{% url 'onboarding_request_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Create Parent Modal -->
+<div class="modal fade" id="createParentModal" tabindex="-1" aria-labelledby="createParentLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <h5 class="modal-title text-white" id="createParentLabel">Create New Parent/Guardian</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createParentForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="parentFirstName" class="form-label">First Name *</label>
+                        <input type="text" class="form-control" id="parentFirstName" name="first_name" required>
+                        <span class="error-text text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="parentLastName" class="form-label">Last Name *</label>
+                        <input type="text" class="form-control" id="parentLastName" name="last_name" required>
+                        <span class="error-text text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="parentType" class="form-label">Relationship *</label>
+                        <select class="form-control" id="parentType" name="parent_type" required>
+                            <option value="">-- Select --</option>
+                            <option value="father">Father</option>
+                            <option value="mother">Mother</option>
+                            <option value="guardian">Guardian</option>
+                        </select>
+                        <span class="error-text text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="parentEmail" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="parentEmail" name="email" required>
+                        <span class="error-text text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="parentPhone" class="form-label">Phone Number *</label>
+                        <input type="text" class="form-control" id="parentPhone" name="phone_number" required>
+                        <span class="error-text text-danger"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveParentBtn">Create Parent</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .student-form input[type="text"],
+    .student-form input[type="email"],
+    .student-form input[type="date"],
+    .student-form input[type="number"],
+    .student-form select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .student-form input:focus,
+    .student-form select:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    #address-suggestions {
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .address-suggestion-item {
+        padding: 10px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s;
+    }
+
+    .address-suggestion-item:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+
+<!-- Mapbox Scripts -->
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+
+<script>
+    // Note: Replace 'YOUR_MAPBOX_TOKEN' with your actual Mapbox token
+    // You can get one from https://account.mapbox.com/
+    const MAPBOX_TOKEN = '{{ MAPBOX_TOKEN }}'; // Configure this in settings.py or pass from view
+
+    // Simple Mapbox Geocoding Implementation
+    const addressInput = document.getElementById('address-input');
+    const suggestionsDiv = document.getElementById('address-suggestions');
+    let debounceTimer;
+
+    addressInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+
+        if (query.length < 3) {
+            suggestionsDiv.style.display = 'none';
+            return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+            // You would need to implement Mapbox Geocoding API call here
+            // For now, showing a basic implementation
+            if (query.length >= 3) {
+                suggestionsDiv.style.display = 'block';
+                // Call Mapbox Geocoding API (requires token)
+                // This is a placeholder - actual implementation needs your Mapbox token
+            }
+        }, 300);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('#address-input') && !event.target.closest('#address-suggestions')) {
+            suggestionsDiv.style.display = 'none';
+        }
+    });
+
+    // Auto-dismiss alert after 10 seconds
+    const alertElement = document.getElementById('onboarding-alert');
+    if (alertElement) {
+        setTimeout(() => {
+            const alert = new bootstrap.Alert(alertElement);
+            alert.close();
+        }, 10000); // 10 seconds
+    }
+
+    // Parent creation via AJAX
+    const createParentBtn = document.getElementById('saveParentBtn');
+    const createParentForm = document.getElementById('createParentForm');
+    const parentsCheckboxes = document.querySelector('input[name="parents"]');
+
+    // Track newly added parents
+    let newlyAddedParents = [];
+    const MAX_NEW_PARENTS = 3;
+    const addParentBtn = document.getElementById('addParentBtn');
+    const newParentsListDiv = document.getElementById('newParentsList');
+
+    if (createParentBtn) {
+        createParentBtn.addEventListener('click', function () {
+            // Check if max parents reached
+            if (newlyAddedParents.length >= MAX_NEW_PARENTS) {
+                alert(`You can only add a maximum of ${MAX_NEW_PARENTS} new parents.`);
+                return;
+            }
+
+            const formData = new FormData(createParentForm);
+
+            // Show loading state
+            createParentBtn.disabled = true;
+            createParentBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+
+            // Clear previous errors
+            document.querySelectorAll('#createParentForm .error-text').forEach(el => el.textContent = '');
+
+            fetch('{% url "create_parent_inline" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Parent created successfully
+                        const parentId = data.parent.id;
+                        const parentName = data.parent.name;
+                        const parentType = data.parent.parent_type;
+
+                        // Track this new parent
+                        newlyAddedParents.push(parentId);
+
+                        // Remove the "no parents" message if this is the first parent
+                        const noParentsMsg = document.getElementById('noParentsMsg');
+                        if (noParentsMsg) {
+                            noParentsMsg.remove();
+                        }
+
+                        // Add new parent to the display list
+                        const parentDiv = document.createElement('div');
+                        parentDiv.className = 'alert alert-info d-flex justify-content-between align-items-center';
+                        parentDiv.id = `new_parent_${parentId}`;
+                        parentDiv.innerHTML = `
+                            <div>
+                                <strong>${parentName}</strong> (${parentType})
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger remove-parent-btn" data-parent-id="${parentId}">
+                                Remove
+                            </button>
+                        `;
+                        newParentsListDiv.appendChild(parentDiv);
+
+                        // Add event listener to remove button
+                        parentDiv.querySelector('.remove-parent-btn').addEventListener('click', function (e) {
+                            e.preventDefault();
+                            const pId = this.getAttribute('data-parent-id');
+                            newlyAddedParents = newlyAddedParents.filter(id => id !== parseInt(pId));
+                            parentDiv.remove();
+
+                            // Show "no parents" message if list is empty
+                            if (newlyAddedParents.length === 0) {
+                                const newMsg = document.createElement('p');
+                                newMsg.id = 'noParentsMsg';
+                                newMsg.className = 'text-muted';
+                                newMsg.textContent = 'No parents added yet. Click "Add New Parent" to add one.';
+                                newParentsListDiv.appendChild(newMsg);
+                            }
+
+                            // Re-enable add button if below limit
+                            if (newlyAddedParents.length < MAX_NEW_PARENTS) {
+                                addParentBtn.disabled = false;
+                            }
+                        });
+
+                        // Disable add button if max reached
+                        if (newlyAddedParents.length >= MAX_NEW_PARENTS) {
+                            addParentBtn.disabled = true;
+                            addParentBtn.title = `Maximum ${MAX_NEW_PARENTS} parents allowed`;
+                        }
+
+                        // Show success message
+                        const successAlert = document.createElement('div');
+                        successAlert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                        successAlert.innerHTML = `
+                        <strong>Success!</strong> Parent "${parentName}" has been created and added.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                        document.querySelector('.card-body').appendChild(successAlert);
+
+                        // Reset form and close modal
+                        createParentForm.reset();
+                        bootstrap.Modal.getInstance(document.getElementById('createParentModal')).hide();
+
+                        // Auto-dismiss success alert
+                        setTimeout(() => {
+                            successAlert.remove();
+                        }, 3000);
+                    } else {
+                        // Show validation errors
+                        const errors = data.errors;
+                        for (const field in errors) {
+                            const errorElement = document.querySelector(`#createParentForm input[name="${field}"], #createParentForm select[name="${field}"]`);
+                            if (errorElement) {
+                                const errorText = errorElement.parentElement.querySelector('.error-text');
+                                if (errorText) {
+                                    errorText.textContent = errors[field].join(', ');
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const errorText = document.querySelector('#parentFirstName').parentElement.querySelector('.error-text');
+                    if (errorText) {
+                        errorText.textContent = 'An error occurred while creating the parent.';
+                    }
+                })
+                .finally(() => {
+                    createParentBtn.disabled = false;
+                    createParentBtn.innerHTML = 'Create Parent';
+                });
+        });
+    }
+
+    // Before form submission, populate the hidden parents field with newly added parents
+    document.querySelector('.student-form').addEventListener('submit', function (e) {
+        // Clear any existing parent checkboxes
+        const existingCheckboxes = document.querySelectorAll('input[name="parents"]');
+        existingCheckboxes.forEach(checkbox => checkbox.checked = false);
+
+        // Check and set only the newly added parents
+        newlyAddedParents.forEach(parentId => {
+            const checkbox = document.querySelector(`input[name="parents"][value="${parentId}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    });
+
+    // Records handling
+    let recordCount = 0;
+    const recordsList = document.getElementById('recordsList');
+    const addRecordBtn = document.getElementById('addRecordBtn');
+
+    if (addRecordBtn) {
+        addRecordBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            recordCount++;
+
+            const recordHTML = `
+                <div class="record-item card mb-3" data-record-id="${recordCount}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Record Type *</label>
+                                <select class="form-control record-type" name="record_type_${recordCount}" required>
+                                    <option value="">-- Select --</option>
+                                    <option value="birth_certificate">Birth Certificate</option>
+                                    <option value="vaccination">Vaccination Records</option>
+                                    <option value="medical_report">Medical Report</option>
+                                    <option value="previous_school">Previous School Records</option>
+                                    <option value="identity_proof">Identity Proof</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Upload File *</label>
+                                <input type="file" class="form-control record-file" name="record_file_${recordCount}" required>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger btn-sm w-100 remove-record">Remove</button>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <label class="form-label">Description (Optional)</label>
+                                <textarea class="form-control record-description" name="record_description_${recordCount}" rows="2" placeholder="Add any notes about this record"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            recordsList.insertAdjacentHTML('beforeend', recordHTML);
+
+            // Add remove handler to the new record
+            document.querySelector(`[data-record-id="${recordCount}"] .remove-record`).addEventListener('click', function (e) {
+                e.preventDefault();
+                this.closest('.record-item').remove();
+            });
+        });
+    }
+
+</script>
+{% endblock %}

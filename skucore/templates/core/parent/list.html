@@ -1,0 +1,52 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Parents - School CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Parents</h1>
+    <a href="{% url 'parent_create' %}" class="btn btn-primary">+ Add Parent</a>
+</div>
+
+{% if parents %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Students</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for parent in parents %}
+                <tr>
+                    <td><strong>{{ parent.first_name }} {{ parent.last_name }}</strong></td>
+                    <td><span class="badge bg-secondary">{{ parent.get_parent_type_display }}</span></td>
+                    <td>{{ parent.email }}</td>
+                    <td>{{ parent.phone_number }}</td>
+                    <td>{{ parent.students.count }}</td>
+                    <td>
+                        <a href="{% url 'parent_detail' parent.pk %}" class="btn btn-sm btn-info">View</a>
+                        <a href="{% url 'parent_update' parent.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{% url 'parent_delete' parent.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <div>
+        No parents found. <a href="{% url 'parent_create' %}" class="alert-link">Create one now</a>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+{% endblock %}

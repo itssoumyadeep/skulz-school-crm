@@ -1,0 +1,87 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Pending Approvals - School CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>⏳ Pending Onboarding Approvals</h1>
+        <span class="badge bg-warning" style="font-size: 1.2em;">{{ count }} Pending</span>
+    </div>
+
+    <div class="alert alert-warning">
+        <strong>Your Role:</strong> You have the authority to approve or reject student onboarding requests. These
+        requests must be processed before students can be added to the system.
+    </div>
+
+    {% if pending_requests %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Email</th>
+                        <th>Requested By</th>
+                        <th>Grade</th>
+                        <th>Request Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in pending_requests %}
+                    <tr>
+                        <td>
+                            <strong>{{ request.first_name }} {{ request.last_name }}</strong>
+                        </td>
+                        <td>{{ request.email }}</td>
+                        <td>{{ request.requested_by.first_name }} {{ request.requested_by.last_name }}</td>
+                        <td>{{ request.grade|default:"Unassigned" }}</td>
+                        <td>
+                            <span class="text-muted">{{ request.created_at|date:"M d, Y H:i" }}</span>
+                            <br>
+                            <small class="text-secondary">{{ request.created_at|timesince }} ago</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'onboarding_request_detail' request.pk %}" class="btn btn-sm btn-info"
+                                title="View Details">
+                                👁️ View
+                            </a>
+                            <a href="{% url 'onboarding_request_approve' request.pk %}" class="btn btn-sm btn-success"
+                                title="Approve or Reject">
+                                ✓ Review
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="alert alert-info alert-dismissible fade show mt-4" role="alert">
+        <div>
+            <strong>💡 Tip:</strong> Click "Review" to see the full request details and make your approval decision.
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% else %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div>
+            <h5>✅ No Pending Requests</h5>
+            <p>All student onboarding requests have been processed. Great job staying on top of approvals!</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+</div>
+
+{% if pending_requests %}
+<style>
+    .table tbody tr:hover {
+        background-color: #f0f7ff;
+        transition: background-color 0.2s;
+    }
+</style>
+{% endif %}
+{% endblock %}

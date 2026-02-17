@@ -1,0 +1,306 @@
+/* Override Bootstrap colors with Skulz palette */
+:root {
+  --primary-dark: #15173d;
+  --primary-purple: #982598;
+  --accent-pink: #e491c9;
+  --bg-light: #f1e9e9;
+  --text-dark: #15173d;
+  --text-purple: #982598;
+  --primary: #982598;
+  --secondary: #e491c9;
+  --success: #66bb6a;
+  --danger: #ef5350;
+  --warning: #ffa726;
+  --info: #29b6f6;
+  --light: #f1e9e9;
+  --dark: #15173d;
+}
+
+/* Bootstrap color overrides */
+.bg-primary {
+  background-color: #982598 !important;
+}
+.bg-secondary {
+  background-color: #e491c9 !important;
+}
+.bg-danger {
+  background-color: #ef5350 !important;
+}
+.bg-warning {
+  background-color: #ffa726 !important;
+}
+.bg-success {
+  background-color: #66bb6a !important;
+}
+.bg-info {
+  background-color: #29b6f6 !important;
+}
+.bg-light {
+  background-color: #f1e9e9 !important;
+}
+.bg-dark {
+  background-color: #15173d !important;
+}
+
+.btn-primary {
+  background-color: #982598 !important;
+  border-color: #982598 !important;
+}
+.btn-primary:hover {
+  background-color: #15173d !important;
+  border-color: #15173d !important;
+}
+
+.btn-secondary {
+  background-color: #e491c9 !important;
+  border-color: #e491c9 !important;
+  color: #15173d !important;
+}
+.btn-secondary:hover {
+  background-color: #982598 !important;
+  border-color: #982598 !important;
+  color: white !important;
+}
+
+.btn-danger {
+  background-color: #ef5350 !important;
+  border-color: #ef5350 !important;
+}
+.btn-success {
+  background-color: #66bb6a !important;
+  border-color: #66bb6a !important;
+}
+.btn-warning {
+  background-color: #ffa726 !important;
+  border-color: #ffa726 !important;
+  color: white !important;
+}
+.btn-info {
+  background-color: #29b6f6 !important;
+  border-color: #29b6f6 !important;
+}
+
+.badge-primary {
+  background-color: #982598 !important;
+}
+.badge-secondary {
+  background-color: #e491c9 !important;
+  color: #15173d !important;
+}
+.badge-danger {
+  background-color: #ef5350 !important;
+}
+.badge-success {
+  background-color: #66bb6a !important;
+}
+.badge-warning {
+  background-color: #ffa726 !important;
+  color: white !important;
+}
+.badge-info {
+  background-color: #29b6f6 !important;
+}
+
+.text-primary {
+  color: #982598 !important;
+}
+.text-secondary {
+  color: #e491c9 !important;
+}
+.text-danger {
+  color: #ef5350 !important;
+}
+.text-success {
+  color: #66bb6a !important;
+}
+.text-warning {
+  color: #ffa726 !important;
+}
+.text-info {
+  color: #29b6f6 !important;
+}
+.text-light {
+  color: #f1e9e9 !important;
+}
+.text-dark {
+  color: #15173d !important;
+}
+
+.text-purple {
+  color: #982598 !important;
+}
+.text-dark-blue {
+  color: #15173d !important;
+}
+.text-pink {
+  color: #e491c9 !important;
+}
+
+/* Alert boxes */
+.alert-success {
+  background-color: #e8f5e9 !important;
+  border-color: #66bb6a !important;
+  color: #2e7d32 !important;
+}
+.alert-danger {
+  background-color: #ffebee !important;
+  border-color: #ef5350 !important;
+  color: #c62828 !important;
+}
+.alert-warning {
+  background-color: #fff3e0 !important;
+  border-color: #ffa726 !important;
+  color: #e65100 !important;
+}
+.alert-info {
+  background-color: #e1f5fe !important;
+  border-color: #29b6f6 !important;
+  color: #01579b !important;
+}
+
+/* Status badges */
+.status-pending {
+  background-color: #fff3e0 !important;
+  color: #f57c00 !important;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.status-approved {
+  background-color: #e8f5e9 !important;
+  color: #2e7d32 !important;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.status-completed {
+  background-color: #e0f2f1 !important;
+  color: #00695c !important;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.status-rejected {
+  background-color: #ffebee !important;
+  color: #c62828 !important;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* Links */
+a {
+  color: #982598;
+}
+a:hover {
+  color: #15173d;
+}
+
+/* Border utilities */
+.border-primary {
+  border-color: #982598 !important;
+}
+.border-secondary {
+  border-color: #e491c9 !important;
+}
+.border-danger {
+  border-color: #ef5350 !important;
+}
+.border-success {
+  border-color: #66bb6a !important;
+}
+.border-warning {
+  border-color: #ffa726 !important;
+}
+.border-info {
+  border-color: #29b6f6 !important;
+}
+.border-light {
+  border-color: #f1e9e9 !important;
+}
+.border-dark {
+  border-color: #15173d !important;
+}
+
+/* Tables */
+.table thead,
+.table-dark thead {
+  background-color: #15173d !important;
+  color: #f1e9e9 !important;
+}
+
+.table tbody tr:hover {
+  background-color: #f9f1f5 !important;
+}
+
+/* Forms */
+.form-control:focus,
+.form-select:focus {
+  border-color: #982598 !important;
+  box-shadow: 0 0 0 0.2rem rgba(152, 37, 152, 0.15) !important;
+}
+
+.form-control {
+  border-color: #e491c9;
+}
+
+.form-select {
+  border-color: #e491c9;
+}
+
+/* Nav */
+.nav-pills .nav-link.active {
+  background-color: #982598 !important;
+}
+
+.nav-tabs .nav-link.active {
+  border-bottom-color: #982598 !important;
+  color: #982598 !important;
+}
+
+/* Pagination */
+.pagination .page-link.active {
+  background-color: #982598 !important;
+  border-color: #982598 !important;
+}
+
+.page-link:hover {
+  color: #15173d !important;
+}
+
+/* Dropdowns */
+.dropdown-menu .dropdown-item:active {
+  background-color: #982598 !important;
+}
+
+/* Cards */
+.card {
+  border-color: #e491c9 !important;
+}
+
+.card-header {
+  background: linear-gradient(90deg, #15173d 0%, #982598 100%) !important;
+  color: #f1e9e9 !important;
+}
+
+/* Modal */
+.modal-header {
+  background: linear-gradient(90deg, #15173d 0%, #982598 100%) !important;
+  color: #f1e9e9 !important;
+}
+
+/* Spinners */
+.spinner-border {
+  color: #982598 !important;
+}
+.spinner-grow {
+  color: #982598 !important;
+}
+
+/* Progressbar */
+.progress-bar {
+  background-color: #982598 !important;
+}

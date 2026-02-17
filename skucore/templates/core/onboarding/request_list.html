@@ -1,0 +1,78 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Onboarding Requests - School CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>📋 Onboarding Requests</h1>
+        {% if can_initiate %}
+        <a href="{% url 'onboarding_request_create' %}" class="btn btn-primary">+ New Request</a>
+        {% endif %}
+    </div>
+
+    {% if requests %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Email</th>
+                        {% if can_approve %}
+                        <th>Requested By</th>
+                        {% endif %}
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in requests %}
+                    <tr>
+                        <td><strong>{{ request.first_name }} {{ request.last_name }}</strong></td>
+                        <td>{{ request.email }}</td>
+                        {% if can_approve %}
+                        <td>{{ request.requested_by.first_name }} {{ request.requested_by.last_name }}</td>
+                        {% endif %}
+                        <td>
+                            {% if request.status == 'pending' %}
+                            <span class="badge bg-warning">⏳ Pending</span>
+                            {% elif request.status == 'approved' %}
+                            <span class="badge bg-info">👀 Approved</span>
+                            {% elif request.status == 'completed' %}
+                            <span class="badge bg-success">✅ Completed</span>
+                            {% elif request.status == 'rejected' %}
+                            <span class="badge bg-danger">❌ Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ request.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'onboarding_request_detail' request.pk %}"
+                                class="btn btn-sm btn-info">View</a>
+                            {% if can_approve and request.status == 'pending' %}
+                            <a href="{% url 'onboarding_request_approve' request.pk %}"
+                                class="btn btn-sm btn-success">Approve/Reject</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <div>
+            {% if can_approve %}
+            No pending requests to review.
+            {% else %}
+            No onboarding requests yet. <a href="{% url 'onboarding_request_create' %}" class="alert-link">Create one
+                now</a>
+            {% endif %}
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Buses - School CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Buses</h1>
+    <a href="{% url 'bus_create' %}" class="btn btn-primary">+ Add Bus</a>
+</div>
+
+{% if buses %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Bus Number</th>
+                    <th>Route</th>
+                    <th>Capacity</th>
+                    <th>Driver</th>
+                    <th>Students</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bus in buses %}
+                <tr>
+                    <td><strong>{{ bus.bus_number }}</strong></td>
+                    <td>{{ bus.route.route_name }}</td>
+                    <td>{{ bus.capacity }}</td>
+                    <td>{{ bus.driver_name }}</td>
+                    <td><span class="badge bg-primary">{{ bus.students.count }}</span></td>
+                    <td>
+                        <a href="{% url 'bus_detail' bus.pk %}" class="btn btn-sm btn-info">View</a>
+                        <a href="{% url 'bus_update' bus.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{% url 'bus_delete' bus.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    No buses found. <a href="{% url 'bus_create' %}" class="alert-link">Create one now</a>
+</div>
+{% endif %}
+{% endblock %}

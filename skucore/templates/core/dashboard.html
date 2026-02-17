@@ -1,0 +1,110 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Dashboard - School CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+            <h1 class="mb-0 text-dark">Dashboard</h1>
+            {% if request.session.school_name %}
+            <p style="color: #982598; font-size: 0.95rem; margin-top: 5px;">
+                📍 School: <strong>{{ request.session.school_name }}</strong>
+            </p>
+            {% endif %}
+        </div>
+        <a href="{% url 'school_selection' %}" class="btn btn-sm btn-outline-primary" title="Switch to another school">
+            🏫 Switch School
+        </a>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h6 class="text-dark">Total Students</h6>
+            <div class="number">{{ total_students }}</div>
+            <a href="{% url 'student_list' %}" class="btn btn-sm btn-outline-primary mt-2">View Students</a>
+        </div>
+
+        <div class="stat-card">
+            <h6 class="text-dark">Active Students</h6>
+            <div class="number">{{ active_students }}</div>
+        </div>
+
+        <div class="stat-card">
+            <h6 class="text-dark">Total Parents</h6>
+            <div class="number">{{ total_parents }}</div>
+            <a href="{% url 'parent_list' %}" class="btn btn-sm btn-outline-primary mt-2">View Parents</a>
+        </div>
+
+        <div class="stat-card">
+            <h6 class="text-dark">Total Grades</h6>
+            <div class="number">{{ total_grades }}</div>
+            <a href="{% url 'grade_list' %}" class="btn btn-sm btn-outline-primary mt-2">View Grades</a>
+        </div>
+
+        <div class="stat-card">
+            <h6 class="text-dark">Total Subjects</h6>
+            <div class="number">{{ total_subjects }}</div>
+            <a href="{% url 'subject_list' %}" class="btn btn-sm btn-outline-primary mt-2">View Subjects</a>
+        </div>
+
+        <div class="stat-card">
+            <h6 class="text-dark">Total Buses</h6>
+            <div class="number">{{ total_buses }}</div>
+            <a href="{% url 'bus_list' %}" class="btn btn-sm btn-outline-primary mt-2">View Buses</a>
+        </div>
+
+        <div class="stat-card">
+            <h6 class="text-dark">New Student Onboarding</h6>
+            <div class="number" style="color: #ff6b6b;">{{ pending_onboarding }}</div>
+            <a href="{% url 'onboarding_request_list' %}" class="btn btn-sm btn-outline-warning mt-2">View Portal</a>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0 text-light">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% if can_create_student %}
+                        <a href="{% url 'student_create' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-plus"></i> Add New Student
+                        </a>
+                        {% else %}
+                        <a href="{% url 'onboarding_request_create' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-plus"></i> Request New Student
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'parent_create' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-plus"></i> Add New Parent
+                        </a>
+                        <a href="{% url 'attendance_create' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-plus"></i> Record Attendance
+                        </a>
+                        <a href="{% url 'bus_create' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-plus"></i> Add New Bus
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0 text-light">System Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Application:</strong> Skulz School CRM</p>
+                    <p><strong>Version:</strong> 1.0.0</p>
+                    <p><strong>Database:</strong> SQLite</p>
+                    <p><strong>Status:</strong> <span class="badge bg-success">Online</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

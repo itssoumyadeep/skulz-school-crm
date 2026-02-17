@@ -1,0 +1,70 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ parent.first_name }} {{ parent.last_name }} - School CRM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">Parent Details</h4>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h5>{{ parent.first_name }} {{ parent.last_name }}</h5>
+                <p class="text-muted">{{ parent.email }}</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge bg-secondary">{{ parent.get_parent_type_display }}</span>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>Phone Number:</strong>
+                <p>{{ parent.phone_number }}</p>
+            </div>
+            <div class="col-md-6">
+                <strong>Type:</strong>
+                <p>{{ parent.get_parent_type_display }}</p>
+            </div>
+        </div>
+
+        {% if parent.address %}
+        <div class="mb-3">
+            <strong>Address:</strong>
+            <p>
+                {{ parent.address.street_address }}<br>
+                {{ parent.address.city }}, {{ parent.address.state }} {{ parent.address.postal_code }}<br>
+                {{ parent.address.country }}
+            </p>
+        </div>
+        {% endif %}
+
+        <hr>
+
+        <div class="mb-3">
+            <strong>Children:</strong>
+            {% if parent.students.all %}
+            <ul>
+                {% for student in parent.students.all %}
+                <li><a href="{% url 'student_detail' student.pk %}">{{ student.first_name }} {{ student.last_name }} ({{
+                        student.grade }})</a></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">No children assigned</p>
+            {% endif %}
+        </div>
+
+        <hr>
+
+        <div class="mt-4">
+            <a href="{% url 'parent_update' parent.pk %}" class="btn btn-warning">Edit</a>
+            <a href="{% url 'parent_delete' parent.pk %}" class="btn btn-danger">Delete</a>
+            <a href="{% url 'parent_list' %}" class="btn btn-secondary">Back</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

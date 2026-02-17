@@ -1,0 +1,213 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Approve/Reject Onboarding Request - School CRM{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-warning" style="color: #f1e9e9;">
+                <h4 class="mb-0" style="color: #f1e9e9;">⚠️ Approve or Reject Request</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Request Details:</strong> Reviewing onboarding request for <strong>{{
+                                onboarding.first_name }} {{ onboarding.last_name }}</strong>
+                        </div>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="alert"
+                            aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6>Personal Information</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong> {{ onboarding.email }}</p>
+                            <p><strong>Phone:</strong> {{ onboarding.phone_number|default:"N/A" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Date of Birth:</strong> {{ onboarding.date_of_birth }}</p>
+                            <p><strong>Grade:</strong> {{ onboarding.grade|default:"N/A" }}</p>
+                        </div>
+                    </div>
+
+                    {% if onboarding.parents.all %}
+                    <p><strong>Parents:</strong></p>
+                    <ul>
+                        {% for parent in onboarding.parents.all %}
+                        <li>{{ parent.first_name }} {{ parent.last_name }} ({{ parent.get_parent_type_display }})</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                {% if records %}
+                <div class="mb-4">
+                    <h6>📎 Records & Attachments</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>File</th>
+                                    <th>Description</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-info">{{ record.get_record_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        <small>{{ record.file.name|truncatechars:40 }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ record.description|default:"—" }}</small>
+                                    </td>
+                                    <td>
+                                        <a href="{{ record.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                            📥 Download
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <hr>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <h6>Your Decision</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="status" id="approved" value="approved"
+                                required>
+                            <label class="form-check-label" for="approved">
+                                <strong>✅ Approve Request</strong>
+                                <p class="text-muted small">Accept this student onboarding. A new student record will be
+                                    created immediately.</p>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="status" id="rejected" value="rejected"
+                                required>
+                            <label class="form-check-label" for="rejected">
+                                <strong>❌ Reject Request</strong>
+                                <p class="text-muted small">Decline this onboarding request. You must provide a reason.
+                                </p>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="rejection_reason" class="form-label">Rejection Reason (required if
+                            rejecting)</label>
+                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="4"
+                            placeholder="Explain why you are rejecting this request..."></textarea>
+                        {% if form.rejection_reason.errors %}
+                        <div class="invalid-feedback d-block">{{ form.rejection_reason.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">Submit Decision</button>
+                        <a href="{% url 'onboarding_request_detail' onboarding.pk %}"
+                            class="btn btn-secondary btn-lg">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header" style="color: #f1e9e9;">
+                <h5 class="mb-0" style="color: #f1e9e9;">Request Summary</h5>
+            </div>
+            <div class="card-body">
+                {% if onboarding.photo %}
+                <div class="mb-3 text-center">
+                    <img src="{{ onboarding.photo.url }}" alt="Student Photo" class="onboarding-photo-circular">
+                </div>
+                {% endif %}
+                <p><strong>Student Name:</strong><br>{{ onboarding.first_name }} {{ onboarding.last_name }}</p>
+                <p><strong>Requested By:</strong><br>{{ onboarding.requested_by.first_name }} {{
+                    onboarding.requested_by.last_name }}</p>
+                <p><strong>Request Date:</strong><br>{{ onboarding.created_at|date:"M d, Y H:i" }}</p>
+                <hr>
+                <p><strong>Status:</strong><br><span class="badge bg-warning">Pending Your Approval</span></p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header" style="color: #f1e9e9;">
+                <h5 class="mb-0" style="color: #f1e9e9;">⚡ Impact</h5>
+            </div>
+            <div class="card-body">
+                <p class="small"><strong>If Approved:</strong> A new student record will be created with all entered
+                    information.</p>
+                <p class="small"><strong>If Rejected:</strong> The requestor will be notified and can resubmit with
+                    corrections.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-check {
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+
+    .form-check:hover {
+        background-color: #f9f9f9;
+    }
+
+    .form-check-input {
+        width: 1.25em;
+        height: 1.25em;
+        margin-top: 0.3em;
+    }
+
+    .onboarding-photo-circular {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: center;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+            0 0 0 1px rgba(0, 0, 0, 0.01);
+        background: #fff;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .onboarding-photo-circular:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08),
+            0 0 0 1px rgba(0, 0, 0, 0.02);
+    }
+</style>
+{% endblock %}

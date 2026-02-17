@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Subjects - School CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Subjects</h1>
+    <a href="{% url 'subject_create' %}" class="btn btn-primary">+ Add Subject</a>
+</div>
+
+{% if subjects %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Subject</th>
+                    <th>Students</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subject in subjects %}
+                <tr>
+                    <td><strong>{{ subject.subject_name }}</strong></td>
+                    <td><span class="badge bg-primary">{{ subject.students.count }}</span></td>
+                    <td>
+                        <a href="{% url 'subject_update' subject.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{% url 'subject_delete' subject.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <div>
+        No subjects found. <a href="{% url 'subject_create' %}" class="alert-link">Create one now</a>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+{% endblock %}

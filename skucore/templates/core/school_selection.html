@@ -1,0 +1,52 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Switch School - School CRM{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">🏫 Switch School</h4>
+                </div>
+                <div class="card-body">
+                    {% if schools %}
+                    <p class="text-muted mb-4">You have access to the following schools. Select one to switch:</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="list-group mb-3">
+                            {% for user_school in schools %}
+                            <label class="list-group-item">
+                                <input class="form-check-input me-2" type="radio" name="school_id"
+                                    value="{{ user_school.school.id }}" required {% if user_school.is_primary %}checked{% endif %}>
+                                <div>
+                                    <strong>{{ user_school.school.name }}</strong>
+                                    {% if user_school.is_primary %}
+                                    <span class="badge bg-success">Primary</span>
+                                    {% endif %}
+                                    <br>
+                                    <small class="text-muted">{{ user_school.school.code }}</small>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Switch School</button>
+                        <a href="{% url 'portal_redirect' %}" class="btn btn-secondary w-100 mt-2">Back</a>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <strong>⚠️ No Schools Available</strong>
+                        <p class="mb-0">You do not have access to any schools. Please contact your administrator.</p>
+                    </div>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

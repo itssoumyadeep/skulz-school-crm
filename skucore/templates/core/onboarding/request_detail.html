@@ -1,0 +1,249 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Onboarding Request Detail - School CRM{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0 text-white">Request Details</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <h5>{{ onboarding.first_name }} {{ onboarding.last_name }}</h5>
+                        <p class="text-muted">{{ onboarding.email }}</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        {% if onboarding.status == 'pending' %}
+                        <span class="badge bg-warning" style="padding: 10px; font-size: 1em;">⏳ Pending Approval</span>
+                        {% elif onboarding.status == 'approved' %}
+                        <span class="badge bg-info" style="padding: 10px; font-size: 1em;">👀 Approved</span>
+                        {% elif onboarding.status == 'completed' %}
+                        <span class="badge bg-success" style="padding: 10px; font-size: 1em;">✅ Completed</span>
+                        {% elif onboarding.status == 'rejected' %}
+                        <span class="badge bg-danger" style="padding: 10px; font-size: 1em;">❌ Rejected</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6>Personal Information</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Date of Birth:</strong>
+                        <p>{{ onboarding.date_of_birth }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Phone Number:</strong>
+                        <p>{{ onboarding.phone_number|default:"N/A" }}</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6>Academic Information</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Grade:</strong>
+                        <p>{{ onboarding.grade|default:"N/A" }}</p>
+                    </div>
+                </div>
+
+                {% if onboarding.address %}
+                <div class="mb-3">
+                    <strong>Address:</strong>
+                    <p>
+                        {{ onboarding.address.street_address }}<br>
+                        {{ onboarding.address.city }}, {{ onboarding.address.state }} {{ onboarding.address.postal_code
+                        }}<br>
+                        {{ onboarding.address.country }}
+                    </p>
+                </div>
+                {% endif %}
+
+                {% if onboarding.bus %}
+                <div class="mb-3">
+                    <strong>Bus Assignment:</strong>
+                    <p>{{ onboarding.bus.bus_number }} ({{ onboarding.bus.route }})</p>
+                </div>
+                {% endif %}
+
+                <hr>
+
+                {% if onboarding.subjects.all %}
+                <div class="mb-3">
+                    <strong>Subjects:</strong>
+                    <div>
+                        {% for subject in onboarding.subjects.all %}
+                        <span class="badge bg-info">{{ subject.subject_name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if onboarding.parents.all %}
+                <div class="mb-3">
+                    <strong>Parents:</strong>
+                    <ul>
+                        {% for parent in onboarding.parents.all %}
+                        <li>{{ parent.first_name }} {{ parent.last_name }} ({{ parent.get_parent_type_display }}) - {{
+                            parent.email }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <hr>
+
+                <h6>Request Information</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Requested By:</strong>
+                        <p>{{ onboarding.requested_by.first_name }} {{ onboarding.requested_by.last_name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Request Date:</strong>
+                        <p>{{ onboarding.created_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                </div>
+
+                {% if onboarding.approved_by %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Approved By:</strong>
+                        <p>{{ onboarding.approved_by.first_name }} {{ onboarding.approved_by.last_name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Approval Date:</strong>
+                        <p>{{ onboarding.approved_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if onboarding.rejection_reason %}
+                <div class="alert alert-danger mt-3">
+                    <strong>Rejection Reason:</strong>
+                    <p>{{ onboarding.rejection_reason }}</p>
+                </div>
+                {% endif %}
+
+                <hr>
+
+                <div class="mt-4">
+                    {% if can_approve and onboarding.status == 'pending' %}
+                    <a href="{% url 'onboarding_request_approve' onboarding.pk %}"
+                        class="btn btn-success">Approve/Reject</a>
+                    {% endif %}
+                    <a href="{% url 'onboarding_request_list' %}" class="btn btn-secondary">Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        {% if records %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0 text-white">📎 Records & Attachments</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-info" style="font-size: 0.75em;">{{
+                                        record.get_record_type_display }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ record.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                        📥
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0 text-white">Status Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item {% if onboarding.created_at %}completed{% endif %}">
+                        <h6>📋 Request Created</h6>
+                        <p class="text-muted">{{ onboarding.created_at|date:"M d, Y H:i" }}</p>
+                    </div>
+
+                    {% if onboarding.status != 'pending' %}
+                    <div class="timeline-item completed">
+                        <h6>👁️ Under Review</h6>
+                        <p class="text-muted">Submitted for approval</p>
+                    </div>
+                    {% endif %}
+
+                    {% if onboarding.approved_at %}
+                    <div class="timeline-item completed">
+                        <h6>
+                            {% if onboarding.status == 'completed' %}
+                            ✅ Approved & Created
+                            {% elif onboarding.status == 'rejected' %}
+                            ❌ Rejected
+                            {% endif %}
+                        </h6>
+                        <p class="text-muted">{{ onboarding.approved_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        padding-left: 30px;
+        padding-bottom: 20px;
+        position: relative;
+        border-left: 2px solid #ddd;
+    }
+
+    .timeline-item.completed {
+        border-left-color: #28a745;
+    }
+
+    .timeline-item:before {
+        content: '';
+        width: 12px;
+        height: 12px;
+        background: #ddd;
+        border: 2px solid white;
+        border-radius: 50%;
+        position: absolute;
+        left: -8px;
+        top: 5px;
+    }
+
+    .timeline-item.completed:before {
+        background: #28a745;
+    }
+
+    .timeline-item:last-child {
+        border-left: none;
+    }
+</style>
+{% endblock %}
