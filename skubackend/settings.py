@@ -51,12 +51,6 @@ if not DEBUG:
     if '*' not in ALLOWED_HOSTS and '*.onrender.com' not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append('*.onrender.com')
 
-#delete
-if 'skulz-school-crm.onrender.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('skulz-school-crm.onrender.com')
-if '*' not in ALLOWED_HOSTS and '*.onrender.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('*.onrender.com')
-
 
 # Application definition
 
@@ -108,12 +102,33 @@ WSGI_APPLICATION = 'skubackend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+# Try to use DATABASE_URL (Render sets this automatically)
+import dj_database_url
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Override with DATABASE_URL if it exists (for production on Render)
+if os.environ.get('DATABASE_URL'):
+    DATABASES['default'] = dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+elif not DEBUG:
+    # Try to use dj_database_url even without explicit DATABASE_URL
+    try:
+        DATABASES['default'] = dj_database_url.config(
+            default='sqlite:///db.sqlite3',
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    except Exception as e:
+        print(f"Warning: Could not configure database from DATABASE_URL: {e}")
 
 
 # Password validation
@@ -152,12 +167,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-#Delete
-if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
-        MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
     
-    # WhiteNoise configuration for better performance
+# WhiteNoise configuration for better performance
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     
 
@@ -203,16 +214,3 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
-    
-    # Database configuration
-    try:
-        import dj_database_url
-        DATABASES = {
-            'default': dj_database_url.config(
-                default='sqlite:///db.sqlite3',
-                conn_max_age=600,
-                conn_health_checks=True,
-            )
-        }
-    except ImportError:
-        pass

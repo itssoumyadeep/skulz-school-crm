@@ -6,7 +6,7 @@ services:
     region: oregon
     plan: free
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python manage.py migrate && python manage.py collectstatic --no-input && python manage.py setup_schools && python manage.py check_db && gunicorn skubackend.wsgi:application"
+    startCommand: "python manage.py migrate --noinput && python manage.py collectstatic --noinput && python manage.py setup_schools && python manage.py check_db && gunicorn skubackend.wsgi:application --workers 2"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11
