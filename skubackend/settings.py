@@ -153,6 +153,15 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+#Delete
+if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+        MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    
+    # WhiteNoise configuration for better performance
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+
+
 # Static files directories (app-level static files)
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'skucore', 'static'),
