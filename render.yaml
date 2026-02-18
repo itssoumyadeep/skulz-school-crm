@@ -1,3 +1,4 @@
+# Build configuration for Render deployment
 services:
   - type: web
     name: skulz-school-crm
