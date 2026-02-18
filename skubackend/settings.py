@@ -51,6 +51,12 @@ if not DEBUG:
     if '*' not in ALLOWED_HOSTS and '*.onrender.com' not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append('*.onrender.com')
 
+#delete
+if 'skulz-school-crm.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('skulz-school-crm.onrender.com')
+if '*' not in ALLOWED_HOSTS and '*.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('*.onrender.com')
+
 
 # Application definition
 
@@ -163,7 +169,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
-#STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')#remove this   
+#delete
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')#remove this   
 
 # ===== PRODUCTION SETTINGS FOR RENDER =====
 if not DEBUG:
