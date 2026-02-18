@@ -19,8 +19,6 @@ services:
         value: admin
       - key: ADMIN_EMAIL
         value: admin@skulz.local
-      - key: ADMIN_PASSWORD
-        generateValue: true
     databases:
       - name: skulz_db
         engine: postgresql
