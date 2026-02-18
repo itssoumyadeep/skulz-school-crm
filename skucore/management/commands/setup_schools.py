@@ -170,38 +170,79 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("\n⚠️  WARNING: No schools with active subscriptions!"))
 
     def handle(self, *args, **options):
-        self.stdout.write("\n" + "="*70)
-        self.stdout.write("SKULZ Multi-Tenancy Setup")
-        self.stdout.write("="*70 + "\n")
+        log_file = '/tmp/setup_schools.log'
         
-        try:
-            # Create admin user
-            self.stdout.write("Setting up admin user...")
-            admin_user = self.create_admin_user()
+        with open(log_file, 'w') as f:
+            f.write("="*70 + "\n")
+            f.write("SKULZ Multi-Tenancy Setup\n")
+            f.write("="*70 + "\n\n")
             
-            # Create school
-            self.stdout.write("\nSetting up school...")
-            school = self.create_school()
-            
-            # Setup admin users
-            self.stdout.write("\nSetting up admin users...")
-            self.setup_admin_users(school)
-            
-            # Verify
-            self.verify_setup()
-            
-            self.stdout.write("\n" + "="*70)
-            self.stdout.write(self.style.SUCCESS("✓ Multi-tenancy setup complete!"))
-            self.stdout.write("="*70)
-            self.stdout.write("\n🔐 LOGIN CREDENTIALS:")
-            self.stdout.write(f"   School: Default School")
-            self.stdout.write(f"   Username: {os.environ.get('ADMIN_USERNAME', 'admin')}")
-            self.stdout.write("   Password: Check output above (Temporary password)")
-            self.stdout.write("\n📍 LOGIN URL:")
-            self.stdout.write("   /login/")
-            self.stdout.write("\n")
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f"\n❌ FATAL ERROR: {e}"))
-            import traceback
-            traceback.print_exc()
-            raise
+            try:
+                f.write("Setting up admin user...\n")
+                self.stdout.write("Setting up admin user...")
+                admin_user = self.create_admin_user()
+                f.write(f"Admin user result: {admin_user}\n")
+                
+                f.write("\nSetting up school...\n")
+                self.stdout.write("\nSetting up school...")
+                school = self.create_school()
+                f.write(f"School result: {school}\n")
+                f.write(f"School ID: {school.id}\n")
+                f.write(f"School is_active: {school.is_active}\n")
+                
+                # Verify subscription
+                try:
+                    sub = school.subscription
+                    f.write(f"Subscription status: {sub.status}\n")
+                    f.write(f"Subscription plan: {sub.plan}\n")
+                except Exception as e:
+                    f.write(f"ERROR getting subscription: {e}\n")
+                
+                f.write("\nSetting up admin users...\n")
+                self.stdout.write("\nSetting up admin users...")
+                self.setup_admin_users(school)
+                f.write("Admin users setup complete\n")
+                
+                f.write("\nVerifying setup...\n")
+                self.verify_setup()
+                
+                # Double-check the database
+                f.write("\n" + "="*70 + "\n")
+                f.write("DATABASE CHECK\n")
+                f.write("="*70 + "\n")
+                
+                from skucore.models import School, Subscription
+                all_schools = School.objects.all()
+                f.write(f"\nTotal schools in DB: {all_schools.count()}\n")
+                for s in all_schools:
+                    f.write(f"  • {s.name} (id={s.id}, active={s.is_active})\n")
+                    try:
+                        sub = s.subscription
+                        f.write(f"    Subscription: status={sub.status}, plan={sub.plan}\n")
+                    except Exception as e:
+                        f.write(f"    ERROR: {e}\n")
+                
+                active_schools = School.objects.filter(subscription__status='active')
+                f.write(f"\nSchools with ACTIVE subscriptions: {active_schools.count()}\n")
+                for s in active_schools:
+                    f.write(f"  • {s.name}\n")
+                
+                f.write("\n" + "="*70 + "\n")
+                f.write("✓ Multi-tenancy setup complete!\n")
+                f.write("="*70 + "\n")
+                
+                self.stdout.write("\n" + "="*70)
+                self.stdout.write(self.style.SUCCESS("✓ Multi-tenancy setup complete!"))
+                self.stdout.write("="*70)
+                self.stdout.write(f"\nLog written to: {log_file}")
+                
+            except Exception as e:
+                f.write(f"\n❌ FATAL ERROR: {e}\n")
+                import traceback
+                f.write(traceback.format_exc())
+                f.write("\n")
+                
+                self.stdout.write(self.style.ERROR(f"\n❌ FATAL ERROR: {e}"))
+                import traceback
+                traceback.print_exc()
+                raise
