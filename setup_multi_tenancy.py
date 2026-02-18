@@ -7,6 +7,8 @@ Run after: python manage.py migrate
 
 import os
 import django
+import secrets
+import string
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'skubackend.settings')
 django.setup()
@@ -15,15 +17,22 @@ from django.contrib.auth.models import User
 from skucore.models import School, Subscription, UserSchool, UserRole
 
 
+def generate_secure_password(length=16):
+    """Generate a secure random password"""
+    chars = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(chars) for _ in range(length))
+
+
 def create_default_admin():
-    """Create a default admin user from environment variables"""
+    """Create a default admin user"""
     admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
     admin_email = os.environ.get('ADMIN_EMAIL', 'admin@skulz.local')
     admin_password = os.environ.get('ADMIN_PASSWORD')
     
+    # If no password provided, generate one
     if not admin_password:
-        print("⚠️  ADMIN_PASSWORD not set, skipping admin user creation")
-        return None
+        admin_password = generate_secure_password()
+        print(f"⚠️  Generated password for admin user: {admin_password}")
     
     try:
         user = User.objects.get(username=admin_username)
@@ -38,6 +47,7 @@ def create_default_admin():
         password=admin_password
     )
     print(f"✓ Created admin user: {admin_username}")
+    print(f"  Temporary password: {admin_password}")
     return user
 
 
@@ -126,14 +136,14 @@ def main():
     print("\n" + "="*70)
     print("✓ Multi-tenancy setup complete!")
     print("="*70)
-    print("\nLogin Instructions:")
-    print(f"• URL: https://skulz-school-crm.onrender.com/login/")
-    print(f"• School: Default School")
-    print(f"• Username: {os.environ.get('ADMIN_USERNAME', 'admin')}")
-    print(f"• Password: Check Render environment variables (ADMIN_PASSWORD)")
-    print("\nAdmin Panel:")
-    print("• URL: https://skulz-school-crm.onrender.com/admin/")
-    print("• Use same credentials as above")
+    print("\n🔐 LOGIN CREDENTIALS:")
+    print(f"   School: Default School")
+    print(f"   Username: {os.environ.get('ADMIN_USERNAME', 'admin')}")
+    print(f"   Password: Check build output above (marked 'Temporary password')")
+    print("\n📍 LOGIN URL:")
+    print(f"   https://skulz-school-crm.onrender.com/login/")
+    print("\n⚙️  ADMIN PANEL:")
+    print(f"   https://skulz-school-crm.onrender.com/admin/")
     print("\n")
 
 
