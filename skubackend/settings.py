@@ -163,6 +163,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')#remove this   
 
 # ===== PRODUCTION SETTINGS FOR RENDER =====
 if not DEBUG:
@@ -170,7 +171,6 @@ if not DEBUG:
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     STATIC_URL = '/static/'
     os.makedirs(STATIC_ROOT, exist_ok=True)
-    
     # WhiteNoise middleware for static files
     if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
         MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
