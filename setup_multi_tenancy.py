@@ -15,6 +15,32 @@ from django.contrib.auth.models import User
 from skucore.models import School, Subscription, UserSchool, UserRole
 
 
+def create_default_admin():
+    """Create a default admin user from environment variables"""
+    admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@skulz.local')
+    admin_password = os.environ.get('ADMIN_PASSWORD')
+    
+    if not admin_password:
+        print("⚠️  ADMIN_PASSWORD not set, skipping admin user creation")
+        return None
+    
+    try:
+        user = User.objects.get(username=admin_username)
+        print(f"✓ Admin user '{admin_username}' already exists")
+        return user
+    except User.DoesNotExist:
+        pass
+    
+    user = User.objects.create_superuser(
+        username=admin_username,
+        email=admin_email,
+        password=admin_password
+    )
+    print(f"✓ Created admin user: {admin_username}")
+    return user
+
+
 def create_default_school():
     """Create a default school for existing data"""
     try:
@@ -86,6 +112,10 @@ def main():
     print("SKULZ Multi-Tenancy Setup")
     print("="*70 + "\n")
     
+    # Create default admin user
+    print("Setting up admin user...")
+    admin_user = create_default_admin()
+    
     # Create default school
     school = create_default_school()
     
@@ -96,12 +126,14 @@ def main():
     print("\n" + "="*70)
     print("✓ Multi-tenancy setup complete!")
     print("="*70)
-    print("\nNext steps:")
-    print("1. Go to http://127.0.0.1:8000/login/")
-    print("2. Select 'Default School' from the dropdown")
-    print("3. Enter your superuser credentials")
-    print("4. Create additional schools in Django admin: /admin/")
-    print("5. Add UserSchool records to link users to schools")
+    print("\nLogin Instructions:")
+    print(f"• URL: https://skulz-school-crm.onrender.com/login/")
+    print(f"• School: Default School")
+    print(f"• Username: {os.environ.get('ADMIN_USERNAME', 'admin')}")
+    print(f"• Password: Check Render environment variables (ADMIN_PASSWORD)")
+    print("\nAdmin Panel:")
+    print("• URL: https://skulz-school-crm.onrender.com/admin/")
+    print("• Use same credentials as above")
     print("\n")
 
 
