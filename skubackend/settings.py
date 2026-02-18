@@ -45,11 +45,11 @@ ALLOWED_HOSTS = config(
 )
 
 # Ensure critical hosts are always included for production
-if not DEBUG:
-    if 'skulz-school-crm.onrender.com' not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append('skulz-school-crm.onrender.com')
-    if '*' not in ALLOWED_HOSTS and '*.onrender.com' not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append('*.onrender.com')
+#if not DEBUG:
+if 'skulz-school-crm.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('skulz-school-crm.onrender.com')
+if '*' not in ALLOWED_HOSTS and '*.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('*.onrender.com')
 
 
 # Application definition
