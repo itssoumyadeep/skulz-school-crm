@@ -68,6 +68,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -167,8 +168,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     
-# WhiteNoise configuration for better performance
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise configuration - use simpler storage that works better on Render
+STATICFILES_STORAGE = 'whitenoise.storage.WhiteNoiseStaticFilesStorage'
     
 
 
@@ -199,13 +200,6 @@ CORS_ALLOWED_ORIGINS = [
 if not DEBUG:
     # Ensure static files directory exists
     os.makedirs(STATIC_ROOT, exist_ok=True)
-    
-    # WhiteNoise middleware for static files
-    if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
-        MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    
-    # WhiteNoise configuration for better performance
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     
     # Security settings
     SECURE_SSL_REDIRECT = True
