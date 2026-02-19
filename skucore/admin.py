@@ -93,6 +93,7 @@ class UserRoleAdmin(SchoolFilteredAdminMixin, admin.ModelAdmin):
     list_display = ['user', 'school', 'role', 'department', 'is_active', 'created_at']
     search_fields = ['user__username', 'user__email', 'school__name']
     list_filter = ['school', 'role', 'is_active', 'created_at']
+    readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('User & School', {
             'fields': ('user', 'school')
@@ -104,7 +105,7 @@ class UserRoleAdmin(SchoolFilteredAdminMixin, admin.ModelAdmin):
             'fields': ('is_active',)
         }),
         ('Timestamps', {
-            'fields': ('created_at',),
+            'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
