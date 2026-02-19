@@ -168,8 +168,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     
-# WhiteNoise configuration - use simpler storage that works better on Render
-STATICFILES_STORAGE = 'whitenoise.storage.WhiteNoiseStaticFilesStorage'
+# Use Django's ManifestStaticFilesStorage with WhiteNoise middleware
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
     
 
 
