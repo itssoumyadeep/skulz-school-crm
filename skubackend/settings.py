@@ -44,12 +44,11 @@ ALLOWED_HOSTS = config(
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 
-# Ensure critical hosts are always included for production
-if not DEBUG:
-    if 'skulz-school-crm.onrender.com' not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append('skulz-school-crm.onrender.com')
-    if '*' not in ALLOWED_HOSTS and '*.onrender.com' not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append('*.onrender.com')
+# Ensure critical hosts are always included (for both dev and production)
+critical_hosts = ['localhost', '127.0.0.1', '*.onrender.com', 'skulz-school-crm.onrender.com']
+for host in critical_hosts:
+    if host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
 
 # Application definition
