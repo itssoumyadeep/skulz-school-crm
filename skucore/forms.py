@@ -177,10 +177,20 @@ class StudentOnboardingRequestForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        school = kwargs.pop('school', None)
         super().__init__(*args, **kwargs)
         # Remove the address field from the form as we're using custom address field
         if 'address' in self.fields:
             del self.fields['address']
+        # Make grade required
+        self.fields['grade'].required = True
+        self.fields['grade'].empty_label = 'Select a grade'
+        # Filter dropdowns to current school
+        if school:
+            self.fields['grade'].queryset = Grade.objects.filter(school=school)
+            self.fields['bus'].queryset = Bus.objects.filter(school=school)
+            self.fields['parents'].queryset = Parent.objects.filter(school=school)
+            self.fields['subjects'].queryset = Subject.objects.filter(school=school)
 
 
 class OnboardingApprovalForm(forms.Form):

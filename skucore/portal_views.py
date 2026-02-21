@@ -289,7 +289,7 @@ def onboarding_request_create(request):
         raise PermissionDenied("You do not have permission to initiate student onboarding.")
     
     if request.method == 'POST':
-        form = StudentOnboardingRequestForm(request.POST, request.FILES)
+        form = StudentOnboardingRequestForm(request.POST, request.FILES, school=request.school)
         if form.is_valid():
             onboarding = form.save(commit=False)
             onboarding.requested_by = request.user
@@ -358,7 +358,7 @@ def onboarding_request_create(request):
 
             return redirect('onboarding_request_list')
     else:
-        form = StudentOnboardingRequestForm()
+        form = StudentOnboardingRequestForm(school=request.school)
     
     return render(request, 'core/onboarding/request_form.html', {'form': form, 'title': 'Create Student Onboarding Request'})
 
