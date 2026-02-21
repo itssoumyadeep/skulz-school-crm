@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from skucore.views import (
@@ -40,7 +40,10 @@ from skucore.portal_views import (
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
+
+    # REST API endpoints
+    path('api/', include('skucore.api_urls')),
+
     # Authentication
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
