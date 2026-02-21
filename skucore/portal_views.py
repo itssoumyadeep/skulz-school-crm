@@ -360,7 +360,11 @@ def onboarding_request_create(request):
     else:
         form = StudentOnboardingRequestForm(school=request.school)
     
-    return render(request, 'core/onboarding/request_form.html', {'form': form, 'title': 'Create Student Onboarding Request'})
+    return render(request, 'core/onboarding/request_form.html', {
+        'form': form,
+        'title': 'Create Student Onboarding Request',
+        'school': request.school,
+    })
 
 
 @login_required
