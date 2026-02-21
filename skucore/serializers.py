@@ -128,6 +128,12 @@ class AttendanceSerializer(serializers.ModelSerializer):
 class StudentOnboardingSerializer(serializers.ModelSerializer):
     requested_by_username = serializers.CharField(source='requested_by.username', read_only=True)
     approved_by_username = serializers.CharField(source='approved_by.username', read_only=True, allow_null=True)
+    # grade is mandatory - explicitly declared to enforce required=True
+    grade = serializers.PrimaryKeyRelatedField(
+        queryset=Grade.objects.all(),
+        required=True,
+        allow_null=False
+    )
 
     class Meta:
         model = StudentOnboardingRequest

@@ -429,6 +429,9 @@ class OnboardingViewSet(SchoolFilteredViewSet):
     serializer_class = StudentOnboardingSerializer
 
     def perform_create(self, serializer):
+        if not self.request.school:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'school': 'No active school context. Please select a school before submitting an onboarding request.'})
         serializer.save(
             school=self.request.school,
             requested_by=self.request.user
