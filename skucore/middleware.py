@@ -23,53 +23,51 @@ class SchoolContextMiddleware:
         self.get_response = get_response
     
     def __call__(self, request):
-        # Check if URL is exempt
         path = request.path
-        if any(path.startswith(url) for url in self.EXEMPT_URLS):
+        is_api_request = path.startswith('/api/')
+
+        # For non-API exempt URLs (login, static, etc.), skip school context
+        non_api_exempt = [url for url in self.EXEMPT_URLS if url != '/api/']
+        if any(path.startswith(url) for url in non_api_exempt):
             request.school = None
             return self.get_response(request)
-        
+
         # If user is not authenticated, just continue
         if not request.user.is_authenticated:
             request.school = None
             return self.get_response(request)
-        
-        # Check if school is in session
+
+        # Try session first (works for browser requests)
         school_id = request.session.get('school_id')
-        
-        if not school_id:
-            # Try to get user's primary school
-            user_school = UserSchool.objects.filter(
-                user=request.user,
-                is_primary=True,
-                is_active=True
-            ).select_related('school').first()
-            
-            if user_school:
-                request.session['school_id'] = user_school.school.id
-                request.session['school_name'] = user_school.school.name
-                request.school = user_school.school
-            else:
-                # Check if user has any schools
-                first_school = UserSchool.objects.filter(
-                    user=request.user,
-                    is_active=True
-                ).select_related('school').first()
-                
-                if first_school:
-                    request.session['school_id'] = first_school.school.id
-                    request.session['school_name'] = first_school.school.name
-                    request.school = first_school.school
-                    return redirect('school_selection')
-                else:
-                    request.school = None
-                    return redirect('logout')
-        else:
+        if school_id:
             try:
                 request.school = School.objects.get(id=school_id)
+                return self.get_response(request)
             except School.DoesNotExist:
                 request.session.flush()
-                return redirect('login')
-        
+
+        # No session school — look up from UserSchool (covers API/token requests)
+        user_school = UserSchool.objects.filter(
+            user=request.user,
+            is_primary=True,
+            is_active=True
+        ).select_related('school').first()
+
+        if not user_school:
+            user_school = UserSchool.objects.filter(
+                user=request.user,
+                is_active=True
+            ).select_related('school').first()
+
+        if user_school:
+            request.session['school_id'] = user_school.school.id
+            request.session['school_name'] = user_school.school.name
+            request.school = user_school.school
+        else:
+            request.school = None
+            # Only redirect browser requests, not API requests
+            if not is_api_request:
+                return redirect('logout')
+
         response = self.get_response(request)
         return response
