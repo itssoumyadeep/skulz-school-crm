@@ -13,21 +13,8 @@
         <h4 class="mb-0 text-light">{{ title }}</h4>
     </div>
     <div class="card-body">
-        <div class="alert alert-info alert-dismissible fade show" role="alert" id="onboarding-alert"
-            style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            <strong>Note:</strong> This student onboarding request will be sent to the Principal or Vice Principal
-            for approval before the student record is created in the system.
-        </div>
-
         <form method="post" class="student-form" enctype="multipart/form-data">
             {% csrf_token %}
-
-            <div class="mb-4">
-                <label class="form-label fw-semibold">School</label>
-                <input type="text" class="form-control bg-light" value="{% if school %}{{ school.name }}{% else %}No school selected{% endif %}" readonly disabled>
-                <small class="text-muted">This request will be submitted for this school.</small>
-            </div>
 
             <div class="row">
                 <div class="col-md-6">
