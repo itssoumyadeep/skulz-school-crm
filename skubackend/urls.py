@@ -3,6 +3,9 @@ from django.contrib.auth import views as auth_views
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+#Remove this
+from skucore.views import db_info
+
 from skucore.views import (
     # Dashboard
     dashboard,
@@ -40,7 +43,9 @@ from skucore.portal_views import (
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
+#Remove this
+    path('db-info/', db_info, name='db_info'),  # add this line
+#Remove this
     # REST API endpoints
     path('api/', include('skucore.api_urls')),
 

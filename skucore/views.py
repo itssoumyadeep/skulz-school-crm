@@ -6,6 +6,27 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from datetime import datetime, timedelta
 import calendar
+
+#Remove the Code Later
+from django.http import JsonResponse
+from django.db import connection
+
+def db_info(request):
+    """Temporary debug endpoint - remove after checking"""
+    db = connection.settings_dict
+    from skucore.models import Student, School, UserSchool
+    return JsonResponse({
+        'engine': db['ENGINE'],
+        'database': db.get('NAME', 'N/A'),
+        'host': db.get('HOST', 'N/A'),
+        'total_students': Student.objects.count(),
+        'total_schools': School.objects.count(),
+        'schools': list(School.objects.values('id', 'name', 'is_active')),
+        'user_schools': list(UserSchool.objects.values('user__username', 'school__name')),
+    })
+
+
+
 from .models import (
     Student, Parent, Grade, Subject, Bus, Route, 
     Attendance, Address, StudentOnboardingRequest, Record
