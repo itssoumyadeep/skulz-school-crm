@@ -76,8 +76,15 @@ def api_me(request):
     GET /api/auth/me/
     Returns current user info and school context
     """
+    from .models import UserSchool
     user = request.user
     school = getattr(request, 'school', None)
+    if not school:
+        user_school = UserSchool.objects.filter(
+            user=user, is_active=True
+        ).select_related('school').first()
+        if user_school:
+            school = user_school.school
     return Response({
         'id': user.id,
         'username': user.username,
@@ -99,14 +106,34 @@ class SchoolFilteredViewSet(viewsets.ModelViewSet):
     """Base viewset that auto-filters queryset by school and sets school on create."""
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_school(self):
+        """
+        Get school for current request. DRF token auth runs inside the view
+        (after middleware), so request.school may be None for token requests.
+        Fall back to UserSchool lookup using the now-authenticated request.user.
+        """
+        from .models import UserSchool
         school = getattr(self.request, 'school', None)
+        if school:
+            return school
+        # Token auth: user is now authenticated but middleware ran before auth
+        user = self.request.user
+        if user and user.is_authenticated:
+            user_school = UserSchool.objects.filter(
+                user=user, is_active=True
+            ).select_related('school').first()
+            if user_school:
+                return user_school.school
+        return None
+
+    def get_queryset(self):
+        school = self.get_school()
         if school:
             return self.queryset.filter(school=school)
         return self.queryset.none()
 
     def perform_create(self, serializer):
-        school = getattr(self.request, 'school', None)
+        school = self.get_school()
         serializer.save(school=school)
 
 
@@ -429,11 +456,12 @@ class OnboardingViewSet(SchoolFilteredViewSet):
     serializer_class = StudentOnboardingSerializer
 
     def perform_create(self, serializer):
-        if not self.request.school:
+        school = self.get_school()
+        if not school:
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'school': 'No active school context. Please select a school before submitting an onboarding request.'})
         serializer.save(
-            school=self.request.school,
+            school=school,
             requested_by=self.request.user
         )
 
