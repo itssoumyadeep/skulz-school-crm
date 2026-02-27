@@ -47,19 +47,18 @@ def api_data(request):
     return Response({"message": "Hello React, this is JSON from Python!"})
 
 
-# Dashboard
 @login_required
 def dashboard(request):
     can_create_student = user_is_admin(request.user)
     context = {
-        'total_students': Student.objects.count(),
-        'total_parents': Parent.objects.count(),
-        'total_grades': Grade.objects.count(),
-        'total_subjects': Subject.objects.count(),
-        'total_buses': Bus.objects.count(),
-        'active_students': Student.objects.filter(is_active=True).count(),
+        'total_students': Student.objects.filter(school=request.school).count(),
+        'total_parents': Parent.objects.filter(school=request.school).count(),
+        'total_grades': Grade.objects.filter(school=request.school).count(),
+        'total_subjects': Subject.objects.filter(school=request.school).count(),
+        'total_buses': Bus.objects.filter(school=request.school).count(),
+        'active_students': Student.objects.filter(school=request.school, is_active=True).count(),
         'can_create_student': can_create_student,
-        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending').count(),
+        'pending_onboarding': StudentOnboardingRequest.objects.filter(school=request.school, status='pending').count(),
     }
     return render(request, 'core/dashboard.html', context)
 
