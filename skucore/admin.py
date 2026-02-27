@@ -30,10 +30,10 @@ class SchoolAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'code', 'email', 'phone', 'website')
+            'fields': ('name', 'code', 'email', 'phone_number', 'website')
         }),
         ('Address Information', {
-            'fields': ('address_street', 'address_city', 'address_state', 'address_postal_code')
+            'fields': ('street_address', 'city', 'state', 'postal_code', 'country')
         }),
         ('Administration', {
             'fields': ('principal_name', 'admin_email', 'is_active')
