@@ -50,7 +50,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ['school', 'plan', 'status', 'max_students', 'max_users', 'start_date', 'end_date']
     search_fields = ['school__name', 'plan']
     list_filter = ['plan', 'status', 'start_date']
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['created_at', 'updated_at', 'start_date']  # Add start_date as readonly
     fieldsets = (
         ('School & Plan', {
             'fields': ('school', 'plan', 'status')
@@ -59,7 +59,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
             'fields': ('max_students', 'max_users')
         }),
         ('Dates', {
-            'fields': ('start_date', 'end_date', 'renewal_date')
+            'fields': ('start_date', 'end_date', 'renewal_date')  # start_date will be readonly
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
