@@ -34,7 +34,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-wp0$9zpyur7(r6f2fra=fpbf=bxv)htwi@8lzd!r%6+-yp+5c#')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 # Build ALLOWED_HOSTS
 _default_allowed_hosts = 'localhost,127.0.0.1,*.onrender.com,skulz-school-crm.onrender.com'

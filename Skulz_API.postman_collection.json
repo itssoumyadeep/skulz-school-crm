@@ -1,0 +1,834 @@
+{
+  "info": {
+    "name": "Skulz School CRM API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "Authorization", "type": "string" },
+      { "key": "value", "value": "Token {{token}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.environment.set('token', res.token);",
+                  "  console.log('Token saved:', res.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"your_password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout", ""]
+            }
+          }
+        },
+        {
+          "name": "Me (Current User)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Students",
+      "item": [
+        {
+          "name": "List All Students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", ""]
+            }
+          }
+        },
+        {
+          "name": "Active Students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students/active/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "active", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Student (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"date_of_birth\": \"2015-06-15\",\n  \"phone_number\": \"555-1234\",\n  \"grade\": 1,\n  \"bus\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/students/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Student by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students/{{student_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "{{student_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Student (Admin Only)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"date_of_birth\": \"2015-06-15\",\n  \"grade\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/students/{{student_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "{{student_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Student (Admin Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students/{{student_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "{{student_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Student Attendance History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students/{{student_id}}/attendance/?from_date=2026-01-01&to_date=2026-02-22",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "{{student_id}}", "attendance", ""],
+              "query": [
+                { "key": "from_date", "value": "2026-01-01" },
+                { "key": "to_date", "value": "2026-02-22" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Student Records (List)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students/{{student_id}}/records/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "{{student_id}}", "records", ""]
+            }
+          }
+        },
+        {
+          "name": "Student Records (Upload)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "record_type",
+                  "value": "birth_certificate",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Birth certificate copy",
+                  "type": "text"
+                },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/students/{{student_id}}/records/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "{{student_id}}", "records", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parents",
+      "item": [
+        {
+          "name": "List All Parents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/parents/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parents", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Parent",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"phone\": \"555-5678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/parents/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parents", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Parent by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/parents/{{parent_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parents", "{{parent_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Parent's Children",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/parents/{{parent_id}}/students/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parents", "{{parent_id}}", "students", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Parent",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"phone\": \"555-5678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/parents/{{parent_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parents", "{{parent_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Parent",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/parents/{{parent_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parents", "{{parent_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Grades",
+      "item": [
+        {
+          "name": "List All Grades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/grades/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "grades", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Grade",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade_name\": \"Grade 1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/grades/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "grades", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Grade by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/grades/{{grade_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "grades", "{{grade_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Grade",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade_name\": \"Grade 1 Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/grades/{{grade_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "grades", "{{grade_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Grade",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/grades/{{grade_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "grades", "{{grade_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subjects",
+      "item": [
+        {
+          "name": "List All Subjects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/subjects/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subjects", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Subject",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject_name\": \"Mathematics\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subjects/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subjects", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Subject by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/subjects/{{subject_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subjects", "{{subject_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Subject",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject_name\": \"Mathematics Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subjects/{{subject_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subjects", "{{subject_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Subject",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/subjects/{{subject_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subjects", "{{subject_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Routes",
+      "item": [
+        {
+          "name": "List All Routes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/routes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "routes", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Route",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_name\": \"Route A\",\n  \"description\": \"North side route\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/routes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "routes", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Route by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/routes/{{route_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "routes", "{{route_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Route",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_name\": \"Route A Updated\",\n  \"description\": \"North side route\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/routes/{{route_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "routes", "{{route_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Route",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/routes/{{route_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "routes", "{{route_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buses",
+      "item": [
+        {
+          "name": "List All Buses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/buses/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "buses", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Bus",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bus_number\": \"BUS-001\",\n  \"capacity\": 40,\n  \"route\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/buses/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "buses", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Bus by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/buses/{{bus_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "buses", "{{bus_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Bus Students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/buses/{{bus_id}}/students/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "buses", "{{bus_id}}", "students", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Bus",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bus_number\": \"BUS-001\",\n  \"capacity\": 45,\n  \"route\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/buses/{{bus_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "buses", "{{bus_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Bus",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/buses/{{bus_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "buses", "{{bus_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "item": [
+        {
+          "name": "List All Attendance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attendance/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", ""]
+            }
+          }
+        },
+        {
+          "name": "List Attendance by Student",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attendance/?student_id={{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", ""],
+              "query": [{ "key": "student_id", "value": "{{student_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Attendance by Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attendance/by_date/?date=2026-02-22",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", "by_date", ""],
+              "query": [{ "key": "date", "value": "2026-02-22" }]
+            }
+          }
+        },
+        {
+          "name": "Attendance Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attendance/summary/?date=2026-02-22",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", "summary", ""],
+              "query": [{ "key": "date", "value": "2026-02-22" }]
+            }
+          }
+        },
+        {
+          "name": "Create Single Attendance",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student\": 1,\n  \"date\": \"2026-02-22\",\n  \"status\": \"present\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/attendance/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", ""]
+            }
+          }
+        },
+        {
+          "name": "Bulk Attendance",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\"student\": 1, \"date\": \"2026-02-22\", \"status\": \"present\"},\n  {\"student\": 2, \"date\": \"2026-02-22\", \"status\": \"absent\"},\n  {\"student\": 3, \"date\": \"2026-02-22\", \"status\": \"late\"}\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/attendance/bulk/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", "bulk", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Attendance",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"excused\"\n}" },
+            "url": {
+              "raw": "{{base_url}}/api/attendance/{{attendance_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", "{{attendance_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Attendance",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attendance/{{attendance_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", "{{attendance_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Onboarding",
+      "item": [
+        {
+          "name": "List All Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/onboarding/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "onboarding", ""]
+            }
+          }
+        },
+        {
+          "name": "Pending Requests (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/onboarding/pending/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "onboarding", "pending", ""]
+            }
+          }
+        },
+        {
+          "name": "Submit Onboarding Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"date_of_birth\": \"2015-06-15\",\n  \"phone_number\": \"555-1234\",\n  \"grade\": 1,\n  \"bus\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/onboarding/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "onboarding", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Onboarding Request by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/onboarding/{{onboarding_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "onboarding", "{{onboarding_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Approve Request (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/onboarding/{{onboarding_id}}/approve/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "onboarding", "{{onboarding_id}}", "approve", ""]
+            }
+          }
+        },
+        {
+          "name": "Reject Request (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejection_reason\": \"Missing required documents\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/onboarding/{{onboarding_id}}/reject/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "onboarding", "{{onboarding_id}}", "reject", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Debug",
+      "item": [
+        {
+          "name": "DB Info",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/db-info/",
+              "host": ["{{base_url}}"],
+              "path": ["db-info", ""]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://skulz-school-crm.onrender.com" },
+    { "key": "token", "value": "" },
+    { "key": "student_id", "value": "1" },
+    { "key": "parent_id", "value": "1" },
+    { "key": "grade_id", "value": "1" },
+    { "key": "subject_id", "value": "1" },
+    { "key": "route_id", "value": "1" },
+    { "key": "bus_id", "value": "1" },
+    { "key": "attendance_id", "value": "1" },
+    { "key": "onboarding_id", "value": "1" }
+  ]
+}
