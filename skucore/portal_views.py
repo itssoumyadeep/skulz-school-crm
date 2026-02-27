@@ -160,16 +160,18 @@ def teacher_portal(request):
     context = {
         'portal_name': 'Teacher Portal',
         'role': 'Teacher',
-        'students': Student.objects.filter(is_active=True),
+        'students': Student.objects.filter(is_active=True, school=request.school),
         'pending_onboarding': StudentOnboardingRequest.objects.filter(
             requested_by=request.user,
+            school=request.school,
             status='pending'
         ),
         'approved_onboarding': StudentOnboardingRequest.objects.filter(
             requested_by=request.user,
+            school=request.school,
             status='approved'
         ),
-        'my_requests': StudentOnboardingRequest.objects.filter(requested_by=request.user),
+        'my_requests': StudentOnboardingRequest.objects.filter(requested_by=request.user, school=request.school),
     }
     return render(request, 'core/portals/teacher_portal.html', context)
 
@@ -183,11 +185,11 @@ def operator_portal(request):
     context = {
         'portal_name': 'Operator Portal',
         'role': 'Operator',
-        'total_students': Student.objects.count(),
-        'active_students': Student.objects.filter(is_active=True).count(),
-        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending'),
-        'my_requests': StudentOnboardingRequest.objects.filter(requested_by=request.user),
-        'recent_requests': StudentOnboardingRequest.objects.all()[:10],
+        'total_students': Student.objects.filter(school=request.school).count(),
+        'active_students': Student.objects.filter(is_active=True, school=request.school).count(),
+        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending', school=request.school),
+        'my_requests': StudentOnboardingRequest.objects.filter(requested_by=request.user, school=request.school),
+        'recent_requests': StudentOnboardingRequest.objects.filter(school=request.school)[:10],
     }
     return render(request, 'core/portals/operator_portal.html', context)
 
@@ -201,9 +203,9 @@ def readonly_portal(request):
     context = {
         'portal_name': 'Read-Only Portal',
         'role': 'Read-Only User',
-        'students': Student.objects.all(),
-        'parents': Parent.objects.all(),
-        'attendance': Attendance.objects.all().order_by('-date')[:50],
+        'students': Student.objects.filter(school=request.school),
+        'parents': Parent.objects.filter(school=request.school),
+        'attendance': Attendance.objects.filter(school=request.school).order_by('-date')[:50],
     }
     return render(request, 'core/portals/readonly_portal.html', context)
 
@@ -217,11 +219,11 @@ def admin_portal(request):
     context = {
         'portal_name': 'Administrator Portal',
         'role': 'Administrator',
-        'total_users': UserRole.objects.count(),
-        'total_students': Student.objects.count(),
-        'total_parents': Parent.objects.count(),
-        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending'),
-        'recent_onboarding': StudentOnboardingRequest.objects.all()[:10],
+        'total_users': UserRole.objects.filter(school=request.school).count(),
+        'total_students': Student.objects.filter(school=request.school).count(),
+        'total_parents': Parent.objects.filter(school=request.school).count(),
+        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending', school=request.school),
+        'recent_onboarding': StudentOnboardingRequest.objects.filter(school=request.school)[:10],
     }
     return render(request, 'core/portals/admin_portal.html', context)
 
@@ -232,11 +234,12 @@ def principal_portal(request):
     context = {
         'portal_name': 'Principal Portal',
         'role': 'Principal',
-        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending'),
-        'total_students': Student.objects.count(),
-        'active_students': Student.objects.filter(is_active=True).count(),
+        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending', school=request.school),
+        'total_students': Student.objects.filter(school=request.school).count(),
+        'active_students': Student.objects.filter(is_active=True, school=request.school).count(),
         'recent_approvals': StudentOnboardingRequest.objects.filter(
-            approved_by=request.user
+            approved_by=request.user,
+            school=request.school
         )[:10],
     }
     return render(request, 'core/portals/principal_portal.html', context)
@@ -248,11 +251,12 @@ def vice_principal_portal(request):
     context = {
         'portal_name': 'Vice Principal Portal',
         'role': 'Vice Principal',
-        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending'),
-        'total_students': Student.objects.count(),
-        'active_students': Student.objects.filter(is_active=True).count(),
+        'pending_onboarding': StudentOnboardingRequest.objects.filter(status='pending', school=request.school),
+        'total_students': Student.objects.filter(school=request.school).count(),
+        'active_students': Student.objects.filter(is_active=True, school=request.school).count(),
         'recent_approvals': StudentOnboardingRequest.objects.filter(
-            approved_by=request.user
+            approved_by=request.user,
+            school=request.school
         )[:10],
     }
     return render(request, 'core/portals/vice_principal_portal.html', context)
@@ -408,6 +412,7 @@ def onboarding_request_approve(request, pk):
             if status == 'approved':
                 # Create the student record
                 student = Student.objects.create(
+                    school=onboarding.school,
                     first_name=onboarding.first_name,
                     last_name=onboarding.last_name,
                     email=onboarding.email,
