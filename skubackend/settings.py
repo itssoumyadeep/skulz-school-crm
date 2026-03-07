@@ -44,6 +44,8 @@ ALLOWED_HOSTS = config(
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 
+X_FRAME_OPTIONS = 'ALLOWALL'
+
 # Ensure critical hosts are always included (for both dev and production)
 critical_hosts = ['localhost', '127.0.0.1', '*.onrender.com', 'skulz-school-crm.onrender.com']
 for host in critical_hosts:
@@ -91,7 +93,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+  #  'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'skucore.middleware.SchoolContextMiddleware',
 ]
 
