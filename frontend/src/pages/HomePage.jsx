@@ -15,7 +15,9 @@ export function HomePage() {
               <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" fill="white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-800">Purple Cubbies</h1>
+              <h1 className="text-2xl font-bold text-gray-800">
+                Purple Cubbies
+              </h1>
             </div>
             <Link to="/login">
               <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-6">
@@ -34,8 +36,9 @@ export function HomePage() {
               Complete Daycare Management System
             </h2>
             <p className="text-xl text-gray-600 mb-8">
-              A comprehensive system connecting schools, parents, administrators, and suppliers.
-              Streamline operations and enhance communication across your entire daycare ecosystem.
+              A comprehensive system connecting schools, parents,
+              administrators, and suppliers. Streamline operations and enhance
+              communication across your entire daycare ecosystem.
             </p>
             <div className="flex gap-4">
               <Link to="/login">
@@ -43,7 +46,10 @@ export function HomePage() {
                   Get Started
                 </Button>
               </Link>
-              <Button variant="outline" className="border-purple-300 text-purple-700 rounded-full px-8 py-6 text-lg hover:bg-purple-50">
+              <Button
+                variant="outline"
+                className="border-purple-300 text-purple-700 rounded-full px-8 py-6 text-lg hover:bg-purple-50"
+              >
                 Learn More
               </Button>
             </div>
@@ -76,9 +82,12 @@ export function HomePage() {
             <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-4">
               <Users className="w-8 h-8 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Multi-Tenant Access</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Multi-Tenant Access
+            </h3>
             <p className="text-gray-600">
-              Dedicated portals for schools, parents, administrators, and suppliers with role-based permissions.
+              Dedicated portals for schools, parents, administrators, and
+              suppliers with role-based permissions.
             </p>
           </Card>
 
@@ -86,9 +95,12 @@ export function HomePage() {
             <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-4">
               <Calendar className="w-8 h-8 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Centralized Dashboard</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Centralized Dashboard
+            </h3>
             <p className="text-gray-600">
-              Manage enrollment, scheduling, billing, and inventory all in one powerful platform.
+              Manage enrollment, scheduling, billing, and inventory all in one
+              powerful platform.
             </p>
           </Card>
 
@@ -96,9 +108,12 @@ export function HomePage() {
             <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-4">
               <Heart className="w-8 h-8 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Enhanced Communication</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Enhanced Communication
+            </h3>
             <p className="text-gray-600">
-              Real-time updates and messaging between all stakeholders keeps everyone connected.
+              Real-time updates and messaging between all stakeholders keeps
+              everyone connected.
             </p>
           </Card>
 
@@ -106,9 +121,12 @@ export function HomePage() {
             <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-4">
               <Shield className="w-8 h-8 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Enterprise Security</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Enterprise Security
+            </h3>
             <p className="text-gray-600">
-              Bank-level encryption and security protocols protect sensitive data across all tenants.
+              Bank-level encryption and security protocols protect sensitive
+              data across all tenants.
             </p>
           </Card>
         </div>
@@ -121,7 +139,8 @@ export function HomePage() {
             Ready to Streamline Your Operations?
           </h2>
           <p className="text-purple-100 text-xl mb-8">
-            Join hundreds of daycare facilities using Purple Cubbies to manage their entire ecosystem.
+            Join hundreds of daycare facilities using Purple Cubbies to manage
+            their entire ecosystem.
           </p>
           <Link to="/login">
             <Button className="bg-white text-purple-600 hover:bg-purple-50 rounded-full px-8 py-6 text-lg">
@@ -135,7 +154,10 @@ export function HomePage() {
       <footer className="bg-gray-50 border-t border-purple-100 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-600">
-            <p>© 2026 Purple Cubbies. Complete daycare management for the modern age.</p>
+            <p>
+              © 2026 Purple Cubbies. Complete daycare management for the modern
+              age.
+            </p>
           </div>
         </div>
       </footer>

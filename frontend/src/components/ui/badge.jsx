@@ -7,16 +7,19 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-transparent bg-purple-600 text-white hover:bg-purple-700",
-        secondary: "border-transparent bg-gray-100 text-gray-800 hover:bg-gray-200",
-        destructive: "border-transparent bg-red-600 text-white hover:bg-red-700",
+        default:
+          "border-transparent bg-purple-600 text-white hover:bg-purple-700",
+        secondary:
+          "border-transparent bg-gray-100 text-gray-800 hover:bg-gray-200",
+        destructive:
+          "border-transparent bg-red-600 text-white hover:bg-red-700",
         outline: "text-gray-800",
       },
     },
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 );
 
 function Badge({ className, variant, ...props }) {

@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Heart, LogOut, Calendar, Image, Bell, MessageSquare, Clock, Apple, Moon, Sun } from "lucide-react";
+import {
+  Heart,
+  LogOut,
+  Calendar,
+  Image,
+  Bell,
+  MessageSquare,
+  Clock,
+  Apple,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,15 +24,41 @@ export function ParentPortalPage() {
     age: 4,
     classroom: "Rainbow Room",
     teacher: "Ms. Sarah",
-    avatar: "https://images.unsplash.com/photo-1549737221-bef65e2604a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+    avatar:
+      "https://images.unsplash.com/photo-1549737221-bef65e2604a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
   });
 
   const todayActivities = [
-    { time: "9:00 AM", icon: Sun, activity: "Morning Circle Time", description: "Emma participated in show and tell!" },
-    { time: "10:30 AM", icon: Apple, activity: "Snack Time", description: "Apple slices and crackers - ate well!" },
-    { time: "11:00 AM", icon: Image, activity: "Art & Crafts", description: "Created a beautiful painting" },
-    { time: "12:30 PM", icon: Apple, activity: "Lunch", description: "Mac & cheese, carrots, and milk" },
-    { time: "1:30 PM", icon: Moon, activity: "Nap Time", description: "Slept for 1 hour" },
+    {
+      time: "9:00 AM",
+      icon: Sun,
+      activity: "Morning Circle Time",
+      description: "Emma participated in show and tell!",
+    },
+    {
+      time: "10:30 AM",
+      icon: Apple,
+      activity: "Snack Time",
+      description: "Apple slices and crackers - ate well!",
+    },
+    {
+      time: "11:00 AM",
+      icon: Image,
+      activity: "Art & Crafts",
+      description: "Created a beautiful painting",
+    },
+    {
+      time: "12:30 PM",
+      icon: Apple,
+      activity: "Lunch",
+      description: "Mac & cheese, carrots, and milk",
+    },
+    {
+      time: "1:30 PM",
+      icon: Moon,
+      activity: "Nap Time",
+      description: "Slept for 1 hour",
+    },
   ];
 
   const recentPhotos = [
@@ -40,16 +77,24 @@ export function ParentPortalPage() {
                 <Heart className="w-6 h-6 text-white" fill="white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Purple Cubbies</h1>
+                <h1 className="text-2xl font-bold text-gray-800">
+                  Purple Cubbies
+                </h1>
                 <p className="text-sm text-gray-500">Parent Portal</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" className="text-gray-600 hover:text-purple-600 rounded-full">
+              <Button
+                variant="ghost"
+                className="text-gray-600 hover:text-purple-600 rounded-full"
+              >
                 <Bell className="w-5 h-5" />
               </Button>
               <Link to="/">
-                <Button variant="outline" className="border-purple-300 text-purple-700 rounded-full hover:bg-purple-50">
+                <Button
+                  variant="outline"
+                  className="border-purple-300 text-purple-700 rounded-full hover:bg-purple-50"
+                >
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </Button>
@@ -71,7 +116,9 @@ export function ParentPortalPage() {
               />
             </div>
             <div className="text-center md:text-left flex-1">
-              <h2 className="text-3xl font-bold text-white mb-2">{selectedChild.name}</h2>
+              <h2 className="text-3xl font-bold text-white mb-2">
+                {selectedChild.name}
+              </h2>
               <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                 <Badge className="bg-white/20 text-white border border-white/30 rounded-full px-4 py-1">
                   {selectedChild.age} years old
@@ -96,16 +143,28 @@ export function ParentPortalPage() {
         {/* Main Content */}
         <Tabs defaultValue="today" className="space-y-6">
           <TabsList className="bg-white rounded-2xl p-1 shadow-sm border border-purple-100">
-            <TabsTrigger value="today" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <TabsTrigger
+              value="today"
+              className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            >
               Today's Updates
             </TabsTrigger>
-            <TabsTrigger value="photos" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <TabsTrigger
+              value="photos"
+              className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            >
               Photos & Media
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <TabsTrigger
+              value="schedule"
+              className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            >
               Schedule
             </TabsTrigger>
-            <TabsTrigger value="milestones" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <TabsTrigger
+              value="milestones"
+              className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            >
               Milestones
             </TabsTrigger>
           </TabsList>
@@ -115,7 +174,9 @@ export function ParentPortalPage() {
               {/* Timeline */}
               <div className="md:col-span-2">
                 <Card className="rounded-3xl p-6 border-purple-100">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-6">Today's Timeline</h3>
+                  <h3 className="text-2xl font-semibold text-gray-800 mb-6">
+                    Today's Timeline
+                  </h3>
                   <div className="space-y-6">
                     {todayActivities.map((item, index) => {
                       const Icon = item.icon;
@@ -131,9 +192,13 @@ export function ParentPortalPage() {
                           </div>
                           <div className="flex-1 pb-6">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm text-purple-600 font-medium">{item.time}</span>
+                              <span className="text-sm text-purple-600 font-medium">
+                                {item.time}
+                              </span>
                             </div>
-                            <h4 className="font-semibold text-gray-800 mb-1">{item.activity}</h4>
+                            <h4 className="font-semibold text-gray-800 mb-1">
+                              {item.activity}
+                            </h4>
                             <p className="text-gray-600">{item.description}</p>
                           </div>
                         </div>
@@ -146,7 +211,9 @@ export function ParentPortalPage() {
               {/* Quick Stats */}
               <div className="space-y-6">
                 <Card className="rounded-3xl p-6 border-purple-100 bg-gradient-to-br from-purple-50 to-white">
-                  <h3 className="font-semibold text-gray-800 mb-4">Today's Summary</h3>
+                  <h3 className="font-semibold text-gray-800 mb-4">
+                    Today's Summary
+                  </h3>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Mood</span>
@@ -154,28 +221,40 @@ export function ParentPortalPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Meals</span>
-                      <Badge className="bg-purple-600 text-white rounded-full border-none">3/3</Badge>
+                      <Badge className="bg-purple-600 text-white rounded-full border-none">
+                        3/3
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Nap Time</span>
-                      <Badge className="bg-purple-600 text-white rounded-full border-none">1 hour</Badge>
+                      <Badge className="bg-purple-600 text-white rounded-full border-none">
+                        1 hour
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Activities</span>
-                      <Badge className="bg-purple-600 text-white rounded-full border-none">5</Badge>
+                      <Badge className="bg-purple-600 text-white rounded-full border-none">
+                        5
+                      </Badge>
                     </div>
                   </div>
                 </Card>
 
                 <Card className="rounded-3xl p-6 border-purple-100">
-                  <h3 className="font-semibold text-gray-800 mb-4">Upcoming Events</h3>
+                  <h3 className="font-semibold text-gray-800 mb-4">
+                    Upcoming Events
+                  </h3>
                   <div className="space-y-3">
                     <div className="p-3 bg-purple-50 rounded-xl">
                       <div className="flex items-start gap-3">
                         <Calendar className="w-5 h-5 text-purple-600 mt-0.5" />
                         <div>
-                          <p className="font-medium text-gray-800">Field Trip</p>
-                          <p className="text-sm text-gray-600">March 5th - Petting Zoo</p>
+                          <p className="font-medium text-gray-800">
+                            Field Trip
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            March 5th - Petting Zoo
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -183,8 +262,12 @@ export function ParentPortalPage() {
                       <div className="flex items-start gap-3">
                         <Calendar className="w-5 h-5 text-purple-600 mt-0.5" />
                         <div>
-                          <p className="font-medium text-gray-800">Parent Meeting</p>
-                          <p className="text-sm text-gray-600">March 10th - 5:00 PM</p>
+                          <p className="font-medium text-gray-800">
+                            Parent Meeting
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            March 10th - 5:00 PM
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -196,10 +279,15 @@ export function ParentPortalPage() {
 
           <TabsContent value="photos">
             <Card className="rounded-3xl p-6 border-purple-100">
-              <h3 className="text-2xl font-semibold text-gray-800 mb-6">Recent Photos</h3>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-6">
+                Recent Photos
+              </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {recentPhotos.map((photo, index) => (
-                  <div key={index} className="aspect-square rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow cursor-pointer">
+                  <div
+                    key={index}
+                    className="aspect-square rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow cursor-pointer"
+                  >
                     <ImageWithFallback
                       src={photo}
                       alt={`Activity photo ${index + 1}`}
@@ -213,9 +301,13 @@ export function ParentPortalPage() {
 
           <TabsContent value="schedule">
             <Card className="rounded-3xl p-6 border-purple-100">
-              <h3 className="text-2xl font-semibold text-gray-800 mb-6">Weekly Schedule</h3>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-6">
+                Weekly Schedule
+              </h3>
               <div className="p-4 bg-purple-50 rounded-2xl">
-                <h4 className="font-semibold text-purple-800 mb-2">Monday - Friday</h4>
+                <h4 className="font-semibold text-purple-800 mb-2">
+                  Monday - Friday
+                </h4>
                 <div className="grid gap-2 text-gray-600">
                   <div className="flex justify-between">
                     <span>Drop-off</span>
@@ -232,15 +324,24 @@ export function ParentPortalPage() {
 
           <TabsContent value="milestones">
             <Card className="rounded-3xl p-6 border-purple-100">
-              <h3 className="text-2xl font-semibold text-gray-800 mb-6">Recent Milestones</h3>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-6">
+                Recent Milestones
+              </h3>
               <div className="space-y-4">
                 <div className="p-4 bg-gradient-to-r from-purple-50 to-white rounded-2xl border border-purple-100">
                   <div className="flex items-start gap-4">
                     <div className="w-3 h-3 bg-purple-600 rounded-full mt-2"></div>
                     <div>
-                      <h4 className="font-semibold text-gray-800">Learned to Write Name</h4>
-                      <p className="text-gray-600 mt-1">Emma successfully wrote her name independently for the first time!</p>
-                      <p className="text-sm text-purple-600 mt-2">February 20, 2026</p>
+                      <h4 className="font-semibold text-gray-800">
+                        Learned to Write Name
+                      </h4>
+                      <p className="text-gray-600 mt-1">
+                        Emma successfully wrote her name independently for the
+                        first time!
+                      </p>
+                      <p className="text-sm text-purple-600 mt-2">
+                        February 20, 2026
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -248,9 +349,16 @@ export function ParentPortalPage() {
                   <div className="flex items-start gap-4">
                     <div className="w-3 h-3 bg-purple-600 rounded-full mt-2"></div>
                     <div>
-                      <h4 className="font-semibold text-gray-800">Social Skills Progress</h4>
-                      <p className="text-gray-600 mt-1">Great improvement in sharing and taking turns with friends.</p>
-                      <p className="text-sm text-purple-600 mt-2">February 15, 2026</p>
+                      <h4 className="font-semibold text-gray-800">
+                        Social Skills Progress
+                      </h4>
+                      <p className="text-gray-600 mt-1">
+                        Great improvement in sharing and taking turns with
+                        friends.
+                      </p>
+                      <p className="text-sm text-purple-600 mt-2">
+                        February 15, 2026
+                      </p>
                     </div>
                   </div>
                 </div>
