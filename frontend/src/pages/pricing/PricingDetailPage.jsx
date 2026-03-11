@@ -40,7 +40,7 @@ export function PricingDetailPage() {
             <img
               src="/logo.png"
               alt="The Purple Cubby"
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
           <div className="flex items-center gap-2">
@@ -456,7 +456,7 @@ export function PricingDetailPage() {
             <img
               src="/logo.png"
               alt="The Purple Cubby"
-              className="h-10 w-auto"
+              className="h-14 w-auto"
             />
           </Link>
           <p className="text-sm text-gray-500 dark:text-gray-400">

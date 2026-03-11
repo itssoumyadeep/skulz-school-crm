@@ -81,7 +81,7 @@ export function HomePage() {
               <img
                 src="/logo.png"
                 alt="The Purple Cubby"
-                className="h-14 w-auto"
+                className="h-20 w-auto"
                 style={{ filter: isDark ? "brightness(1) drop-shadow(0 0 0 transparent)" : "none" }}
               />
             </Link>
@@ -415,7 +415,7 @@ export function HomePage() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="mb-4">
-                <img src="/logo.png" alt="The Purple Cubby" className="h-12 w-auto" />
+                <img src="/logo.png" alt="The Purple Cubby" className="h-16 w-auto" />
               </div>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
                 The complete daycare management platform for modern childcare centers.

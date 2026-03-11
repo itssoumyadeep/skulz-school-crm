@@ -56,7 +56,7 @@ export function StartFreeTrialPage() {
             <img
               src="/logo.png"
               alt="The Purple Cubby"
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
           <div className="flex items-center gap-2">
