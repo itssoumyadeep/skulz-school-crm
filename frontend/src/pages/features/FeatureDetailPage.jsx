@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useParams, Navigate } from "react-router";
 import { ArrowLeft, Moon, Sun, CheckCircle2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,10 @@ import { features } from "./featureData";
 export function FeatureDetailPage() {
   const { slug } = useParams();
   const { isDark, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
 
   const feature = features.find((f) => f.slug === slug);
   if (!feature) return <Navigate to="/" replace />;
@@ -202,7 +207,6 @@ export function FeatureDetailPage() {
           <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
             {features
               .filter((f) => f.slug !== slug)
-              .slice(0, 8)
               .map((f, index) => {
                 const OtherIcon = f.icon;
                 return (

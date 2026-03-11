@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, Navigate } from "react-router";
 import {
   ArrowLeft,
@@ -18,6 +18,10 @@ import { pricingPlans, featureMatrix } from "./pricingData";
 export function PricingDetailPage() {
   const { slug } = useParams();
   const { isDark, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
   const [yearly, setYearly] = useState(false);
 
   const plan = pricingPlans.find((p) => p.slug === slug);
