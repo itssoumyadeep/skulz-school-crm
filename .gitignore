@@ -21,4 +21,5 @@ coverage/
 .DS_Store
 .vscode/
 *.log
-*.tsbuildinfonode_modules
+*.tsbuildinfo
+~$*.docx
