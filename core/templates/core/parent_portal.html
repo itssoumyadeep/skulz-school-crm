@@ -1,0 +1,175 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Parent Portal · Purple Cubby</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'core/parent_portal.css' %}">
+</head>
+
+<body>
+    <div class="portal-shell">
+        <aside class="sidebar" aria-label="Parent portal navigation">
+            <div class="brand-lockup">
+                <div class="brand-mark">PC</div>
+                <div><strong>Purple Cubby</strong><span>Parent portal</span></div>
+            </div>
+            <div class="child-switcher">
+                <span class="eyebrow">Viewing child</span>
+                <button class="child-button" type="button"><span class="avatar avatar-plum">AM</span><span><b>Aria
+                            Morgan</b><small>Grade 4 · Room 12</small></span><span class="chevron">⌄</span></button>
+            </div>
+            <nav class="nav-list">
+                <a class="nav-item active" href="#overview"><span class="nav-icon">⌂</span>Overview</a>
+                <a class="nav-item" href="#calendar"><span class="nav-icon">▣</span>Calendar <em>3</em></a>
+                <a class="nav-item" href="#learning"><span class="nav-icon">▤</span>Learning</a>
+                <a class="nav-item" href="#fees"><span class="nav-icon">$</span>Fees & payments</a>
+                <a class="nav-item" href="#messages"><span class="nav-icon">✉</span>Messages <em>2</em></a>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="help-card"><span class="help-badge">?</span>
+                    <div><b>Need a hand?</b><small>We’re here for you</small></div><button type="button"
+                        aria-label="Open help">→</button>
+                </div><a class="nav-item subtle" href="#settings"><span class="nav-icon">⚙</span>Account settings</a>
+            </div>
+        </aside>
+
+        <main class="main-content" id="overview">
+            <header class="topbar">
+                <div class="mobile-brand">
+                    <div class="brand-mark">PC</div><strong>Purple Cubby</strong>
+                </div>
+                <div class="top-actions"><button class="icon-button" type="button" aria-label="Notifications"><span
+                            class="notification-dot"></span>♢</button>
+                    <div class="profile-menu"><span class="avatar avatar-sand">SM</span><span><b>Sarah
+                                Morgan</b><small>Parent account</small></span><span class="chevron">⌄</span></div>
+                </div>
+            </header>
+            <section class="welcome-row">
+                <div>
+                    <p class="eyebrow">Monday, September 14, 2026</p>
+                    <h1>Good morning, Sarah <span>✦</span></h1>
+                    <p class="intro">Here’s what’s happening with Aria today.</p>
+                </div><button class="primary-button" type="button" data-toast="Message composer opened">＋ <span>Message
+                        teacher</span></button>
+            </section>
+
+            <section class="dashboard-grid">
+                <article class="card attendance-card">
+                    <div class="card-heading">
+                        <div><span class="eyebrow">This term</span>
+                            <h2>Attendance</h2>
+                        </div><span class="status-chip success">On track</span>
+                    </div>
+                    <div class="attendance-body">
+                        <div class="ring">
+                            <div><strong>96<span>%</span></strong><small>present</small></div>
+                        </div>
+                        <div class="attendance-stats">
+                            <div><span class="stat-dot green"></span>
+                                <div><b>48 days</b><small>Present</small></div>
+                            </div>
+                            <div><span class="stat-dot gold"></span>
+                                <div><b>2 days</b><small>Absent</small></div>
+                            </div>
+                            <div><span class="stat-dot gray"></span>
+                                <div><b>1 day</b><small>Late</small></div>
+                            </div>
+                        </div>
+                    </div><a class="card-link" href="#attendance">View attendance history <span>→</span></a>
+                </article>
+                <article class="card next-card">
+                    <div class="card-heading">
+                        <div><span class="eyebrow">Up next</span>
+                            <h2>Today at school</h2>
+                        </div><span class="date-tile"><b>14</b><small>SEP</small></span>
+                    </div>
+                    <div class="timeline">
+                        <div class="timeline-item"><span class="time">08:45</span><span class="timeline-line"><i
+                                    class="timeline-dot purple"></i></span>
+                            <div><b>Math workshop</b><small>Room 12 · Ms. Chen</small></div>
+                        </div>
+                        <div class="timeline-item"><span class="time">11:30</span><span class="timeline-line"><i
+                                    class="timeline-dot orange"></i></span>
+                            <div><b>Lunch & recess</b><small>Courtyard</small></div>
+                        </div>
+                        <div class="timeline-item"><span class="time">14:15</span><span class="timeline-line"><i
+                                    class="timeline-dot blue"></i></span>
+                            <div><b>Library visit</b><small>Bring reading journal</small></div>
+                        </div>
+                    </div><a class="card-link" href="#calendar">Open full calendar <span>→</span></a>
+                </article>
+                <article class="card assignment-card" id="learning">
+                    <div class="card-heading">
+                        <div><span class="eyebrow">Learning snapshot</span>
+                            <h2>Recent progress</h2>
+                        </div><button class="text-button" type="button" data-toast="Full report coming soon">View report
+                            ↗</button>
+                    </div>
+                    <div class="progress-row">
+                        <div class="subject-icon peach">✎</div>
+                        <div class="progress-copy"><b>Creative writing</b><small>Personal narrative · Submitted Sep
+                                11</small>
+                            <div class="progress-bar"><span style="width:88%"></span></div>
+                        </div><strong class="progress-score">A−</strong>
+                    </div>
+                    <div class="progress-row">
+                        <div class="subject-icon lavender">∿</div>
+                        <div class="progress-copy"><b>Fractions & decimals</b><small>Unit 2 check-in · Due Sep
+                                16</small>
+                            <div class="progress-bar"><span class="gold-fill" style="width:64%"></span></div>
+                        </div><strong class="progress-score pending">In progress</strong>
+                    </div>
+                    <div class="progress-row">
+                        <div class="subject-icon mint">✿</div>
+                        <div class="progress-copy"><b>Local ecosystems</b><small>Science journal · Submitted Sep
+                                09</small>
+                            <div class="progress-bar"><span class="blue-fill" style="width:92%"></span></div>
+                        </div><strong class="progress-score">A</strong>
+                    </div>
+                </article>
+                <article class="card fees-card" id="fees">
+                    <div class="card-heading">
+                        <div><span class="eyebrow">Account balance</span>
+                            <h2>Fees & payments</h2>
+                        </div><span class="status-chip warning">Due Sep 20</span>
+                    </div>
+                    <div class="balance"><span>$</span>420<small>.00</small></div>
+                    <div class="balance-meta"><span>Fall activity fee</span><b>Remaining</b></div>
+                    <div class="mini-progress"><span></span></div><button class="secondary-button" type="button"
+                        data-toast="Payment flow opened">Review payment <span>→</span></button>
+                </article>
+                <article class="card message-card" id="messages">
+                    <div class="card-heading">
+                        <div><span class="eyebrow">Stay connected</span>
+                            <h2>Messages</h2>
+                        </div><span class="unread-count">2 new</span>
+                    </div>
+                    <div class="message-preview"><span class="avatar avatar-blue">MC</span>
+                        <div><b>Ms. Chen <span>· 2h ago</span></b>
+                            <p>Aria had a wonderful breakthrough during today’s math workshop…</p>
+                        </div>
+                    </div>
+                    <div class="message-preview"><span class="avatar avatar-green">OA</span>
+                        <div><b>Office admin <span>· Yesterday</span></b>
+                            <p>Reminder: Picture day is coming up on Friday.</p>
+                        </div>
+                    </div><a class="card-link" href="#messages">See all messages <span>→</span></a>
+                </article>
+            </section>
+            <footer class="footer-note"><span>🔒 Your family’s information is private and secure.</span><span>School
+                    year 2026–27 · <a href="#support">Support</a></span></footer>
+        </main>
+    </div>
+    <div class="toast" role="status" aria-live="polite"></div>
+    <script src="{% static 'core/parent_portal.js' %}"></script>
+</body>
+
+</html>

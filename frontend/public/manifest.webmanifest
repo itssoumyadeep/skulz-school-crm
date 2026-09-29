@@ -1,0 +1,17 @@
+{
+  "name": "Purple Cubby Teacher/Caregiver Portal",
+  "short_name": "PurpleCubby",
+  "description": "Sprint 6 static PWA shell for operations mockups.",
+  "display": "standalone",
+  "start_url": "/teacher",
+  "background_color": "#f0e8da",
+  "theme_color": "#7658a8",
+  "icons": [
+    {
+      "src": "/next.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

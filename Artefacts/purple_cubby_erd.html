@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Purple Cubby — Entity Relationship Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8ff;
+    --surface: #ffffff;
+    --surface2: #f3f0ff;
+    --border: rgba(109,40,217,0.12);
+    --text: #1e1030;
+    --muted: #7c6f9a;
+    --purple: #7c3aed;
+    --purple-light: #ede9fe;
+    --purple-dark: #4c1d95;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    border-top: 4px solid var(--purple);
+  }
+
+  .header {
+    padding: 28px 24px 20px;
+    background: linear-gradient(135deg, #f5f0ff 0%, #faf8ff 50%, #f0e8ff 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--purple); margin-bottom: 8px;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(22px, 4vw, 36px); font-weight: 400;
+    background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .header p { color: var(--muted); font-size: 13px; line-height: 1.5; max-width: 680px; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 14px 24px;
+    background: rgba(250,248,255,0.97);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 200;
+    backdrop-filter: blur(10px);
+  }
+  .controls-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); margin-right: 4px;
+  }
+  .group-btn {
+    padding: 5px 12px; border-radius: 16px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 11px; font-weight: 500; cursor: pointer;
+    transition: all 0.18s; white-space: nowrap;
+    touch-action: manipulation;
+  }
+  .group-btn:hover { border-color: var(--purple); color: var(--purple); }
+  .group-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+
+  .stats-bar {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    padding: 10px 24px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .stat { display: flex; align-items: center; gap: 6px; }
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .stat-label { color: var(--muted); }
+  .stat-val { font-weight: 600; color: var(--text); }
+
+  .diagram-wrap {
+    padding: 24px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .diagram-section {
+    display: none;
+    animation: fadeIn 0.25s ease;
+  }
+  .diagram-section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--purple); margin-bottom: 12px; margin-top: 4px;
+  }
+  .section-desc {
+    font-size: 12px; color: var(--muted); margin-bottom: 20px; max-width: 700px; line-height: 1.6;
+  }
+
+  .erd-container {
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(109,40,217,0.06);
+    overflow-x: auto;
+    margin-bottom: 28px;
+  }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    font-size: 11px; color: var(--muted);
+    padding: 12px 0 0;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-sym { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--purple); }
+
+  .entity-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px; margin-top: 16px;
+  }
+  .entity-table th {
+    background: var(--purple); color: #fff;
+    padding: 8px 12px; text-align: left;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 1px; text-transform: uppercase;
+    font-weight: 500;
+  }
+  .entity-table th:first-child { border-radius: 8px 0 0 0; }
+  .entity-table th:last-child { border-radius: 0 8px 0 0; }
+  .entity-table td {
+    padding: 7px 12px; border-bottom: 1px solid var(--border);
+    vertical-align: top; line-height: 1.5;
+  }
+  .entity-table tr:hover td { background: var(--surface2); }
+  .entity-table td:first-child { font-weight: 600; color: var(--purple-dark); white-space: nowrap; }
+  .entity-table td:nth-child(2) { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .pk { color: #d97706; font-weight: 600; }
+  .fk { color: #059669; }
+  .entity-name {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    background: var(--purple-light); color: var(--purple-dark);
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    font-weight: 500; margin-right: 4px; margin-bottom: 2px;
+  }
+  .count-badge {
+    display: inline-block; padding: 1px 6px; border-radius: 8px;
+    background: var(--surface2); color: var(--muted);
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    border: 1px solid var(--border); margin-left: 4px;
+  }
+
+  /* Mermaid overrides */
+  .mermaid { font-family: 'DM Sans', sans-serif !important; }
+  .mermaid svg { max-width: 100%; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">The Purple Cubby · CRM Architecture</div>
+  <h1>Entity Relationship Diagram</h1>
+  <p>561 data elements across 40 domains — organized into 8 logical groups. Select a group to explore the entity relationships and field catalog for that domain cluster.</p>
+</div>
+
+<div class="controls">
+  <span class="controls-label">Domain</span>
+  <button class="group-btn active" onclick="showGroup('all')">All entities</button>
+  <div class="sep"></div>
+  <button class="group-btn" onclick="showGroup('student')">Student & Family</button>
+  <button class="group-btn" onclick="showGroup('academic')">Academics</button>
+  <button class="group-btn" onclick="showGroup('attendance')">Attendance</button>
+  <button class="group-btn" onclick="showGroup('billing')">Billing</button>
+  <button class="group-btn" onclick="showGroup('hr')">Staff & HR</button>
+  <button class="group-btn" onclick="showGroup('health')">Health & Safety</button>
+  <button class="group-btn" onclick="showGroup('vendor')">Vendor & Procurement</button>
+  <button class="group-btn" onclick="showGroup('comms')">Events & Comms</button>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-dot" style="background:#7c3aed"></div><span class="stat-label">Entities:</span><span class="stat-val">40</span></div>
+  <div class="stat"><div class="stat-dot" style="background:#059669"></div><span class="stat-label">Data elements:</span><span class="stat-val">561</span></div>
+  <div class="stat"><div class="stat-dot" style="background:#d97706"></div><span class="stat-label">Primary keys:</span><span class="stat-val">40</span></div>
+  <div class="stat"><div class="stat-dot" style="background:#0891b2"></div><span class="stat-label">Relationships:</span><span class="stat-val">62+</span></div>
+  <div class="stat"><div class="stat-dot" style="background:#db2777"></div><span class="stat-label">Process modules:</span><span class="stat-val">10</span></div>
+</div>
+
+<div class="diagram-wrap">
+
+  <!-- ALL -->
+  <div class="diagram-section active" id="group-all">
+    <div class="section-title">Full system overview</div>
+    <div class="section-desc">High-level view of all entity clusters and their cross-domain relationships. The tenant is the root container for every entity in the system — all data is scoped to a tenant_id.</div>
+    <div class="erd-container">
+      <div class="mermaid" id="erd-all"></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-sym">||--||</span> Exactly one to exactly one</div>
+      <div class="legend-item"><span class="legend-sym">||--o{</span> One to zero-or-many</div>
+      <div class="legend-item"><span class="legend-sym">}o--o{</span> Many to many</div>
+      <div class="legend-item"><span class="legend-sym">PK</span> Primary key &nbsp;·&nbsp; <span class="legend-sym">FK</span> Foreign key</div>
+    </div>
+  </div>
+
+  <!-- STUDENT & FAMILY -->
+  <div class="diagram-section" id="group-student">
+    <div class="section-title">Student & Family cluster</div>
+    <div class="section-desc">Core identity entities. A tenant has many students; each student has one or more parent/guardian records, emergency contacts, and a health profile. The enrollment application is the gateway that creates the student record.</div>
+    <div class="erd-container"><div class="mermaid" id="erd-student"></div></div>
+    <table class="entity-table">
+      <tr><th>Entity</th><th>Key fields</th><th>Linked to</th></tr>
+      <tr><td>TENANT</td><td><span class="pk">PK</span> tenant_id, name, subdomain, type, subscription_tier, region</td><td><span class="entity-name">STUDENT</span><span class="entity-name">STAFF</span><span class="entity-name">VENDOR</span></td></tr>
+      <tr><td>STUDENT</td><td><span class="pk">PK</span> student_id · <span class="fk">FK</span> tenant_id, class_id · name, dob, grade, status, enrolled_date</td><td><span class="entity-name">APPLICATION</span><span class="entity-name">PARENT</span><span class="entity-name">STUDENT_HEALTH</span><span class="entity-name">INVOICE</span></td></tr>
+      <tr><td>APPLICATION</td><td><span class="pk">PK</span> application_id · <span class="fk">FK</span> tenant_id, student_id · status, applied_date, decision_date, decided_by</td><td><span class="entity-name">STUDENT</span><span class="entity-name">DOCUMENT</span></td></tr>
+      <tr><td>PARENT</td><td><span class="pk">PK</span> parent_id · <span class="fk">FK</span> tenant_id, student_id · name, relationship, phone, email, notification_prefs, media_consent</td><td><span class="entity-name">STUDENT</span><span class="entity-name">PAYMENT</span><span class="entity-name">EVENT_REGISTRATION</span></td></tr>
+      <tr><td>EMERGENCY_CONTACT</td><td><span class="pk">PK</span> contact_id · <span class="fk">FK</span> student_id · name, phone, relationship, medical_consent, consent_date</td><td><span class="entity-name">STUDENT</span></td></tr>
+    </table>
+  </div>
+
+  <!-- ACADEMICS -->
+  <div class="diagram-section" id="group-academic">
+    <div class="section-title">Academics cluster</div>
+    <div class="section-desc">Curriculum, lesson plans, assignments, exams, marks, and report cards. All academic records are scoped to a student + subject + term combination. The academic calendar ties everything to specific date windows.</div>
+    <div class="erd-container"><div class="mermaid" id="erd-academic"></div></div>
+    <table class="entity-table">
+      <tr><th>Entity</th><th>Key fields</th><th>Linked to</th></tr>
+      <tr><td>CURRICULUM</td><td><span class="pk">PK</span> curriculum_id · grade, subjects[], learning_outcomes[], version, approved_by</td><td><span class="entity-name">LESSON_PLAN</span><span class="entity-name">ACADEMIC_CALENDAR</span></td></tr>
+      <tr><td>ACADEMIC_CALENDAR</td><td><span class="pk">PK</span> calendar_id · academic_year, term_dates[], holidays[], exam_weeks[], event_dates[]</td><td><span class="entity-name">CURRICULUM</span><span class="entity-name">EVENT</span><span class="entity-name">EXAM</span></td></tr>
+      <tr><td>LESSON_PLAN</td><td><span class="pk">PK</span> plan_id · <span class="fk">FK</span> teacher_id, class_id, curriculum_id · week, topic, status, reviewed_by</td><td><span class="entity-name">CURRICULUM</span><span class="entity-name">STAFF</span></td></tr>
+      <tr><td>ASSIGNMENT</td><td><span class="pk">PK</span> assignment_id · <span class="fk">FK</span> teacher_id, class_id · title, due_date, max_marks, submission_tracking[]</td><td><span class="entity-name">MARKS_RECORD</span><span class="entity-name">STAFF</span></td></tr>
+      <tr><td>EXAM</td><td><span class="pk">PK</span> exam_id · <span class="fk">FK</span> class_id, calendar_id · name, type, date, duration, room, invigilator_id, max_marks</td><td><span class="entity-name">MARKS_RECORD</span><span class="entity-name">ACADEMIC_CALENDAR</span></td></tr>
+      <tr><td>MARKS_RECORD</td><td><span class="pk">PK</span> marks_id · <span class="fk">FK</span> student_id, exam_id, teacher_id · marks, grade, locked, moderated_by</td><td><span class="entity-name">REPORT_CARD</span><span class="entity-name">STUDENT</span></td></tr>
+      <tr><td>REPORT_CARD</td><td><span class="pk">PK</span> report_id · <span class="fk">FK</span> student_id · term, year, overall_grade, published_date, parent_ack</td><td><span class="entity-name">STUDENT</span><span class="entity-name">MARKS_RECORD</span></td></tr>
+    </table>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div class="diagram-section" id="group-attendance">
+    <div class="section-title">Attendance cluster</div>
+    <div class="section-desc">Student and staff attendance, leave requests, and rosters. Every attendance mark references the student or staff, date, method, and who recorded it. Leave records affect payroll deductions for staff and academic records for students.</div>
+    <div class="erd-container"><div class="mermaid" id="erd-attendance"></div></div>
+    <table class="entity-table">
+      <tr><th>Entity</th><th>Key fields</th><th>Linked to</th></tr>
+      <tr><td>STUDENT_ATTENDANCE</td><td><span class="pk">PK</span> att_id · <span class="fk">FK</span> student_id, class_id · date, period, status, method, marked_by, notified_parent</td><td><span class="entity-name">STUDENT</span><span class="entity-name">LEAVE_REQUEST</span><span class="entity-name">STAFF</span></td></tr>
+      <tr><td>STAFF_ATTENDANCE</td><td><span class="pk">PK</span> staff_att_id · <span class="fk">FK</span> staff_id · date, check_in, check_out, method, status, substitute_id</td><td><span class="entity-name">STAFF</span><span class="entity-name">PAYROLL_RUN</span></td></tr>
+      <tr><td>LEAVE_REQUEST</td><td><span class="pk">PK</span> leave_id · <span class="fk">FK</span> requester_id · type, start_date, end_date, days, reason, status, approved_by, balance_before, balance_after</td><td><span class="entity-name">STUDENT</span><span class="entity-name">STAFF</span></td></tr>
+      <tr><td>ATTENDANCE_ROSTER</td><td><span class="pk">PK</span> roster_id · <span class="fk">FK</span> class_id, tenant_id · date, window_start, window_end, generated_at</td><td><span class="entity-name">STUDENT_ATTENDANCE</span><span class="entity-name">STAFF_ATTENDANCE</span></td></tr>
+    </table>
+  </div>
+
+  <!-- BILLING -->
+  <div class="diagram-section" id="group-billing">
+    <div class="section-title">Billing & Fee Management cluster</div>
+    <div class="section-desc">Fee structures flow into invoices; payments close invoices; discounts adjust them; reconciliation closes the period. Every financial entity carries a tenant_id and is auditable via the audit log.</div>
+    <div class="erd-container"><div class="mermaid" id="erd-billing"></div></div>
+    <table class="entity-table">
+      <tr><th>Entity</th><th>Key fields</th><th>Linked to</th></tr>
+      <tr><td>FEE_STRUCTURE</td><td><span class="pk">PK</span> fee_struct_id · <span class="fk">FK</span> tenant_id · grade, term, components[], discount_rules[], penalty_rules, version</td><td><span class="entity-name">INVOICE</span></td></tr>
+      <tr><td>INVOICE</td><td><span class="pk">PK</span> invoice_id · <span class="fk">FK</span> student_id, parent_id, fee_struct_id · date, due_date, line_items[], total, status, type</td><td><span class="entity-name">PAYMENT</span><span class="entity-name">DISCOUNT_WAIVER</span><span class="entity-name">RECONCILIATION</span></td></tr>
+      <tr><td>PAYMENT</td><td><span class="pk">PK</span> payment_id · <span class="fk">FK</span> invoice_id, parent_id · amount, date, method, txn_ref, status, receipt_id, outstanding_balance</td><td><span class="entity-name">INVOICE</span><span class="entity-name">RECONCILIATION</span></td></tr>
+      <tr><td>DISCOUNT_WAIVER</td><td><span class="pk">PK</span> discount_id · <span class="fk">FK</span> invoice_id, student_id · type, amount, reason, approved_by, approval_date</td><td><span class="entity-name">INVOICE</span></td></tr>
+      <tr><td>RECONCILIATION</td><td><span class="pk">PK</span> recon_id · <span class="fk">FK</span> tenant_id · period, total_invoiced, total_collected, outstanding, adjustments, discrepancies[], status</td><td><span class="entity-name">INVOICE</span><span class="entity-name">PAYMENT</span></td></tr>
+    </table>
+  </div>
+
+  <!-- STAFF & HR -->
+  <div class="diagram-section" id="group-hr">
+    <div class="section-title">Staff & HR cluster</div>
+    <div class="section-desc">Staff profiles are the anchor for payroll, scheduling, appraisals, leave, and professional development. Payroll runs aggregate attendance deductions, allowances, and substitution records into a net pay figure per staff member per period.</div>
+    <div class="erd-container"><div class="mermaid" id="erd-hr"></div></div>
+    <table class="entity-table">
+      <tr><th>Entity</th><th>Key fields</th><th>Linked to</th></tr>
+      <tr><td>STAFF</td><td><span class="pk">PK</span> staff_id · <span class="fk">FK</span> tenant_id · name, role, dept, employment_type, start_date, salary, certifications[], dbs_ref, dbs_expiry</td><td><span class="entity-name">PAYROLL_RUN</span><span class="entity-name">APPRAISAL</span><span class="entity-name">SCHEDULE</span><span class="entity-name">CPD_RECORD</span></td></tr>
+      <tr><td>PAYROLL_RUN</td><td><span class="pk">PK</span> payroll_id · <span class="fk">FK</span> staff_id, tenant_id · period, base_salary, allowances[], deductions[], gross, net, status, approved_by, disbursed_date</td><td><span class="entity-name">STAFF</span><span class="entity-name">STAFF_ATTENDANCE</span></td></tr>
+      <tr><td>APPRAISAL</td><td><span class="pk">PK</span> appraisal_id · <span class="fk">FK</span> staff_id, appraiser_id · cycle, self_score, manager_score, outcome, salary_recommendation, status</td><td><span class="entity-name">STAFF</span><span class="entity-name">CPD_RECORD</span></td></tr>
+      <tr><td>CPD_RECORD</td><td><span class="pk">PK</span> cpd_id · <span class="fk">FK</span> staff_id · activity, type, provider, date, hours, mandatory, completion_status, certificate</td><td><span class="entity-name">STAFF</span></td></tr>
+      <tr><td>SCHEDULE</td><td><span class="pk">PK</span> schedule_id · <span class="fk">FK</span> staff_id, class_id · week, time_slot, duty_type, substitute_flag, original_staff_id</td><td><span class="entity-name">STAFF</span></td></tr>
+      <tr><td>CONTRACT</td><td><span class="pk">PK</span> contract_id · <span class="fk">FK</span> staff_id · type, start_date, end_date, esigned_at, renewal_alert_sent</td><td><span class="entity-name">STAFF</span></td></tr>
+    </table>
+  </div>
+
+  <!-- HEALTH & SAFETY -->
+  <div class="diagram-section" id="group-health">
+    <div class="section-title">Health & Safety cluster</div>
+    <div class="section-desc">Health records are created at enrollment and updated by parents and care staff. Incidents, medications, and drill records are all time-stamped and linked to the student or school. Compliance reports aggregate across the full cluster.</div>
+    <div class="erd-container"><div class="mermaid" id="erd-health"></div></div>
+    <table class="entity-table">
+      <tr><th>Entity</th><th>Key fields</th><th>Linked to</th></tr>
+      <tr><td>STUDENT_HEALTH</td><td><span class="pk">PK</span> health_id · <span class="fk">FK</span> student_id · allergies[], conditions[], medications[], vaccinations[], doctor_contact, consent_flag</td><td><span class="entity-name">STUDENT</span><span class="entity-name">MEDICATION_LOG</span><span class="entity-name">HEALTH_OBSERVATION</span></td></tr>
+      <tr><td>HEALTH_OBSERVATION</td><td><span class="pk">PK</span> obs_id · <span class="fk">FK</span> student_id, staff_id · date, mood, appetite, notes, nap_duration, feeding_notes</td><td><span class="entity-name">STUDENT_HEALTH</span></td></tr>
+      <tr><td>MEDICATION_LOG</td><td><span class="pk">PK</span> med_log_id · <span class="fk">FK</span> student_id, staff_id · medicine, dose, time_administered, parent_notified</td><td><span class="entity-name">STUDENT_HEALTH</span></td></tr>
+      <tr><td>INCIDENT</td><td><span class="pk">PK</span> incident_id · <span class="fk">FK</span> tenant_id · type, date, location, students[], staff[], witnesses[], description, actions_taken, escalated_to_principal</td><td><span class="entity-name">STUDENT</span><span class="entity-name">STAFF</span><span class="entity-name">EVENT_REPORT</span></td></tr>
+      <tr><td>SAFETY_DRILL</td><td><span class="pk">PK</span> drill_id · <span class="fk">FK</span> tenant_id · type, scheduled_date, duration, participation_rate, issues[], completed_by</td><td><span class="entity-name">TENANT</span></td></tr>
+    </table>
+  </div>
+
+  <!-- VENDOR & PROCUREMENT -->
+  <div class="diagram-section" id="group-vendor">
+    <div class="section-title">Vendor & Procurement cluster</div>
+    <div class="section-desc">Vendors submit invoices against purchase orders that were raised from approved requisitions. The 3-way match (requisition → PO → vendor invoice) triggers payment. Inventory levels auto-generate requisitions when they drop below threshold.</div>
+    <div class="erd-container"><div class="mermaid" id="erd-vendor"></div></div>
+    <table class="entity-table">
+      <tr><th>Entity</th><th>Key fields</th><th>Linked to</th></tr>
+      <tr><td>VENDOR</td><td><span class="pk">PK</span> vendor_id · <span class="fk">FK</span> tenant_id · name, contact, tax_reg, bank_details, status, category, performance_score</td><td><span class="entity-name">PURCHASE_ORDER</span><span class="entity-name">VENDOR_INVOICE</span></td></tr>
+      <tr><td>REQUISITION</td><td><span class="pk">PK</span> req_id · <span class="fk">FK</span> raised_by, tenant_id · items[], total_value, approval_tier, status, approved_by, approval_date</td><td><span class="entity-name">PURCHASE_ORDER</span><span class="entity-name">INVENTORY</span></td></tr>
+      <tr><td>PURCHASE_ORDER</td><td><span class="pk">PK</span> po_id · <span class="fk">FK</span> req_id, vendor_id · items[], delivery_address, required_date, payment_terms, status, sent_at</td><td><span class="entity-name">DELIVERY_RECORD</span><span class="entity-name">VENDOR_INVOICE</span></td></tr>
+      <tr><td>DELIVERY_RECORD</td><td><span class="pk">PK</span> delivery_id · <span class="fk">FK</span> po_id · date, items_received[], discrepancies[], confirmed_by, po_status_after</td><td><span class="entity-name">PURCHASE_ORDER</span></td></tr>
+      <tr><td>VENDOR_INVOICE</td><td><span class="pk">PK</span> v_invoice_id · <span class="fk">FK</span> po_id, vendor_id · date, line_items[], total, match_result, approval_status, approved_by, payment_processed</td><td><span class="entity-name">PURCHASE_ORDER</span><span class="entity-name">VENDOR</span></td></tr>
+      <tr><td>INVENTORY</td><td><span class="pk">PK</span> item_id · <span class="fk">FK</span> tenant_id · name, category, unit, stock_level, min_threshold, location, asset_tag</td><td><span class="entity-name">REQUISITION</span></td></tr>
+    </table>
+  </div>
+
+  <!-- EVENTS & COMMS -->
+  <div class="diagram-section" id="group-comms">
+    <div class="section-title">Events & Communications cluster</div>
+    <div class="section-desc">Events link to the academic calendar, generate registrations, collect fees, and produce post-event reports. The communication entity covers all message types — announcements, alerts, newsletters, direct messages — with full delivery tracking.</div>
+    <div class="erd-container"><div class="mermaid" id="erd-comms"></div></div>
+    <table class="entity-table">
+      <tr><th>Entity</th><th>Key fields</th><th>Linked to</th></tr>
+      <tr><td>EVENT</td><td><span class="pk">PK</span> event_id · <span class="fk">FK</span> tenant_id, calendar_id, organiser_id · name, type, date, venue, capacity, budget, status, approved_by</td><td><span class="entity-name">EVENT_REGISTRATION</span><span class="entity-name">EVENT_VOLUNTEER</span><span class="entity-name">EVENT_REPORT</span><span class="entity-name">INVOICE</span></td></tr>
+      <tr><td>EVENT_REGISTRATION</td><td><span class="pk">PK</span> reg_id · <span class="fk">FK</span> event_id, student_id, parent_id · status, permission_signed, fee_paid, payment_id</td><td><span class="entity-name">EVENT</span><span class="entity-name">STUDENT</span><span class="entity-name">PAYMENT</span></td></tr>
+      <tr><td>EVENT_VOLUNTEER</td><td><span class="pk">PK</span> vol_id · <span class="fk">FK</span> event_id, volunteer_id · type, slot_claimed_at, dbs_verified, checked_in</td><td><span class="entity-name">EVENT</span><span class="entity-name">PARENT</span><span class="entity-name">STAFF</span></td></tr>
+      <tr><td>EVENT_REPORT</td><td><span class="pk">PK</span> report_id · <span class="fk">FK</span> event_id · actual_attendance, actual_cost, budget_variance, incident_ids[], feedback_summary, completed_by</td><td><span class="entity-name">EVENT</span><span class="entity-name">INCIDENT</span></td></tr>
+      <tr><td>MESSAGE</td><td><span class="pk">PK</span> message_id · <span class="fk">FK</span> sender_id, tenant_id · type, audience[], channels[], body, sent_at, delivery_status[], read_receipts[], ack_required</td><td><span class="entity-name">NOTIFICATION_RULE</span></td></tr>
+      <tr><td>NOTIFICATION_RULE</td><td><span class="pk">PK</span> rule_id · <span class="fk">FK</span> tenant_id · trigger_event, target_roles[], channels[], delay_window, template_id, enabled</td><td><span class="entity-name">MESSAGE</span></td></tr>
+      <tr><td>AUDIT_LOG</td><td><span class="pk">PK</span> log_id · <span class="fk">FK</span> tenant_id, actor_id · action, entity_type, entity_id, old_value, new_value, timestamp, ip</td><td>All entities</td></tr>
+    </table>
+  </div>
+
+</div>
+
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+
+const dark = document.documentElement.dataset.mode === 'dark'
+  || (!document.documentElement.dataset.mode && matchMedia('(prefers-color-scheme: dark)').matches);
+
+await document.fonts.ready;
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"DM Sans", sans-serif',
+  er: { diagramPadding: 24, layoutDirection: 'TB', minEntityWidth: 120, minEntityHeight: 36, entityPadding: 14, useMaxWidth: true },
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '12px',
+    fontFamily: '"DM Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#8b73cc',
+    textColor: dark ? '#c2c0b6' : '#1e1030',
+    primaryColor: dark ? '#3c2a7a' : '#ede9fe',
+    primaryTextColor: dark ? '#d4c8ff' : '#4c1d95',
+    primaryBorderColor: dark ? '#6d3aed' : '#8b5cf6',
+    secondaryColor: dark ? '#1e2a3a' : '#f0fdf4',
+    tertiaryColor: dark ? '#2a2040' : '#faf8ff',
+    edgeLabelBackground: dark ? '#1e1030' : '#faf8ff',
+    attributeBackgroundColorEven: dark ? '#2a1f50' : '#faf8ff',
+    attributeBackgroundColorOdd: dark ? '#231845' : '#f5f0ff',
+  }
+});
+
+const diagrams = {
+  'all': `erDiagram
+    TENANT ||--o{ STUDENT : "enrolls"
+    TENANT ||--o{ STAFF : "employs"
+    TENANT ||--o{ VENDOR : "contracts"
+    TENANT ||--o{ FEE_STRUCTURE : "configures"
+    TENANT ||--o{ EVENT : "hosts"
+    TENANT ||--o{ MESSAGE : "sends"
+    STUDENT ||--o{ APPLICATION : "has"
+    STUDENT ||--o{ STUDENT_ATTENDANCE : "tracked by"
+    STUDENT ||--o{ INVOICE : "billed via"
+    STUDENT ||--o{ MARKS_RECORD : "graded in"
+    STUDENT ||--o{ STUDENT_HEALTH : "profiled in"
+    STUDENT }o--o{ EVENT_REGISTRATION : "registers for"
+    STAFF ||--o{ PAYROLL_RUN : "paid via"
+    STAFF ||--o{ SCHEDULE : "assigned in"
+    STAFF ||--o{ APPRAISAL : "reviewed in"
+    STAFF ||--o{ LESSON_PLAN : "authors"
+    VENDOR ||--o{ PURCHASE_ORDER : "receives"
+    PURCHASE_ORDER ||--o{ VENDOR_INVOICE : "invoiced by"
+    INVOICE ||--o{ PAYMENT : "settled by"
+    FEE_STRUCTURE ||--o{ INVOICE : "generates"
+    EVENT ||--o{ EVENT_REGISTRATION : "has"
+    EVENT ||--o{ EVENT_REPORT : "produces"
+    MESSAGE ||--o{ NOTIFICATION_RULE : "fired by"
+    STUDENT_HEALTH ||--o{ INCIDENT : "linked via"
+    MARKS_RECORD ||--o{ REPORT_CARD : "compiled into"
+    TENANT {
+      uuid tenant_id PK
+      string name
+      string subdomain
+      string type
+      string subscription_tier
+    }
+    STUDENT {
+      uuid student_id PK
+      uuid tenant_id FK
+      string name
+      date dob
+      string grade
+      string status
+    }
+    STAFF {
+      uuid staff_id PK
+      uuid tenant_id FK
+      string name
+      string role
+      string employment_type
+    }
+    VENDOR {
+      uuid vendor_id PK
+      uuid tenant_id FK
+      string name
+      string category
+      string status
+    }
+    INVOICE {
+      uuid invoice_id PK
+      uuid student_id FK
+      decimal total
+      string status
+    }
+    PAYMENT {
+      uuid payment_id PK
+      uuid invoice_id FK
+      decimal amount
+      string method
+    }
+    MARKS_RECORD {
+      uuid marks_id PK
+      uuid student_id FK
+      string subject
+      int marks
+    }
+    REPORT_CARD {
+      uuid report_id PK
+      uuid student_id FK
+      string term
+      string overall_grade
+    }
+    EVENT {
+      uuid event_id PK
+      uuid tenant_id FK
+      string name
+      string type
+    }
+    INCIDENT {
+      uuid incident_id PK
+      uuid tenant_id FK
+      string type
+      timestamp occurred_at
+    }
+    FEE_STRUCTURE {
+      uuid fee_struct_id PK
+      uuid tenant_id FK
+      string grade
+      string term
+    }
+    STUDENT_HEALTH {
+      uuid health_id PK
+      uuid student_id FK
+      text allergies
+      text conditions
+    }
+    LESSON_PLAN {
+      uuid plan_id PK
+      uuid teacher_id FK
+      string week
+      string status
+    }
+    PURCHASE_ORDER {
+      uuid po_id PK
+      uuid vendor_id FK
+      string status
+    }
+    VENDOR_INVOICE {
+      uuid v_invoice_id PK
+      uuid po_id FK
+      string match_result
+    }
+    PAYROLL_RUN {
+      uuid payroll_id PK
+      uuid staff_id FK
+      decimal net_pay
+      string status
+    }
+    SCHEDULE {
+      uuid schedule_id PK
+      uuid staff_id FK
+      string week
+    }
+    APPRAISAL {
+      uuid appraisal_id PK
+      uuid staff_id FK
+      string outcome
+    }
+    APPLICATION {
+      uuid application_id PK
+      uuid student_id FK
+      string status
+    }
+    EVENT_REGISTRATION {
+      uuid reg_id PK
+      uuid event_id FK
+      uuid student_id FK
+    }
+    EVENT_REPORT {
+      uuid report_id PK
+      uuid event_id FK
+      int actual_attendance
+    }
+    MESSAGE {
+      uuid message_id PK
+      uuid sender_id FK
+      string type
+    }
+    NOTIFICATION_RULE {
+      uuid rule_id PK
+      string trigger_event
+    }`,
+
+  'student': `erDiagram
+    TENANT ||--o{ STUDENT : "enrolls"
+    STUDENT ||--o{ APPLICATION : "applies via"
+    STUDENT ||--o{ PARENT : "linked to"
+    STUDENT ||--o{ EMERGENCY_CONTACT : "has"
+    STUDENT ||--o{ STUDENT_HEALTH : "profiled in"
+    APPLICATION ||--o{ DOCUMENT : "requires"
+    PARENT }o--o{ STUDENT : "guardian of"
+    TENANT {
+      uuid tenant_id PK
+      string name
+      string subdomain
+      string type
+      string subscription_tier
+      string region
+      date subscription_start
+    }
+    STUDENT {
+      uuid student_id PK
+      uuid tenant_id FK
+      uuid class_id FK
+      string first_name
+      string last_name
+      date dob
+      string grade
+      string section
+      date enrolled_date
+      string status
+      string nationality
+      string transport_flag
+    }
+    APPLICATION {
+      uuid application_id PK
+      uuid tenant_id FK
+      uuid student_id FK
+      string status
+      date applied_date
+      date decision_date
+      uuid decided_by FK
+      int waitlist_position
+      string inquiry_ref
+    }
+    PARENT {
+      uuid parent_id PK
+      uuid student_id FK
+      string name
+      string relationship
+      string phone
+      string email
+      jsonb notification_prefs
+      boolean media_consent
+      boolean dbs_verified
+    }
+    EMERGENCY_CONTACT {
+      uuid contact_id PK
+      uuid student_id FK
+      string name
+      string phone
+      string relationship
+      boolean medical_consent
+      timestamp consent_date
+    }
+    STUDENT_HEALTH {
+      uuid health_id PK
+      uuid student_id FK
+      text allergies
+      text conditions
+      jsonb medications
+      jsonb vaccinations
+      string doctor_contact
+      boolean consent_flag
+    }
+    DOCUMENT {
+      uuid doc_id PK
+      uuid application_id FK
+      string doc_type
+      string file_path
+      timestamp uploaded_at
+      boolean verified
+    }`,
+
+  'academic': `erDiagram
+    CURRICULUM ||--o{ LESSON_PLAN : "structured in"
+    ACADEMIC_CALENDAR ||--o{ EXAM : "schedules"
+    CURRICULUM ||--o{ ASSIGNMENT : "maps to"
+    LESSON_PLAN }o--|| STAFF : "authored by"
+    ASSIGNMENT ||--o{ MARKS_RECORD : "graded in"
+    EXAM ||--o{ MARKS_RECORD : "produces"
+    MARKS_RECORD }o--|| STUDENT : "belongs to"
+    MARKS_RECORD ||--o{ REPORT_CARD : "compiled into"
+    CURRICULUM {
+      uuid curriculum_id PK
+      string grade
+      jsonb subjects
+      jsonb learning_outcomes
+      string version
+      uuid approved_by FK
+      date effective_from
+      string type
+    }
+    ACADEMIC_CALENDAR {
+      uuid calendar_id PK
+      uuid tenant_id FK
+      string academic_year
+      jsonb term_dates
+      jsonb holidays
+      jsonb exam_weeks
+      date pt_meeting_dates
+    }
+    LESSON_PLAN {
+      uuid plan_id PK
+      uuid teacher_id FK
+      uuid class_id FK
+      uuid curriculum_id FK
+      string week
+      string topic
+      text objectives
+      string status
+      uuid reviewed_by FK
+      text review_notes
+    }
+    ASSIGNMENT {
+      uuid assignment_id PK
+      uuid teacher_id FK
+      uuid class_id FK
+      string subject
+      string title
+      date due_date
+      int max_marks
+      jsonb submission_tracking
+    }
+    EXAM {
+      uuid exam_id PK
+      uuid class_id FK
+      uuid calendar_id FK
+      string name
+      string type
+      date exam_date
+      int duration_mins
+      string room
+      uuid invigilator_id FK
+      int max_marks
+      int pass_mark
+    }
+    MARKS_RECORD {
+      uuid marks_id PK
+      uuid student_id FK
+      uuid exam_id FK
+      uuid teacher_id FK
+      string subject
+      int marks
+      string grade
+      boolean locked
+      uuid moderated_by FK
+    }
+    REPORT_CARD {
+      uuid report_id PK
+      uuid student_id FK
+      string term
+      string academic_year
+      string overall_grade
+      date published_date
+      boolean parent_ack
+    }
+    STUDENT {
+      uuid student_id PK
+      string name
+      string grade
+    }
+    STAFF {
+      uuid staff_id PK
+      string name
+      string role
+    }`,
+
+  'attendance': `erDiagram
+    STUDENT ||--o{ STUDENT_ATTENDANCE : "tracked by"
+    STAFF ||--o{ STAFF_ATTENDANCE : "tracked by"
+    STUDENT ||--o{ LEAVE_REQUEST : "requests"
+    STAFF ||--o{ LEAVE_REQUEST : "requests"
+    ATTENDANCE_ROSTER ||--o{ STUDENT_ATTENDANCE : "generates"
+    ATTENDANCE_ROSTER ||--o{ STAFF_ATTENDANCE : "generates"
+    LEAVE_REQUEST }o--|| STAFF_ATTENDANCE : "adjusts"
+    STUDENT_ATTENDANCE {
+      uuid att_id PK
+      uuid student_id FK
+      uuid class_id FK
+      date att_date
+      string period
+      string status
+      string method
+      uuid marked_by FK
+      timestamp mark_time
+      boolean parent_notified
+      uuid leave_request_id FK
+    }
+    STAFF_ATTENDANCE {
+      uuid staff_att_id PK
+      uuid staff_id FK
+      date att_date
+      time check_in
+      time check_out
+      string method
+      string status
+      uuid substitute_id FK
+      boolean sub_allowance_flag
+    }
+    LEAVE_REQUEST {
+      uuid leave_id PK
+      uuid requester_id FK
+      string requester_type
+      string leave_type
+      date start_date
+      date end_date
+      int days
+      string reason
+      string status
+      uuid approved_by FK
+      date approval_date
+      decimal balance_before
+      decimal balance_after
+    }
+    ATTENDANCE_ROSTER {
+      uuid roster_id PK
+      uuid class_id FK
+      uuid tenant_id FK
+      date roster_date
+      time window_start
+      time window_end
+      timestamp generated_at
+    }
+    STUDENT {
+      uuid student_id PK
+      string name
+      string grade
+    }
+    STAFF {
+      uuid staff_id PK
+      string name
+      string role
+    }`,
+
+  'billing': `erDiagram
+    TENANT ||--o{ FEE_STRUCTURE : "configures"
+    FEE_STRUCTURE ||--o{ INVOICE : "generates"
+    STUDENT ||--o{ INVOICE : "billed via"
+    PARENT ||--o{ PAYMENT : "makes"
+    INVOICE ||--o{ PAYMENT : "settled by"
+    INVOICE ||--o{ DISCOUNT_WAIVER : "adjusted by"
+    INVOICE }o--|| RECONCILIATION : "reconciled in"
+    PAYMENT }o--|| RECONCILIATION : "reconciled in"
+    FEE_STRUCTURE {
+      uuid fee_struct_id PK
+      uuid tenant_id FK
+      string grade
+      string term
+      jsonb components
+      jsonb discount_rules
+      jsonb penalty_rules
+      int installment_options
+      uuid approved_by FK
+      date effective_from
+      int version
+    }
+    INVOICE {
+      uuid invoice_id PK
+      uuid student_id FK
+      uuid parent_id FK
+      uuid fee_struct_id FK
+      date invoice_date
+      date due_date
+      jsonb line_items
+      decimal subtotal
+      decimal total_due
+      string status
+      string type
+      uuid generated_by FK
+      int reminder_count
+      date last_reminder
+    }
+    PAYMENT {
+      uuid payment_id PK
+      uuid invoice_id FK
+      uuid parent_id FK
+      decimal amount
+      date payment_date
+      string method
+      string txn_ref
+      string gateway_code
+      string status
+      uuid receipt_id FK
+      decimal outstanding_balance
+      boolean partial_flag
+    }
+    DISCOUNT_WAIVER {
+      uuid discount_id PK
+      uuid invoice_id FK
+      uuid student_id FK
+      string discount_type
+      decimal amount
+      string reason
+      uuid requested_by FK
+      uuid approved_by FK
+      date approval_date
+    }
+    RECONCILIATION {
+      uuid recon_id PK
+      uuid tenant_id FK
+      string period
+      decimal total_invoiced
+      decimal total_collected
+      decimal outstanding
+      decimal adjustments
+      jsonb discrepancies
+      uuid reconciled_by FK
+      timestamp recon_timestamp
+      string status
+    }
+    STUDENT {
+      uuid student_id PK
+      string name
+    }
+    PARENT {
+      uuid parent_id PK
+      string name
+    }
+    TENANT {
+      uuid tenant_id PK
+      string name
+    }`,
+
+  'hr': `erDiagram
+    TENANT ||--o{ STAFF : "employs"
+    STAFF ||--o{ CONTRACT : "under"
+    STAFF ||--o{ PAYROLL_RUN : "paid via"
+    STAFF ||--o{ APPRAISAL : "reviewed in"
+    STAFF ||--o{ CPD_RECORD : "develops via"
+    STAFF ||--o{ SCHEDULE : "assigned in"
+    STAFF ||--o{ LEAVE_REQUEST : "requests"
+    STAFF_ATTENDANCE }o--|| PAYROLL_RUN : "feeds"
+    STAFF {
+      uuid staff_id PK
+      uuid tenant_id FK
+      string name
+      date dob
+      string role
+      string department
+      string employment_type
+      date start_date
+      decimal base_salary
+      jsonb allowances
+      jsonb certifications
+      string dbs_ref
+      date dbs_expiry
+      date firstaid_expiry
+      string bank_account
+    }
+    CONTRACT {
+      uuid contract_id PK
+      uuid staff_id FK
+      string type
+      date start_date
+      date end_date
+      timestamp esigned_at
+      boolean renewal_alert_sent
+    }
+    PAYROLL_RUN {
+      uuid payroll_id PK
+      uuid staff_id FK
+      uuid tenant_id FK
+      string period
+      decimal base_salary
+      jsonb allowances
+      jsonb deductions
+      decimal substitution_allowance
+      decimal overtime
+      decimal gross_pay
+      decimal net_pay
+      string status
+      uuid approved_by FK
+      date disbursed_date
+    }
+    APPRAISAL {
+      uuid appraisal_id PK
+      uuid staff_id FK
+      uuid appraiser_id FK
+      string cycle
+      text self_assessment
+      decimal self_score
+      decimal manager_score
+      text manager_narrative
+      string outcome
+      text salary_recommendation
+      date appraisal_date
+      string status
+    }
+    CPD_RECORD {
+      uuid cpd_id PK
+      uuid staff_id FK
+      string activity
+      string activity_type
+      string provider
+      date cpd_date
+      decimal hours
+      boolean mandatory
+      uuid assigned_by FK
+      string completion_status
+    }
+    SCHEDULE {
+      uuid schedule_id PK
+      uuid staff_id FK
+      uuid class_id FK
+      string week
+      string time_slot
+      string duty_type
+      boolean substitute_flag
+      uuid original_staff_id FK
+    }
+    LEAVE_REQUEST {
+      uuid leave_id PK
+      uuid staff_id FK
+      string leave_type
+      date start_date
+      date end_date
+      int days
+      string status
+      uuid approved_by FK
+    }
+    STAFF_ATTENDANCE {
+      uuid staff_att_id PK
+      uuid staff_id FK
+      date att_date
+      string status
+    }`,
+
+  'health': `erDiagram
+    STUDENT ||--|| STUDENT_HEALTH : "profiled in"
+    STUDENT_HEALTH ||--o{ HEALTH_OBSERVATION : "logged in"
+    STUDENT_HEALTH ||--o{ MEDICATION_LOG : "tracked in"
+    STUDENT ||--o{ INCIDENT : "involved in"
+    STAFF ||--o{ INCIDENT : "involved in"
+    TENANT ||--o{ SAFETY_DRILL : "schedules"
+    INCIDENT ||--o{ EVENT_REPORT : "logged in"
+    STUDENT_HEALTH {
+      uuid health_id PK
+      uuid student_id FK
+      jsonb allergies
+      jsonb conditions
+      jsonb medications
+      jsonb vaccinations
+      string doctor_name
+      string doctor_contact
+      boolean consent_flag
+      jsonb dietary_restrictions
+    }
+    HEALTH_OBSERVATION {
+      uuid obs_id PK
+      uuid student_id FK
+      uuid staff_id FK
+      date obs_date
+      string mood
+      string appetite
+      text physical_notes
+      int nap_duration_mins
+      text feeding_notes
+      text toileting_notes
+    }
+    MEDICATION_LOG {
+      uuid med_log_id PK
+      uuid student_id FK
+      uuid staff_id FK
+      string medicine_name
+      string dose
+      timestamp time_administered
+      boolean parent_notified
+    }
+    INCIDENT {
+      uuid incident_id PK
+      uuid tenant_id FK
+      string incident_type
+      timestamp occurred_at
+      string location
+      jsonb students_involved
+      jsonb staff_involved
+      jsonb witnesses
+      text description
+      text actions_taken
+      boolean escalated
+      timestamp parent_notified_at
+    }
+    SAFETY_DRILL {
+      uuid drill_id PK
+      uuid tenant_id FK
+      string drill_type
+      date scheduled_date
+      int duration_mins
+      decimal participation_rate
+      text issues_identified
+      uuid completed_by FK
+    }
+    EVENT_REPORT {
+      uuid report_id PK
+      uuid event_id FK
+      jsonb incident_ids
+    }
+    STUDENT {
+      uuid student_id PK
+      string name
+    }
+    STAFF {
+      uuid staff_id PK
+      string name
+    }
+    TENANT {
+      uuid tenant_id PK
+      string name
+    }`,
+
+  'vendor': `erDiagram
+    TENANT ||--o{ VENDOR : "contracts"
+    VENDOR ||--o{ PURCHASE_ORDER : "receives"
+    REQUISITION ||--|| PURCHASE_ORDER : "becomes"
+    PURCHASE_ORDER ||--o{ DELIVERY_RECORD : "fulfilled by"
+    PURCHASE_ORDER ||--o{ VENDOR_INVOICE : "invoiced via"
+    INVENTORY ||--o{ REQUISITION : "triggers"
+    VENDOR_INVOICE }o--|| VENDOR : "submitted by"
+    VENDOR {
+      uuid vendor_id PK
+      uuid tenant_id FK
+      string company_name
+      string contact_person
+      string phone
+      string email
+      string tax_reg
+      string bank_details
+      string category
+      string status
+      decimal performance_score
+      decimal ontime_delivery_rate
+      int quality_issues
+    }
+    REQUISITION {
+      uuid req_id PK
+      uuid raised_by FK
+      uuid tenant_id FK
+      date raised_date
+      jsonb items
+      decimal total_estimate
+      string justification
+      uuid preferred_vendor FK
+      string approval_tier
+      string status
+      uuid approved_by FK
+      date approval_date
+    }
+    PURCHASE_ORDER {
+      uuid po_id PK
+      uuid req_id FK
+      uuid vendor_id FK
+      jsonb items
+      string delivery_address
+      date required_date
+      string payment_terms
+      date po_date
+      string status
+      uuid created_by FK
+      timestamp sent_at
+    }
+    DELIVERY_RECORD {
+      uuid delivery_id PK
+      uuid po_id FK
+      date delivery_date
+      jsonb items_received
+      jsonb discrepancies
+      uuid confirmed_by FK
+      timestamp vendor_update_at
+      string po_status_after
+    }
+    VENDOR_INVOICE {
+      uuid v_invoice_id PK
+      uuid po_id FK
+      uuid vendor_id FK
+      date invoice_date
+      jsonb line_items
+      decimal total
+      string match_result
+      text discrepancy_notes
+      uuid confirmed_by FK
+      string approval_status
+      uuid approved_by FK
+      boolean payment_processed
+    }
+    INVENTORY {
+      uuid item_id PK
+      uuid tenant_id FK
+      string item_name
+      string category
+      string unit
+      int stock_level
+      int min_threshold
+      boolean low_stock_alert
+      string location
+      string asset_tag
+    }
+    TENANT {
+      uuid tenant_id PK
+      string name
+    }`,
+
+  'comms': `erDiagram
+    TENANT ||--o{ EVENT : "hosts"
+    TENANT ||--o{ MESSAGE : "sends"
+    TENANT ||--o{ NOTIFICATION_RULE : "configures"
+    EVENT ||--o{ EVENT_REGISTRATION : "has"
+    EVENT ||--o{ EVENT_VOLUNTEER : "involves"
+    EVENT ||--o{ EVENT_REPORT : "produces"
+    STUDENT }o--o{ EVENT_REGISTRATION : "registers for"
+    PARENT }o--o{ EVENT_VOLUNTEER : "volunteers for"
+    NOTIFICATION_RULE ||--o{ MESSAGE : "triggers"
+    MESSAGE ||--o{ AUDIT_LOG : "logged in"
+    EVENT {
+      uuid event_id PK
+      uuid tenant_id FK
+      uuid calendar_id FK
+      uuid organiser_id FK
+      string name
+      string event_type
+      date event_date
+      string venue
+      int capacity
+      decimal budget_estimate
+      decimal actual_cost
+      string status
+      uuid approved_by FK
+      boolean recurring_template
+    }
+    EVENT_REGISTRATION {
+      uuid reg_id PK
+      uuid event_id FK
+      uuid student_id FK
+      uuid parent_id FK
+      string status
+      boolean permission_signed
+      timestamp permission_timestamp
+      boolean fee_paid
+      uuid payment_id FK
+    }
+    EVENT_VOLUNTEER {
+      uuid vol_id PK
+      uuid event_id FK
+      uuid volunteer_id FK
+      string volunteer_type
+      timestamp slot_claimed_at
+      boolean dbs_verified
+      boolean checked_in
+    }
+    EVENT_REPORT {
+      uuid report_id PK
+      uuid event_id FK
+      int actual_attendance
+      int registered_count
+      decimal actual_cost
+      decimal budget_variance
+      jsonb incident_ids
+      text feedback_summary
+      uuid completed_by FK
+      date report_date
+    }
+    MESSAGE {
+      uuid message_id PK
+      uuid sender_id FK
+      uuid tenant_id FK
+      string message_type
+      jsonb recipients
+      jsonb channels
+      text body
+      jsonb attachments
+      timestamp sent_at
+      jsonb delivery_status
+      jsonb read_receipts
+      boolean ack_required
+      boolean emergency_flag
+      decimal open_rate
+    }
+    NOTIFICATION_RULE {
+      uuid rule_id PK
+      uuid tenant_id FK
+      string trigger_event
+      jsonb target_roles
+      jsonb channels
+      int delay_window_mins
+      uuid template_id FK
+      boolean enabled
+      timestamp last_fired
+    }
+    AUDIT_LOG {
+      uuid log_id PK
+      uuid tenant_id FK
+      uuid actor_id FK
+      string action_type
+      string entity_type
+      uuid entity_id FK
+      jsonb old_value
+      jsonb new_value
+      timestamp log_timestamp
+      string ip_address
+    }
+    STUDENT {
+      uuid student_id PK
+      string name
+    }
+    PARENT {
+      uuid parent_id PK
+      string name
+    }
+    TENANT {
+      uuid tenant_id PK
+      string name
+    }`
+};
+
+async function renderDiagram(groupId, diagramDef) {
+  const containerId = 'erd-' + groupId;
+  const container = document.getElementById(containerId);
+  if (!container || container.dataset.rendered) return;
+  try {
+    const uniqueId = 'mermaid-' + groupId + '-' + Date.now();
+    const { svg } = await mermaid.render(uniqueId, diagramDef);
+    container.innerHTML = svg;
+    container.dataset.rendered = 'true';
+    styleERD(container);
+  } catch (e) {
+    container.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:16px;">Diagram rendering error: ${e.message}</div>`;
+  }
+}
+
+function styleERD(container) {
+  container.querySelectorAll('svg').forEach(svg => {
+    svg.style.maxWidth = '100%';
+    svg.style.fontFamily = '"DM Sans", sans-serif';
+  });
+}
+
+function showGroup(group) {
+  document.querySelectorAll('.diagram-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
+
+  const section = document.getElementById('group-' + group);
+  if (section) section.classList.add('active');
+
+  const btn = [...document.querySelectorAll('.group-btn')].find(b =>
+    b.getAttribute('onclick').includes(`'${group}'`)
+  );
+  if (btn) {
+    btn.classList.add('active');
+    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  const diagramDef = diagrams[group];
+  if (diagramDef) renderDiagram(group, diagramDef);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.showGroup = showGroup;
+
+// Render the first (all) diagram immediately
+renderDiagram('all', diagrams['all']);
+</script>
+</body>
+</html>
