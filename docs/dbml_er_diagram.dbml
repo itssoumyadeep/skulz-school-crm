@@ -1,0 +1,710 @@
+Project school_crm {
+  database_type: 'PostgreSQL'
+  Note: 'Multi-tenant school CRM domain model'
+}
+
+Table tenant {
+  tenant_id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(255) [not null]
+  subdomain varchar(100) [unique, not null]
+  type varchar(50) [not null]
+  subscription_tier varchar(50) [default: 'Basic']
+  region varchar(50) [not null]
+  config jsonb [default: '{}']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  created_by uuid
+}
+
+Table tenant_sequence {
+  sequence_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  sequence_type varchar(50) [default: 'STUDENT']
+  year int [default: 2026]
+  last_value int [default: 0]
+}
+
+Table student {
+  student_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_number varchar(50) [not null]
+  class_id uuid
+  name varchar(255) [not null]
+  dob date [not null]
+  grade varchar(50) [not null]
+  section varchar(50) [default: 'A']
+  class_teacher varchar(255) [default: '']
+  status varchar(50) [default: 'Inquiry']
+  enrolled_date date
+  indexes {
+    (tenant_id, student_number) [unique]
+  }
+}
+
+Table application {
+  application_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  status varchar(50) [default: 'Pending']
+  applied_date timestamp [not null, default: `now()`]
+  decision_date timestamp
+  decided_by uuid
+  payment_confirmed boolean [default: false]
+  notification_dispatched boolean [default: false]
+}
+
+Table parent {
+  parent_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  name varchar(255) [not null]
+  relationship varchar(100) [not null]
+  phone varchar(50) [not null]
+  email varchar(255) [not null]
+  notification_prefs jsonb [default: '{}']
+  media_consent boolean [default: true]
+}
+
+Table emergency_contact {
+  contact_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  name varchar(255) [not null]
+  phone varchar(50) [not null]
+  relationship varchar(100) [not null]
+  medical_consent boolean [default: false]
+  consent_date timestamp
+}
+
+Table document {
+  document_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  application_id uuid [not null, ref: > application.application_id]
+  doc_type varchar(100) [not null]
+  file_path varchar(512) [not null]
+  verified boolean [default: false]
+  verified_by uuid
+  verified_at timestamp
+}
+
+Table audit_log {
+  log_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  actor_id uuid
+  action varchar(50) [not null]
+  entity varchar(100) [not null]
+  entity_id varchar(100)
+  old_values jsonb [default: '{}']
+  new_values jsonb [default: '{}']
+  ip_address varchar(45)
+  timestamp timestamp [not null, default: `now()`]
+}
+
+Table curriculum {
+  curriculum_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  grade varchar(50) [not null]
+  subjects jsonb [default: '[]']
+  learning_outcomes jsonb [default: '[]']
+  version varchar(50) [default: '1.0']
+  approved_by uuid
+}
+
+Table academic_calendar {
+  calendar_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  academic_year varchar(50) [not null]
+  terms jsonb [default: '[]']
+  holidays jsonb [default: '[]']
+  exam_weeks jsonb [default: '[]']
+  blackout_dates jsonb [default: '[]']
+  indexes {
+    (tenant_id, academic_year) [unique]
+  }
+}
+
+Table lesson_plan {
+  plan_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  teacher_id uuid [not null]
+  class_id uuid [not null]
+  curriculum_id uuid [not null, ref: > curriculum.curriculum_id]
+  week int [not null]
+  topic varchar(255) [not null]
+  learning_outcomes jsonb [default: '[]']
+  status varchar(50) [default: 'Draft']
+  reviewed_by uuid
+}
+
+Table assignment {
+  assignment_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  teacher_id uuid [not null]
+  class_id uuid [not null]
+  subject varchar(100) [not null]
+  title varchar(255) [not null]
+  description text
+  due_date date [not null]
+  max_marks decimal(5,2) [default: 100.00]
+  submission_tracking jsonb [default: '[]']
+}
+
+Table exam {
+  exam_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  class_id uuid [not null]
+  calendar_id uuid [not null, ref: > academic_calendar.calendar_id]
+  name varchar(255) [not null]
+  exam_type varchar(50) [default: 'Unit_Test']
+  date date [not null]
+  start_time varchar(10) [default: '09:00']
+  end_time varchar(10) [default: '12:00']
+  duration_mins int [default: 180]
+  room varchar(100)
+  invigilator_id uuid
+  max_marks decimal(5,2) [default: 100.00]
+  status varchar(50) [default: 'Draft']
+}
+
+Table marks_record {
+  marks_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  exam_id uuid [not null, ref: > exam.exam_id]
+  teacher_id uuid [not null]
+  subject varchar(100) [not null]
+  marks decimal(5,2) [not null]
+  max_marks decimal(5,2) [default: 100.00]
+  grade varchar(10)
+  locked boolean [default: false]
+  moderated_by uuid
+  moderation_date timestamp
+  indexes {
+    (tenant_id, student_id, exam_id, subject) [unique]
+  }
+}
+
+Table report_card {
+  report_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  calendar_id uuid [not null, ref: > academic_calendar.calendar_id]
+  term varchar(50) [not null]
+  year int [default: 2026]
+  overall_grade varchar(10) [not null]
+  gpa decimal(4,2) [default: 0.00]
+  subject_grades jsonb [default: '[]']
+  attendance_percentage decimal(5,2) [default: 100.00]
+  published_date date [not null]
+  is_published boolean [default: false]
+  parent_ack boolean [default: false]
+  parent_ack_date timestamp
+  indexes {
+    (tenant_id, student_id, term, year) [unique]
+  }
+}
+
+Table student_attendance {
+  att_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  class_id uuid [not null]
+  date date [not null]
+  period varchar(50) [default: 'Full_Day']
+  status varchar(50) [not null]
+  method varchar(50) [default: 'Manual']
+  marked_by uuid [not null]
+  notified_parent boolean [default: false]
+  locked boolean [default: false]
+  locked_at timestamp
+  indexes {
+    (tenant_id, student_id, class_id, date, period) [unique]
+  }
+}
+
+Table staff_attendance {
+  staff_att_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  staff_id uuid [not null]
+  date date [not null]
+  check_in varchar(10)
+  check_out varchar(10)
+  method varchar(50) [default: 'Manual']
+  status varchar(50) [default: 'Present']
+  substitute_id uuid
+  latitude float
+  longitude float
+  geofence_verified boolean [default: false]
+  indexes {
+    (tenant_id, staff_id, date) [unique]
+  }
+}
+
+Table leave_request {
+  leave_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  requester_id uuid [not null]
+  requester_type varchar(50) [not null]
+  leave_type varchar(50) [default: 'Sick']
+  start_date date [not null]
+  end_date date [not null]
+  days decimal(4,1) [default: 1.0]
+  reason text [not null]
+  status varchar(50) [default: 'Pending']
+  approved_by uuid
+  approval_date timestamp
+  balance_before decimal(5,1) [default: 0.0]
+  balance_after decimal(5,1) [default: 0.0]
+}
+
+Table attendance_roster {
+  roster_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  class_id uuid [not null]
+  date date [not null]
+  window_start varchar(10) [default: '08:00']
+  window_end varchar(10) [default: '10:00']
+  generated_at timestamp [not null, default: `now()`]
+  indexes {
+    (tenant_id, class_id, date) [unique]
+  }
+}
+
+Table student_health {
+  health_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, unique, ref: > student.student_id]
+  allergies jsonb [default: '[]']
+  conditions jsonb [default: '[]']
+  medications jsonb [default: '[]']
+  vaccinations jsonb [default: '[]']
+  doctor_name varchar(255)
+  doctor_phone varchar(50)
+  consent_flag boolean [default: false]
+  consent_date timestamp
+}
+
+Table health_observation {
+  obs_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  staff_id uuid [not null]
+  date date [not null]
+  mood varchar(50) [default: 'Happy']
+  appetite varchar(50) [default: 'Good']
+  nap_duration_mins int [default: 0]
+  feeding_notes text
+  general_notes text
+}
+
+Table medication_log {
+  med_log_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  staff_id uuid [not null]
+  medicine_name varchar(255) [not null]
+  dose varchar(100) [not null]
+  time_administered timestamp [not null]
+  parent_notified boolean [default: false]
+  notes text
+}
+
+Table incident {
+  incident_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  incident_type varchar(50) [not null]
+  severity varchar(50) [default: 'Low']
+  date date [not null]
+  time varchar(10) [default: '12:00']
+  location varchar(255) [not null]
+  students jsonb [default: '[]']
+  staff jsonb [default: '[]']
+  description text [not null]
+  actions_taken text
+  acknowledged_by uuid
+  acknowledged_at timestamp
+  escalated_to_principal boolean [default: false]
+  parent_notified boolean [default: false]
+}
+
+Table safety_drill {
+  drill_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  drill_type varchar(50) [not null]
+  scheduled_date date [not null]
+  duration_seconds int [default: 120]
+  participation_rate decimal(5,2) [default: 100.00]
+  issues_noted jsonb [default: '[]']
+  completed_by uuid [not null]
+  signed_off boolean [default: true]
+}
+
+Table fee_structure {
+  fee_struct_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  grade varchar(50) [not null]
+  term varchar(50) [not null]
+  components jsonb [default: '[]']
+  discount_rules jsonb [default: '[]']
+  penalty_rules jsonb [default: '{}']
+  version varchar(50) [default: '1.0']
+}
+
+Table invoice {
+  invoice_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  student_id uuid [not null, ref: > student.student_id]
+  parent_id uuid [not null, ref: > parent.parent_id]
+  fee_structure_id uuid [ref: > fee_structure.fee_struct_id]
+  invoice_date date [not null]
+  due_date date [not null]
+  line_items jsonb [default: '[]']
+  total decimal(12,2) [not null]
+  status varchar(50) [default: 'Draft']
+  invoice_type varchar(50) [default: 'Tuition']
+}
+
+Table payment {
+  payment_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  invoice_id uuid [not null, ref: > invoice.invoice_id]
+  parent_id uuid [not null, ref: > parent.parent_id]
+  amount decimal(12,2) [not null]
+  date timestamp [not null, default: `now()`]
+  method varchar(50) [default: 'Card']
+  txn_ref varchar(255)
+  status varchar(50) [default: 'Completed']
+  receipt_id varchar(100)
+  refund_amount decimal(12,2) [default: 0.00]
+  refunded_by uuid
+  refund_date timestamp
+}
+
+Table discount_waiver {
+  discount_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  invoice_id uuid [not null, ref: > invoice.invoice_id]
+  student_id uuid [not null, ref: > student.student_id]
+  discount_type varchar(50) [not null]
+  amount decimal(12,2) [not null]
+  reason text [not null]
+  approved_by uuid [not null]
+  approval_date timestamp [not null, default: `now()`]
+}
+
+Table reconciliation {
+  recon_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  period varchar(50) [not null]
+  total_invoiced decimal(12,2) [default: 0.00]
+  total_collected decimal(12,2) [default: 0.00]
+  total_outstanding decimal(12,2) [default: 0.00]
+  adjustments decimal(12,2) [default: 0.00]
+  discrepancies jsonb [default: '[]']
+  status varchar(50) [default: 'Draft']
+  finalized_by uuid
+  finalized_at timestamp
+  indexes {
+    (tenant_id, period) [unique]
+  }
+}
+
+Table staff {
+  staff_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  name varchar(255) [not null]
+  role varchar(100) [not null]
+  dept varchar(100) [not null]
+  employment_type varchar(50) [default: 'Full_Time']
+  start_date date [not null]
+  salary decimal(12,2) [default: 0.00]
+  certifications jsonb [default: '[]']
+  dbs_ref varchar(100)
+  dbs_expiry date
+  active boolean [default: true]
+}
+
+Table contract {
+  contract_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  staff_id uuid [not null]
+  contract_type varchar(50) [default: 'Standard']
+  start_date date [not null]
+  end_date date
+  esigned_at timestamp
+  renewal_alert_sent boolean [default: false]
+}
+
+Table payroll_run {
+  payroll_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  staff_id uuid [not null]
+  period varchar(50) [not null]
+  base_salary decimal(12,2) [not null]
+  allowances jsonb [default: '{}']
+  deductions jsonb [default: '{}']
+  gross decimal(12,2) [default: 0.00]
+  net decimal(12,2) [default: 0.00]
+  status varchar(50) [default: 'Draft']
+  approved_by uuid
+  approved_at timestamp
+  leave_deduction decimal(12,2) [default: 0.00]
+  indexes {
+    (tenant_id, staff_id, period) [unique]
+  }
+}
+
+Table appraisal {
+  appraisal_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  staff_id uuid [not null]
+  appraiser_id uuid
+  cycle varchar(50) [not null]
+  self_score decimal(5,2)
+  manager_score decimal(5,2)
+  outcome varchar(100)
+  status varchar(50) [default: 'Draft']
+  notes text
+  indexes {
+    (tenant_id, staff_id, cycle) [unique]
+  }
+}
+
+Table cpd_record {
+  cpd_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  staff_id uuid [not null]
+  activity varchar(255) [not null]
+  activity_type varchar(100) [not null]
+  hours decimal(5,2) [default: 0.00]
+  mandatory boolean [default: false]
+  completion_status varchar(50) [default: 'Planned']
+  completed_at timestamp
+}
+
+Table vendor {
+  vendor_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  name varchar(255) [not null]
+  contact_name varchar(255)
+  phone varchar(50)
+  email varchar(255)
+  payment_terms varchar(100)
+  active boolean [default: true]
+  indexes {
+    (tenant_id, name) [unique]
+  }
+}
+
+Table requisition {
+  requisition_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  vendor_id uuid [not null, ref: > vendor.vendor_id]
+  requester_id uuid [not null]
+  item_name varchar(255) [not null]
+  quantity int [default: 1]
+  amount decimal(12,2) [not null]
+  reason text
+  status varchar(50) [default: 'Draft']
+  approved_by uuid
+  approved_at timestamp
+}
+
+Table purchase_order {
+  po_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  vendor_id uuid [not null, ref: > vendor.vendor_id]
+  requisition_id uuid [ref: > requisition.requisition_id]
+  po_number varchar(100) [not null]
+  amount decimal(12,2) [not null]
+  expected_delivery_date date
+  status varchar(50) [default: 'Draft']
+  approved_by uuid
+  approved_at timestamp
+  indexes {
+    (tenant_id, po_number) [unique]
+  }
+}
+
+Table delivery_record {
+  delivery_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  purchase_order_id uuid [not null, ref: > purchase_order.po_id]
+  vendor_id uuid [not null, ref: > vendor.vendor_id]
+  amount decimal(12,2) [not null]
+  delivered_at timestamp [not null, default: `now()`]
+  received_by uuid
+  notes text
+  accepted boolean [default: false]
+}
+
+Table vendor_invoice {
+  vendor_invoice_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  vendor_id uuid [not null, ref: > vendor.vendor_id]
+  purchase_order_id uuid [ref: > purchase_order.po_id]
+  invoice_number varchar(100) [not null]
+  amount decimal(12,2) [not null]
+  due_date date
+  status varchar(50) [default: 'Pending']
+  verified boolean [default: false]
+  approved_by uuid
+  approved_at timestamp
+  indexes {
+    (tenant_id, invoice_number) [unique]
+  }
+}
+
+Table inventory {
+  inventory_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  vendor_id uuid [ref: > vendor.vendor_id]
+  item_name varchar(255) [not null]
+  sku varchar(100)
+  quantity_on_hand int [default: 0]
+  reorder_level int [default: 0]
+  unit_cost decimal(12,2) [default: 0.00]
+  last_restocked date
+  indexes {
+    (tenant_id, item_name) [unique]
+  }
+}
+
+Table analytics_snapshot {
+  snapshot_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  snapshot_date date [not null]
+  role_scope varchar(50) [default: 'admin']
+  metrics jsonb [default: '{}']
+  indexes {
+    (tenant_id, snapshot_date, role_scope) [unique]
+  }
+}
+
+Table custom_report {
+  report_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  name varchar(255) [not null]
+  requested_by uuid
+  requested_role varchar(50)
+  fields jsonb [default: '[]']
+  filters jsonb [default: '{}']
+  group_by jsonb [default: '[]']
+  status varchar(50) [default: 'Completed']
+  result jsonb [default: '{}']
+  generated_at timestamp [not null, default: `now()`]
+}
+
+Table report_schedule {
+  schedule_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  report_id uuid [not null, ref: > custom_report.report_id]
+  cron_expression varchar(120) [not null]
+  active boolean [default: true]
+  destination varchar(120) [default: 'email']
+  next_run_at timestamp
+  last_run_at timestamp
+}
+
+Table webhook_subscription {
+  webhook_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  event_type varchar(100) [not null]
+  target_url varchar(1000) [not null]
+  secret varchar(255) [not null]
+  active boolean [default: true]
+  retry_limit int [default: 5]
+}
+
+Table webhook_delivery_attempt {
+  delivery_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  webhook_id uuid [not null, ref: > webhook_subscription.webhook_id]
+  event_type varchar(100) [not null]
+  payload jsonb [default: '{}']
+  signature varchar(255) [not null]
+  status varchar(50) [default: 'Pending']
+  attempt_count int [default: 1]
+  response_code int
+  response_body text
+  next_retry_at timestamp
+}
+
+Table event {
+  event_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  title varchar(255) [not null]
+  event_date date [not null]
+  registration_deadline date [not null]
+  location varchar(255) [not null]
+  description text
+  fee_amount decimal(12,2) [default: 0.00]
+  capacity int [default: 0]
+  requires_permission_slip boolean [default: true]
+  status varchar(50) [default: 'Draft']
+}
+
+Table event_registration {
+  registration_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  event_id uuid [not null, ref: > event.event_id]
+  participant_name varchar(255) [not null]
+  participant_email varchar(255)
+  participant_phone varchar(50)
+  registration_status varchar(50) [default: 'Registered']
+  permission_slip_received boolean [default: false]
+  payment_status varchar(50) [default: 'Pending']
+}
+
+Table event_volunteer {
+  volunteer_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  event_id uuid [not null, ref: > event.event_id]
+  volunteer_name varchar(255) [not null]
+  role varchar(100) [not null]
+  phone varchar(50)
+  approved boolean [default: false]
+  notes text
+}
+
+Table event_report {
+  report_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  event_id uuid [not null, unique, ref: > event.event_id]
+  attendees_count int [default: 0]
+  revenue decimal(12,2) [default: 0.00]
+  expenses decimal(12,2) [default: 0.00]
+  summary text
+  published_at timestamp
+}
+
+Table message {
+  message_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  recipient_id uuid
+  recipient_role varchar(100)
+  channel varchar(50) [not null]
+  subject varchar(255)
+  body text [not null]
+  trigger_event varchar(100)
+  payload jsonb [default: '{}']
+  delivery_status varchar(50) [default: 'Queued']
+  opt_out_ignored boolean [default: false]
+  delivery_confirmed_at timestamp
+}
+
+Table notification_rule {
+  rule_id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null, ref: > tenant.tenant_id]
+  trigger_event varchar(100) [not null]
+  channel varchar(50) [not null]
+  template_name varchar(255) [not null]
+  conditions jsonb [default: '{}']
+  active boolean [default: true]
+  priority int [default: 1]
+  emergency boolean [default: false]
+  indexes {
+    (tenant_id, trigger_event, channel) [unique]
+  }
+}
+

@@ -1,0 +1,427 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{padding:1rem 0;font-family:var(--font-sans,sans-serif)}
+.tabs{display:flex;flex-wrap:nowrap;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:8px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;font-size:11px;padding:5px 12px;border-radius:14px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab.active{background:var(--bg-pro);color:var(--text-pro);border-color:var(--border-pro)}
+.tab:hover:not(.active){color:var(--text-primary);border-color:var(--border-stronger)}
+.panel{display:none}.panel.active{display:block}
+
+/* flow lane */
+.lane-wrap{overflow-x:auto;padding-bottom:4px}
+.flow{display:flex;align-items:flex-start;gap:0;min-width:max-content}
+.step{display:flex;flex-direction:column;align-items:center;position:relative}
+.step-box{width:140px;border-radius:10px;border:0.5px solid var(--border-strong);background:var(--surface-1);padding:10px 10px 8px;cursor:pointer;transition:border-color .15s,background .15s}
+.step-box:hover{border-color:var(--border-stronger);background:var(--surface-2)}
+.step-box.active{border-color:var(--border-accent);background:var(--bg-accent)}
+.step-num{font-size:10px;font-weight:500;color:var(--text-muted);margin-bottom:3px}
+.step-name{font-size:12px;font-weight:500;color:var(--text-primary);line-height:1.3;margin-bottom:5px}
+.step-role-chips{display:flex;flex-wrap:wrap;gap:3px}
+.rc{font-size:9px;padding:1px 5px;border-radius:6px;border:0.5px solid;white-space:nowrap}
+.arrow-box{display:flex;align-items:center;padding:0 4px;padding-top:28px}
+.arrow-svg{width:24px;height:20px}
+
+/* detail panel */
+.detail{margin-top:14px;border:0.5px solid var(--border);border-radius:10px;background:var(--surface-1);padding:14px 16px;display:none}
+.detail.show{display:block}
+.detail-head{font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:10px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.det-card{border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--surface-2)}
+.det-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;font-weight:500}
+.det-val{font-size:12px;color:var(--text-primary);line-height:1.5}
+.det-val span{display:block}
+
+/* connections */
+.conn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.conn-card{border:0.5px solid var(--border);border-radius:8px;padding:9px 12px;background:var(--surface-2);font-size:12px}
+.conn-dir{font-size:10px;font-weight:500;color:var(--text-muted);margin-bottom:4px}
+.conn-item{color:var(--text-secondary);padding:2px 0;line-height:1.4}
+.conn-arrow{color:var(--text-accent);margin-right:4px}
+
+/* record sits section */
+.record-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px}
+.record-table th{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);font-weight:500;padding:4px 8px;text-align:left;border-bottom:0.5px solid var(--border)}
+.record-table td{padding:6px 8px;border-bottom:0.5px solid var(--border);vertical-align:top}
+.record-table tr:last-child td{border-bottom:none}
+.record-table td:first-child{font-weight:500;color:var(--text-primary);white-space:nowrap}
+.record-table td:nth-child(2){color:var(--text-secondary)}
+.access-pill{display:inline-block;font-size:9px;padding:1px 6px;border-radius:8px;border:0.5px solid;margin:1px}
+</style>
+
+<div class="wrap">
+<h2 class="sr-only">Process actor flows — who does what, who submits, who approves, who can see records</h2>
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
+</div>
+
+<script>
+const RC={
+  Owner:     {bg:'var(--bg-pro)',border:'var(--border-pro)',text:'var(--text-pro)'},
+  Board:     {bg:'var(--bg-pro)',border:'var(--border-pro)',text:'var(--text-pro)'},
+  Trustee:   {bg:'var(--bg-pro)',border:'var(--border-pro)',text:'var(--text-pro)'},
+  Principal: {bg:'var(--bg-accent)',border:'var(--border-accent)',text:'var(--text-accent)'},
+  VP:        {bg:'var(--bg-accent)',border:'var(--border-accent)',text:'var(--text-accent)'},
+  Admin:     {bg:'var(--bg-warning)',border:'var(--border-warning)',text:'var(--text-warning)'},
+  Teacher:   {bg:'var(--bg-success)',border:'var(--border-success)',text:'var(--text-success)'},
+  Caregiver: {bg:'var(--bg-success)',border:'var(--border-success)',text:'var(--text-success)'},
+  Parent:    {bg:'var(--bg-danger)',border:'var(--border-danger)',text:'var(--text-danger)'},
+  Vendor:    {bg:'var(--bg-neutral)',border:'var(--border)',text:'var(--text-secondary)'},
+  System:    {bg:'var(--surface-1)',border:'var(--border-strong)',text:'var(--text-muted)'},
+};
+
+const PROCESSES=[
+  {
+    id:'P01',name:'Enrollment & Admissions',
+    steps:[
+      {name:'Inquiry submitted',roles:['Parent','Admin'],submitter:'Parent',detail:'Parent fills inquiry form on public portal. Admin can enter on behalf of walk-in families. System auto-creates an Application record with status Inquiry and sends acknowledgement.'},
+      {name:'Application completed',roles:['Parent','Admin'],submitter:'Parent',detail:'Parent receives secure link to full application form. Uploads required documents (birth cert, previous school records, photo). Admin assists walk-ins. Application moves to status Applied.'},
+      {name:'Documents verified',roles:['Admin','VP'],submitter:'Admin',approver:'VP',detail:'Admin reviews each uploaded document against the configured checklist. Marks each as Verified or flags as missing. VP can flag edge cases (age waivers, transfer students). Missing docs trigger automated reminder to Parent.'},
+      {name:'Assessment scheduled',roles:['Admin','Teacher','Parent'],submitter:'Admin',detail:'For schools requiring assessment, Admin books a slot in the integrated calendar. Parent receives calendar invite. Teacher assigned as assessor sees their schedule in Teacher portal.'},
+      {name:'Admission decision',roles:['Principal','VP'],submitter:'VP',approver:'Principal',detail:'Principal or VP reviews complete application package — documents, assessment scores, available seats — and sets status to Approved, Waitlisted, or Rejected. Decision triggers automated notification to Parent with reason. Decision is immutable after notification is dispatched.'},
+      {name:'Payment & seat confirmation',roles:['Parent','Admin'],submitter:'Parent',detail:'On approval, Parent receives offer letter with first invoice attached. Parent pays via payment gateway. Admin records offline payments. On payment confirmed, enrollment status moves to Active. Receipt auto-generated.'},
+      {name:'Student profile created',roles:['Admin','System'],submitter:'System',detail:'System auto-generates Student ID and student_number. Creates full student profile from application data. Initiates health profile creation. Links emergency contacts. Notifies the assigned class Teacher.'},
+      {name:'Class assigned',roles:['VP','Admin'],submitter:'VP',approver:'Principal',detail:'VP assigns student to class and section based on age, grade, and capacity. Teacher of that class is notified. Parent portal now shows child\'s class, teacher name, timetable, and school calendar.'},
+    ],
+    records:[
+      {entity:'APPLICATION',created_by:'Parent / Admin',approved_by:'Principal / VP',sits:'Admin console — application queue',access:'Admin (full), VP (full), Principal (full), Parent (own application status only), Owner (analytics)'},
+      {entity:'DOCUMENT',created_by:'Parent (upload)',approved_by:'Admin (verify)',sits:'Admin document library',access:'Admin (full), VP (view), Principal (view), Parent (own uploads only)'},
+      {entity:'STUDENT',created_by:'System (on confirmation)',approved_by:'—',sits:'Student registry',access:'Admin (full), Principal (full), VP (full), Teacher (own class only), Parent (own child only)'},
+      {entity:'INVOICE (first)',created_by:'System (auto on confirmation)',approved_by:'—',sits:'Billing — student fee account',access:'Admin (full), Parent (own child)'},
+    ],
+    connections:[
+      {dir:'→ triggers',items:['P02 Billing: first invoice auto-generated on enrollment confirmation','P07 Health: health profile creation initiated','P03 Attendance: student added to class roster','P04 Academics: student added to curriculum and class plan']},
+      {dir:'→ notifies via',items:['P06 Comms: status change notifications at each step','P06 Comms: offer letter and payment receipt to Parent']},
+    ],
+  },
+  {
+    id:'P02',name:'Billing & Fee Management',
+    steps:[
+      {name:'Fee structure configured',roles:['Admin','Owner'],submitter:'Admin',approver:'Owner',detail:'Admin sets fee components per grade and term — tuition, activity, transport, meals, lab. Discount rules, penalty schedules, and installment options configured. Owner approves the policy. Changes are versioned; effective_from date prevents retroactive impact.'},
+      {name:'Invoice generated',roles:['System','Admin'],submitter:'System',detail:'Auto-invoice job runs at start of billing period for all active students. Admin can manually create one-off invoices for events, replacement items, ad-hoc charges. Each invoice is a line-item breakdown with due date. Parent notified immediately.'},
+      {name:'Discount / waiver applied',roles:['Admin','Principal','Owner'],submitter:'Admin',approver:'Principal',detail:'Admin raises a discount or waiver request for a specific student invoice. Principal approves amounts below the high-value threshold. Owner approves above it. All approvals logged with approver ID, timestamp, and reason — immutable. Invoice updated; Parent portal shows revised amount immediately.'},
+      {name:'Payment received',roles:['Parent','Admin'],submitter:'Parent',detail:'Parent pays via integrated gateway (card, UPI, bank transfer, wallet). Admin records offline payments (cash, cheque). Partial payments accepted — outstanding balance tracked. Payment gateway webhook updates PAYMENT record status in real time.'},
+      {name:'Late fee applied',roles:['System'],submitter:'System',detail:'Scheduled job checks all invoices past due_date + grace_period. Late fee computed and added automatically — no manual trigger. Admin sees Outstanding Fees Dashboard. Reminders sent at 7, 14, and 30 days overdue. Escalation alert to Principal for accounts over 30 days.'},
+      {name:'Receipt issued',roles:['System','Parent','Admin'],submitter:'System',detail:'On successful payment, receipt auto-generated and sent via email and SMS to Parent. PAYMENT record updates to Paid. Student\'s fee account shows updated outstanding_balance. Receipt permanently stored and downloadable from Parent portal.'},
+      {name:'Vendor invoice processed',roles:['Vendor','Admin','Owner'],submitter:'Vendor',approver:'Owner',detail:'Vendor submits invoice through Vendor Portal referencing PO number. System runs 3-way match (PO, delivery record, invoice). On match, Admin confirms. Owner approves high-value payments. Payment processed; vendor notified; expense recorded in financial ledger.'},
+      {name:'Period reconciled',roles:['Admin','Owner','Board'],submitter:'Admin',approver:'Owner',detail:'At period end, system auto-reconciles all invoices against payments. Discrepancies (partial payments, refunds, failed transactions) flagged for Admin review. Reconciliation can only be finalised after all discrepancies are resolved or acknowledged. Owner and Board see final financial statement.'},
+    ],
+    records:[
+      {entity:'FEE_STRUCTURE',created_by:'Admin',approved_by:'Owner',sits:'Billing configuration',access:'Owner (full), Admin (full), Principal (view), Board/Trustee (view)'},
+      {entity:'INVOICE',created_by:'System / Admin',approved_by:'—',sits:'Student fee account',access:'Admin (full), Parent (own), Principal (summary), Owner (analytics)'},
+      {entity:'PAYMENT',created_by:'System (gateway) / Admin',approved_by:'—',sits:'Payment ledger',access:'Admin (full), Parent (own receipts), Owner (analytics), Board (aggregates)'},
+      {entity:'DISCOUNT_WAIVER',created_by:'Admin',approved_by:'Principal / Owner',sits:'Audit log + invoice record',access:'Admin (full), Principal (approved by them), Owner (all), Board (audit view)'},
+      {entity:'RECONCILIATION',created_by:'System',approved_by:'Owner',sits:'Financial close records',access:'Admin (full), Owner (full), Board/Trustee (view)'},
+    ],
+    connections:[
+      {dir:'← receives from',items:['P01 Enrollment: first invoice triggered on student confirmation','P09 Events: event fee line items added on registration','P08 Vendor: vendor invoices enter same reconciliation cycle']},
+      {dir:'→ sends to',items:['P06 Comms: invoice generated, overdue, receipt notifications','P10 Analytics: revenue, collection rate, outstanding data']},
+    ],
+  },
+  {
+    id:'P03',name:'Attendance Management',
+    steps:[
+      {name:'Roster auto-generated',roles:['System'],submitter:'System',detail:'Nightly job generates attendance rosters for all classes for the next day, based on enrolled active students. Staff rosters generated from SCHEDULE records. Admins configure the attendance window (open and close times) per class type.'},
+      {name:'Attendance marked',roles:['Teacher','Caregiver'],submitter:'Teacher',detail:'Teacher marks attendance at start of each class via manual portal entry, QR code scan, or biometric integration. Care Givers mark session attendance for childcare programs including arrival and departure times. Marks are only accepted within the configured window.'},
+      {name:'Staff attendance tracked',roles:['Admin','VP'],submitter:'System',detail:'Staff check-in/out captured via biometric, PIN, or mobile geofence. VP receives immediate alert if any class has no teacher cover. Admin monitors staff punctuality. No-cover flag on STAFF_ATTENDANCE triggers substitution workflow.'},
+      {name:'Leave validated',roles:['Parent','Teacher','Admin'],submitter:'Parent',approver:'Admin',detail:'Parents submit student leave requests from Parent portal. Teachers submit own leave through Teacher portal. Admin processes and approves. Approved leave marks student as On Leave (not Absent) — preventing false parent notification. Leave clash with exam or blackout dates blocks approval unless Principal overrides.'},
+      {name:'Absence alerts sent',roles:['System'],submitter:'System',detail:'Within the configured delay window after attendance is marked, absent-without-leave students trigger automated SMS and push notification to Parent. Notification includes child name, date, class, and a link to submit leave or acknowledge. Delivery tracked in MESSAGE record.'},
+      {name:'Records locked',roles:['System'],submitter:'System',detail:'24 hours after session date, all attendance records for that session are locked. No edits permitted via any route. Locking is enforced at the BO layer (not just UI) — direct API calls also rejected. Locked flag visible to Admin for audit purposes.'},
+      {name:'Reports generated',roles:['Admin','Principal','VP','Owner'],submitter:'System',detail:'Attendance reports generated per student, class, grade, and school. Monthly summaries auto-published. Chronic absentee flags surfaced for counsellor review. Owner sees cross-school comparison. Board receives compliance reports confirming minimum attendance requirements are met.'},
+    ],
+    records:[
+      {entity:'STUDENT_ATTENDANCE',created_by:'Teacher / Caregiver',approved_by:'—',sits:'Attendance register',access:'Admin (full), Teacher (own class), VP/Principal (school-wide), Parent (own child), Owner (analytics)'},
+      {entity:'STAFF_ATTENDANCE',created_by:'System (biometric/geofence)',approved_by:'—',sits:'HR attendance log',access:'Admin (full), VP/Principal (school-wide), Owner (analytics); staff see own only'},
+      {entity:'LEAVE_REQUEST',created_by:'Parent / Teacher / Staff',approved_by:'Admin / Principal',sits:'Leave register',access:'Admin (full), Principal/VP (full), Teacher (own), Parent (own child)'},
+      {entity:'ATTENDANCE_ROSTER',created_by:'System',approved_by:'—',sits:'Daily operations view',access:'Admin (full), Teacher (own class), VP (full), Principal (full)'},
+    ],
+    connections:[
+      {dir:'→ feeds',items:['P04 Academics: attendance eligibility gates report card publication','P05 HR: staff absence data feeds payroll deduction computation','P06 Comms: absent student triggers parent notification','P10 Analytics: attendance trends and compliance reports']},
+      {dir:'← validates via',items:['P04 Academics: AcademicCalendar used to check blackout dates before leave approval']},
+    ],
+  },
+  {
+    id:'P04',name:'Academic Management',
+    steps:[
+      {name:'Calendar configured',roles:['Principal','Admin'],submitter:'Admin',approver:'Principal',detail:'Admin creates the academic calendar — term start and end dates, holiday dates, exam weeks, blackout periods, parent-teacher meeting dates. Principal approves. This calendar is the single authoritative source used by all 10 process modules for date validation. Cannot be deleted if it has existing exams or events.'},
+      {name:'Curriculum defined',roles:['Principal','VP','Admin'],submitter:'Admin',approver:'Principal',detail:'Principal defines curriculum framework per grade. Admin configures subjects, topics, and learning outcomes in the system. For Montessori programs, learning areas replace traditional subjects. Government schools import prescribed curricula. Curriculum is version-controlled.'},
+      {name:'Lesson plans created',roles:['Teacher'],submitter:'Teacher',approver:'VP',detail:'Teachers create lesson plans week-by-week, mapping each lesson to a syllabus topic from the current curriculum version. Plans include attachments, links, and teaching resources. VP reviews plans for compliance and quality. Plan status: Draft → Submitted → Reviewed.'},
+      {name:'Assignments posted',roles:['Teacher','Parent'],submitter:'Teacher',detail:'Teacher posts assignment with instructions, due date, and file attachments. Due date validated against AcademicCalendar (cannot fall on holiday or blackout). Parent portal shows assignment with countdown to due date. Teacher tracks submissions per student.'},
+      {name:'Exams scheduled',roles:['VP','Admin','Teacher'],submitter:'VP',approver:'Principal',detail:'VP creates exam timetable, validated against AcademicCalendar (no exam on holiday, no class overlap). Admin configures exam structure. Teachers receive invigilation schedules. Parents receive downloadable timetable. Hall tickets auto-generated after timetable is finalised.'},
+      {name:'Marks entered',roles:['Teacher','Admin'],submitter:'Teacher',approver:'VP',detail:'Teachers enter marks per student per subject and assessment type. System computes grades based on configured grading scale. VP reviews grade distribution. Principal can moderate before finalisation. Marks locked after deadline — retroactive changes require Principal approval and an audit note.'},
+      {name:'Report card published',roles:['Admin','System','Teacher'],submitter:'Admin',approver:'Principal',detail:'System auto-generates report cards using entered marks. Teachers add narrative comments per subject. Admin customises template with school branding. Report card release gated by published_date in AcademicCalendar — cannot be published early. Student attendance eligibility flag must also be clear. Parent portal shows report card on release date.'},
+    ],
+    records:[
+      {entity:'ACADEMIC_CALENDAR',created_by:'Admin',approved_by:'Principal',sits:'School configuration — used by all modules',access:'All roles (view), Admin (edit), Principal (approve)'},
+      {entity:'LESSON_PLAN',created_by:'Teacher',approved_by:'VP',sits:'Academic records',access:'Teacher (own), VP/Principal (all), Admin (view)'},
+      {entity:'ASSIGNMENT',created_by:'Teacher',approved_by:'—',sits:'Academic records',access:'Teacher (own class), Parent (own child), VP/Principal (view)'},
+      {entity:'MARKS_RECORD',created_by:'Teacher',approved_by:'VP / Principal (moderation)',sits:'Academic ledger — locked after deadline',access:'Teacher (own subject), VP/Principal (full), Admin (generate reports), Parent (own child via report card)'},
+      {entity:'REPORT_CARD',created_by:'System',approved_by:'Principal',sits:'Academic records — published to Parent portal',access:'Admin (full), Principal (full), Teacher (own class), Parent (own child only)'},
+    ],
+    connections:[
+      {dir:'← receives from',items:['P01 Enrollment: student class/grade assignment populates planning rosters','P03 Attendance: attendance eligibility flag gates report card publish']},
+      {dir:'→ sends to',items:['P06 Comms: grade drop and assignment overdue alerts to Parent','P10 Analytics: academic performance data feeds dashboards','P03/P09: AcademicCalendar validates dates across all modules']},
+    ],
+  },
+  {
+    id:'P05',name:'Staff & HR Management',
+    steps:[
+      {name:'Vacancy posted',roles:['Principal','Admin'],submitter:'Principal',approver:'Owner',detail:'Principal raises recruitment request specifying role, qualifications, and start date. Admin posts vacancy (optionally to external job boards) and manages applications within the system. RecruitmentCase BO created with status Vacancy. Owner approves senior hires.'},
+      {name:'Candidate assessed',roles:['Principal','VP','Admin'],submitter:'Admin',detail:'Candidates move through configurable interview stages. Admin records outcome notes per stage. Shortlisted candidates visible to Principal and VP. Background check initiated before offer can be issued.'},
+      {name:'Offer & contract',roles:['Principal','Admin'],submitter:'Admin',approver:'Principal',detail:'Admin generates contract from template, sends for e-signature within the platform. Contract must be e-signed before RecruitmentCase can graduate to a StaffMember record. Background check reference must be on file. Principal approves the hire.'},
+      {name:'Onboarding completed',roles:['Admin','Staff'],submitter:'Admin',detail:'On hire, onboarding checklist activates: IT setup, policy sign-offs, induction schedule. Staff completes their own checklist items. Onboarding must reach 100% before staff member can be assigned to any class in the Schedule. VP notified when complete.'},
+      {name:'Staff scheduled',roles:['VP','Admin'],submitter:'VP',detail:'VP creates weekly class timetables, duty rosters, and cover arrangements. DBS expiry validated before scheduling — expired DBS blocks assignment. When teacher calls in sick, system flags classes without cover and suggests available substitutes. Substitution allowance logged for payroll.'},
+      {name:'Payroll computed',roles:['Admin','Owner'],submitter:'Admin',approver:'Owner',detail:'Monthly payroll computed automatically: base salary + allowances − attendance deductions − tax. Staff attendance data must be locked before computation begins. Substitution allowances and overtime included. Admin reviews computation; Owner must approve before disbursement. Payslips auto-generated and pushed to Staff portal on approval.'},
+      {name:'Appraisal completed',roles:['Principal','VP','Staff'],submitter:'Staff',approver:'Principal',detail:'Two formal appraisal cycles per year. Staff complete self-assessment through their portal. Principal and VP complete structured appraisal form. Both submissions required before record can be finalised. Outcome feeds salary review recommendation and CPD plan. CPD hours below annual minimum blocks an Exceeds Expectations outcome.'},
+    ],
+    records:[
+      {entity:'STAFF',created_by:'Admin (on hire)',approved_by:'Principal',sits:'HR registry',access:'Admin (full), Principal (full), VP (full), Staff member (own profile), Owner (analytics)'},
+      {entity:'CONTRACT',created_by:'Admin',approved_by:'Principal + Staff (e-sign)',sits:'HR legal records',access:'Admin (full), Principal (view), Owner (view), Staff member (own only)'},
+      {entity:'PAYROLL_RUN',created_by:'System / Admin',approved_by:'Owner',sits:'Payroll ledger',access:'Admin (full), Owner (full), Staff member (own payslip only), Board/Trustee (aggregates)'},
+      {entity:'APPRAISAL',created_by:'Staff (self) + Principal/VP',approved_by:'Principal',sits:'HR performance records',access:'Admin (full), Principal (full), VP (full), Staff member (own only)'},
+      {entity:'SCHEDULE',created_by:'VP / Admin',approved_by:'—',sits:'Operational schedule',access:'VP/Principal (full), Admin (full), Teacher (own schedule only)'},
+    ],
+    connections:[
+      {dir:'← receives from',items:['P03 Attendance: staff absence feeds payroll deduction computation','P08 Vendor: staffing agency vendors managed via procurement module']},
+      {dir:'→ sends to',items:['P02 Billing: payroll disbursement feeds financial statement','P06 Comms: contract expiry and certification renewal alerts','P07 Health: staff first-aid certification compliance tracked','P10 Analytics: staffing cost and turnover dashboards']},
+    ],
+  },
+  {
+    id:'P06',name:'Communication & Notifications',
+    steps:[
+      {name:'Audience segmented',roles:['Admin','Principal','Teacher'],submitter:'Admin',detail:'Sender selects audience before any message is sent: all school, specific grades, individual classes, role groups, or individual users. Custom segments can be saved for reuse. Dynamic segments auto-update (e.g. "Parents of Grade 3" updates as students move grades).'},
+      {name:'Rule evaluated',roles:['System'],submitter:'System',detail:'Notification engine evaluates all active NOTIFICATION_RULE records against the trigger event. Matches selected target roles, channels, delay window, and message template. Rules are versioned — changes require preview and approval before going live. Rollback available for 30 days.'},
+      {name:'Message composed',roles:['Admin','Principal','Teacher','Caregiver'],submitter:'Admin',detail:'Announcements and circulars composed with rich text, attachments, and embedded images. Group messages sent to class parents by Teacher or Caregiver. Direct messages between individual Teacher/Caregiver and Parent are two-way threaded. Emergency broadcasts composed by Principal or Owner only.'},
+      {name:'Message dispatched',roles:['System'],submitter:'System',detail:'Message routed through configured channels: SMS (Twilio), email (SendGrid), push notification (FCM). Emergency broadcasts bypass all opt-out preferences. Out-of-hours messages queued and delivered at start of next window unless flagged urgent. Bulk messages require Admin role or above.'},
+      {name:'Delivery tracked',roles:['Admin'],submitter:'System',detail:'Delivery status recorded per recipient per channel: sent, delivered, read. Read receipts tracked for circulars marked as requiring acknowledgement. Admin sees delivery dashboard showing completion rate, failed deliveries, and bounce count. Failed deliveries trigger retry.'},
+      {name:'Audit retained',roles:['System'],submitter:'System',detail:'All messages — automated and manual — logged immutably in AUDIT_LOG. Parent-teacher messages retained minimum 12 months for safeguarding. Admin can search message history. Principals can view message threads if a safeguarding concern is flagged. Logs cannot be deleted by any role.'},
+    ],
+    records:[
+      {entity:'MESSAGE',created_by:'System / Admin / Teacher / Principal / Owner',approved_by:'—',sits:'Communication log',access:'Admin (full search), Principal (own school + safeguarding view), Teacher (own messages), Parent (own received messages), Owner (network broadcasts)'},
+      {entity:'NOTIFICATION_RULE',created_by:'Admin',approved_by:'Admin (preview + publish)',sits:'System configuration',access:'Admin (full), Owner (full), Principal (view)'},
+      {entity:'AUDIT_LOG (messages)',created_by:'System',approved_by:'—',sits:'Immutable audit log',access:'Admin (search), Owner (full), Board/Trustee (compliance view)'},
+    ],
+    connections:[
+      {dir:'← triggered by all 9 processes',items:['P01: application status change notifications','P02: invoice generated, overdue, payment receipt','P03: absent student parent alert','P04: grade drop, report card published','P05: contract expiry, payroll alert','P07: incident parent notification','P08: PO dispatch to Vendor','P09: event reminders to Parent','P10: scheduled report delivery']},
+      {dir:'→ sends to',items:['P10 Analytics: delivery rate and engagement metrics']},
+    ],
+  },
+  {
+    id:'P07',name:'Health & Safety',
+    steps:[
+      {name:'Health profile created',roles:['Parent','Admin'],submitter:'Parent',approver:'Admin',detail:'On enrollment, Parent completes health profile: allergies, conditions, medications, vaccinations, dietary restrictions, and family doctor contact. Parent gives digital consent for emergency medical treatment. Admin reviews completeness. Profile immediately visible to assigned Care Givers and class Teachers. Parent can update at any time; all updates logged with timestamp and version.'},
+      {name:'Daily observations logged',roles:['Caregiver','Teacher'],submitter:'Caregiver',detail:'Care Givers log daily wellness check-ins per child: mood, appetite, physical observations, complaints, nap duration, feeding notes. Teachers flag health concerns observed in class. A cumulative health log builds over time per student. Concerns can be escalated to Admin.'},
+      {name:'Medication administered',roles:['Caregiver','Admin'],submitter:'Caregiver',detail:'For students on prescribed medications during school hours, Parent must have a signed consent form on file before first administration. Care Giver logs each administration: medicine name, dose, time, and administering staff member. Admin maintains controlled medications register. Parent receives notification each time medication is given.'},
+      {name:'Incident reported',roles:['Teacher','Caregiver','Admin'],submitter:'Teacher',approver:'Admin',detail:'Any incident — injury, allergic reaction, behavioural incident, near-miss — logged immediately through incident form: what happened, where, who was involved, witnesses, actions taken. Admin reviews and categorises within 1 hour. Serious incidents (injury, allergic reaction) auto-escalate to Principal and trigger immediate parent notification.'},
+      {name:'Emergency response',roles:['Admin','Principal','System'],submitter:'System',detail:'System provides instant access to student\'s emergency contacts and health profile in one tap — critical for first responders. Admin triggers emergency alert to Parent with real-time updates. All emergency actions logged with timestamps for legal and insurance purposes. Emergency contact records must be verified before any off-site event.'},
+      {name:'Safety drill conducted',roles:['Principal','Admin'],submitter:'Admin',approver:'Principal',detail:'Principal schedules mandatory safety drills — fire, lockdown, earthquake. Admin records drill: date, type, duration, participation rate, issues identified, staff responsible. Drill records are immutable after sign-off — corrections require a superseding record. Drill compliance reports auto-generated for regulatory inspections.'},
+      {name:'Compliance report generated',roles:['System','Admin','Owner','Board'],submitter:'System',detail:'Monthly compliance report auto-generated: immunisation status summary, incident frequency by type, medication administration logs, drill completion rates. Cannot be suppressed by any role. Owner sees network-wide compliance dashboard. Board and Trustee see compliance reports for governance. Reports exported for regulatory submission.'},
+    ],
+    records:[
+      {entity:'STUDENT_HEALTH',created_by:'Parent',approved_by:'Admin (review)',sits:'Health registry — restricted access',access:'Admin (full), Caregiver (own group), Teacher (allergy/emergency flags only), Principal (summary), Parent (own child)'},
+      {entity:'HEALTH_OBSERVATION',created_by:'Caregiver / Teacher',approved_by:'—',sits:'Daily care log',access:'Admin (full), Caregiver (own group), Principal (review), Parent (own child)'},
+      {entity:'MEDICATION_LOG',created_by:'Caregiver',approved_by:'Parent (consent)',sits:'Medication register',access:'Admin (full), Caregiver (own group), Principal (view), Parent (own child only)'},
+      {entity:'INCIDENT',created_by:'Teacher / Caregiver',approved_by:'Admin (within 1 hour)',sits:'Incident register',access:'Admin (full), Principal (full), VP (view), Teacher (raised by them), Parent (incidents involving own child)'},
+      {entity:'SAFETY_DRILL',created_by:'Admin',approved_by:'Principal',sits:'Safety compliance records — immutable after sign-off',access:'Admin (full), Principal (full), Owner (network view), Board/Trustee (compliance)'},
+    ],
+    connections:[
+      {dir:'← receives from',items:['P01 Enrollment: health profile creation initiated on confirmation','P05 HR: staff first-aid certification expiry tracked in SafetyCompliance BO']},
+      {dir:'→ sends to',items:['P06 Comms: incident alerts and health notifications to Parent and Principal','P10 Analytics: drill completion and incident data feeds compliance KPIs']},
+    ],
+  },
+  {
+    id:'P08',name:'Vendor & Procurement',
+    steps:[
+      {name:'Vendor registered',roles:['Admin','Owner','Board'],submitter:'Vendor',approver:'Admin',detail:'Vendor self-registers through Vendor Portal: company details, bank information, tax registration, insurance certificates, and references. Admin verifies documentation and conducts background checks. Board approves vendors for high-value or strategic contracts. Approved vendors added to Preferred Vendor List. Suspended vendors cannot receive new POs.'},
+      {name:'Need identified',roles:['Admin','Teacher'],submitter:'Admin',detail:'Admin and department heads (Teachers) perform stock checks using inventory module. Items below minimum threshold automatically generate a requisition draft for Admin review. Teachers submit supply requests for classroom needs via portal — these feed Admin\'s procurement queue.'},
+      {name:'Requisition raised',roles:['Admin','Teacher'],submitter:'Admin',approver:'Principal',detail:'Admin raises formal purchase requisition specifying items, quantities, estimated cost, justification, and preferred vendor. Requisition submitted to tiered approval workflow. Teachers can raise requisitions for classroom supplies below a configurable value threshold.'},
+      {name:'Approval obtained',roles:['Principal','Owner','Board'],submitter:'Principal',approver:'Owner',detail:'Tiered approval based on value: below threshold → Principal approves. Mid-range → Owner approves. High-value or capital expenditure → Board approval required. Approvers receive full requisition details in their portal and can approve or reject with comments. Rejection reason logged.'},
+      {name:'Purchase Order issued',roles:['Admin','System'],submitter:'System',detail:'On approval, system generates PO with unique PO number. PO sent to vendor via email and accessible in Vendor Portal. PO details: items, quantities, prices, delivery address, payment terms, required delivery date. Admin tracks all open POs from single dashboard.'},
+      {name:'Delivery confirmed',roles:['Admin','Vendor'],submitter:'Admin',detail:'On delivery, Admin confirms receipt of goods or services in the system, noting any discrepancies. Vendor updates delivery status in their portal. Partial deliveries tracked. Admin can reject non-conforming items, triggering a returns process. PO status updates to Partially Received or Fully Received.'},
+      {name:'3-way match & payment',roles:['Vendor','Admin','Owner'],submitter:'Vendor',approver:'Owner',detail:'Vendor submits invoice through Vendor Portal referencing the PO. System performs 3-way match: PO vs delivery record vs invoice. Match failure automatically blocks payment and flags for Admin review. On match, Admin confirms; Owner approves high-value payments. Payment processed; remittance advice sent to vendor. Vendor performance score updated.'},
+    ],
+    records:[
+      {entity:'VENDOR',created_by:'Vendor (self-register)',approved_by:'Admin / Board',sits:'Vendor registry',access:'Admin (full), Owner (full), Board (view), Vendor (own profile only)'},
+      {entity:'REQUISITION',created_by:'Admin / Teacher',approved_by:'Principal / Owner / Board (tiered)',sits:'Procurement queue',access:'Admin (full), Principal (approved by them), Owner (full), Board (high-value only)'},
+      {entity:'PURCHASE_ORDER',created_by:'System',approved_by:'—',sits:'PO register',access:'Admin (full), Principal (view), Owner (full), Vendor (own POs only)'},
+      {entity:'DELIVERY_RECORD',created_by:'Admin',approved_by:'—',sits:'Goods receipt log',access:'Admin (full), Owner (view), Vendor (own deliveries)'},
+      {entity:'VENDOR_INVOICE',created_by:'Vendor',approved_by:'Admin + Owner (high-value)',sits:'Accounts payable',access:'Admin (full), Owner (full), Board/Trustee (audit view), Vendor (own invoices)'},
+      {entity:'INVENTORY',created_by:'Admin',approved_by:'—',sits:'Stock register',access:'Admin (full), Teacher (view — own classroom supplies), Principal (view), Owner (analytics)'},
+    ],
+    connections:[
+      {dir:'← receives from',items:['P05 HR: staffing agency vendors onboarded here','P09 Events: event service bookings (catering, photography) create POs here']},
+      {dir:'→ sends to',items:['P02 Billing: vendor payments enter same reconciliation cycle','P06 Comms: PO dispatch and delivery alerts to Vendor','P10 Analytics: spend-by-category feeds financial dashboards']},
+    ],
+  },
+  {
+    id:'P09',name:'Events & Extra-Curricular',
+    steps:[
+      {name:'Event created',roles:['Principal','Teacher','Admin'],submitter:'Teacher',approver:'Principal',detail:'Event created with full details: name, type, date, venue, target audience, budget estimate, and organising teacher. Event date validated against AcademicCalendar — cannot fall on blackout dates without Owner override. For recurring events (annual sports day), templates available. Principal must approve before event is published to parents.'},
+      {name:'Resources booked',roles:['Admin'],submitter:'Admin',detail:'Admin books internal venues (hall, gym, field) using the resource booking calendar — prevents double-bookings. External venues tracked with booking confirmations stored against the event. Equipment, buses, and materials assigned. Vendor bookings (catering, photography) create POs in the Vendor & Procurement module.'},
+      {name:'Registrations opened',roles:['Parent','Admin','Teacher'],submitter:'Parent',detail:'Parents register children through Parent Portal. Teachers register students for inter-school competitions and clubs. Admin has live view of registration count vs capacity. Waitlisting managed automatically when full. Admin can bulk-register all eligible students for mandatory events.'},
+      {name:'Permissions & fees collected',roles:['Parent','System','Admin'],submitter:'Parent',detail:'For trips and off-site events, digital permission slips sent to parents with event details and risk notices. Parent signs digitally from their portal. Event fees auto-added to next invoice cycle — no manual step required. Admin tracks permission and payment completion via dashboard before the event date.'},
+      {name:'Volunteers coordinated',roles:['Admin','Teacher','Parent'],submitter:'Parent',detail:'Admin creates volunteer sign-up visible to staff and parents. Slots claimed on first-come basis. Confirmed volunteers receive briefing document and schedule. On event day, Admin checks off volunteers from register. DBS check status of parent volunteers automatically validated against their profile.'},
+      {name:'Event delivered',roles:['Admin','Teacher'],submitter:'Admin',detail:'Attendance on event day tracked. Absentees from mandatory events flagged in the attendance module. Any incidents during the event logged through the Health & Safety module. Emergency contacts verified for all registered students before departure for off-site events.'},
+      {name:'Post-event report',roles:['Admin','Principal','Owner'],submitter:'Admin',approver:'Principal',detail:'Admin completes event report within 5 working days: actual attendance vs registered, actual cost vs budget, incident log, feedback summary, photos. Principal is notified if report is overdue. Principal reviews outcomes. Owner sees events summary across all branches including total spend and participation rates.'},
+    ],
+    records:[
+      {entity:'EVENT',created_by:'Teacher / Admin',approved_by:'Principal',sits:'Events calendar',access:'Admin (full), Principal (full), VP (full), Teacher (own events), Parent (published events only), Owner (all schools)'},
+      {entity:'EVENT_REGISTRATION',created_by:'Parent / Admin / Teacher',approved_by:'—',sits:'Event registration list',access:'Admin (full), Teacher (own events), Parent (own child)'},
+      {entity:'EVENT_VOLUNTEER',created_by:'Parent / Staff (self-sign)',approved_by:'Admin (check-in)',sits:'Volunteer register',access:'Admin (full), Teacher (own events), Principal (view)'},
+      {entity:'EVENT_REPORT',created_by:'Admin',approved_by:'Principal',sits:'Event archive',access:'Admin (full), Principal (full), Owner (all schools), Board/Trustee (budget view)'},
+    ],
+    connections:[
+      {dir:'← receives from',items:['P04 Academics: AcademicCalendar validates event dates','P08 Vendor: event service bookings create POs']},
+      {dir:'→ sends to',items:['P02 Billing: event fees auto-added to student invoices','P03 Attendance: mandatory event absences flagged','P06 Comms: event notifications, reminders, post-event communications','P07 Health: off-site event triggers emergency contact verification']},
+    ],
+  },
+  {
+    id:'P10',name:'Reports & Analytics',
+    steps:[
+      {name:'BOs updated',roles:['System'],submitter:'System',detail:'Every operational process (P01–P09) continuously updates its Business Objects. AnalyticsDashboard BO reads exclusively from other BOs — never directly from base entities. This architectural boundary ensures analytics always consume clean, rule-enforced data.'},
+      {name:'KPI snapshots computed',roles:['System'],submitter:'System',detail:'Scheduled job pre-computes role-scoped KPI snapshots on a configurable refresh interval. Not generated on demand — pre-computation protects system performance under load. Snapshots are role-specific: Owner sees network-wide, Principal sees school-level, Teacher sees class-level, Parent sees own child only.'},
+      {name:'Dashboard requested',roles:['Owner','Board','Trustee','Principal','Admin','Teacher','Parent'],submitter:'Role user',detail:'Each role sees a personalised dashboard on login with pre-computed KPIs relevant to their scope. Admin: outstanding fees, today\'s attendance, open incidents, pending approvals. Principal: academic performance, staff attendance, enrollment vs capacity. Owner: multi-school revenue, headcount trends, comparative performance.'},
+      {name:'Role & tenant access applied',roles:['System'],submitter:'System',detail:'Every analytics response is filtered by role and tenant before delivery. Cross-tenant comparative data visible to Owner only — never exposed to school-level roles. Custom report builder enforces the same role scope — a Teacher cannot build a report that includes other classes. All export actions logged with requester ID and timestamp.'},
+      {name:'Custom report built',roles:['Admin','Principal','Owner'],submitter:'Admin',detail:'Authorised users build custom reports by selecting data fields from across all BO domains, applying filters, groupings, and date ranges. Custom reports saved as versioned templates owned by their creator. Templates can be scheduled for automated delivery via CommunicationBundle.'},
+      {name:'Scheduled delivery',roles:['System','Admin'],submitter:'System',detail:'Scheduled reports delivered via CommunicationBundle (BO-22). All delivery tracked and logged. Compliance reports auto-delivered to configured regulatory contacts and cannot be suppressed by any role. Board and Trustee receive governance report packs automatically at month-end.'},
+      {name:'Export & audit',roles:['Admin','Owner'],submitter:'Admin',detail:'Data exports include audit timestamp and requesting user ID for data governance. GDPR erasure request flow: soft-delete student PII, anonymise audit log references, confirm to requester within 30 days. Every export is logged in AUDIT_LOG. Board and Trustee can view financial audit trails with full approver chain.'},
+    ],
+    records:[
+      {entity:'Report (custom)',created_by:'Admin / Principal / Owner',approved_by:'—',sits:'Report template library',access:'Creator (full), Admin (school templates), Owner (all templates)'},
+      {entity:'KPI Snapshot (computed)',created_by:'System',approved_by:'—',sits:'Analytics cache — role-scoped',access:'Each role sees only their scope — enforced at BO layer, not UI'},
+      {entity:'Export / Delivery log',created_by:'System',approved_by:'—',sits:'AUDIT_LOG',access:'Admin (search), Owner (full), Board/Trustee (compliance view)'},
+    ],
+    connections:[
+      {dir:'← reads from (all 9 processes)',items:['P01: enrollment funnel, conversion rates','P02: revenue, collection rate, outstanding','P03: attendance trends, compliance','P04: academic performance','P05: HR cost, turnover','P07: safety compliance KPIs','P08: spend by category','P09: event participation and cost']},
+      {dir:'→ delivers via',items:['P06 Comms: scheduled reports via CommunicationBundle','External BI tools (Power BI, Tableau) via API export and webhooks']},
+    ],
+  },
+];
+
+const tabs=document.getElementById('tabs');
+const panels=document.getElementById('panels');
+let activeP=null,activeS=null;
+
+function chipHtml(roles){
+  return roles.map(r=>{
+    const s=RC[r]||RC.System;
+    return `<span class="rc" style="background:${s.bg};border-color:${s.border};color:${s.text}">${r}</span>`;
+  }).join('');
+}
+
+function accessPill(text){
+  const parts=text.split(',');
+  return parts.map(p=>`<span class="access-pill" style="background:var(--surface-1);border-color:var(--border-strong);color:var(--text-secondary)">${p.trim()}</span>`).join('');
+}
+
+PROCESSES.forEach((proc,pi)=>{
+  // tab
+  const t=document.createElement('button');
+  t.className='tab'+(pi===0?' active':'');
+  t.textContent=proc.id;
+  t.title=proc.name;
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('p-'+proc.id).classList.add('active');
+    activeP=proc.id; activeS=null;
+    document.querySelectorAll('.detail').forEach(x=>x.classList.remove('show'));
+    t.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  };
+  tabs.appendChild(t);
+
+  // panel
+  const pnl=document.createElement('div');
+  pnl.className='panel'+(pi===0?' active':'');
+  pnl.id='p-'+proc.id;
+
+  // header
+  const hdr=document.createElement('div');
+  hdr.style.cssText='margin-bottom:12px;';
+  hdr.innerHTML=`<div style="font-size:15px;font-weight:500;color:var(--text-primary);margin-bottom:2px">${proc.id} — ${proc.name}</div><div style="font-size:12px;color:var(--text-secondary)">Click a step to see who submits, who approves, and where the record sits.</div>`;
+  pnl.appendChild(hdr);
+
+  // flow
+  const laneWrap=document.createElement('div');
+  laneWrap.className='lane-wrap';
+  const flow=document.createElement('div');
+  flow.className='flow';
+
+  proc.steps.forEach((step,si)=>{
+    const stepDiv=document.createElement('div');
+    stepDiv.className='step';
+
+    const box=document.createElement('div');
+    box.className='step-box';
+    box.innerHTML=`<div class="step-num">${proc.id}.${si+1}</div><div class="step-name">${step.name}</div><div class="step-role-chips">${chipHtml(step.roles)}</div>`;
+    box.onclick=()=>{
+      const key=proc.id+'-'+si;
+      const isOpen=activeS===key;
+      document.querySelectorAll('.step-box').forEach(x=>x.classList.remove('active'));
+      const det=document.getElementById('det-'+proc.id);
+      if(isOpen){activeS=null;det.classList.remove('show');return;}
+      box.classList.add('active');
+      activeS=key;
+      // populate detail
+      const submitter=step.submitter||step.roles[0];
+      const approver=step.approver||'—';
+      det.innerHTML=`
+        <div class="detail-head">${proc.id}.${si+1} — ${step.name}</div>
+        <div class="detail-grid">
+          <div class="det-card"><div class="det-label">What happens</div><div class="det-val">${step.detail}</div></div>
+          <div class="det-card"><div class="det-label">Submitted by</div><div class="det-val"><span>${chipHtml([submitter])}</span><span style="margin-top:6px;font-size:11px;color:var(--text-muted)">Creates or initiates the record</span></div></div>
+          <div class="det-card"><div class="det-label">Approved by</div><div class="det-val"><span>${approver==='—'?'<span style="color:var(--text-muted)">No approval required</span>':chipHtml([approver])}</span>${approver!=='—'?'<span style="margin-top:6px;font-size:11px;color:var(--text-muted)">Must act before next step</span>':''}</div></div>
+        </div>`;
+      det.classList.add('show');
+    };
+    stepDiv.appendChild(box);
+    flow.appendChild(stepDiv);
+
+    if(si<proc.steps.length-1){
+      const arrBox=document.createElement('div');
+      arrBox.className='arrow-box';
+      arrBox.innerHTML=`<svg class="arrow-svg" viewBox="0 0 24 20" fill="none"><path d="M2 10h18M16 5l6 5-6 5" stroke="var(--border-stronger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      flow.appendChild(arrBox);
+    }
+  });
+
+  laneWrap.appendChild(flow);
+  pnl.appendChild(laneWrap);
+
+  // step detail
+  const det=document.createElement('div');
+  det.className='detail';
+  det.id='det-'+proc.id;
+  pnl.appendChild(det);
+
+  // Records table
+  const recDiv=document.createElement('div');
+  recDiv.style.cssText='margin-top:16px;';
+  recDiv.innerHTML=`<div style="font-size:12px;font-weight:500;color:var(--text-primary);margin-bottom:6px">Records created — where they sit and who can see them</div>
+    <table class="record-table">
+      <thead><tr><th>Entity</th><th>Created by</th><th>Approved by</th><th>Where it sits</th><th>Access</th></tr></thead>
+      <tbody>${proc.records.map(r=>`<tr>
+        <td style="font-family:var(--font-mono);font-size:11px">${r.entity}</td>
+        <td>${r.created_by}</td>
+        <td>${r.approved_by}</td>
+        <td style="color:var(--text-muted)">${r.sits}</td>
+        <td>${r.access}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  pnl.appendChild(recDiv);
+
+  // Connections
+  const connDiv=document.createElement('div');
+  connDiv.style.cssText='margin-top:14px;';
+  connDiv.innerHTML=`<div style="font-size:12px;font-weight:500;color:var(--text-primary);margin-bottom:6px">Process connections</div>
+    <div class="conn-grid">${proc.connections.map(c=>`<div class="conn-card">
+      <div class="conn-dir">${c.dir}</div>
+      ${c.items.map(i=>`<div class="conn-item"><span class="conn-arrow">→</span>${i}</div>`).join('')}
+    </div>`).join('')}</div>`;
+  pnl.appendChild(connDiv);
+
+  panels.appendChild(pnl);
+});
+</script>
