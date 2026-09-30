@@ -123,11 +123,17 @@ def generate_student_number(tenant: Tenant, year: int = None) -> str:
             year=year,
             defaults={'last_value': 0}
         )
-        seq_obj.last_value += 1
+        while True:
+            seq_obj.last_value += 1
+            student_number = f"{prefix}-{year}-{seq_obj.last_value:04d}"
+            if not Student.objects.filter(
+                tenant=tenant,
+                student_number=student_number,
+            ).exists():
+                break
         seq_obj.save(update_fields=['last_value', 'updated_at'])
-        sequence_num = seq_obj.last_value
 
-    return f"{prefix}-{year}-{sequence_num:04d}"
+    return student_number
 
 
 class Student(TenantScopedModel):
