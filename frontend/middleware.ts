@@ -4,13 +4,15 @@ import type { NextRequest } from "next/server";
 type Role =
   | "admin"
   | "principal"
+  | "vice_principal"
   | "teacher"
   | "caregiver"
   | "parent"
   | "vendor"
   | "owner"
   | "board"
-  | "trustee";
+  | "trustee"
+  | "staff";
 
 type Claims = {
   role?: Role;
@@ -21,7 +23,9 @@ type Claims = {
 const roleRules: Array<{ prefix: string; roles: Role[] }> = [
   { prefix: "/admin", roles: ["admin"] },
   { prefix: "/principal", roles: ["principal", "admin"] },
+  { prefix: "/vice-principal", roles: ["vice_principal", "admin"] },
   { prefix: "/teacher", roles: ["teacher", "admin"] },
+  { prefix: "/staff", roles: ["staff", "admin"] },
   { prefix: "/caregiver", roles: ["caregiver", "admin"] },
   { prefix: "/parent", roles: ["parent", "admin"] },
   { prefix: "/vendor", roles: ["vendor", "admin"] },
@@ -91,7 +95,10 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/principal/:path*",
+    "/vice-principal/:path*",
     "/teacher/:path*",
+    "/staff/:path*",
+    "/staff/:path*",
     "/caregiver/:path*",
     "/parent/:path*",
     "/vendor/:path*",

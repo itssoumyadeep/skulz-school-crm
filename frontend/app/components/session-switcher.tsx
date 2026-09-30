@@ -7,6 +7,7 @@ import { buildMockJwt, type UserRole } from "@/app/lib/session";
 const roleRoutes: Record<UserRole, string> = {
   admin: "/admin",
   principal: "/principal",
+  vice_principal: "/vice-principal",
   teacher: "/teacher",
   caregiver: "/caregiver",
   parent: "/parent",
@@ -14,11 +15,13 @@ const roleRoutes: Record<UserRole, string> = {
   owner: "/governance/owner",
   board: "/governance/board",
   trustee: "/governance/trustee",
+  staff: "/staff",
 };
 
 export function SessionSwitcher() {
   const [role, setRole] = useState<UserRole>("admin");
   const [tenantId, setTenantId] = useState("tenant-demo-001");
+  const [userId, setUserId] = useState("11111111-1111-4111-8111-111111111111");
   const [linkedStudents, setLinkedStudents] = useState(
     "11111111-1111-4111-8111-111111111111,22222222-2222-4222-8222-222222222222",
   );
@@ -36,6 +39,7 @@ export function SessionSwitcher() {
       role,
       tenantId.trim() || "tenant-demo-001",
       linkedStudentIds,
+      { userId: userId.trim() || undefined, userName: `${role} user` },
     );
     document.cookie = `pc_session=${encodeURIComponent(token)}; Path=/; Max-Age=86400; SameSite=Lax`;
     router.push(roleRoutes[role]);
@@ -46,7 +50,7 @@ export function SessionSwitcher() {
       <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
         Sprint 6-7 Session Emulator
       </p>
-      <div className="mt-3 grid gap-3 md:grid-cols-3">
+      <div className="mt-3 grid gap-3 md:grid-cols-4">
         <select
           value={role}
           onChange={(event) => setRole(event.target.value as UserRole)}
@@ -54,6 +58,7 @@ export function SessionSwitcher() {
         >
           <option value="admin">Admin</option>
           <option value="principal">Principal</option>
+          <option value="vice_principal">Vice Principal</option>
           <option value="teacher">Teacher</option>
           <option value="caregiver">Caregiver</option>
           <option value="parent">Parent</option>
@@ -61,12 +66,20 @@ export function SessionSwitcher() {
           <option value="owner">Owner</option>
           <option value="board">Board</option>
           <option value="trustee">Trustee</option>
+          <option value="staff">Staff</option>
         </select>
         <input
           value={tenantId}
           onChange={(event) => setTenantId(event.target.value)}
           className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm"
           placeholder="tenant id"
+        />
+        <input
+          value={userId}
+          onChange={(event) => setUserId(event.target.value)}
+          className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm"
+          placeholder="role user UUID"
+          aria-label="Role user UUID"
         />
         <button
           onClick={startSession}

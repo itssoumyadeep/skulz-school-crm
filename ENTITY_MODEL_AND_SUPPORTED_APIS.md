@@ -109,11 +109,21 @@ The API is mounted under `/api` and `/api/v1` through the central registry in `c
 Defined in `core/api/v1/enrollments.py`
 
 - `POST /enrollments`
+- `PATCH /enrollments/{application_id}` (Parent/Admin saved-draft update)
+- `POST /enrollments/{application_id}/submit` (Parent/Admin draft submission)
 - `GET /enrollments/{application_id}/status`
 - `PUT /enrollments/{application_id}/decision`
 - `POST /enrollments/{application_id}/documents`
+- `POST /enrollments/{application_id}/documents/upload` (multipart file upload)
 - `PUT /enrollments/{application_id}/documents/{document_id}/verify`
+- `PUT /enrollments/{application_id}/assessment-assignment` (Admin/VP)
+- `GET /enrollments/my-assessments` (assigned Teacher)
+- `PUT /enrollments/{application_id}/assessment` (assigned Teacher/Admin)
+- `PUT /enrollments/{application_id}/recommendation` (Vice Principal)
 - `GET /enrollments/my-applications`
+- `GET /enrollments/pipeline` (Admin/VP/Principal/Owner)
+
+The Parent, Admin, Teacher, Vice Principal, and Principal portal workflows consume these endpoints. Billing uses `POST /invoices` and `POST /payments`; a fully paid invoice is linked to the offered application. Final decisions require a verified birth certificate, completed Teacher assessment, and Vice Principal recommendation; Active enrollment additionally requires a paid invoice and emergency contact.
 
 ### 4.2 Academic API
 

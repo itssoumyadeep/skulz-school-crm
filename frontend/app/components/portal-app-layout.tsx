@@ -1,5 +1,6 @@
 "use client";
 
+import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Baby,
@@ -28,11 +29,16 @@ import {
   type SidebarNavItem,
   type SidebarTheme,
 } from "@/components/pc/app-shell";
-import { getClientSession, type UserRole } from "@/app/lib/session";
+import {
+  getClientSession,
+  type SessionClaims,
+  type UserRole,
+} from "@/app/lib/session";
 
 const roleTitles: Record<UserRole, string> = {
   admin: "General Administration",
   principal: "Principal Workspace",
+  vice_principal: "Vice Principal Workspace",
   teacher: "Teacher Workspace",
   caregiver: "Caregiver Workspace",
   parent: "Parent Dashboard",
@@ -40,6 +46,7 @@ const roleTitles: Record<UserRole, string> = {
   owner: "Owner Admin",
   board: "Board Member Portal",
   trustee: "Trustee Portal",
+  staff: "Staff Workspace",
 };
 
 const teacherLinks: SidebarNavItem[] = [
@@ -55,6 +62,11 @@ const teacherLinks: SidebarNavItem[] = [
     href: "/teacher/assessments",
     icon: <ChartNoAxesColumn />,
   },
+  {
+    label: "Admissions Assessments",
+    href: "/teacher#admissions-workflow",
+    icon: <FileText />,
+  },
   { label: "Schedule", href: "/teacher/schedule", icon: <CalendarDays /> },
   { label: "Messages", href: "/teacher/messages", icon: <MessageSquare /> },
   {
@@ -69,22 +81,27 @@ const teacherLinks: SidebarNavItem[] = [
 const principalLinks: SidebarNavItem[] = [
   {
     label: "Staff Attendance",
-    href: "/principal#staff-attendance",
+    href: "/principal/attendance/staff",
     icon: <UserCheck />,
   },
   {
     label: "Student Attendance",
-    href: "/principal#student-attendance",
+    href: "/principal/attendance/students",
     icon: <ClipboardCheck />,
   },
   {
     label: "Admissions",
-    href: "/principal#admissions",
+    href: "/principal/admissions",
     icon: <FileText />,
   },
   {
+    label: "Decision Queue",
+    href: "/principal/decision-queue",
+    icon: <ClipboardList />,
+  },
+  {
     label: "Announcements",
-    href: "/principal#announcements",
+    href: "/principal/announcements",
     icon: <Megaphone />,
   },
   {
@@ -95,20 +112,51 @@ const principalLinks: SidebarNavItem[] = [
   },
   {
     label: "Schedule",
-    href: "/principal#schedule",
+    href: "/principal/schedule",
     icon: <CalendarDays />,
+  },
+];
+
+const vicePrincipalLinks: SidebarNavItem[] = [
+  {
+    label: "Admissions Review",
+    href: "#admissions-workflow",
+    icon: <FileText />,
   },
 ];
 
 const featureLinksByRole: Record<UserRole, SidebarNavItem[]> = {
   admin: [
-    { label: "Admissions", href: "#admissions", icon: <FileText /> },
-    { label: "Billing", href: "#billing", icon: <ChartNoAxesColumn /> },
-    { label: "Invoices", href: "#invoices", icon: <ClipboardList /> },
-    { label: "Register Student", href: "#register-student", icon: <Users /> },
+    {
+      label: "Admissions Queue",
+      href: "/admin/admissions",
+      icon: <FileText />,
+    },
+    {
+      label: "Document Review",
+      href: "/admin/admissions/documents",
+      icon: <ClipboardCheck />,
+    },
+    {
+      label: "Assessment Schedule",
+      href: "/admin/admissions/assessments",
+      icon: <CalendarDays />,
+    },
+    {
+      label: "Billing",
+      href: "/admin/admissions/billing",
+      icon: <ChartNoAxesColumn />,
+    },
+    {
+      label: "Student Records",
+      href: "/admin/admissions/students",
+      icon: <ClipboardList />,
+    },
   ],
   principal: principalLinks,
+  vice_principal: vicePrincipalLinks,
   teacher: teacherLinks,
+  staff: [],
   caregiver: [
     {
       label: "Care Observations",
@@ -125,13 +173,22 @@ const featureLinksByRole: Record<UserRole, SidebarNavItem[]> = {
   ],
   parent: [
     {
+      label: "My Applications",
+      href: "/parent/applications",
+      icon: <ClipboardList />,
+    },
+    {
       label: "Child Progress",
-      href: "#child-progress",
+      href: "/parent/progress",
       icon: <GraduationCap />,
     },
-    { label: "Tuition & Fees", href: "#tuition-fees", icon: <DollarSign /> },
-    { label: "School Events", href: "#school-events", icon: <CalendarDays /> },
-    { label: "Make Payment", href: "#make-payment", icon: <Wallet /> },
+    {
+      label: "Tuition & Fees",
+      href: "/parent/tuition-fees",
+      icon: <DollarSign />,
+    },
+    { label: "School Events", href: "/parent/events", icon: <CalendarDays /> },
+    { label: "Make Payment", href: "/parent/payments", icon: <Wallet /> },
   ],
   vendor: [
     {
@@ -143,13 +200,22 @@ const featureLinksByRole: Record<UserRole, SidebarNavItem[]> = {
   ],
   owner: [
     {
+      label: "Admissions",
+      href: "/governance/owner/admissions",
+      icon: <FileText />,
+    },
+    {
       label: "Performance",
       href: "#monthly-performance",
       icon: <ChartNoAxesColumn />,
     },
     { label: "Audit Log", href: "#audit-log", icon: <ClipboardCheck /> },
     { label: "Schools", href: "#schools-directory", icon: <School /> },
-    { label: "Add School", href: "#add-school", icon: <Users /> },
+    {
+      label: "Add School",
+      href: "/governance/owner#school-form",
+      icon: <Users />,
+    },
   ],
   board: [
     {
@@ -181,15 +247,22 @@ export function PortalAppLayout({
   sidebarTheme: SidebarTheme;
 }) {
   const router = useRouter();
-  const session = getClientSession();
+  const [session, setSession] = useState<SessionClaims | null>(null);
+  useEffect(() => {
+    startTransition(() => {
+      setSession(getClientSession());
+    });
+  }, []);
   const dashboardHref =
-    role === "owner"
-      ? "/governance/owner"
-      : role === "board"
-        ? "/governance/board"
-        : role === "trustee"
-          ? "/governance/trustee"
-          : `/${role}`;
+    role === "vice_principal"
+      ? "/vice-principal"
+      : role === "owner"
+        ? "/governance/owner"
+        : role === "board"
+          ? "/governance/board"
+          : role === "trustee"
+            ? "/governance/trustee"
+            : `/${role}`;
   const featureLinks = featureLinksByRole[role].map((item) => ({
     ...item,
     href: item.href?.startsWith("#")

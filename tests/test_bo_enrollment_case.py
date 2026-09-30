@@ -21,12 +21,13 @@ class TestEnrollmentCaseBO:
         app = Application.objects.create(
             tenant=tenant_a,
             student=student,
-            status="Pending"
+            status="Pending",
+            workflow_data={"assessment": {"status": "Completed"}},
         )
-        # Upload 3 required documents, but only 2 verified
+        # A birth certificate is required before an offer; it is not verified.
         Document.objects.create(
             tenant=tenant_a, application=app, doc_type="birth_certificate",
-            file_path="/docs/bc.pdf", verified=True
+            file_path="/docs/bc.pdf", verified=False
         )
         Document.objects.create(
             tenant=tenant_a, application=app, doc_type="previous_school_records",
@@ -34,7 +35,7 @@ class TestEnrollmentCaseBO:
         )
         Document.objects.create(
             tenant=tenant_a, application=app, doc_type="photo",
-            file_path="/docs/photo.jpg", verified=False # Not verified!
+            file_path="/docs/photo.jpg", verified=False
         )
 
         bo = EnrollmentCaseBO(application=app, actor_role="Admin")
@@ -55,7 +56,11 @@ class TestEnrollmentCaseBO:
         app = Application.objects.create(
             tenant=tenant_a,
             student=student,
-            status="Under_Review"
+            status="Under_Review",
+            workflow_data={
+                "assessment": {"status": "Completed"},
+                "vp_recommendation": {"decision": "Offered", "reason": "Recommended."},
+            },
         )
         for dtype in ["birth_certificate", "previous_school_records", "photo"]:
             Document.objects.create(
@@ -139,7 +144,8 @@ class TestEnrollmentCaseBO:
             tenant=tenant_a,
             student=student,
             status="Rejected",
-            notification_dispatched=True # Notification was sent!
+            notification_dispatched=True, # Notification was sent!
+            workflow_data={"assessment": {"status": "Completed"}},
         )
 
         bo_admin = EnrollmentCaseBO(application=app, actor_role="Admin")

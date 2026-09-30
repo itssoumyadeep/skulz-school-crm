@@ -1,4 +1,4 @@
-import { AuthLanding } from "./components/auth-landing";
+import { SignInScreen } from "./components/sign-in-screen";
 
 type HomeProps = {
   searchParams: Promise<{ denied?: string }>;
@@ -6,5 +6,5 @@ type HomeProps = {
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
-  return <AuthLanding deniedReason={params.denied} />;
+  return <SignInScreen deniedReason={params.denied} />;
 }

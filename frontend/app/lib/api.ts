@@ -16,7 +16,9 @@ export async function apiFetch<T>(
   const session = getClientSession();
 
   const headers = new Headers(init?.headers ?? {});
-  headers.set("Content-Type", "application/json");
+  if (!(typeof FormData !== "undefined" && init?.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -80,12 +82,137 @@ export type Envelope<T> = {
   }>;
 };
 
+export type LoginResponse = {
+  access_token: string;
+  token_type: "Bearer";
+  expires_in: number;
+  role: string;
+  tenant_id: string;
+  user: {
+    id: string;
+    username: string;
+    name: string;
+    email: string;
+  };
+};
+
+export async function loginWithPassword(payload: {
+  username: string;
+  password: string;
+  tenant: string;
+}) {
+  return apiFetch<Envelope<LoginResponse>>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export type SignupResponse = {
+  username: string;
+  email: string;
+  name: string;
+  role: "parent";
+  status: "pending_activation";
+};
+
+export async function signupWithPassword(payload: {
+  full_name: string;
+  email: string;
+  password: string;
+  tenant: string;
+}) {
+  return apiFetch<Envelope<SignupResponse>>("/auth/signup", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 // ── P01: Enrollment & Admissions ──────────────────────────────────
+export type EnrollmentCase = {
+  application_id: string;
+  tenant_name: string;
+  status: string;
+  applied_date: string | null;
+  updated_at: string | null;
+  decision_date: string | null;
+  payment_confirmed: boolean;
+  student: {
+    student_id: string;
+    student_number: string;
+    name: string;
+    dob: string | null;
+    grade: string;
+    status: string;
+  };
+  parent: Array<{
+    parent_id: string;
+    name: string;
+    email: string;
+    phone: string;
+    relationship: string;
+  }>;
+  emergency_contacts: Array<{
+    name: string;
+    phone: string;
+    relationship: string;
+    medical_consent: boolean;
+  }>;
+  invoices: Array<{
+    invoice_id: string;
+    invoice_date: string;
+    due_date: string;
+    total: number;
+    balance_due: number;
+    status: string;
+  }>;
+  workflow_data: {
+    is_draft?: boolean;
+    preferred_intake?: string | null;
+    comments?: string;
+    assessment?: {
+      assessor_id?: string;
+      assessment_with?: "Principal" | "Teacher" | "Admin";
+      assessor_name?: string;
+      comments?: string;
+      scheduled_at?: string;
+      status?: string;
+      score?: number;
+      recommendation?: string;
+      notes?: string;
+    };
+    vp_recommendation?: {
+      decision?: string;
+      reason?: string;
+    };
+    emergency_contact?: {
+      name?: string;
+      phone?: string;
+      relationship?: string;
+      medical_consent?: boolean;
+    };
+    decision?: {
+      status?: string;
+      reason?: string;
+    };
+    parent_clarification_response?: string;
+  };
+  documents: Array<{
+    document_id: string;
+    doc_type: string;
+    file_path: string;
+    verified: boolean;
+  }>;
+};
+
 export async function submitNewEnrollment(payload: {
   first_name: string;
   last_name: string;
-  dob: string;
+  dob: string | null;
   grade: string;
+  preferred_intake?: string;
+  comments?: string;
+  save_as_draft?: boolean;
+  desired_start_date?: string;
   parent_name: string;
   parent_email: string;
   parent_phone: string;
@@ -95,10 +222,136 @@ export async function submitNewEnrollment(payload: {
   emergency_contact_relationship?: string;
   medical_consent?: boolean;
 }) {
-  return apiFetch<Envelope<Record<string, unknown>>>("/enrollments", {
+  return apiFetch<Envelope<EnrollmentCase>>("/enrollments", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function updateEnrollmentDraft(
+  applicationId: string,
+  payload: Partial<{
+    first_name: string;
+    last_name: string;
+    dob: string | null;
+    grade: string;
+    preferred_intake: string;
+    comments: string;
+    desired_start_date: string;
+    parent_name: string;
+    parent_email: string;
+    parent_phone: string;
+    emergency_contact_name: string;
+    emergency_contact_phone: string;
+    emergency_contact_relationship: string;
+    medical_consent: boolean;
+  }>,
+) {
+  return apiFetch<Envelope<EnrollmentCase>>(`/enrollments/${applicationId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function submitEnrollmentDraft(applicationId: string) {
+  return apiFetch<Envelope<EnrollmentCase>>(
+    `/enrollments/${applicationId}/submit`,
+    { method: "POST" },
+  );
+}
+
+export async function uploadEnrollmentFile(
+  applicationId: string,
+  docType: string,
+  file: File,
+) {
+  const payload = new FormData();
+  payload.set("doc_type", docType);
+  payload.set("file", file);
+  return apiFetch<Envelope<EnrollmentCase>>(
+    `/enrollments/${applicationId}/documents/upload`,
+    { method: "POST", body: payload },
+  );
+}
+
+export type AssessmentAssessor = {
+  id: string;
+  name: string;
+  role: "Admin" | "Principal" | "Teacher";
+  username: string;
+};
+
+export async function fetchAssessmentAssessors() {
+  return apiFetch<Envelope<AssessmentAssessor[]>>(
+    "/enrollments/assessment-assessors",
+  );
+}
+
+export async function viewEnrollmentDocument(
+  applicationId: string,
+  documentId: string,
+) {
+  const token = getCookieValue("pc_session");
+  const response = await fetch(
+    `${API_BASE}/enrollments/${applicationId}/documents/${documentId}/view`,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Unable to open document (${response.status}).`);
+  }
+  return URL.createObjectURL(await response.blob());
+}
+
+export async function assignEnrollmentAssessment(
+  applicationId: string,
+  payload: {
+    assessor_id: string;
+    scheduled_at: string;
+    assessment_with: "Principal" | "Teacher" | "Admin";
+    assessor_name: string;
+    comments: string;
+  },
+) {
+  return apiFetch<Envelope<EnrollmentCase>>(
+    `/enrollments/${applicationId}/assessment-assignment`,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
+}
+
+export async function fetchMyAssessments() {
+  return apiFetch<Envelope<EnrollmentCase[]>>("/enrollments/my-assessments");
+}
+
+export async function submitEnrollmentAssessment(
+  applicationId: string,
+  payload: {
+    score: number;
+    recommendation:
+      | "Recommend Admission"
+      | "Needs further review"
+      | "Not recommended";
+    notes: string;
+  },
+) {
+  return apiFetch<Envelope<EnrollmentCase>>(
+    `/enrollments/${applicationId}/assessment`,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
+}
+
+export async function submitEnrollmentRecommendation(
+  applicationId: string,
+  payload: {
+    recommendation: "Offered" | "Waitlisted" | "Rejected";
+    reason: string;
+  },
+) {
+  return apiFetch<Envelope<EnrollmentCase>>(
+    `/enrollments/${applicationId}/recommendation`,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
 }
 
 export async function uploadEnrollmentDocument(
@@ -135,24 +388,34 @@ export async function fetchEnrollmentStatus(applicationId: string) {
 }
 
 export async function fetchMyApplications() {
-  return apiFetch<Envelope<Array<Record<string, unknown>>>>(
-    "/enrollments/my-applications",
-  );
+  return apiFetch<Envelope<EnrollmentCase[]>>("/enrollments/my-applications");
 }
 
 export async function fetchAdmissionsPipeline() {
-  return apiFetch<Envelope<unknown[]>>("/enrollments/pipeline");
+  return apiFetch<Envelope<EnrollmentCase[]>>("/enrollments/pipeline");
 }
 
 export async function submitEnrollmentDecision(
   applicationId: string,
-  decision: "Offered" | "Waitlisted" | "Rejected" | "Accepted" | "Active",
+  decision:
+    | "Offered"
+    | "Waitlisted"
+    | "Rejected"
+    | "Accepted"
+    | "Active"
+    | "Pending_Clarification",
+  reason?: string,
+  invoiceAmount?: number,
 ) {
   return apiFetch<Envelope<Record<string, unknown>>>(
     `/enrollments/${applicationId}/decision`,
     {
       method: "PUT",
-      body: JSON.stringify({ decision }),
+      body: JSON.stringify({
+        decision,
+        reason,
+        invoice_amount: invoiceAmount,
+      }),
     },
   );
 }

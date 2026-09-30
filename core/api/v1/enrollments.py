@@ -1,20 +1,28 @@
 import uuid
+import mimetypes
+from pathlib import Path
 from uuid import UUID
 from typing import List, Dict, Any
+from django.core.files.storage import default_storage
 from django.db import models
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse
 from ninja import Router
 
-from core.models import Tenant, Application, Student, Document, EmergencyContact, AuditLog
+from core.models import Tenant, Application, Student, Document, EmergencyContact, AuditLog, PortalRoleMembership
 from core.auth.bearer import JWTAuthBearer
 from core.auth.decorators import require_roles
 from core.auth.scoping import verify_student_access, verify_application_access
 from core.schemas.base import build_response, build_error
 from core.schemas.enrollment import (
     EnrollmentCreateSchema,
+    EnrollmentDraftUpdateSchema,
     EnrollmentDecisionSchema,
+    AssessmentAssignmentSchema,
+    AssessmentSubmissionSchema,
+    EnrollmentRecommendationSchema,
     DocumentUploadSchema,
     DocumentVerifySchema,
     StudentUpdateSchema,
@@ -26,6 +34,7 @@ router = Router(tags=["Admissions (P01)"])
 
 
 @router.post("/enrollments", auth=JWTAuthBearer())
+@require_roles('Parent', 'Admin')
 def create_enrollment(request, payload: EnrollmentCreateSchema):
     """
     P01: Creates a new student inquiry/application, assigns tenant-scoped student number,
@@ -35,10 +44,25 @@ def create_enrollment(request, payload: EnrollmentCreateSchema):
     actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     actor_role = getattr(request, 'user_role', 'Parent')
 
+    if not payload.save_as_draft:
+        return JsonResponse(build_error(
+            errors=[{
+                "code": "RULE_VIOLATION",
+                "rule": "BR-01-12",
+                "message": "Create a saved draft, upload required documents, then submit the application.",
+            }],
+            tenant_id=request.tenant_id,
+            role=actor_role,
+        ), status=422)
+
     data = {
         "student_name": payload.student_name,
         "dob": payload.dob,
         "grade": payload.grade,
+        "desired_start_date": payload.desired_start_date,
+        "preferred_intake": payload.preferred_intake,
+        "comments": payload.comments,
+        "save_as_draft": payload.save_as_draft,
         "parent_name": payload.parent_name,
         "parent_relationship": payload.parent_relationship,
         "parent_email": payload.parent_email,
@@ -56,6 +80,50 @@ def create_enrollment(request, payload: EnrollmentCreateSchema):
         actor_role=actor_role
     )
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.patch("/enrollments/{uuid:application_id}", auth=JWTAuthBearer())
+@require_roles('Parent', 'Admin')
+def update_enrollment_draft(request, application_id: UUID, payload: EnrollmentDraftUpdateSchema):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    if not verify_application_access(request, application):
+        return JsonResponse(build_error(
+            errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to edit this application."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Parent'),
+        ), status=403)
+
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    bo = EnrollmentCaseBO(application=application, actor_role=getattr(request, 'user_role', 'Parent'))
+    bo.update_draft(payload.model_dump(exclude_unset=True), actor_id=actor_id)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Parent')))
+
+
+@router.post("/enrollments/{application_id}/submit", auth=JWTAuthBearer())
+@require_roles('Parent', 'Admin')
+def submit_enrollment_draft(request, application_id: UUID):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    if not verify_application_access(request, application):
+        return JsonResponse(build_error(
+            errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to submit this application."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Parent'),
+        ), status=403)
+
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    bo = EnrollmentCaseBO(application=application, actor_role=getattr(request, 'user_role', 'Parent'))
+    bo.submit_draft(actor_id=actor_id)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Parent')))
 
 
 @router.get("/enrollments/{application_id}/status", auth=JWTAuthBearer())
@@ -93,7 +161,7 @@ def get_enrollment_status(request, application_id: UUID):
 
 
 @router.put("/enrollments/{application_id}/decision", auth=JWTAuthBearer())
-@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
+@require_roles('Admin', 'Principal', 'Owner')
 def update_decision(request, application_id: UUID, payload: EnrollmentDecisionSchema):
     """
     P01: Advance admission decision (Offered, Accepted, Rejected, Waitlisted, Active).
@@ -105,6 +173,24 @@ def update_decision(request, application_id: UUID, payload: EnrollmentDecisionSc
         tenant_id=request.tenant_id,
         is_deleted=False
     )
+    document = get_object_or_404(
+        Document,
+        document_id=document_id,
+        application=application,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    if not default_storage.exists(document.file_path):
+        return JsonResponse(build_error(
+            errors=[{"code": "DOCUMENT_NOT_FOUND", "message": "The uploaded document is no longer available."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Owner'),
+        ), status=404)
+    content_type = mimetypes.guess_type(document.file_path)[0] or 'application/octet-stream'
+    response = FileResponse(default_storage.open(document.file_path, 'rb'), content_type=content_type)
+    response['Content-Disposition'] = 'inline'
+    return response
+
     actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     actor_role = getattr(request, 'user_role', 'Admin')
 
@@ -112,7 +198,9 @@ def update_decision(request, application_id: UUID, payload: EnrollmentDecisionSc
     bo.advance_status(
         new_status=payload.decision,
         actor_id=actor_id,
-        actor_role=actor_role
+        actor_role=actor_role,
+        reason=payload.reason,
+        invoice_amount=payload.invoice_amount,
     )
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
 
@@ -149,6 +237,188 @@ def upload_document(request, application_id: UUID, payload: DocumentUploadSchema
 
     bo = EnrollmentCaseBO(application=application, actor_role=getattr(request, 'user_role', 'Parent'))
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Parent')), status=201)
+
+
+@router.post("/enrollments/{application_id}/documents/upload", auth=JWTAuthBearer())
+def upload_application_file(request, application_id: UUID):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    if not verify_application_access(request, application):
+        return JsonResponse(build_error(
+            errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to upload documents to this application."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Parent'),
+        ), status=403)
+
+    uploaded_file = request.FILES.get('file')
+    doc_type = request.POST.get('doc_type', '')
+    allowed_types = {'birth_certificate', 'previous_school_records', 'photo', 'immunization', 'proof_of_address', 'other'}
+    allowed_extensions = {'.pdf', '.jpg', '.jpeg', '.png'}
+    if not uploaded_file or doc_type not in allowed_types:
+        return JsonResponse(build_error(
+            errors=[{"code": "INVALID_UPLOAD", "message": "Choose a supported document and document type."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Parent'),
+        ), status=422)
+    if uploaded_file.size > 10 * 1024 * 1024 or Path(uploaded_file.name).suffix.lower() not in allowed_extensions:
+        return JsonResponse(build_error(
+            errors=[{"code": "INVALID_UPLOAD", "message": "Documents must be PDF, JPG, or PNG files no larger than 10 MB."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Parent'),
+        ), status=422)
+
+    stored_path = default_storage.save(
+        f"admissions/{application_id}/{uuid.uuid4().hex}_{Path(uploaded_file.name).name}",
+        uploaded_file,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    EnrollmentCaseBO.upload_document(
+        application=application,
+        doc_type=doc_type,
+        file_path=stored_path,
+        actor_id=actor_id,
+    )
+    bo = EnrollmentCaseBO(application=application, actor_role=getattr(request, 'user_role', 'Parent'))
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Parent')), status=201)
+
+
+@router.get("/enrollments/{application_id}/documents/{document_id}/view", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def view_application_document(request, application_id: UUID, document_id: UUID):
+    application = get_object_or_404(
+        Application,
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    document = get_object_or_404(
+        Document,
+        document_id=document_id,
+        application=application,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    if not default_storage.exists(document.file_path):
+        return JsonResponse(build_error(
+            errors=[{"code": "DOCUMENT_NOT_FOUND", "message": "The uploaded document is no longer available."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Owner'),
+        ), status=404)
+    content_type = mimetypes.guess_type(document.file_path)[0] or 'application/octet-stream'
+    response = FileResponse(default_storage.open(document.file_path, 'rb'), content_type=content_type)
+    response['Content-Disposition'] = 'inline'
+    return response
+
+
+@router.get("/enrollments/assessment-assessors", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def list_assessment_assessors(request):
+    memberships = PortalRoleMembership.objects.filter(
+        tenant_id=request.tenant_id,
+        is_active=True,
+        role__in=['Admin', 'Principal', 'Teacher'],
+        user__is_active=True,
+    ).select_related('user').order_by('role', 'user__first_name', 'user__last_name', 'user__username')
+    data = []
+    for membership in memberships:
+        subject = uuid.uuid5(
+            uuid.NAMESPACE_URL,
+            f"school-crm:{request.tenant_id}:{membership.user_id}",
+        )
+        data.append({
+            'id': str(subject),
+            'name': membership.user.get_full_name() or membership.user.username,
+            'role': membership.role,
+            'username': membership.user.username,
+        })
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Owner')))
+
+
+@router.put("/enrollments/{application_id}/assessment-assignment", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner', 'Vice_Principal')
+def assign_assessment(request, application_id: UUID, payload: AssessmentAssignmentSchema):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    bo = EnrollmentCaseBO(application=application, actor_role=getattr(request, 'user_role', 'Admin'))
+    bo.assign_assessment(
+        payload.assessor_id,
+        payload.scheduled_at,
+        assessment_with=payload.assessment_with,
+        assessor_name=payload.assessor_name,
+        comments=payload.comments,
+        actor_id=actor_id,
+    )
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')))
+
+
+@router.get("/enrollments/my-assessments", auth=JWTAuthBearer())
+@require_roles('Teacher')
+def get_my_assessments(request):
+    user_id = str(getattr(request, 'user_id', '') or '')
+    applications = Application.objects.filter(
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+        workflow_data__assessment__assessor_id=user_id,
+    ).select_related('student', 'tenant').order_by('workflow_data__assessment__scheduled_at')
+    data = [EnrollmentCaseBO(application=app, actor_role='Teacher').to_dict() for app in applications]
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role='Teacher'), status=200)
+
+
+@router.put("/enrollments/{application_id}/assessment", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Admin')
+def submit_assessment(request, application_id: UUID, payload: AssessmentSubmissionSchema):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    assessment = (application.workflow_data or {}).get('assessment', {})
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    if getattr(request, 'user_role', None) == 'Teacher' and (
+        not actor_id or assessment.get('assessor_id') != str(actor_id)
+    ):
+        return JsonResponse(build_error(
+            errors=[{"code": "ACCESS_DENIED", "message": "Only the assigned teacher can submit this assessment."}],
+            tenant_id=request.tenant_id,
+            role='Teacher',
+        ), status=403)
+
+    bo = EnrollmentCaseBO(application=application, actor_role=getattr(request, 'user_role', 'Admin'))
+    bo.submit_assessment(payload.model_dump(), actor_id=actor_id)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')))
+
+
+@router.put("/enrollments/{application_id}/recommendation", auth=JWTAuthBearer())
+@require_roles('Vice_Principal')
+def recommend_enrollment_decision(request, application_id: UUID, payload: EnrollmentRecommendationSchema):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    assessment = (application.workflow_data or {}).get('assessment', {})
+    if assessment.get('status') != 'Completed':
+        return JsonResponse(build_error(
+            errors=[{"code": "WORKFLOW_NOT_READY", "message": "An assessment must be completed before making a recommendation."}],
+            tenant_id=request.tenant_id,
+            role='Vice_Principal',
+        ), status=409)
+
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    bo = EnrollmentCaseBO(application=application, actor_role='Vice_Principal')
+    bo.save_recommendation(payload.recommendation, payload.reason, actor_id=actor_id)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role='Vice_Principal'))
 
 
 @router.put("/enrollments/{application_id}/documents/{document_id}/verify", auth=JWTAuthBearer())
@@ -315,10 +585,7 @@ def get_student_queryset(request):
         if user_email:
             filter_q |= models.Q(parents__email__iexact=user_email)
 
-        parent_qs = base_qs.filter(filter_q).distinct()
-        if parent_qs.exists():
-            return parent_qs
-        return base_qs
+        return base_qs.filter(filter_q).distinct()
 
     if role in ('Board', 'Board_Member', 'Trustee', 'Vendor'):
         return base_qs.none()

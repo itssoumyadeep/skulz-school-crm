@@ -73,14 +73,18 @@ export function AdminConsole() {
         parent_name: "Guardian " + (names[1] || ""),
         parent_email: newStudent.email,
         parent_phone: "555-0199",
+        save_as_draft: true,
       });
       setSubmitNotice(
         `Student '${newStudent.name}' enrolled into admissions pipeline.`,
       );
       setNewStudent({ name: "", grade: "", email: "", dob: "2018-05-15" });
-    } catch {
-      setSubmitNotice(`Student '${newStudent.name}' registered.`);
-      setNewStudent({ name: "", grade: "", email: "", dob: "2018-05-15" });
+    } catch (error: unknown) {
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? String(error.message)
+          : "Unable to create the admissions draft.";
+      setSubmitNotice(message);
     } finally {
       setLoading(false);
     }

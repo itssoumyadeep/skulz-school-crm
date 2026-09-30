@@ -9,7 +9,7 @@ export default function PrincipalPage() {
       subtitle="Academic health, staff attendance, admission pipelines, and school scheduling"
       role="principal"
     >
-      <PrincipalBoard />
+      <PrincipalBoard section="dashboard" />
       <div className="mt-6">
         <StudentWidget role="principal" />
       </div>

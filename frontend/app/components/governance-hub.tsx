@@ -284,7 +284,7 @@ export function GovernanceHub({ mode }: GovernanceHubProps) {
           </SectionCard>
         </div>
 
-        <div id="add-school" className="scroll-mt-20 lg:col-span-4">
+        <div id="school-form" className="scroll-mt-20 lg:col-span-4">
           <ActionCard
             title="Add New School"
             onSubmit={handleAddSchool}

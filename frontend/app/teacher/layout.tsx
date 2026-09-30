@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { PortalAppLayout } from "../components/portal-app-layout";
 import { TeacherWorkbench } from "../components/teacher-workbench";
+import { AdmissionsWorkflow } from "../components/admissions-workflow";
 
 export default function TeacherLayout({
   children,
@@ -11,7 +12,14 @@ export default function TeacherLayout({
 }) {
   const pathname = usePathname();
   const page =
-    pathname === "/teacher" ? <TeacherWorkbench embedded /> : children;
+    pathname === "/teacher" ? (
+      <>
+        <TeacherWorkbench embedded />
+        <AdmissionsWorkflow role="teacher" />
+      </>
+    ) : (
+      children
+    );
 
   return (
     <PortalAppLayout role="teacher" sidebarTheme="dark">

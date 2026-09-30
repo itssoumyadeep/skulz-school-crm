@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -36,6 +37,50 @@ class TenantScopedModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class PortalRoleMembership(models.Model):
+    ROLE_CHOICES = [
+        ('Admin', 'Admin'),
+        ('Principal', 'Principal'),
+        ('Vice_Principal', 'Vice Principal'),
+        ('Teacher', 'Teacher'),
+        ('CareGiver', 'Caregiver'),
+        ('Parent', 'Parent'),
+        ('Vendor', 'Vendor'),
+        ('Owner', 'Owner'),
+        ('Board', 'Board'),
+        ('Trustee', 'Trustee'),
+        ('Staff', 'Staff'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='portal_memberships',
+    )
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.CASCADE,
+        related_name='portal_memberships',
+    )
+    group = models.ForeignKey(
+        'auth.Group',
+        on_delete=models.CASCADE,
+        related_name='portal_memberships',
+    )
+    role = models.CharField(max_length=32, choices=ROLE_CHOICES)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'core_portal_role_membership'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'tenant'],
+                name='uq_portal_role_membership_user_tenant',
+            )
+        ]
 
 
 class TenantSequence(TenantScopedModel):
@@ -90,7 +135,7 @@ class Student(TenantScopedModel):
     student_number = models.CharField(max_length=50, db_index=True)
     class_id = models.UUIDField(null=True, blank=True)
     name = models.CharField(max_length=255)
-    dob = models.DateField()
+    dob = models.DateField(null=True, blank=True)
     grade = models.CharField(max_length=50)
     section = models.CharField(max_length=50, blank=True, default='A')
     class_teacher = models.CharField(max_length=255, blank=True, default='')
@@ -137,6 +182,7 @@ class Application(TenantScopedModel):
         default='Pending',
         choices=[
             ('Pending', 'Pending'),
+            ('Pending_Clarification', 'Pending Clarification'),
             ('Under_Review', 'Under Review'),
             ('Offered', 'Offered'),
             ('Accepted', 'Accepted'),
@@ -150,13 +196,14 @@ class Application(TenantScopedModel):
     decided_by = models.UUIDField(null=True, blank=True)
     payment_confirmed = models.BooleanField(default=False)
     notification_dispatched = models.BooleanField(default=False)
+    workflow_data = models.JSONField(default=dict, blank=True)
 
     class Meta:
         db_table = 'core_application'
         constraints = [
             models.CheckConstraint(
                 check=models.Q(status__in=[
-                    'Pending', 'Under_Review', 'Offered', 'Accepted', 'Rejected', 'Waitlisted', 'Active'
+                    'Pending', 'Pending_Clarification', 'Under_Review', 'Offered', 'Accepted', 'Rejected', 'Waitlisted', 'Active'
                 ]),
                 name='chk_application_status_enum'
             )

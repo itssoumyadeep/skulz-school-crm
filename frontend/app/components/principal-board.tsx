@@ -44,28 +44,18 @@ const todayAgenda = [
   },
 ];
 
-const samplePipelines = [
-  {
-    student: "Sienna Miller",
-    grade: "Kindergarten",
-    status: "Approved",
-    date: "Oct 12, 2024",
-  },
-  {
-    student: "Lucas Vance",
-    grade: "Pre-K",
-    status: "Review",
-    date: "Oct 11, 2024",
-  },
-  {
-    student: "Chloe Patel",
-    grade: "Toddler",
-    status: "Approved",
-    date: "Oct 10, 2024",
-  },
-];
+export type PrincipalBoardSection =
+  | "dashboard"
+  | "staff-attendance"
+  | "student-attendance"
+  | "announcements"
+  | "schedule";
 
-export function PrincipalBoard() {
+export function PrincipalBoard({
+  section = "dashboard",
+}: {
+  section?: PrincipalBoardSection;
+}) {
   const [announcement, setAnnouncement] = useState({
     title: "",
     audience: "",
@@ -99,6 +89,143 @@ export function PrincipalBoard() {
       setAnnouncement({ title: "", audience: "", content: "" });
     }
   };
+
+  if (section === "dashboard") {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Enrolled Students"
+          value="384"
+          trend="+2.4% vs last month"
+        />
+        <StatCard
+          label="Staff Present Today"
+          value="24 / 26"
+          trend="92% attendance"
+        />
+        <StatCard
+          label="Pending Admissions"
+          value="12"
+          trend="+15% vs last month"
+        />
+        <StatCard
+          label="Events This Week"
+          value="3"
+          trend="No change this month"
+        />
+      </div>
+    );
+  }
+
+  if (section === "staff-attendance") {
+    return (
+      <SectionCard title="Staff Attendance">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard
+            label="Present today"
+            value="24 / 26"
+            trend="92% attendance"
+          />
+          <StatCard label="On leave" value="2" trend="Across all departments" />
+          <StatCard
+            label="Coverage needed"
+            value="0"
+            trend="No open coverage gaps"
+          />
+        </div>
+      </SectionCard>
+    );
+  }
+
+  if (section === "student-attendance") {
+    return (
+      <SectionCard title="Student Attendance">
+        <MiniBarChart data={attendanceWeeklyData} />
+      </SectionCard>
+    );
+  }
+
+  if (section === "schedule") {
+    return (
+      <SectionCard title="Principal Schedule">
+        <div className="space-y-3.5 py-1">
+          {todayAgenda.map((item) => (
+            <div
+              key={`${item.time}-${item.title}`}
+              className={`border-l-4 ${item.color} py-0.5 pl-3.5`}
+            >
+              <span className="text-[11px] font-bold text-[#6E3FF3]">
+                {item.time}
+              </span>
+              <p className="mt-0.5 text-xs font-bold text-gray-900">
+                {item.title}
+              </p>
+              <p className="text-[11px] font-medium text-gray-500">
+                {item.room}
+              </p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    );
+  }
+
+  if (section === "announcements") {
+    return (
+      <ActionCard
+        title="Create Announcement"
+        onSubmit={handleCreateAnnouncement}
+        submitLabel="Submit"
+        onCancel={() =>
+          setAnnouncement({ title: "", audience: "", content: "" })
+        }
+      >
+        <div>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+            Announcement Title
+          </label>
+          <input
+            type="text"
+            value={announcement.title}
+            onChange={(event) =>
+              setAnnouncement({ ...announcement, title: event.target.value })
+            }
+            className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2 text-xs text-gray-900 focus:border-[#6E3FF3] focus:bg-white focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+            Target Audience
+          </label>
+          <select
+            value={announcement.audience}
+            onChange={(event) =>
+              setAnnouncement({ ...announcement, audience: event.target.value })
+            }
+            className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2 text-xs text-gray-900 focus:border-[#6E3FF3] focus:bg-white focus:outline-none"
+          >
+            <option value="">Select Recipient Group...</option>
+            <option value="Parents">All Parents</option>
+            <option value="Teachers">All Teaching Staff</option>
+            <option value="Grade 1">Grade 1 Parents</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+            Message Content
+          </label>
+          <textarea
+            rows={4}
+            value={announcement.content}
+            onChange={(event) =>
+              setAnnouncement({ ...announcement, content: event.target.value })
+            }
+            className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2 text-xs text-gray-900 focus:border-[#6E3FF3] focus:bg-white focus:outline-none"
+          />
+        </div>
+      </ActionCard>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -246,22 +373,49 @@ export function PrincipalBoard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {samplePipelines.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/60 transition">
-                      <td className="py-3.5 font-bold text-gray-900">
-                        {row.student}
-                      </td>
-                      <td className="py-3.5 text-gray-600 font-semibold">
-                        {row.grade}
-                      </td>
-                      <td className="py-3.5">
-                        <StatusBadge status={row.status} />
-                      </td>
-                      <td className="py-3.5 text-gray-500 font-medium">
-                        {row.date}
+                  {pipeline.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="py-5 text-center text-gray-500"
+                      >
+                        No admission applications yet.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    pipeline.map((application) => {
+                      const student = application.student as
+                        | Record<string, unknown>
+                        | undefined;
+                      const appliedDate = application.applied_date
+                        ? new Date(
+                            String(application.applied_date),
+                          ).toLocaleDateString()
+                        : "—";
+
+                      return (
+                        <tr
+                          key={String(application.application_id)}
+                          className="hover:bg-gray-50/60 transition"
+                        >
+                          <td className="py-3.5 font-bold text-gray-900">
+                            {String(student?.name ?? "Unknown student")}
+                          </td>
+                          <td className="py-3.5 text-gray-600 font-semibold">
+                            {String(student?.grade ?? "—")}
+                          </td>
+                          <td className="py-3.5">
+                            <StatusBadge
+                              status={String(application.status ?? "Unknown")}
+                            />
+                          </td>
+                          <td className="py-3.5 text-gray-500 font-medium">
+                            {appliedDate}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

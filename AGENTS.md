@@ -106,7 +106,19 @@ Important UI flow:
 - [frontend/app/components/student-widget.tsx](frontend/app/components/student-widget.tsx) is the reusable student summary widget
 - Parent-specific widget behavior is wrapped in [frontend/app/components/student-widget-parent-wrapper.tsx](frontend/app/components/student-widget-parent-wrapper.tsx)
 
-UI: use only /components/ui and /components/pc. Never hardcode colours. If a component is missing, add it to /components/pc first.
+### Mandatory frontend UI rules
+
+These rules apply to every UI change, including dashboards, portals, forms, tables, menus, dialogs, empty states, and responsive states. They take precedence over one-off visual implementations.
+
+1. Reuse the design system. Before writing UI, inspect the relevant page, `frontend/styles/tokens.css`, and existing components under `frontend/components/ui` and `frontend/components/pc`. Use those components and their established APIs. Do not create a second button, input, select, panel, status badge, modal, table, or other primitive when an equivalent already exists.
+2. Do not build a parallel component system. Do not add page-local or feature-local copies of shared UI components. If a genuinely missing reusable primitive is required, add it under `frontend/components/pc`, export it through the existing barrel, and add or update its Storybook story. Keep route-specific composition in the route or its existing feature component.
+3. Do not build interfaces from ad hoc raw HTML. Use the shared UI components for interactive or styled controls, and `frontend/components/pc/data-table` for data tables. Raw semantic elements such as `main`, `section`, `form`, headings, and descriptive text are appropriate for structure; do not hand-build styled controls or replace shared components with raw elements.
+4. Do not use static HTML documents as application UI. HTML mockups belong only in `Artefacts/` when a task explicitly requests a static mockup. Product workflows belong in the Next.js App Router and must use the existing components and API/session patterns.
+5. Never hardcode colors. Use semantic Tailwind utilities backed by the design tokens or CSS variables from `frontend/styles/tokens.css` and the existing theme files. Do not use hex, RGB/HSL literals, named-color utilities, arbitrary color values, inline color styles, or new one-off color variables. If a semantic color is missing, add a named design token first and use it consistently.
+6. Preserve the established visual language and responsive behavior. Use stable layout dimensions, accessible labels and keyboard behavior, and the existing icon library. Do not add explanatory UI copy or decorative styling that conflicts with the current product patterns.
+7. Before adding any component, search for an existing equivalent. Before finishing a UI change, run focused ESLint on changed frontend files and `npm run build` from `frontend/`; report any pre-existing lint failures separately instead of adding suppressions.
+
+For a quick reference, application code should import UI primitives from `frontend/components/ui` and shared product components from `frontend/components/pc`; design values belong in `frontend/styles/tokens.css` or the established theme files, never in page-local literals.
 
 ## Core business logic layers
 

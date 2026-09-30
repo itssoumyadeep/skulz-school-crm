@@ -1,13 +1,15 @@
 export type UserRole =
   | "admin"
   | "principal"
+  | "vice_principal"
   | "teacher"
   | "caregiver"
   | "parent"
   | "vendor"
   | "owner"
   | "board"
-  | "trustee";
+  | "trustee"
+  | "staff";
 
 export type SessionClaims = {
   sub?: string;

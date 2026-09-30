@@ -13,6 +13,7 @@ from core.business_objects.billing import (
     PaymentTransactionBO,
     FinancialStatementBO,
 )
+from core.business_objects.enrollment import EnrollmentCaseBO
 from core.models import (
     Tenant,
     Student,
@@ -162,11 +163,30 @@ def bulk_generate_invoices(request, payload: BulkInvoiceGenerateSchema):
 
 
 @router.post("/payments", auth=JWTAuthBearer())
-@require_roles('Admin', 'Principal', 'Owner')
+@require_roles('Admin', 'Principal', 'Owner', 'Parent')
 def create_payment(request, payload: PaymentCreateSchema):
     tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
     invoice = get_object_or_404(Invoice, invoice_id=payload.invoice_id, tenant=tenant, is_deleted=False)
     parent = get_object_or_404(Parent, parent_id=payload.parent_id, tenant=tenant, is_deleted=False)
+    actor_role = getattr(request, 'user_role', 'Admin')
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    if actor_role == 'Parent':
+        user_email = (getattr(request, 'user_email', None) or '').lower()
+        parent_email = (parent.email or '').lower()
+        owns_invoice = bool(
+            (user_email and user_email == parent_email)
+            or (actor_id and parent.created_by == actor_id)
+        )
+        if not verify_student_access(request, invoice.student) or parent.student_id != invoice.student_id or not owns_invoice:
+            return JsonResponse(
+                build_error(
+                    errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to pay this invoice."}],
+                    tenant_id=request.tenant_id,
+                    role=actor_role,
+                ),
+                status=403,
+            )
+
     payment = PaymentTransactionBO.record_payment(
         tenant=tenant,
         invoice=invoice,
@@ -175,7 +195,14 @@ def create_payment(request, payload: PaymentCreateSchema):
         method=payload.method,
         txn_ref=payload.txn_ref or "",
     )
-    return JsonResponse(build_response(_payment_to_dict(payment), tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')), status=201)
+    invoice.refresh_from_db()
+    EnrollmentCaseBO.confirm_paid_invoice(
+        invoice,
+        payment,
+        actor_id=actor_id,
+        actor_role=actor_role,
+    )
+    return JsonResponse(build_response(_payment_to_dict(payment), tenant_id=request.tenant_id, role=actor_role), status=201)
 
 
 @router.get("/payments/{payment_id}/receipt", auth=JWTAuthBearer())
