@@ -54,7 +54,7 @@ class Command(BaseCommand):
             username_role = role_name.lower().replace(" ", "_")
 
             for index in (1, 2):
-                username = f"{username_role}{index}"
+                username = f"{username_role}{index}_{tenant.subdomain}"
                 user, created = user_model.objects.get_or_create(
                     username=username,
                     defaults={

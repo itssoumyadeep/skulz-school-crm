@@ -291,7 +291,16 @@ export function PortalAppLayout({
         email: session?.email,
       }}
       onSignOut={() => {
-        document.cookie = "pc_session=; Path=/; Max-Age=0; SameSite=Lax";
+        const expiredCookie = "pc_session=; Path=/; Max-Age=0; SameSite=Lax";
+        document.cookie = expiredCookie;
+        if (process.env.NODE_ENV === "production") {
+          const baseDomain = (
+            process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN ?? "purplecubby.com"
+          )
+            .replace(/^\.+/, "")
+            .toLowerCase();
+          document.cookie = `${expiredCookie}; Domain=.${baseDomain}; Secure`;
+        }
         router.push("/");
       }}
     >

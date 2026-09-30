@@ -88,6 +88,7 @@ export type LoginResponse = {
   expires_in: number;
   role: string;
   tenant_id: string;
+  tenant_code: string;
   user: {
     id: string;
     username: string;
@@ -99,7 +100,6 @@ export type LoginResponse = {
 export async function loginWithPassword(payload: {
   username: string;
   password: string;
-  tenant: string;
 }) {
   return apiFetch<Envelope<LoginResponse>>("/auth/login", {
     method: "POST",

@@ -1,3 +1,4 @@
+import hashlib
 import time
 import uuid
 from uuid import UUID
@@ -12,10 +13,23 @@ from jose import jwt
 from ninja import Router
 
 from core.models import PortalRoleMembership, Student, Tenant
-from core.schemas.auth import LoginSchema, SignupSchema
+from core.business_objects.trial import TrialSignupBO, TrialSignupError
+from core.schemas.auth import LoginSchema, SignupSchema, TrialSignupSchema
 from core.schemas.base import build_error, build_response
 
 router = Router(tags=["Authentication"])
+
+TRIAL_ROLE_CLAIMS = {
+    "Admin": "admin",
+    "Teacher": "teacher",
+    "Owner": "owner",
+}
+
+TRIAL_ROLE_PORTALS = {
+    "Admin": "/admin",
+    "Teacher": "/teacher",
+    "Owner": "/governance/owner",
+}
 
 ROLE_CLAIMS = {
     "Admin": "admin",
@@ -31,6 +45,22 @@ ROLE_CLAIMS = {
     "Staff": "staff",
 }
 
+GROUP_ROLE_MAP = {
+    "Admin": "Admin",
+    "Principal": "Principal",
+    "Vice Principal": "Vice_Principal",
+    "Vice_Principal": "Vice_Principal",
+    "Teacher": "Teacher",
+    "Caregiver": "CareGiver",
+    "CareGiver": "CareGiver",
+    "Parent": "Parent",
+    "Vendor": "Vendor",
+    "Owner": "Owner",
+    "Board": "Board",
+    "Trustee": "Trustee",
+    "Staff": "Staff",
+}
+
 
 def _error(request, status: int, code: str, message: str):
     return JsonResponse(
@@ -44,27 +74,19 @@ def _error(request, status: int, code: str, message: str):
 
 @router.post("/auth/login")
 def login(request, payload: LoginSchema):
-    try:
-        tenant_uuid = UUID(payload.tenant)
-    except (ValueError, TypeError):
-        tenant_uuid = None
+    username = payload.username.strip()
+    username_prefix, separator, tenant_code = username.rpartition("_")
+    if not separator or not username_prefix or not tenant_code:
+        return _error(
+            request,
+            400,
+            "SCHOOL_CODE_REQUIRED",
+            "Enter your username followed by an underscore and your school code.",
+        )
 
-    tenant_query = Tenant.objects.filter(is_deleted=False) if hasattr(Tenant, "is_deleted") else Tenant.objects.all()
-    tenant = (
-        tenant_query.filter(tenant_id=tenant_uuid).first()
-        if tenant_uuid
-        else tenant_query.filter(subdomain__iexact=payload.tenant.strip()).first()
-    )
+    tenant = Tenant.objects.filter(subdomain__iexact=tenant_code).first()
     if tenant is None:
-        return _error(request, 401, "AUTH_INVALID", "Invalid username, password, or school.")
-
-    user = authenticate(
-        request,
-        username=payload.username.strip(),
-        password=payload.password,
-    )
-    if user is None or not user.is_active:
-        return _error(request, 401, "AUTH_INVALID", "Invalid username, password, or school.")
+        return _error(request, 401, "AUTH_INVALID", "Invalid username or password.")
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -72,13 +94,47 @@ def login(request, payload: LoginSchema):
             [str(tenant.tenant_id)],
         )
 
+    user_model = get_user_model()
+    user = user_model.objects.filter(username__iexact=username).first()
+    if user is None:
+        return _error(request, 401, "AUTH_INVALID", "Invalid username or password.")
+
+    user = authenticate(
+        request,
+        username=user.username,
+        password=payload.password,
+    )
+    if user is None or not user.is_active:
+        return _error(request, 401, "AUTH_INVALID", "Invalid username or password.")
+
     membership = PortalRoleMembership.objects.select_related("group").filter(
         user=user,
         tenant=tenant,
-        is_active=True,
     ).first()
+    if membership is not None and not membership.is_active:
+        return _error(request, 403, "ROLE_MEMBERSHIP_REQUIRED", "This user has no active school role.")
+
+    role_groups = list(
+        user.groups.filter(name__in=GROUP_ROLE_MAP.keys()).order_by("name")
+    )
+    if len(role_groups) == 1:
+        group = role_groups[0]
+        role_name = GROUP_ROLE_MAP[group.name]
+        if membership is None:
+            membership = PortalRoleMembership.objects.create(
+                user=user,
+                tenant=tenant,
+                group=group,
+                role=role_name,
+                is_active=True,
+            )
+        elif membership.role != role_name or membership.group_id != group.pk:
+            membership.group = group
+            membership.role = role_name
+            membership.save(update_fields=["group", "role"])
+
     if membership is None or membership.role not in ROLE_CLAIMS:
-        return _error(request, 403, "ROLE_MEMBERSHIP_REQUIRED", "This user has no active role in the selected school.")
+        return _error(request, 403, "ROLE_MEMBERSHIP_REQUIRED", "This user has no active school role.")
 
     role_claim = ROLE_CLAIMS[membership.role]
     subject = uuid.uuid5(
@@ -116,6 +172,7 @@ def login(request, payload: LoginSchema):
                 "expires_in": 60 * 60 * 8,
                 "role": role_claim,
                 "tenant_id": str(tenant.tenant_id),
+                "tenant_code": tenant.subdomain,
                 "user": {
                     "id": str(user.pk),
                     "username": user.username,
@@ -127,6 +184,43 @@ def login(request, payload: LoginSchema):
             role=role_claim,
         ),
         status=200,
+    )
+
+
+@router.post("/auth/trial-signup")
+def trial_signup(request, payload: TrialSignupSchema):
+    try:
+        tenant, user, membership = TrialSignupBO.create_trial(
+            daycare_name=payload.daycare_name,
+            email=str(payload.email),
+            role=payload.role,
+            password=payload.password,
+        )
+    except TrialSignupError as exc:
+        return _error(request, exc.status, exc.code, exc.message)
+
+    role_claim = TRIAL_ROLE_CLAIMS[membership.role]
+    return JsonResponse(
+        build_response(
+            data={
+                "status": "trial_started",
+                "tenant": {
+                    "id": str(tenant.tenant_id),
+                    "name": tenant.name,
+                    "code": tenant.subdomain,
+                },
+                "user": {
+                    "id": str(user.pk),
+                    "username": user.username,
+                    "email": user.email,
+                    "role": membership.role,
+                },
+                "portal_path": TRIAL_ROLE_PORTALS[membership.role],
+            },
+            tenant_id=tenant.tenant_id,
+            role=role_claim,
+        ),
+        status=201,
     )
 
 
@@ -154,9 +248,16 @@ def signup(request, payload: SignupSchema):
 
     user_model = get_user_model()
     email = str(payload.email).strip().lower()
+    username_suffix = f"_{tenant.subdomain}"
+    username_prefix = email
+    if len(username_prefix) + len(username_suffix) > 150:
+        digest = hashlib.sha256(email.encode()).hexdigest()[:8]
+        max_prefix_length = 150 - len(username_suffix) - len(digest) - 1
+        username_prefix = f"{email[:max_prefix_length]}_{digest}"
+    username = f"{username_prefix}{username_suffix}"
     first_name, _, last_name = payload.full_name.partition(" ")
     candidate = user_model(
-        username=email,
+        username=username,
         email=email,
         first_name=first_name,
         last_name=last_name,
@@ -175,7 +276,7 @@ def signup(request, payload: SignupSchema):
 
     try:
         with transaction.atomic():
-            if user_model.objects.filter(username__iexact=email).exists() or user_model.objects.filter(email__iexact=email).exists():
+            if user_model.objects.filter(username__iexact=username).exists() or user_model.objects.filter(email__iexact=email).exists():
                 return JsonResponse(
                     build_error(
                         errors=[{"code": "ACCOUNT_EXISTS", "field": "email", "message": "An account with this email already exists."}],
@@ -186,7 +287,7 @@ def signup(request, payload: SignupSchema):
                 )
 
             user = user_model.objects.create_user(
-                username=email,
+                username=username,
                 email=email,
                 password=payload.password,
                 first_name=first_name,
@@ -194,6 +295,7 @@ def signup(request, payload: SignupSchema):
                 is_active=False,
             )
             parent_group, _ = Group.objects.get_or_create(name="Parent")
+            user.groups.add(parent_group)
             with connection.cursor() as cursor:
                 cursor.execute(
                     "SELECT set_config('app.current_tenant_id', %s, FALSE)",
