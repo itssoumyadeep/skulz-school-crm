@@ -89,10 +89,10 @@ class FeeAccountBO(BaseBusinessObject):
                 field='tenant'
             )
 
-        if self.student and self.student.status not in {'Active', 'Offered', 'Accepted'}:
+        if self.student and self.student.status != 'Active':
             return RuleViolation(
                 rule_id='BR-02-01',
-            message='Invoices can only be generated for Active, Offered, or Accepted students.',
+                message='Invoices can only be generated for Active students.',
                 field='student'
             )
         return None
@@ -238,7 +238,7 @@ class FeeAccountBO(BaseBusinessObject):
         students = Student.objects.filter(
             tenant=tenant,
             grade=fee_structure.grade,
-            status__in=['Active', 'Offered'],
+            status='Active',
             is_deleted=False
         ).prefetch_related('parents')
 

@@ -113,7 +113,7 @@ These rules apply to every UI change, including dashboards, portals, forms, tabl
 1. Reuse the design system. Before writing UI, inspect the relevant page, `frontend/styles/tokens.css`, and existing components under `frontend/components/ui` and `frontend/components/pc`. Use those components and their established APIs. Do not create a second button, input, select, panel, status badge, modal, table, or other primitive when an equivalent already exists.
 2. Do not build a parallel component system. Do not add page-local or feature-local copies of shared UI components. If a genuinely missing reusable primitive is required, add it under `frontend/components/pc`, export it through the existing barrel, and add or update its Storybook story. Keep route-specific composition in the route or its existing feature component.
 3. Do not build interfaces from ad hoc raw HTML. Use the shared UI components for interactive or styled controls, and `frontend/components/pc/data-table` for data tables. Raw semantic elements such as `main`, `section`, `form`, headings, and descriptive text are appropriate for structure; do not hand-build styled controls or replace shared components with raw elements.
-4. Do not use static HTML documents as application UI. HTML mockups belong only in `Artefacts/` when a task explicitly requests a static mockup. Product workflows belong in the Next.js App Router and must use the existing components and API/session patterns.
+4. Do not use static HTML documents as application UI. HTML mockups belong only in `Artefacts/UX Designs` folder. when a task explicitly requests a static mockup, create accordingly using component designed already as mentioned above. Product workflows belong in the Next.js App Router and must use the existing components and API/session patterns.
 5. Never hardcode colors. Use semantic Tailwind utilities backed by the design tokens or CSS variables from `frontend/styles/tokens.css` and the existing theme files. Do not use hex, RGB/HSL literals, named-color utilities, arbitrary color values, inline color styles, or new one-off color variables. If a semantic color is missing, add a named design token first and use it consistently.
 6. Preserve the established visual language and responsive behavior. Use stable layout dimensions, accessible labels and keyboard behavior, and the existing icon library. Do not add explanatory UI copy or decorative styling that conflicts with the current product patterns.
 7. Before adding any component, search for an existing equivalent. Before finishing a UI change, run focused ESLint on changed frontend files and `npm run build` from `frontend/`; report any pre-existing lint failures separately instead of adding suppressions.
@@ -176,7 +176,7 @@ These are the highest-signal files for onboarding and feature work:
 When implementing new features:
 
 1. Identify the correct domain and router file.
-2. Determine whether the change belongs in `core/models.py`, `core/business_objects`, or `core/schemas`.
+2. Determine whether the change belongs in `core/models.py`, `core/business_objects`, or `core/schemas`. If there's a confusion ask.
 3. Add/adjust the route only after the BO and schema logic are in place.
 4. Keep tenant and role checks explicit.
 5. Cover the behavior with tests in `tests/` when the change affects backend domain logic.

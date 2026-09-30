@@ -387,6 +387,13 @@ class EnrollmentCaseBO(BaseBusinessObject):
             and self.target_status in final_decisions
             and self.target_status != self.application.status
         )
+        is_parent_accepting_offer = (
+            self.actor_role == 'Parent'
+            and self.application.status == 'Offered'
+            and self.target_status == 'Accepted'
+        )
+        if is_parent_accepting_offer:
+            return None
         if not is_decision_change:
             return None
 
@@ -448,7 +455,7 @@ class EnrollmentCaseBO(BaseBusinessObject):
         actor_role: str = 'Admin'
     ) -> 'EnrollmentCaseBO':
         """
-        Creates Student (Inquiry/Applied), Parent, EmergencyContact (if provided),
+        Creates an Inactive Student, Parent, EmergencyContact (if provided),
         Application, and assigns a tenant-scoped student number.
         """
         save_as_draft = data.get('save_as_draft', True)
@@ -463,7 +470,7 @@ class EnrollmentCaseBO(BaseBusinessObject):
                 name=data['student_name'],
                 dob=data['dob'],
                 grade=data['grade'],
-                status='Inquiry' if save_as_draft else 'Applied',
+                status='Inactive',
                 created_by=actor_id
             )
 
@@ -666,9 +673,7 @@ class EnrollmentCaseBO(BaseBusinessObject):
             workflow_data['parent_clarification_response'] = workflow_data.get('comments', '')
         self.application.workflow_data = workflow_data
         self.application.status = 'Under_Review'
-        self.student.status = 'Applied'
         with transaction.atomic():
-            self.student.save(update_fields=['status', 'updated_at'])
             self.application.save(update_fields=['workflow_data', 'status', 'updated_at'])
             AuditLog.objects.create(
                 tenant=self.application.tenant,
@@ -689,15 +694,17 @@ class EnrollmentCaseBO(BaseBusinessObject):
         actor_id: Optional[uuid.UUID] = None,
     ) -> None:
         workflow_data = dict(self.application.workflow_data or {})
-        workflow_data['assessment'] = {
+        assessment = {
             **workflow_data.get('assessment', {}),
             'assessor_id': str(assessor_id),
-            'scheduled_at': scheduled_at.isoformat(),
             'assessment_with': assessment_with,
             'assessor_name': assessor_name,
             'comments': comments,
-            'status': 'Scheduled',
+            'status': 'Scheduled' if scheduled_at else 'Assigned',
         }
+        if scheduled_at:
+            assessment['scheduled_at'] = scheduled_at.isoformat()
+        workflow_data['assessment'] = assessment
         self.application.workflow_data = workflow_data
         self.application.status = 'Under_Review'
         self.application.save(update_fields=['workflow_data', 'status', 'updated_at'])
@@ -908,20 +915,28 @@ class EnrollmentCaseBO(BaseBusinessObject):
                 'decided_by': str(actor_id) if actor_id else None,
                 'decided_at': self.application.decision_date.isoformat(),
             }
+            if new_status == 'Offered':
+                if invoice_amount is None:
+                    workflow_data.pop('offer_invoice_amount', None)
+                else:
+                    workflow_data['offer_invoice_amount'] = str(invoice_amount)
             self.application.workflow_data = workflow_data
 
             if new_status == 'Offered':
-                self.student.status = 'Offered'
+                self.student.status = 'Inactive'
                 self.student.save(update_fields=['status', 'updated_at'])
             elif new_status == 'Accepted':
-                self.student.status = 'Accepted'
+                self.student.status = 'Active'
                 self.student.save(update_fields=['status', 'updated_at'])
             elif new_status == 'Active':
                 self.student.status = 'Active'
                 self.student.enrolled_date = timezone.now().date()
                 self.student.save(update_fields=['status', 'enrolled_date', 'updated_at'])
-            elif new_status in ['Rejected', 'Waitlisted']:
-                self.student.status = new_status
+            elif new_status == 'Waitlisted':
+                self.student.status = 'Waitlisted'
+                self.student.save(update_fields=['status', 'updated_at'])
+            elif new_status == 'Rejected':
+                self.student.status = 'Inactive'
                 self.student.save(update_fields=['status', 'updated_at'])
 
             self.application.save(update_fields=[
@@ -953,6 +968,54 @@ class EnrollmentCaseBO(BaseBusinessObject):
                     "owner_override": self.actor_role == 'Owner' and new_status in {'Accepted', 'Rejected'},
                 }
             )
+
+    def accept_offer(
+        self,
+        photo_file_path: str,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> None:
+        if self.application.status != 'Offered':
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-15',
+                    message="Only an offered application can be accepted by a parent.",
+                    field='status',
+                )
+            ])
+        if not photo_file_path:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-16',
+                    message="A student photograph is required to accept the offer.",
+                    field='photo',
+                )
+            ])
+
+        offer_invoice_amount = (self.application.workflow_data or {}).get(
+            'offer_invoice_amount'
+        )
+        with transaction.atomic():
+            self.upload_document(
+                application=self.application,
+                doc_type='photo',
+                file_path=photo_file_path,
+                actor_id=actor_id,
+            )
+            self.advance_status(
+                new_status='Accepted',
+                actor_id=actor_id,
+                actor_role='Parent',
+                reason='Offer accepted by parent.',
+            )
+            if not self.application.workflow_data.get('acceptance_invoice_id'):
+                self._create_acceptance_invoice(
+                    actor_id=actor_id,
+                    invoice_amount=(
+                        Decimal(str(offer_invoice_amount))
+                        if offer_invoice_amount is not None
+                        else None
+                    ),
+                )
 
     @classmethod
     def upload_document(

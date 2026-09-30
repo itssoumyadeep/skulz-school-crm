@@ -27,10 +27,31 @@ from core.schemas.enrollment import (
     DocumentVerifySchema,
     StudentUpdateSchema,
 )
+from core.business_objects.analytics import ParentDashboardBO
 from core.business_objects.enrollment import StudentProfileBO, EnrollmentCaseBO
 from core.business_objects.base import BusinessRuleError
 
 router = Router(tags=["Admissions (P01)"])
+
+
+@router.get("/parent/dashboard", auth=JWTAuthBearer())
+@require_roles('Parent')
+def get_parent_dashboard(request):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    summary = ParentDashboardBO(
+        tenant=tenant,
+        user_id=getattr(request, "user_id", None),
+        user_email=getattr(request, "user_email", None),
+        linked_student_ids=getattr(request, "linked_student_ids", []),
+    ).to_dict()
+    return JsonResponse(
+        build_response(
+            data=summary,
+            tenant_id=request.tenant_id,
+            role=getattr(request, "user_role", "Parent"),
+        ),
+        status=200,
+    )
 
 
 @router.post("/enrollments", auth=JWTAuthBearer())
@@ -65,7 +86,7 @@ def create_enrollment(request, payload: EnrollmentCreateSchema):
         "save_as_draft": payload.save_as_draft,
         "parent_name": payload.parent_name,
         "parent_relationship": payload.parent_relationship,
-        "parent_email": payload.parent_email,
+        "parent_email": payload.parent_email or getattr(request, 'user_email', '') or '',
         "parent_phone": payload.parent_phone,
         "emergency_contact_name": payload.emergency_contact_name,
         "emergency_contact_phone": payload.emergency_contact_phone,
@@ -126,6 +147,53 @@ def submit_enrollment_draft(request, application_id: UUID):
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Parent')))
 
 
+@router.post("/enrollments/{uuid:application_id}/accept-offer", auth=JWTAuthBearer())
+@require_roles('Parent')
+def accept_enrollment_offer(request, application_id: UUID):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    if not verify_application_access(request, application):
+        return JsonResponse(build_error(
+            errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to accept this offer."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Parent'),
+        ), status=403)
+
+    photo = request.FILES.get('photo')
+    allowed_extensions = {'.jpg', '.jpeg', '.png'}
+    if (
+        not photo
+        or photo.size > 10 * 1024 * 1024
+        or Path(photo.name).suffix.lower() not in allowed_extensions
+    ):
+        return JsonResponse(build_error(
+            errors=[{"code": "INVALID_UPLOAD", "message": "Upload a JPG or PNG photograph no larger than 10 MB."}],
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Parent'),
+        ), status=422)
+
+    stored_path = default_storage.save(
+        f"admissions/{application_id}/{uuid.uuid4().hex}_{Path(photo.name).name}",
+        photo,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    bo = EnrollmentCaseBO(application=application, actor_role='Parent')
+    try:
+        bo.accept_offer(photo_file_path=stored_path, actor_id=actor_id)
+    except Exception:
+        default_storage.delete(stored_path)
+        raise
+
+    return JsonResponse(
+        bo.to_response(tenant_id=request.tenant_id, role='Parent'),
+        status=200,
+    )
+
+
 @router.get("/enrollments/{application_id}/status", auth=JWTAuthBearer())
 def get_enrollment_status(request, application_id: UUID):
     """
@@ -173,24 +241,6 @@ def update_decision(request, application_id: UUID, payload: EnrollmentDecisionSc
         tenant_id=request.tenant_id,
         is_deleted=False
     )
-    document = get_object_or_404(
-        Document,
-        document_id=document_id,
-        application=application,
-        tenant_id=request.tenant_id,
-        is_deleted=False,
-    )
-    if not default_storage.exists(document.file_path):
-        return JsonResponse(build_error(
-            errors=[{"code": "DOCUMENT_NOT_FOUND", "message": "The uploaded document is no longer available."}],
-            tenant_id=request.tenant_id,
-            role=getattr(request, 'user_role', 'Owner'),
-        ), status=404)
-    content_type = mimetypes.guess_type(document.file_path)[0] or 'application/octet-stream'
-    response = FileResponse(default_storage.open(document.file_path, 'rb'), content_type=content_type)
-    response['Content-Disposition'] = 'inline'
-    return response
-
     actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     actor_role = getattr(request, 'user_role', 'Admin')
 

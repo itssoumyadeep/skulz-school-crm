@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P03 | Student Attendance UX Mockup</title>
+  <link rel="stylesheet" href="../../../frontend/styles/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+      font-size: 14px;
+    }
+
+    button, input, select { font: inherit; }
+
+    .app-shell {
+      display: grid;
+      min-height: 100vh;
+      grid-template-columns: 232px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 18px 12px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 8px 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: var(--app-radius-md);
+      background: var(--primary);
+      color: var(--primary-foreground);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .brand-name { font-size: 13px; font-weight: 700; }
+    .brand-subtitle { margin-top: 2px; color: var(--muted); font-size: 11px; }
+
+    .nav-label {
+      padding: 12px 10px 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .nav-link {
+      display: flex;
+      min-height: 38px;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--app-radius-md);
+      color: var(--muted);
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .nav-link.active {
+      background: var(--primary-50);
+      color: var(--primary-800);
+      font-weight: 650;
+    }
+
+    .nav-glyph {
+      display: grid;
+      width: 20px;
+      height: 20px;
+      place-items: center;
+      border: 1px solid currentColor;
+      border-radius: 5px;
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 14px 10px 4px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .workspace { min-width: 0; }
+
+    .topbar {
+      display: flex;
+      min-height: 60px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .breadcrumb { color: var(--muted); font-size: 12px; }
+    .breadcrumb strong { color: var(--foreground); font-weight: 600; }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .preview-label {
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--foreground);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .avatar {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--secondary);
+      color: var(--accent-foreground);
+      font-size: 11px;
+    }
+
+    main {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .page-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.2;
+      font-weight: 680;
+    }
+
+    .page-heading p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .scope-pill {
+      display: inline-flex;
+      min-height: 28px;
+      align-items: center;
+      padding: 4px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--app-radius-md);
+      background: var(--surface);
+    }
+
+    .summary-item {
+      min-width: 0;
+      padding: 13px 16px;
+      border-right: 1px solid var(--border);
+    }
+
+    .summary-item:last-child { border-right: 0; }
+    .summary-label { color: var(--muted); font-size: 11px; }
+    .summary-value { margin-top: 4px; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .summary-value.present { color: var(--success); }
+    .summary-value.absent { color: var(--danger); }
+    .summary-value.leave { color: var(--warning); }
+
+    .roster-panel {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--app-radius-md);
+      background: var(--surface);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bulk-actions, .filters {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .filters { justify-content: flex-end; }
+
+    .filter-field {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .filter-field input, .filter-field select, .search-input, .row-status {
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--app-radius-md);
+      background: var(--surface);
+      color: var(--foreground);
+    }
+
+    .filter-field input, .filter-field select { padding: 0 10px; }
+    .filter-field input { width: 158px; }
+    .filter-field select { min-width: 142px; }
+
+    .button {
+      display: inline-flex;
+      min-height: 36px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--app-radius-md);
+      background: var(--surface);
+      color: var(--foreground);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .button:hover { background: var(--background); }
+    .button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    .button-present { border-color: color-mix(in srgb, var(--success) 35%, var(--border)); color: var(--success); }
+    .button-absent { border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); color: var(--danger); }
+    .button-primary { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+    .button-primary:hover { background: var(--primary-700); }
+
+    .roster-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .roster-heading h2 { margin: 0; font-size: 14px; font-weight: 650; }
+    .roster-heading p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .roster-meta { color: var(--muted); font-size: 11px; white-space: nowrap; }
+
+    .search-row { padding: 12px 16px 0; }
+    .search-input { width: min(320px, 100%); padding: 0 11px; }
+
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; min-width: 730px; border-collapse: collapse; text-align: left; }
+    th {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--background);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    td { padding: 11px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: color-mix(in srgb, var(--background) 65%, var(--surface)); }
+
+    .student-cell { display: flex; min-width: 190px; align-items: center; gap: 10px; }
+    .student-avatar {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .student-name { font-size: 12px; font-weight: 650; }
+    .student-number { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .grade-cell { color: var(--foreground); font-size: 12px; }
+    .row-status { width: 148px; padding: 0 9px; font-size: 12px; cursor: pointer; }
+    .row-status[data-status="Present"] { border-color: color-mix(in srgb, var(--success) 42%, var(--border)); color: var(--success); }
+    .row-status[data-status="Absent"] { border-color: color-mix(in srgb, var(--danger) 42%, var(--border)); color: var(--danger); }
+    .row-status[data-status="On Leave"] { border-color: color-mix(in srgb, var(--warning) 50%, var(--border)); color: var(--warning); }
+    .row-status[data-status="Holiday"] { border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); color: var(--primary-800); }
+
+    .table-footer {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .footer-actions { display: flex; align-items: center; gap: 8px; }
+    .notice { min-height: 18px; color: var(--success); font-size: 11px; }
+    .empty-row { padding: 26px; color: var(--muted); text-align: center; }
+
+    @media (max-width: 960px) {
+      .app-shell { grid-template-columns: 190px minmax(0, 1fr); }
+      .sidebar { padding-inline: 9px; }
+      .topbar { padding-inline: 18px; }
+      main { padding: 22px 18px; }
+      .toolbar { align-items: stretch; flex-direction: column-reverse; }
+      .filters { justify-content: flex-start; }
+    }
+
+    @media (max-width: 680px) {
+      .app-shell { display: block; }
+      .sidebar { display: none; }
+      .topbar { min-height: 52px; padding: 8px 14px; }
+      main { padding: 18px 12px 28px; }
+      .page-heading { margin-bottom: 18px; }
+      h1 { font-size: 22px; }
+      .page-heading p { max-width: 32ch; line-height: 1.45; }
+      .scope-pill { display: none; }
+      .summary-item { padding: 11px 9px; }
+      .summary-value { font-size: 17px; }
+      .summary-label { font-size: 10px; }
+      .toolbar { padding: 12px; }
+      .bulk-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .bulk-actions .button { width: 100%; padding-inline: 7px; }
+      .filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .filter-field input, .filter-field select { width: 100%; min-width: 0; }
+      .roster-heading { align-items: flex-start; }
+      .table-footer { align-items: flex-start; flex-direction: column; }
+      .footer-actions { width: 100%; justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">PC</div>
+        <div>
+          <div class="brand-name">Purple Cubby</div>
+          <div class="brand-subtitle">School CRM</div>
+        </div>
+      </div>
+      <div class="nav-label">School</div>
+      <a class="nav-link" href="#"><span class="nav-glyph" aria-hidden="true">D</span> Dashboard</a>
+      <a class="nav-link" href="#"><span class="nav-glyph" aria-hidden="true">C</span> Classes</a>
+      <a class="nav-link active" href="#attendance" aria-current="page"><span class="nav-glyph" aria-hidden="true">A</span> Student Attendance</a>
+      <a class="nav-link" href="#"><span class="nav-glyph" aria-hidden="true">R</span> Reports</a>
+      <div class="sidebar-bottom">Shared roster workspace</div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="breadcrumb">School operations <span aria-hidden="true">/</span> <strong>Attendance</strong></div>
+        <div class="topbar-right">
+          <span class="preview-label">UX preview</span>
+          <div class="user-badge"><span class="avatar" aria-hidden="true">AM</span><span>Alex Morgan</span></div>
+        </div>
+      </header>
+
+      <main id="attendance">
+        <section class="page-heading" aria-labelledby="page-title">
+          <div>
+            <h1 id="page-title">Student Attendance</h1>
+            <p>Daily roll for all grades. Editable by Teachers, Admins, Owners and Principals.</p>
+          </div>
+          <span class="scope-pill">All school · Full day</span>
+        </section>
+
+        <section class="summary" aria-label="Attendance totals">
+          <div class="summary-item"><div class="summary-label">Students shown</div><div class="summary-value" id="count-total">0</div></div>
+          <div class="summary-item"><div class="summary-label">Present</div><div class="summary-value present" id="count-present">0</div></div>
+          <div class="summary-item"><div class="summary-label">Absent</div><div class="summary-value absent" id="count-absent">0</div></div>
+          <div class="summary-item"><div class="summary-label">Leave / holiday</div><div class="summary-value leave" id="count-other">0</div></div>
+        </section>
+
+        <section class="roster-panel" aria-labelledby="roster-title">
+          <div class="toolbar">
+            <div class="bulk-actions" aria-label="Bulk attendance actions">
+              <button class="button button-present" id="mark-present" type="button">Mark all present</button>
+              <button class="button button-absent" id="mark-absent" type="button">Mark all absent</button>
+            </div>
+            <div class="filters" aria-label="Roster filters">
+              <label class="filter-field" for="attendance-date">Date
+                <input id="attendance-date" type="date" value="2026-09-30">
+              </label>
+              <label class="filter-field" for="grade-filter">Grade
+                <select id="grade-filter">
+                  <option value="all">All grades</option>
+                  <option value="Toddler">Toddler</option>
+                  <option value="Pre-K">Pre-K</option>
+                  <option value="Kindergarten">Kindergarten</option>
+                  <option value="Grade 1">Grade 1</option>
+                  <option value="Grade 2">Grade 2</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="roster-heading">
+            <div>
+              <h2 id="roster-title">Student roster</h2>
+              <p id="date-summary">Wednesday, September 30, 2026</p>
+            </div>
+            <span class="roster-meta" id="roster-meta">8 students</span>
+          </div>
+
+          <div class="search-row">
+            <label class="filter-field" for="student-search">Search students
+              <input class="search-input" id="student-search" type="search" placeholder="Name or student number">
+            </label>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <caption class="visually-hidden">Student attendance roster with editable status</caption>
+              <thead>
+                <tr><th scope="col">Student</th><th scope="col">Grade</th><th scope="col">Attendance status</th></tr>
+              </thead>
+              <tbody id="roster-body"></tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <span class="notice" id="notice" role="status" aria-live="polite"></span>
+            <div class="footer-actions">
+              <span id="visible-range">Showing 0 students</span>
+              <button class="button button-primary" id="save-attendance" type="button">Save attendance</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const students = [
+      { id: "STU-2042", name: "Aisha Rahman", grade: "Pre-K", status: "Present" },
+      { id: "STU-2041", name: "Noah Chen", grade: "Grade 1", status: "Absent" },
+      { id: "STU-2038", name: "Maya Patel", grade: "Pre-K", status: "On Leave" },
+      { id: "STU-2034", name: "Leo Martin", grade: "Grade 2", status: "Present" },
+      { id: "STU-2032", name: "Sofia Reed", grade: "Kindergarten", status: "Holiday" },
+      { id: "STU-2028", name: "Elijah Green", grade: "Grade 1", status: "Present" },
+      { id: "STU-2024", name: "Layla Ahmed", grade: "Pre-K", status: "Absent" },
+      { id: "STU-2020", name: "Owen Carter", grade: "Grade 2", status: "On Leave" }
+    ];
+
+    const statuses = ["Present", "Absent", "On Leave", "Holiday"];
+    const rosterBody = document.getElementById("roster-body");
+    const gradeFilter = document.getElementById("grade-filter");
+    const searchInput = document.getElementById("student-search");
+    const dateInput = document.getElementById("attendance-date");
+    const notice = document.getElementById("notice");
+
+    function visibleStudents() {
+      const grade = gradeFilter.value;
+      const query = searchInput.value.trim().toLowerCase();
+      return students.filter((student) => {
+        const gradeMatches = grade === "all" || student.grade === grade;
+        const queryMatches = `${student.name} ${student.id}`.toLowerCase().includes(query);
+        return gradeMatches && queryMatches;
+      });
+    }
+
+    function updateSummary(visible) {
+      const count = (status) => visible.filter((student) => student.status === status).length;
+      document.getElementById("count-total").textContent = visible.length;
+      document.getElementById("count-present").textContent = count("Present");
+      document.getElementById("count-absent").textContent = count("Absent");
+      document.getElementById("count-other").textContent = count("On Leave") + count("Holiday");
+      document.getElementById("roster-meta").textContent = `${visible.length} ${visible.length === 1 ? "student" : "students"}`;
+      document.getElementById("visible-range").textContent = `Showing ${visible.length} ${visible.length === 1 ? "student" : "students"}`;
+      document.getElementById("mark-present").disabled = visible.length === 0;
+      document.getElementById("mark-absent").disabled = visible.length === 0;
+    }
+
+    function renderRoster() {
+      const visible = visibleStudents();
+      rosterBody.replaceChildren();
+      if (visible.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 3;
+        cell.className = "empty-row";
+        cell.textContent = "No students match these filters.";
+        row.append(cell);
+        rosterBody.append(row);
+      }
+
+      visible.forEach((student) => {
+        const row = document.createElement("tr");
+        const studentCell = document.createElement("td");
+        const identity = document.createElement("div");
+        identity.className = "student-cell";
+        const avatar = document.createElement("span");
+        avatar.className = "student-avatar";
+        avatar.setAttribute("aria-hidden", "true");
+        avatar.textContent = student.name.split(" ").map((part) => part[0]).join("");
+        const nameBlock = document.createElement("div");
+        const name = document.createElement("div");
+        name.className = "student-name";
+        name.textContent = student.name;
+        const number = document.createElement("div");
+        number.className = "student-number";
+        number.textContent = student.id;
+        nameBlock.append(name, number);
+        identity.append(avatar, nameBlock);
+        studentCell.append(identity);
+
+        const gradeCell = document.createElement("td");
+        gradeCell.className = "grade-cell";
+        gradeCell.textContent = student.grade;
+
+        const statusCell = document.createElement("td");
+        const statusSelect = document.createElement("select");
+        statusSelect.className = "row-status";
+        statusSelect.setAttribute("aria-label", `Attendance status for ${student.name}`);
+        statusSelect.dataset.status = student.status;
+        statuses.forEach((status) => {
+          const option = document.createElement("option");
+          option.value = status;
+          option.textContent = status;
+          option.selected = student.status === status;
+          statusSelect.append(option);
+        });
+        statusSelect.addEventListener("change", () => {
+          student.status = statusSelect.value;
+          statusSelect.dataset.status = student.status;
+          notice.textContent = `${student.name}: ${student.status}.`;
+          updateSummary(visibleStudents());
+        });
+        statusCell.append(statusSelect);
+        row.append(studentCell, gradeCell, statusCell);
+        rosterBody.append(row);
+      });
+      updateSummary(visible);
+    }
+
+    function markVisible(status) {
+      visibleStudents().forEach((student) => { student.status = status; });
+      notice.textContent = `${visibleStudents().length} visible students marked ${status.toLowerCase()}.`;
+      renderRoster();
+    }
+
+    gradeFilter.addEventListener("change", renderRoster);
+    searchInput.addEventListener("input", renderRoster);
+    dateInput.addEventListener("change", () => {
+      const date = new Date(`${dateInput.value}T12:00:00`);
+      document.getElementById("date-summary").textContent = Number.isNaN(date.getTime())
+        ? "Select a date"
+        : new Intl.DateTimeFormat("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(date);
+      notice.textContent = "Date changed. Attendance is shown as a UX preview.";
+    });
+    document.getElementById("mark-present").addEventListener("click", () => markVisible("Present"));
+    document.getElementById("mark-absent").addEventListener("click", () => markVisible("Absent"));
+    document.getElementById("save-attendance").addEventListener("click", () => {
+      notice.textContent = "Preview updated locally. Attendance is not connected to the API.";
+    });
+
+    renderRoster();
+  </script>
+</body>
+</html>

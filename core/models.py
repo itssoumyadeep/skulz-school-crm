@@ -141,16 +141,11 @@ class Student(TenantScopedModel):
     class_teacher = models.CharField(max_length=255, blank=True, default='')
     status = models.CharField(
         max_length=50,
-        default='Inquiry',
+        default='Inactive',
         choices=[
-            ('Inquiry', 'Inquiry'),
-            ('Applied', 'Applied'),
-            ('Offered', 'Offered'),
-            ('Accepted', 'Accepted'),
             ('Active', 'Active'),
+            ('Inactive', 'Inactive'),
             ('Waitlisted', 'Waitlisted'),
-            ('Rejected', 'Rejected'),
-            ('Withdrawn', 'Withdrawn')
         ]
     )
     enrolled_date = models.DateField(null=True, blank=True)
@@ -164,7 +159,7 @@ class Student(TenantScopedModel):
             ),
             models.CheckConstraint(
                 check=models.Q(status__in=[
-                    'Inquiry', 'Applied', 'Offered', 'Accepted', 'Active', 'Waitlisted', 'Rejected', 'Withdrawn'
+                    'Active', 'Inactive', 'Waitlisted'
                 ]),
                 name='chk_student_status_enum'
             )
@@ -481,7 +476,14 @@ class StudentAttendance(TenantScopedModel):
     period = models.CharField(max_length=50, default='Full_Day')
     status = models.CharField(
         max_length=50,
-        choices=[('Present', 'Present'), ('Absent', 'Absent'), ('Late', 'Late'), ('Excused', 'Excused')]
+        choices=[
+            ('Present', 'Present'),
+            ('Absent', 'Absent'),
+            ('Late', 'Late'),
+            ('Excused', 'Excused'),
+            ('On Leave', 'On Leave'),
+            ('Holiday', 'Holiday'),
+        ]
     )
     method = models.CharField(
         max_length=50,
@@ -501,7 +503,9 @@ class StudentAttendance(TenantScopedModel):
                 name='uq_student_attendance_record'
             ),
             models.CheckConstraint(
-                check=models.Q(status__in=['Present', 'Absent', 'Late', 'Excused']),
+                check=models.Q(status__in=[
+                    'Present', 'Absent', 'Late', 'Excused', 'On Leave', 'Holiday'
+                ]),
                 name='chk_student_attendance_status_enum'
             )
         ]

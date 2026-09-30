@@ -22,7 +22,7 @@ class TestBR0201:
             name="Billing Test Child",
             dob=date(2019, 1, 1),
             grade="Grade 1",
-            status="Applied",
+            status="Inactive",
         )
         parent = Parent.objects.create(
             tenant=tenant_a,

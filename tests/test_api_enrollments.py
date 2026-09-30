@@ -12,6 +12,30 @@ class TestEnrollmentsAPI:
     def setup_method(self):
         self.client = Client()
 
+    def test_parent_can_create_and_reopen_an_incomplete_draft(
+        self, tenant_a, parent_token_tenant_a
+    ):
+        response = self.client.post(
+            "/api/v1/enrollments",
+            data={"save_as_draft": True},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+        )
+
+        assert response.status_code == 201
+        application_id = response.json()["data"]["application_id"]
+        student_id = response.json()["data"]["student"]["student_id"]
+        assert response.json()["data"]["workflow_data"]["is_draft"] is True
+
+        applications_response = self.client.get(
+            "/api/v1/enrollments/my-applications",
+            HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+        )
+
+        assert applications_response.status_code == 200
+        assert [item["application_id"] for item in applications_response.json()["data"]] == [application_id]
+        assert applications_response.json()["data"][0]["student"]["student_id"] == student_id
+
     def test_create_enrollment_success(self, tenant_a, admin_token_tenant_a):
         payload = {
             "first_name": "Liam",
@@ -83,6 +107,69 @@ class TestEnrollmentsAPI:
         res_json = response.json()
         assert res_json["data"] is None
         assert any(e["code"] == "RBAC_DENIED" for e in res_json["errors"])
+
+    def test_parent_accepts_offer_after_uploading_student_photo(
+        self, tenant_a, parent_token_tenant_a, tmp_path
+    ):
+        created = self.client.post(
+            "/api/v1/enrollments",
+            data={"save_as_draft": True},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+        )
+        application_id = created.json()["data"]["application_id"]
+        application = Application.objects.get(application_id=application_id)
+        application.status = "Offered"
+        application.notification_dispatched = True
+        application.workflow_data = {
+            **application.workflow_data,
+            "offer_invoice_amount": "420.00",
+        }
+        application.save(
+            update_fields=["status", "notification_dispatched", "workflow_data"]
+        )
+        application.student.status = "Inactive"
+        application.student.save(update_fields=["status"])
+        endpoint = f"/api/v1/enrollments/{application_id}/accept-offer"
+
+        missing_photo = self.client.post(
+            endpoint,
+            data={},
+            HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+        )
+        assert missing_photo.status_code == 422
+        application.refresh_from_db()
+        assert application.status == "Offered"
+
+        invalid_photo = self.client.post(
+            endpoint,
+            data={
+                "photo": SimpleUploadedFile(
+                    "child.pdf", b"not-an-image", content_type="application/pdf"
+                )
+            },
+            HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+        )
+        assert invalid_photo.status_code == 422
+
+        with override_settings(MEDIA_ROOT=str(tmp_path)):
+            accepted = self.client.post(
+                endpoint,
+                data={
+                    "photo": SimpleUploadedFile(
+                        "child.jpg", b"test-image", content_type="image/jpeg"
+                    )
+                },
+                HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+            )
+
+        assert accepted.status_code == 200
+        assert accepted.json()["data"]["status"] == "Accepted"
+        assert accepted.json()["data"]["student"]["status"] == "Active"
+        assert accepted.json()["data"]["invoices"][0]["total"] == 420.0
+        assert Document.objects.filter(
+            application=application, doc_type="photo", is_deleted=False
+        ).count() == 1
 
     def test_decision_business_rule_violation_returns_422(self, tenant_a, admin_token_tenant_a):
         student = Student.objects.create(
@@ -177,7 +264,7 @@ class TestEnrollmentsAPI:
             name="Original Name",
             dob=date(2018, 2, 1),
             grade="Grade 2",
-            status="Inquiry"
+            status="Inactive"
         )
 
         response = self.client.patch(
@@ -250,6 +337,38 @@ class TestEnrollmentsAPI:
 
         assert response.status_code == 201
         assert Document.objects.filter(application=application, doc_type="immunization").exists()
+
+    def test_owner_can_assign_assessment_without_a_schedule(self, tenant_a, owner_token_tenant_a):
+        student = Student.objects.create(
+            tenant=tenant_a,
+            student_number="OAK-2026-0202",
+            name="Assignment Student",
+            grade="Kindergarten",
+        )
+        application = Application.objects.create(
+            tenant=tenant_a,
+            student=student,
+            status="Under_Review",
+        )
+        assessor_id = str(uuid.uuid4())
+
+        response = self.client.put(
+            f"/api/v1/enrollments/{application.application_id}/assessment-assignment",
+            data={
+                "assessor_id": assessor_id,
+                "assessment_with": "Teacher",
+                "assessor_name": "Teacher One",
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {owner_token_tenant_a}",
+        )
+
+        assert response.status_code == 200
+        assessment = response.json()["data"]["workflow_data"]["assessment"]
+        assert assessment["assessor_id"] == assessor_id
+        assert assessment["assessor_name"] == "Teacher One"
+        assert assessment["status"] == "Assigned"
+        assert "scheduled_at" not in assessment
 
     def test_parent_data_isolation_between_different_parents(self, tenant_a):
         from jose import jwt
@@ -368,6 +487,12 @@ class TestEnrollmentsAPI:
     def test_parent_can_save_edit_upload_and_complete_enrollment(
         self, tenant_a, parent_token_tenant_a, admin_token_tenant_a, tmp_path
     ):
+        FeeStructure.objects.create(
+            tenant=tenant_a,
+            grade="Kindergarten",
+            term="Fall 2026",
+            components=[{"description": "Tuition", "amount": 320.0}],
+        )
         response = self.client.post(
             "/api/v1/enrollments",
             data={
@@ -480,6 +605,20 @@ class TestEnrollmentsAPI:
             HTTP_AUTHORIZATION=f"Bearer {admin_token_tenant_a}",
         )
         assert offer.status_code == 200
+
+        with override_settings(MEDIA_ROOT=str(tmp_path)):
+            accepted = self.client.post(
+                f"/api/v1/enrollments/{application_id}/accept-offer",
+                data={
+                    "photo": SimpleUploadedFile(
+                        "ava.jpg", b"test-image", content_type="image/jpeg"
+                    )
+                },
+                HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+            )
+        assert accepted.status_code == 200, accepted.json()
+        assert accepted.json()["data"]["status"] == "Accepted"
+        assert accepted.json()["data"]["student"]["status"] == "Active"
 
         parent_id = offer.json()["data"]["parent"][0]["parent_id"]
         invoice = self.client.post(
@@ -601,7 +740,7 @@ class TestEnrollmentsAPI:
             name="Jordan Lee",
             dob=date(2018, 11, 20),
             grade="Kindergarten",
-            status="Applied",
+            status="Inactive",
         )
         Parent.objects.create(
             tenant=tenant_a,
@@ -630,7 +769,7 @@ class TestEnrollmentsAPI:
         assert len(response.json()["data"]["invoices"]) == 1
         assert response.json()["data"]["invoices"][0]["total"] == 320.0
         student.refresh_from_db()
-        assert student.status == "Accepted"
+        assert student.status == "Active"
         audit = AuditLog.objects.filter(
             entity="Application",
             entity_id=str(application.application_id),
@@ -647,7 +786,7 @@ class TestEnrollmentsAPI:
             name="Morgan Lee",
             dob=date(2018, 12, 1),
             grade="Pre-K",
-            status="Applied",
+            status="Inactive",
         )
         Parent.objects.create(
             tenant=tenant_a,
@@ -690,7 +829,7 @@ class TestEnrollmentsAPI:
             name="Casey Lee",
             dob=date(2018, 12, 2),
             grade="Pre-K",
-            status="Accepted",
+            status="Active",
         )
         Parent.objects.create(
             tenant=tenant_a,
@@ -733,7 +872,7 @@ class TestEnrollmentsAPI:
             name="Chloe Patel",
             dob=date(2019, 5, 2),
             grade="Toddler",
-            status="Applied",
+            status="Inactive",
         )
         application = Application.objects.create(
             tenant=tenant_a,

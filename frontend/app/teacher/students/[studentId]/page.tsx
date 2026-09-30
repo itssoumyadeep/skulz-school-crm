@@ -5,17 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { fetchStudent, type Student } from "@/app/lib/students";
 import { updateStudent } from "@/app/lib/api";
 import { getClientSession } from "@/app/lib/session";
+import { DatePicker } from "@/components/pc";
 
-const VALID_STUDENT_STATUSES = [
-  "Inquiry",
-  "Applied",
-  "Offered",
-  "Accepted",
-  "Active",
-  "Waitlisted",
-  "Rejected",
-  "Withdrawn",
-] as const;
+const VALID_STUDENT_STATUSES = ["Active", "Inactive", "Waitlisted"] as const;
 
 function normalizeStudentStatus(value?: string | null): string {
   const nextValue = value?.trim();
@@ -249,11 +241,10 @@ export default function StudentProfilePage() {
               </select>
             </Field>
             <Field label="Date of birth">
-              <input
-                type="date"
+              <DatePicker
+                aria-label="Date of birth"
                 value={form.dob}
-                onChange={(e) => handleFieldChange("dob", e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-0 focus:border-violet-500"
+                onChange={(value) => handleFieldChange("dob", value)}
               />
             </Field>
             <Field label="Class teacher">
@@ -266,13 +257,10 @@ export default function StudentProfilePage() {
               />
             </Field>
             <Field label="Enrollment date">
-              <input
-                type="date"
+              <DatePicker
+                aria-label="Enrollment date"
                 value={form.enrolled_date}
-                onChange={(e) =>
-                  handleFieldChange("enrolled_date", e.target.value)
-                }
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-0 focus:border-violet-500"
+                onChange={(value) => handleFieldChange("enrolled_date", value)}
               />
             </Field>
           </div>

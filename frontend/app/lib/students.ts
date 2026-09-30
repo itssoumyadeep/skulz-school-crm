@@ -69,6 +69,11 @@ export type StudentPermissions = {
 export type StudentEnvelope<T> = Envelope<T> & {
   meta?: Envelope<T>["meta"] & {
     permissions?: StudentPermissions;
+    pagination?: {
+      total?: number;
+      page?: number;
+      page_size?: number;
+    };
   };
 };
 

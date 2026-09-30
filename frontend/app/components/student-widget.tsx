@@ -32,6 +32,7 @@ import {
   type StudentPermissions,
 } from "@/app/lib/students";
 import { updateStudent, uploadStudentDocument } from "@/app/lib/api";
+import { DatePicker } from "@/components/pc";
 
 // ── Role type (mirrors middleware.ts) ─────────────────────────────────────────
 type Role =
@@ -283,11 +284,11 @@ function EditStudentModal({
           </label>
           <label className="text-xs text-slate-600">
             Date of birth
-            <input
-              type="date"
+            <DatePicker
+              aria-label="Date of birth"
               value={form.dob}
-              onChange={(e) => handleChange("dob", e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:border-violet-500 focus:outline-none"
+              onChange={(value) => handleChange("dob", value)}
+              className="mt-1"
             />
           </label>
           <label className="text-xs text-slate-600">

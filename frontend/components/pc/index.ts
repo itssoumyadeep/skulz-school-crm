@@ -13,6 +13,7 @@ export {
   type UserMenuAction,
 } from "./app-shell";
 export { DetailPanel, type DetailPanelProps } from "./detail-panel";
+export { DatePicker, type DatePickerProps } from "./date-picker";
 export { FormModal, type FormModalProps } from "./form-modal";
 export {
   DateField,

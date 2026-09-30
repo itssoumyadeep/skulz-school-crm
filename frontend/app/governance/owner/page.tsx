@@ -1,5 +1,5 @@
 import { PortalFrame } from "../../components/portal-frame";
-import { GovernanceHub } from "../../components/governance-hub";
+import { AdminConsole } from "../../components/admin-console";
 import { StudentWidget } from "../../components/student-widget";
 
 export default function OwnerPage() {
@@ -9,7 +9,7 @@ export default function OwnerPage() {
       subtitle="Multi-tenant oversight, school subscriptions, audit log, and network analytics"
       role="owner"
     >
-      <GovernanceHub mode="owner" />
+      <AdminConsole role="owner" />
       <div className="mt-6">
         <StudentWidget role="owner" />
       </div>

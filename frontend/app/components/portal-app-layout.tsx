@@ -16,6 +16,7 @@ import {
   Megaphone,
   MessageSquare,
   ClipboardList,
+  Database,
   PackageCheck,
   Pill,
   School,
@@ -43,7 +44,7 @@ const roleTitles: Record<UserRole, string> = {
   caregiver: "Caregiver Workspace",
   parent: "Parent Dashboard",
   vendor: "Vendor Portal",
-  owner: "Owner Admin",
+  owner: "Owner Workspace",
   board: "Board Member Portal",
   trustee: "Trustee Portal",
   staff: "Staff Workspace",
@@ -53,7 +54,7 @@ const teacherLinks: SidebarNavItem[] = [
   { label: "My Classes", href: "/teacher/my-classes", icon: <BookOpen /> },
   { label: "Students", href: "/teacher/students", icon: <Users /> },
   {
-    label: "Attendance",
+    label: "Student Attendance",
     href: "/teacher/attendance",
     icon: <ClipboardCheck />,
   },
@@ -134,23 +135,33 @@ const featureLinksByRole: Record<UserRole, SidebarNavItem[]> = {
     },
     {
       label: "Document Review",
-      href: "/admin/admissions/documents",
+      href: "/admin/documents",
       icon: <ClipboardCheck />,
     },
     {
       label: "Assessment Schedule",
-      href: "/admin/admissions/assessments",
+      href: "/admin/assessments",
       icon: <CalendarDays />,
     },
     {
       label: "Billing",
-      href: "/admin/admissions/billing",
+      href: "/admin/billing",
       icon: <ChartNoAxesColumn />,
     },
     {
       label: "Student Records",
-      href: "/admin/admissions/students",
+      href: "/admin/students",
       icon: <ClipboardList />,
+    },
+    {
+      label: "Student Attendance",
+      href: "/admin/attendance/students",
+      icon: <ClipboardCheck />,
+    },
+    {
+      label: "Data Classification",
+      href: "/admin/data-classification",
+      icon: <Database />,
     },
   ],
   principal: principalLinks,
@@ -203,6 +214,11 @@ const featureLinksByRole: Record<UserRole, SidebarNavItem[]> = {
       label: "Admissions",
       href: "/governance/owner/admissions",
       icon: <FileText />,
+    },
+    {
+      label: "Student Attendance",
+      href: "/governance/owner/attendance/students",
+      icon: <ClipboardCheck />,
     },
     {
       label: "Performance",
@@ -278,13 +294,15 @@ export function PortalAppLayout({
     },
     ...featureLinks,
   ];
+  const topbarTitle =
+    role === "parent" || role === "owner" ? "" : roleTitles[role];
 
   return (
     <AppShell
       navigation={navigation}
       sidebarTheme={sidebarTheme}
       brand={{ name: "Purple Cubby", description: "School CRM" }}
-      title={roleTitles[role]}
+      title={topbarTitle}
       searchPlaceholder="Search this portal"
       user={{
         name: session?.user_name || roleTitles[role],

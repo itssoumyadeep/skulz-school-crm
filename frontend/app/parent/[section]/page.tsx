@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { AdmissionsWorkflow } from "../../components/admissions-workflow";
+import { ParentAdmissionsWorkflow } from "../../components/parent-admissions-workflow";
 import { ParentHub } from "../../components/parent-hub";
 import { PortalFrame } from "../../components/portal-frame";
 
@@ -16,15 +17,7 @@ export default async function ParentSectionPage({
     case "admissions":
       redirect("/parent/applications");
     case "applications":
-      return (
-        <PortalFrame
-          title="My Applications"
-          subtitle="Track saved drafts and submitted applications"
-          role="parent"
-        >
-          <AdmissionsWorkflow role="parent" parentView="applications" />
-        </PortalFrame>
-      );
+      return <ParentAdmissionsWorkflow />;
     case "progress":
       return (
         <PortalFrame
@@ -47,15 +40,7 @@ export default async function ParentSectionPage({
       );
     case "tuition-fees":
     case "payments":
-      return (
-        <PortalFrame
-          title={section === "payments" ? "Make Payment" : "Tuition & Fees"}
-          subtitle="Review invoices and pay outstanding balances"
-          role="parent"
-        >
-          <AdmissionsWorkflow role="parent" parentView="payments" />
-        </PortalFrame>
-      );
+      return <AdmissionsWorkflow role="parent" parentView="payments" />;
     default:
       notFound();
   }

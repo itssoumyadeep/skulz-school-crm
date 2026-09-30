@@ -16,6 +16,7 @@ from core.auth.scoping import verify_student_access
 from core.schemas.base import build_response, build_error
 from core.schemas.attendance_health import (
     AttendanceMarkSchema,
+    AttendanceRosterBulkMarkSchema,
     AttendanceUpdateSchema,
     LeaveRequestCreateSchema,
     LeaveRequestApproveSchema,
@@ -23,11 +24,145 @@ from core.schemas.attendance_health import (
 )
 from core.business_objects.attendance_health import (
     AttendanceSheetBO,
+    DEFAULT_ATTENDANCE_CLASS_ID,
     LeaveCaseBO,
     StaffRosterBO
 )
 from core.business_objects.academic import AcademicCalendarBO
 router = Router(tags=["Attendance (P03)"])
+
+
+@router.get("/attendance/students/{att_date}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Owner', 'Admin', 'Principal')
+def get_student_attendance_roster(request, att_date: date):
+    students = list(
+        Student.objects.filter(
+            tenant_id=request.tenant_id,
+            is_deleted=False,
+            status='Active',
+        ).order_by('grade', 'name')
+    )
+    class_ids = {
+        student.student_id: student.class_id or DEFAULT_ATTENDANCE_CLASS_ID
+        for student in students
+    }
+    records = StudentAttendance.objects.filter(
+        tenant_id=request.tenant_id,
+        student_id__in=[student.student_id for student in students],
+        date=att_date,
+        period='Full_Day',
+        is_deleted=False,
+    ).select_related('student')
+    records_by_student = {
+        record.student_id: record
+        for record in records
+        if class_ids.get(record.student_id) == record.class_id
+    }
+
+    data = [
+        {
+            'student_id': str(student.student_id),
+            'student_number': student.student_number,
+            'name': student.name,
+            'grade': student.grade,
+            'class_id': str(class_ids[student.student_id]),
+            'attendance_id': (
+                str(records_by_student[student.student_id].att_id)
+                if student.student_id in records_by_student
+                else None
+            ),
+            'status': (
+                records_by_student[student.student_id].status
+                if student.student_id in records_by_student
+                else None
+            ),
+            'notified_parent': (
+                records_by_student[student.student_id].notified_parent
+                if student.student_id in records_by_student
+                else False
+            ),
+        }
+        for student in students
+    ]
+    return JsonResponse(
+        build_response(
+            data=data,
+            tenant_id=request.tenant_id,
+            role=getattr(request, 'user_role', 'Teacher'),
+        ),
+        status=200,
+    )
+
+
+@router.post("/attendance/bulk-mark", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Owner', 'Admin', 'Principal')
+def mark_attendance_roster(request, payload: AttendanceRosterBulkMarkSchema):
+    student_ids = [record.student_id for record in payload.records]
+    if len(student_ids) != len(set(student_ids)):
+        return JsonResponse(
+            build_error(
+                errors=[{
+                    'code': 'DUPLICATE_STUDENT',
+                    'message': 'Each student can only appear once in an attendance update.',
+                }],
+                tenant_id=request.tenant_id,
+                role=getattr(request, 'user_role', 'Teacher'),
+            ),
+            status=422,
+        )
+
+    students = Student.objects.filter(
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+        status='Active',
+        student_id__in=student_ids,
+    ).in_bulk(field_name='student_id')
+    if len(students) != len(student_ids):
+        return JsonResponse(
+            build_error(
+                errors=[{
+                    'code': 'STUDENT_NOT_FOUND',
+                    'message': 'One or more active students could not be found.',
+                }],
+                tenant_id=request.tenant_id,
+                role=getattr(request, 'user_role', 'Teacher'),
+            ),
+            status=404,
+        )
+
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else uuid.uuid4()
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    attendance_records = AttendanceSheetBO.mark_roster(
+        tenant=tenant,
+        records=[
+            (students[item.student_id], item.status)
+            for item in payload.records
+        ],
+        att_date=payload.date,
+        marked_by=actor_id,
+        actor_role=actor_role,
+    )
+    return JsonResponse(
+        build_response(
+            data={
+                'date': payload.date.isoformat(),
+                'records': [
+                    {
+                        'attendance_id': str(record.att_id),
+                        'student_id': str(record.student_id),
+                        'class_id': str(record.class_id),
+                        'status': record.status,
+                        'notified_parent': record.notified_parent,
+                    }
+                    for record in attendance_records
+                ],
+            },
+            tenant_id=request.tenant_id,
+            role=actor_role,
+        ),
+        status=200,
+    )
 
 
 @router.post("/attendance/mark", auth=JWTAuthBearer())

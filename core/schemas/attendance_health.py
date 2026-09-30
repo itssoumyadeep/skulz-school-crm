@@ -4,6 +4,8 @@ from uuid import UUID
 from decimal import Decimal
 from pydantic import BaseModel, Field, field_validator
 
+ATTENDANCE_STATUSES = ['Present', 'Absent', 'Late', 'Excused', 'On Leave', 'Holiday']
+
 
 class AttendanceMarkSchema(BaseModel):
     student_id: UUID
@@ -16,9 +18,8 @@ class AttendanceMarkSchema(BaseModel):
     @field_validator('status')
     @classmethod
     def valid_status(cls, v: str) -> str:
-        allowed = ['Present', 'Absent', 'Late', 'Excused']
-        if v not in allowed:
-            raise ValueError(f"status must be one of {allowed}")
+        if v not in ATTENDANCE_STATUSES:
+            raise ValueError(f"status must be one of {ATTENDANCE_STATUSES}")
         return v
 
 
@@ -33,9 +34,8 @@ class AttendanceUpdateSchema(BaseModel):
     def valid_status(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
-        allowed = ['Present', 'Absent', 'Late', 'Excused']
-        if v not in allowed:
-            raise ValueError(f"status must be one of {allowed}")
+        if v not in ATTENDANCE_STATUSES:
+            raise ValueError(f"status must be one of {ATTENDANCE_STATUSES}")
         return v
 
     @field_validator('method')
@@ -47,6 +47,23 @@ class AttendanceUpdateSchema(BaseModel):
         if v not in allowed:
             raise ValueError(f"method must be one of {allowed}")
         return v
+
+
+class AttendanceRosterMarkSchema(BaseModel):
+    student_id: UUID
+    status: str
+
+    @field_validator('status')
+    @classmethod
+    def valid_status(cls, v: str) -> str:
+        if v not in ATTENDANCE_STATUSES:
+            raise ValueError(f"status must be one of {ATTENDANCE_STATUSES}")
+        return v
+
+
+class AttendanceRosterBulkMarkSchema(BaseModel):
+    date: date
+    records: List[AttendanceRosterMarkSchema] = Field(min_length=1, max_length=500)
 
 
 class LeaveRequestCreateSchema(BaseModel):

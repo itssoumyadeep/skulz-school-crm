@@ -183,3 +183,114 @@ class TestAttendanceAndHealthAPI:
         assert data["bo"] == "SafetyComplianceReport"
         assert data["drills_conducted"] == 1
         assert data["compliance_status"] == "COMPLIANT"
+
+    def test_student_attendance_roster_is_tenant_scoped_for_shared_editor_roles(
+        self,
+        tenant_a,
+        tenant_b,
+        admin_token_tenant_a,
+        teacher_token_tenant_a,
+        owner_token_tenant_a,
+    ):
+        class_id = uuid.uuid4()
+        student = Student.objects.create(
+            tenant=tenant_a,
+            student_number="OAK-2026-0301",
+            name="Avery Student",
+            grade="Pre-K",
+            class_id=class_id,
+            status="Active",
+        )
+        Student.objects.create(
+            tenant=tenant_b,
+            student_number="MLA-2026-0301",
+            name="Other Tenant Student",
+            grade="Pre-K",
+            status="Active",
+        )
+        StudentAttendance.objects.create(
+            tenant=tenant_a,
+            student=student,
+            class_id=class_id,
+            date=date(2026, 9, 30),
+            status="On Leave",
+            method="Manual",
+            marked_by=uuid.uuid4(),
+        )
+        principal_token = jwt.encode(
+            {
+                "sub": str(uuid.uuid4()),
+                "tenant_id": str(tenant_a.tenant_id),
+                "role": "Principal",
+            },
+            settings.JWT_SECRET_KEY,
+            algorithm="HS256",
+        )
+
+        for token in (
+            admin_token_tenant_a,
+            teacher_token_tenant_a,
+            owner_token_tenant_a,
+            principal_token,
+        ):
+            response = self.client.get(
+                "/api/v1/attendance/students/2026-09-30",
+                HTTP_AUTHORIZATION=f"Bearer {token}",
+            )
+            assert response.status_code == 200
+            rows = response.json()["data"]
+            assert len(rows) == 1
+            assert rows[0]["student_id"] == str(student.student_id)
+            assert rows[0]["status"] == "On Leave"
+
+    def test_bulk_attendance_marks_all_supported_student_statuses(
+        self, tenant_a, teacher_token_tenant_a
+    ):
+        students = [
+            Student.objects.create(
+                tenant=tenant_a,
+                student_number=f"OAK-2026-031{index}",
+                name=f"Attendance Student {index}",
+                grade="Grade 1",
+                status="Active",
+            )
+            for index in range(4)
+        ]
+        statuses = ["Present", "Absent", "On Leave", "Holiday"]
+
+        response = self.client.post(
+            "/api/v1/attendance/bulk-mark",
+            data={
+                "date": "2026-09-30",
+                "records": [
+                    {"student_id": str(student.student_id), "status": status}
+                    for student, status in zip(students, statuses)
+                ],
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {teacher_token_tenant_a}",
+        )
+
+        assert response.status_code == 200, response.json()
+        saved = {
+            str(record.student_id): record.status
+            for record in StudentAttendance.objects.filter(
+                tenant=tenant_a,
+                date=date(2026, 9, 30),
+                is_deleted=False,
+            )
+        }
+        assert saved == {
+            str(student.student_id): status
+            for student, status in zip(students, statuses)
+        }
+        assert StudentAttendance.objects.get(
+            tenant=tenant_a,
+            student=students[1],
+            date=date(2026, 9, 30),
+        ).notified_parent is True
+        assert StudentAttendance.objects.get(
+            tenant=tenant_a,
+            student=students[2],
+            date=date(2026, 9, 30),
+        ).notified_parent is False

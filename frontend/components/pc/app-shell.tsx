@@ -275,9 +275,11 @@ export function Topbar({
           <PanelLeftOpen aria-hidden="true" />
         </Button>
       )}
-      <h1 className="hidden shrink-0 text-sm font-semibold text-foreground sm:block">
-        {title}
-      </h1>
+      {title && (
+        <h1 className="hidden shrink-0 text-sm font-semibold text-foreground sm:block">
+          {title}
+        </h1>
+      )}
       <label className="relative ml-auto block w-full max-w-md">
         <Search
           aria-hidden="true"
