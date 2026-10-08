@@ -1,4 +1,4 @@
-import { getClientSession, getCookieValue } from "./session";
+import { getCookieValue } from "./session";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000/api/v1";
@@ -13,7 +13,6 @@ export async function apiFetch<T>(
   init?: RequestInit,
 ): Promise<T> {
   const token = getCookieValue("pc_session");
-  const session = getClientSession();
 
   const headers = new Headers(init?.headers ?? {});
   if (!(typeof FormData !== "undefined" && init?.body instanceof FormData)) {
@@ -22,9 +21,6 @@ export async function apiFetch<T>(
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
-  }
-  if (session?.tenant_id) {
-    headers.set("X-Tenant-Id", session.tenant_id);
   }
 
   let response: Response;
@@ -83,6 +79,52 @@ export type Envelope<T> = {
 };
 
 export type DataClassificationCategory = "Actors" | "Processes" | "Meta Data";
+export type SchoolSetupDatasetKey =
+  | "students"
+  | "teachers"
+  | "parents"
+  | "admins"
+  | "owners"
+  | "principals"
+  | "vendors"
+  | "assessments"
+  | "attendance"
+  | "curriculums"
+  | "events"
+  | "fee-structures"
+  | "marks"
+  | "lesson-plans"
+  | "leave-plans"
+  | "purchase-orders"
+  | "staff-details"
+  | "staff-attendances"
+  | "messages";
+
+export type SchoolSetupTemplate = {
+  key: SchoolSetupDatasetKey;
+  group: "students" | "people" | "operations";
+  label: string;
+  description: string;
+  fields: Array<{ name: string; required: boolean; example: string }>;
+};
+
+export type SchoolSetupContext = {
+  school: {
+    tenant_id: string;
+    name: string;
+    school_code: string;
+    region: string;
+    type: string;
+  };
+  datasets: SchoolSetupTemplate[];
+};
+
+export type SchoolSetupImportResult = {
+  dataset: SchoolSetupDatasetKey;
+  imported_count: number;
+  records: Array<Record<string, string | number | boolean | null>>;
+};
+
 export type StudentAttendanceStatus =
   | "Present"
   | "Absent"
@@ -520,6 +562,64 @@ export async function fetchParentFeeAccount(studentId: string) {
   return apiFetch<Envelope<Record<string, unknown>>>(
     `/students/${studentId}/fee-account`,
   );
+}
+
+export type ParentBillingPayment = {
+  payment_id: string;
+  invoice_id: string;
+  amount: number;
+  date: string | null;
+  method: string;
+  status: string;
+  receipt_id: string | null;
+};
+
+export type ParentBillingInvoice = {
+  invoice_id: string;
+  invoice_type: string;
+  invoice_date: string;
+  due_date: string;
+  line_items: Array<{ description?: string; amount?: number }>;
+  total: number;
+  paid: number;
+  balance_due: number;
+  status: string;
+  payments: ParentBillingPayment[];
+};
+
+export type ParentBillingChild = {
+  student_id: string;
+  student_number: string;
+  name: string;
+  grade: string;
+  section: string;
+  outstanding_balance: number;
+  invoices: ParentBillingInvoice[];
+  payments: ParentBillingPayment[];
+};
+
+export type ParentBillingSummary = {
+  currency: string;
+  outstanding_balance: number;
+  children: ParentBillingChild[];
+};
+
+export type ParentCheckoutSession = {
+  payment_id: string;
+  checkout_url: string;
+  amount: number;
+  currency: string;
+};
+
+export async function fetchParentBilling() {
+  return apiFetch<Envelope<ParentBillingSummary>>("/parent/billing");
+}
+
+export async function startParentCheckout(invoiceId: string, amount: number) {
+  return apiFetch<Envelope<ParentCheckoutSession>>("/parent/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ invoice_id: invoiceId, amount }),
+  });
 }
 
 export type ParentDashboardSummary = {
@@ -1212,6 +1312,20 @@ export async function fetchDataClassification() {
   return apiFetch<Envelope<DataClassificationCatalog>>(
     "/metadata/data-classification",
   );
+}
+
+export async function fetchSchoolSetupContext() {
+  return apiFetch<Envelope<SchoolSetupContext>>("/school-setup/config");
+}
+
+export async function importSchoolSetupDataset(
+  dataset: SchoolSetupDatasetKey,
+  records: Array<Record<string, unknown>>,
+) {
+  return apiFetch<Envelope<SchoolSetupImportResult>>("/school-setup/import", {
+    method: "POST",
+    body: JSON.stringify({ dataset, records }),
+  });
 }
 
 export async function fetchAnalyticsKpis(role: string, period?: string) {

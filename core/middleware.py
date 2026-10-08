@@ -1,4 +1,5 @@
 from django.db import connection
+from django.conf import settings
 from django.http import HttpResponse
 
 
@@ -11,18 +12,25 @@ class CorsMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        origin = request.headers.get("Origin", "").rstrip("/")
+        allowed_origin = origin if origin in settings.CORS_ALLOWED_ORIGINS else None
+
         if request.method == "OPTIONS":
             response = HttpResponse()
-            response["Access-Control-Allow-Origin"] = "*"
+            if allowed_origin:
+                response["Access-Control-Allow-Origin"] = allowed_origin
+                response["Vary"] = "Origin"
             response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-            response["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Tenant-Id, Accept, Origin, X-Requested-With"
+            response["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
             response["Access-Control-Max-Age"] = "86400"
             return response
 
         response = self.get_response(request)
-        response["Access-Control-Allow-Origin"] = "*"
+        if allowed_origin:
+            response["Access-Control-Allow-Origin"] = allowed_origin
+            response["Vary"] = "Origin"
         response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        response["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Tenant-Id, Accept, Origin, X-Requested-With"
+        response["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
         return response
 
 
@@ -31,17 +39,18 @@ class TenantSecurityMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Extract tenant info from request (e.g. from JWT auth parsed request)
-        tenant_id = getattr(request, 'tenant_id', None)
+        # Authentication happens inside Django Ninja after middleware. Clear
+        # connection state here; JWTAuthBearer establishes it after validation.
+        self._clear_context()
+        try:
+            return self.get_response(request)
+        finally:
+            # Database connections may be reused, so never let request context
+            # leak into the next request.
+            self._clear_context()
 
-        if tenant_id:
-            with connection.cursor() as cursor:
-                # Set tenant context in PostgreSQL session safely
-                cursor.execute("SELECT set_config('app.current_tenant_id', %s, FALSE)", [str(tenant_id)])
-        else:
-            with connection.cursor() as cursor:
-                cursor.execute("RESET app.current_tenant_id;")
-
-        response = self.get_response(request)
-        return response
-
+    @staticmethod
+    def _clear_context():
+        with connection.cursor() as cursor:
+            cursor.execute("RESET app.current_tenant_id;")
+            cursor.execute("RESET app.current_user_id;")

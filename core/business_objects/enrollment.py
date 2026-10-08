@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Dict, Any, List, Optional
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Sum
 
 from .base import BaseBusinessObject, RuleViolation, BusinessRuleError
 from core.models import (
@@ -204,10 +205,14 @@ class StudentProfileBO(BaseBusinessObject):
         att_records = attendances.filter(is_deleted=False) if attendances else []
         att_total = att_records.count() if attendances else 0
         att_present = att_records.filter(status__in=['Present', 'Late']).count() if attendances else 0
-        attendance_pct = int(round((att_present / att_total) * 100)) if att_total > 0 else 96
+        attendance_pct = round((att_present / att_total) * 100, 2) if att_total else None
         latest_att = att_records.order_by('-date').first() if attendances else None
-        attendance_status = latest_att.status if latest_att else "Present"
-        attendance_summary = f"{attendance_pct}% attendance ({att_present}/{att_total or 30} days)"
+        attendance_status = latest_att.status if latest_att else None
+        attendance_summary = (
+            f"{attendance_pct}% attendance ({att_present}/{att_total} sessions)"
+            if att_total
+            else None
+        )
 
         # Health info
         health_prof = getattr(self.student, 'health_profile', None)
@@ -217,26 +222,87 @@ class StudentProfileBO(BaseBusinessObject):
         if not health_flags:
             health_flags = []
         medications = [m if isinstance(m, str) else f"{m.get('name', 'Med')} ({m.get('dosage', '')})" for m in (health_prof.medications if health_prof else [])]
-        dietary = "Standard Diet"
-        nap_schedule = "1:00 PM - 2:00 PM"
+        dietary = None
+        nap_schedule = None
 
         # Fee info
-        invoices_rel = getattr(self.student, 'invoices', None)
-        invoices_qs = invoices_rel.filter(is_deleted=False) if invoices_rel else []
-        has_overdue = invoices_qs.filter(status='Overdue').exists() if invoices_rel else False
-        fee_status = "Overdue" if has_overdue else "Current"
-        fee_account_summary = "Fees Current · $0.00 Outstanding" if not has_overdue else "Overdue Balance · Action Required"
-        fee_account = {"status": fee_status, "outstanding": 0.0 if not has_overdue else 450.0}
+        invoices_qs = self.student.invoices.filter(is_deleted=False).order_by('-invoice_date')
+        open_invoices = invoices_qs.filter(status__in=['Issued', 'Partially_Paid', 'Overdue'])
+        total_due = open_invoices.aggregate(total=Sum('total'))['total'] or Decimal('0.00')
+        total_paid = Payment.objects.filter(
+            tenant=self.student.tenant,
+            invoice__in=open_invoices,
+            is_deleted=False,
+            status='Completed',
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        outstanding = max(total_due - total_paid, Decimal('0.00'))
+        has_invoices = invoices_qs.exists()
+        has_overdue = open_invoices.filter(status='Overdue').exists()
+        fee_status = (
+            'Overdue' if has_overdue
+            else 'Outstanding' if outstanding > 0
+            else 'Current' if has_invoices
+            else None
+        )
+        fee_account_summary = (
+            f"{fee_status} · ${outstanding:.2f} outstanding"
+            if has_invoices
+            else None
+        )
+        fee_account = (
+            {'status': fee_status, 'outstanding': float(outstanding)}
+            if has_invoices
+            else None
+        )
+        invoices = [
+            {
+                'invoice_id': str(invoice.invoice_id),
+                'invoice_type': invoice.invoice_type,
+                'invoice_date': invoice.invoice_date.isoformat(),
+                'due_date': invoice.due_date.isoformat(),
+                'total': float(invoice.total),
+                'status': invoice.status,
+            }
+            for invoice in invoices_qs
+        ]
+        receipts = [
+            {
+                'receipt_id': payment.receipt_id,
+                'amount': float(payment.amount),
+                'date': payment.date.isoformat(),
+                'method': payment.method,
+                'invoice_id': str(payment.invoice_id),
+            }
+            for payment in Payment.objects.filter(
+                tenant=self.student.tenant,
+                invoice__student=self.student,
+                is_deleted=False,
+                status='Completed',
+            ).order_by('-date')
+        ]
 
         # Academic info
         report_cards_rel = getattr(self.student, 'report_cards', None)
-        latest_rc = report_cards_rel.filter(is_deleted=False).order_by('-year', '-published_date').first() if report_cards_rel else None
-        academic_summary = f"Grade {latest_rc.overall_grade} (GPA {latest_rc.gpa})" if latest_rc else "Grade A · Standard Progress"
-        report_card = {
-            "term": latest_rc.term if latest_rc else "Term 1",
-            "overall_grade": latest_rc.overall_grade if latest_rc else "A",
-            "gpa": float(latest_rc.gpa) if latest_rc else 3.85
-        }
+        latest_rc = report_cards_rel.filter(
+            is_deleted=False,
+            is_published=True,
+        ).order_by('-year', '-published_date').first() if report_cards_rel else None
+        academic_summary = (
+            f"Grade {latest_rc.overall_grade} (GPA {latest_rc.gpa})"
+            if latest_rc
+            else None
+        )
+        report_card = (
+            {
+                'term': latest_rc.term,
+                'year': latest_rc.year,
+                'overall_grade': latest_rc.overall_grade,
+                'gpa': float(latest_rc.gpa),
+                'published_date': latest_rc.published_date.isoformat(),
+            }
+            if latest_rc
+            else None
+        )
 
         # Computed completeness
         has_verified_docs = any(app["verified_documents_count"] >= 3 for app in applications) if applications else False
@@ -252,7 +318,7 @@ class StudentProfileBO(BaseBusinessObject):
             "section": self.student.section or "A",
             "status": self.student.status,
             "enrolled_date": self.student.enrolled_date.isoformat() if self.student.enrolled_date else (self.student.created_at.date().isoformat() if self.student.created_at else None),
-            "class_teacher": self.student.class_teacher or "Ms. Harper",
+            "class_teacher": self.student.class_teacher or None,
             "parent_contact": primary_contact,
             "emergency_contact": emergency_contact_str,
             "attendance_pct": attendance_pct,
@@ -267,11 +333,11 @@ class StudentProfileBO(BaseBusinessObject):
             "fee_status": fee_status,
             "fee_account_summary": fee_account_summary,
             "fee_account": fee_account,
-            "assignment_submissions": [{"title": "Weekly Math Worksheet", "status": "Submitted"}],
-            "marks_own_subject": {"Current Subject": 92},
+            "assignment_submissions": [],
+            "marks_own_subject": {},
             "report_card": report_card,
-            "invoices": [{"invoice_type": "Tuition", "total": 1200.0, "status": "Paid"}],
-            "receipts": [{"receipt_id": "REC-2026-0001", "amount": 1200.0}],
+            "invoices": invoices,
+            "receipts": receipts,
             "primary_contact": primary_parent,
             "parents": parents,
             "emergency_contacts": emergency_contacts,

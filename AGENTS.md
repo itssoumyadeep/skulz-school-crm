@@ -20,6 +20,7 @@ The goal is to manage a school operation across student lifecycle, admissions, a
 - Follow the existing patterns in the `core/business_objects` layer and `core/api/v1` route modules.
 - Do not invent new database tables or bypass tenant checks unless the task explicitly requires it.
 - Preserve the Django + Django Ninja structure; do not replace it with ad hoc logic.
+- Use same code styling, similar nomenclature, and same pattern while writing new code
 
 ## Repository map
 

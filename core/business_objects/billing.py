@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Dict, Any, List, Optional
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Q, Sum
 
 from .base import BaseBusinessObject, RuleViolation, BusinessRuleError
 from core.models import (
@@ -286,6 +287,17 @@ class FeeAccountBO(BaseBusinessObject):
         bo.enforce_rules()
 
         with transaction.atomic():
+            invoice = Invoice.objects.select_for_update().get(
+                invoice_id=invoice.invoice_id,
+                tenant=tenant,
+                is_deleted=False,
+            )
+            if Payment.objects.filter(
+                invoice=invoice,
+                status='Pending',
+                is_deleted=False,
+            ).exists():
+                raise ValueError('An online checkout is in progress for this invoice.')
             discount = DiscountWaiver.objects.create(
                 tenant=tenant,
                 invoice=invoice,
@@ -383,6 +395,123 @@ class FeeAccountBO(BaseBusinessObject):
         return self.invoice
 
 
+class ParentBillingBO(BaseBusinessObject):
+    def __init__(
+        self,
+        tenant: Tenant,
+        user_id: Optional[str],
+        user_email: Optional[str],
+        linked_student_ids: Optional[List[str]] = None,
+        currency: str = 'CAD',
+    ):
+        self.tenant = tenant
+        self.user_id = user_id
+        self.user_email = user_email
+        self.linked_student_ids = linked_student_ids or []
+        self.currency = currency.upper()
+
+    def to_dict(self) -> Dict[str, Any]:
+        linked_filter = Q(student_id__in=self.linked_student_ids)
+        if self.user_id:
+            try:
+                user_uuid = uuid.UUID(str(self.user_id))
+                linked_filter |= Q(created_by=user_uuid) | Q(parents__created_by=user_uuid)
+            except (ValueError, TypeError):
+                pass
+        if self.user_email:
+            linked_filter |= Q(parents__email__iexact=self.user_email)
+
+        students = list(
+            Student.objects.filter(
+                tenant=self.tenant,
+                is_deleted=False,
+            ).filter(linked_filter).distinct().order_by('name')
+        )
+        invoices = Invoice.objects.filter(
+            tenant=self.tenant,
+            student__in=students,
+            is_deleted=False,
+            status__in=['Issued', 'Partially_Paid', 'Overdue', 'Paid'],
+        ).order_by('-due_date', '-invoice_date')
+        payments_by_invoice: Dict[uuid.UUID, List[Payment]] = {}
+        for payment in Payment.objects.filter(
+            tenant=self.tenant,
+            invoice__in=invoices,
+            is_deleted=False,
+        ).order_by('-date'):
+            payments_by_invoice.setdefault(payment.invoice_id, []).append(payment)
+
+        invoices_by_student: Dict[uuid.UUID, List[Dict[str, Any]]] = {}
+        child_totals: Dict[uuid.UUID, Decimal] = {}
+        recent_payments: Dict[uuid.UUID, List[Dict[str, Any]]] = {}
+        for invoice in invoices:
+            invoice_payments = payments_by_invoice.get(invoice.invoice_id, [])
+            paid = sum(
+                (payment.amount for payment in invoice_payments if payment.status == 'Completed'),
+                Decimal('0.00'),
+            )
+            balance_due = max(invoice.total - paid, Decimal('0.00'))
+            if invoice.status in {'Paid', 'Cancelled', 'Waived'}:
+                balance_due = Decimal('0.00')
+            invoices_by_student.setdefault(invoice.student_id, []).append({
+                'invoice_id': str(invoice.invoice_id),
+                'invoice_type': invoice.invoice_type,
+                'invoice_date': invoice.invoice_date.isoformat(),
+                'due_date': invoice.due_date.isoformat(),
+                'line_items': invoice.line_items,
+                'total': float(invoice.total),
+                'paid': float(paid),
+                'balance_due': float(balance_due),
+                'status': invoice.status,
+                'payments': [self._payment_dict(payment) for payment in invoice_payments],
+            })
+            child_totals[invoice.student_id] = child_totals.get(
+                invoice.student_id, Decimal('0.00')
+            ) + balance_due
+            recent_payments.setdefault(invoice.student_id, []).extend(
+                self._payment_dict(payment) for payment in invoice_payments
+            )
+
+        children = []
+        for student in students:
+            payments = sorted(
+                recent_payments.get(student.student_id, []),
+                key=lambda payment: payment['date'] or '',
+                reverse=True,
+            )
+            children.append({
+                'student_id': str(student.student_id),
+                'student_number': student.student_number,
+                'name': student.name,
+                'grade': student.grade,
+                'section': student.section,
+                'outstanding_balance': float(child_totals.get(student.student_id, Decimal('0.00'))),
+                'invoices': invoices_by_student.get(student.student_id, []),
+                'payments': payments,
+            })
+
+        return {
+            'currency': self.currency,
+            'outstanding_balance': float(sum(
+                (Decimal(str(child['outstanding_balance'])) for child in children),
+                Decimal('0.00'),
+            )),
+            'children': children,
+        }
+
+    @staticmethod
+    def _payment_dict(payment: Payment) -> Dict[str, Any]:
+        return {
+            'payment_id': str(payment.payment_id),
+            'invoice_id': str(payment.invoice_id),
+            'amount': float(payment.amount),
+            'date': payment.date.isoformat() if payment.date else None,
+            'method': payment.method,
+            'status': payment.status,
+            'receipt_id': payment.receipt_id or None,
+        }
+
+
 class PaymentTransactionBO(BaseBusinessObject):
     """
     BO-11: PaymentTransaction
@@ -428,6 +557,142 @@ class PaymentTransactionBO(BaseBusinessObject):
         return None
 
     @classmethod
+    def create_pending_checkout(
+        cls,
+        *,
+        tenant: Tenant,
+        invoice_id: uuid.UUID,
+        parent: Parent,
+        amount: Decimal,
+        currency: str,
+    ) -> Payment:
+        with transaction.atomic():
+            invoice = Invoice.objects.select_for_update().get(
+                invoice_id=invoice_id,
+                tenant=tenant,
+                is_deleted=False,
+            )
+            if invoice.status not in {'Issued', 'Partially_Paid', 'Overdue'}:
+                raise ValueError('This invoice is not available for payment.')
+            if invoice.parent_id != parent.parent_id or parent.tenant_id != tenant.tenant_id:
+                raise ValueError('Parent does not own this invoice.')
+
+            pending = Payment.objects.select_for_update().filter(
+                invoice=invoice,
+                status='Pending',
+                is_deleted=False,
+            )
+            if pending.exists():
+                raise ValueError('A checkout is already in progress for this invoice.')
+
+            total_paid = Payment.objects.filter(
+                invoice=invoice,
+                status='Completed',
+                is_deleted=False,
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            balance_due = max(invoice.total - total_paid, Decimal('0.00'))
+            if amount <= 0 or amount > balance_due:
+                raise ValueError('Payment amount must be greater than zero and no more than the current balance.')
+
+            return Payment.objects.create(
+                tenant=tenant,
+                invoice=invoice,
+                parent=parent,
+                amount=amount,
+                method='Card',
+                status='Pending',
+                stripe_currency=currency.lower(),
+            )
+
+    @staticmethod
+    def attach_checkout_session(
+        payment: Payment,
+        *,
+        session_id: str,
+        expires_at: Optional[datetime] = None,
+    ) -> Payment:
+        payment.stripe_checkout_session_id = session_id
+        payment.checkout_expires_at = expires_at
+        payment.save(update_fields=[
+            'stripe_checkout_session_id',
+            'checkout_expires_at',
+            'updated_at',
+        ])
+        return payment
+
+    @classmethod
+    def complete_checkout(
+        cls,
+        *,
+        tenant: Tenant,
+        session_id: str,
+        payment_intent_id: Optional[str],
+        amount_total: int,
+        currency: str,
+        expected_currency: str,
+    ) -> tuple[Optional[Payment], bool]:
+        with transaction.atomic():
+            payment = Payment.objects.select_for_update().select_related(
+                'invoice', 'parent'
+            ).filter(
+                tenant=tenant,
+                stripe_checkout_session_id=session_id,
+                is_deleted=False,
+            ).first()
+            if payment is None or payment.status == 'Completed':
+                return payment, False
+            if payment.status != 'Pending':
+                return payment, False
+            expected_currency = payment.stripe_currency or expected_currency
+            if currency.lower() != expected_currency.lower():
+                raise ValueError('Stripe checkout currency does not match the configured currency.')
+            expected_minor_amount = int(payment.amount * 100)
+            if amount_total != expected_minor_amount:
+                raise ValueError('Stripe checkout amount does not match the pending payment.')
+
+            invoice = Invoice.objects.select_for_update().get(
+                invoice_id=payment.invoice_id,
+                tenant=tenant,
+                is_deleted=False,
+            )
+            total_paid = Payment.objects.filter(
+                invoice=invoice,
+                status='Completed',
+                is_deleted=False,
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            if payment.amount > max(invoice.total - total_paid, Decimal('0.00')):
+                raise ValueError('Invoice balance changed before the checkout completed.')
+
+            payment.status = 'Completed'
+            payment.receipt_id = generate_receipt_number(tenant)
+            payment.txn_ref = payment_intent_id or session_id
+            payment.stripe_payment_intent_id = payment_intent_id or None
+            payment.save(update_fields=[
+                'status',
+                'receipt_id',
+                'txn_ref',
+                'stripe_payment_intent_id',
+                'updated_at',
+            ])
+            new_paid_total = total_paid + payment.amount
+            invoice.status = 'Paid' if new_paid_total >= invoice.total else 'Partially_Paid'
+            invoice.save(update_fields=['status', 'updated_at'])
+            return payment, True
+
+    @staticmethod
+    def fail_checkout(*, tenant: Tenant, session_id: str) -> Optional[Payment]:
+        with transaction.atomic():
+            payment = Payment.objects.select_for_update().filter(
+                tenant=tenant,
+                stripe_checkout_session_id=session_id,
+                is_deleted=False,
+            ).first()
+            if payment and payment.status == 'Pending':
+                payment.status = 'Failed'
+                payment.save(update_fields=['status', 'updated_at'])
+            return payment
+
+    @classmethod
     def record_payment(
         cls,
         tenant: Tenant,
@@ -437,25 +702,41 @@ class PaymentTransactionBO(BaseBusinessObject):
         method: str = "Card",
         txn_ref: str = ""
     ) -> Payment:
-        projected_total = sum(
-            payment.amount for payment in invoice.payments.filter(status='Completed', is_deleted=False)
-        ) + amount
-        target_status = 'Paid' if projected_total >= invoice.total else 'Partially_Paid'
-        bo = cls(
-            payment=None,
-            invoice=invoice,
-            parent=parent,
-            tenant=tenant,
-            amount=amount,
-            method=method,
-            txn_ref=txn_ref,
-            target_invoice_status=target_status,
-            operation='record_payment'
-        )
-        bo.enforce_rules()
-
-        receipt_no = generate_receipt_number(tenant)
         with transaction.atomic():
+            invoice = Invoice.objects.select_for_update().get(
+                invoice_id=invoice.invoice_id,
+                tenant=tenant,
+                is_deleted=False,
+            )
+            if Payment.objects.filter(
+                invoice=invoice,
+                status='Pending',
+                is_deleted=False,
+            ).exists():
+                raise ValueError('An online checkout is in progress for this invoice.')
+            total_paid = Payment.objects.filter(
+                invoice=invoice,
+                status='Completed',
+                is_deleted=False,
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            if amount <= 0 or amount > max(invoice.total - total_paid, Decimal('0.00')):
+                raise ValueError('Payment amount must be greater than zero and no more than the current balance.')
+            projected_total = total_paid + amount
+            target_status = 'Paid' if projected_total >= invoice.total else 'Partially_Paid'
+            bo = cls(
+                payment=None,
+                invoice=invoice,
+                parent=parent,
+                tenant=tenant,
+                amount=amount,
+                method=method,
+                txn_ref=txn_ref,
+                target_invoice_status=target_status,
+                operation='record_payment'
+            )
+            bo.enforce_rules()
+
+            receipt_no = generate_receipt_number(tenant)
             payment = Payment.objects.create(
                 tenant=tenant,
                 invoice=invoice,
@@ -468,11 +749,11 @@ class PaymentTransactionBO(BaseBusinessObject):
             )
 
             # Update invoice balance status
-            total_paid = sum(
-                p.amount for p in Payment.objects.filter(
-                    invoice=invoice, status='Completed', is_deleted=False
-                )
-            )
+            total_paid = Payment.objects.filter(
+                invoice=invoice,
+                status='Completed',
+                is_deleted=False,
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
             if total_paid >= invoice.total:
                 invoice.status = 'Paid'

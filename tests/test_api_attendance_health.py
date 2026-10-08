@@ -90,7 +90,7 @@ class TestAttendanceAndHealthAPI:
             tenant=tenant_a,
             student=student,
             class_id=class_id,
-            date=date(2026, 8, 31),
+            date=date.today(),
             status="Absent",
             method="Manual",
             marked_by=uuid.uuid4(),
@@ -108,6 +108,37 @@ class TestAttendanceAndHealthAPI:
         record.refresh_from_db()
         assert record.status == "Present"
         assert record.notified_parent is False
+
+    def test_teacher_cannot_edit_attendance_older_than_the_lock_window(
+        self, tenant_a, teacher_token_tenant_a
+    ):
+        student = Student.objects.create(
+            tenant=tenant_a,
+            student_number="OAK-2026-0091",
+            name="Locked Attendance Student",
+            grade="Grade 6",
+            status="Active",
+        )
+        record = StudentAttendance.objects.create(
+            tenant=tenant_a,
+            student=student,
+            class_id=uuid.uuid4(),
+            date=date(2026, 1, 1),
+            status="Present",
+            method="Manual",
+            marked_by=uuid.uuid4(),
+        )
+
+        response = self.client.patch(
+            f"/api/v1/attendance/{record.att_id}",
+            data={"status": "Absent"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {teacher_token_tenant_a}",
+        )
+
+        assert response.status_code == 422
+        record.refresh_from_db()
+        assert record.status == "Present"
 
     def test_medication_log_blocked_without_consent_returns_422(self, tenant_a, caregiver_token_tenant_a):
         student = Student.objects.create(

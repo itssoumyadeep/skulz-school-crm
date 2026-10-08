@@ -211,34 +211,18 @@ def update_attendance_record(request, att_id: UUID, payload: AttendanceUpdateSch
         is_deleted=False
     )
 
-    if getattr(request, 'user_role', 'Teacher') in {'Teacher', 'CareGiver', 'Admin', 'Principal', 'Vice_Principal', 'Owner'}:
-        if payload.status is not None:
-            record.status = payload.status
-        if payload.method is not None:
-            record.method = payload.method
-        if payload.period is not None:
-            record.period = payload.period
-        if payload.notified_parent is not None:
-            record.notified_parent = payload.notified_parent
-
-        record.marked_by = UUID(request.user_id) if getattr(request, 'user_id', None) else record.marked_by
-        record.save()
-
-        if payload.status == 'Present' and record.notified_parent:
-            record.notified_parent = False
-            record.save(update_fields=['notified_parent', 'updated_at'])
-
-        bo = AttendanceSheetBO(record=record, actor_role=getattr(request, 'user_role', 'Teacher'))
-        return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Teacher')), status=200)
-
-    return JsonResponse(
-        build_error(
-            errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to update attendance records."}],
-            tenant_id=request.tenant_id,
-            role=getattr(request, 'user_role', 'Teacher')
-        ),
-        status=403
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    record = AttendanceSheetBO.update_record(
+        record=record,
+        actor_role=actor_role,
+        marked_by=UUID(request.user_id),
+        status=payload.status,
+        method=payload.method,
+        period=payload.period,
+        notified_parent=payload.notified_parent,
     )
+    bo = AttendanceSheetBO(record=record, actor_role=actor_role)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
 
 
 @router.get("/classes/{class_id}/attendance/{att_date}", auth=JWTAuthBearer())

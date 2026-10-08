@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,13 +22,50 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-kj11(58k7yt#bmubjm)pj6sc+#_+sjqcsht7=f02esfxn103u)'
+def env_bool(name: str, default: bool = False) -> bool:
+    return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+DEBUG = env_bool("DJANGO_DEBUG", True)
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is false.")
+    SECRET_KEY = "django-insecure-development-key"
+
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", SECRET_KEY)
+if not DEBUG and "JWT_SECRET_KEY" not in os.environ:
+    raise ImproperlyConfigured("JWT_SECRET_KEY must be set when DJANGO_DEBUG is false.")
+
+ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if host]
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
+FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_CURRENCY = os.environ.get("STRIPE_CURRENCY", "cad").strip().lower()
+STRIPE_CHECKOUT_SUCCESS_URL = os.environ.get(
+    "STRIPE_CHECKOUT_SUCCESS_URL",
+    f"{FRONTEND_BASE_URL}/parent/payments?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
+)
+STRIPE_CHECKOUT_CANCEL_URL = os.environ.get(
+    "STRIPE_CHECKOUT_CANCEL_URL",
+    f"{FRONTEND_BASE_URL}/parent/payments?checkout=cancelled",
+)
+
+CORS_ALLOWED_ORIGINS = {
+    origin.rstrip("/")
+    for origin in os.environ.get(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000" if DEBUG else "",
+    ).split(",")
+    if origin
+}
+
+# Disabled by default, including development. Enable only for an isolated local
+# demo where the frontend session emulator is intentionally being used.
+ALLOW_INSECURE_DEV_TOKENS = DEBUG and env_bool("ALLOW_INSECURE_DEV_TOKENS")
 
 
 # Application definition
@@ -86,9 +126,6 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
-JWT_SECRET_KEY = 'super-secret-key-for-jwt-tokens'
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

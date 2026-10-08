@@ -25,16 +25,19 @@ ROLE_MAP = {
 
 class JWTAuthBearer(HttpBearer):
     def authenticate(self, request, token):
-        payload = None
+        used_insecure_dev_token = False
         try:
             payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
         except JWTError:
-            # Fallback for dev/mock tokens: header.payload.sig
+            if not settings.ALLOW_INSECURE_DEV_TOKENS:
+                return None
+            # Explicitly opt-in local-demo compatibility for the session emulator.
             try:
                 parts = token.split('.')
                 if len(parts) >= 2:
                     padded = parts[1] + '=' * ((4 - len(parts[1]) % 4) % 4)
                     payload = json.loads(base64.urlsafe_b64decode(padded).decode('utf-8'))
+                    used_insecure_dev_token = True
             except Exception:
                 return None
 
@@ -45,13 +48,15 @@ class JWTAuthBearer(HttpBearer):
         try:
             request.user_id = str(UUID(str(raw_user_id)))
         except (ValueError, TypeError):
-            request.user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(raw_user_id or "default-user")))
+            # Signed identity providers may use a non-UUID subject. The CRM
+            # stores audit actors as UUIDs, so derive a stable internal value.
+            request.user_id = str(uuid.uuid5(uuid.NAMESPACE_URL, str(raw_user_id)))
 
         raw_tenant_id = payload.get("tenant_id")
         try:
             tenant_uuid = UUID(str(raw_tenant_id))
         except (ValueError, TypeError):
-            tenant_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(raw_tenant_id or "demo-tenant"))
+            return None
 
         request.tenant_id = tenant_uuid
         request.user_email = payload.get("email")
@@ -60,25 +65,30 @@ class JWTAuthBearer(HttpBearer):
         request.linked_student_ids = [str(sid) for sid in raw_linked]
         request.vendor_id = payload.get("vendor_id")
 
-        # Ensure tenant exists in DB for foreign key / RLS constraints
-        Tenant.objects.get_or_create(
-            tenant_id=tenant_uuid,
-            defaults={
-                'name': 'The Purple Cubby Demo School',
-                'subdomain': f'tenant-{str(tenant_uuid)[:8]}',
-                'type': 'K-12',
-                'subscription_tier': 'Basic',
-                'region': 'Canada',
-            }
-        )
-
         raw_role = payload.get("role", "Parent")
         request.user_role = ROLE_MAP.get(str(raw_role).lower(), str(raw_role))
+        if request.user_role not in ROLE_MAP.values():
+            return None
+
+        # A signed token must refer to an existing tenant. The opt-in demo
+        # mode can create its isolated local tenant for the session emulator.
+        if used_insecure_dev_token:
+            Tenant.objects.get_or_create(
+                tenant_id=tenant_uuid,
+                defaults={
+                    'name': 'The Purple Cubby Demo School',
+                    'subdomain': f'tenant-{str(tenant_uuid)[:8]}',
+                    'type': 'K-12',
+                    'subscription_tier': 'Basic',
+                    'region': 'Canada',
+                },
+            )
+        elif not Tenant.objects.filter(tenant_id=tenant_uuid).exists():
+            return None
 
         # Immediately inject tenant context into PostgreSQL connection for RLS
         if request.tenant_id:
             with connection.cursor() as cursor:
-                cursor.execute("SELECT set_config('app.current_tenant_id', %s, TRUE)", [str(request.tenant_id)])
+                cursor.execute("SELECT set_config('app.current_tenant_id', %s, FALSE)", [str(request.tenant_id)])
 
         return payload
-

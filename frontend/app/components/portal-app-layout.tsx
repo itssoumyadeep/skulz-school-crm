@@ -129,6 +129,11 @@ const vicePrincipalLinks: SidebarNavItem[] = [
 const featureLinksByRole: Record<UserRole, SidebarNavItem[]> = {
   admin: [
     {
+      label: "New Setup",
+      href: "/admin/setup",
+      icon: <School />,
+    },
+    {
       label: "Admissions Queue",
       href: "/admin/admissions",
       icon: <FileText />,

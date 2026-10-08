@@ -85,26 +85,58 @@ class AttendanceSheetBO(BaseBusinessObject):
                     marked_by=marked_by
                 )
 
-            # BR-03-02: Check unexcused absence
-            if status == 'Absent':
-                has_approved_leave = LeaveRequest.objects.filter(
-                    tenant=tenant,
-                    requester_id=student.student_id,
-                    requester_type='Student',
-                    start_date__lte=att_date,
-                    end_date__gte=att_date,
-                    status='Approved',
-                    is_deleted=False
-                ).exists()
-
-                if not has_approved_leave:
-                    record.notified_parent = True
-                    record.save(update_fields=['notified_parent', 'updated_at'])
-            elif record.notified_parent:
-                record.notified_parent = False
-                record.save(update_fields=['notified_parent', 'updated_at'])
+            cls._apply_absence_notification(record)
 
             return record
+
+    @classmethod
+    def update_record(
+        cls,
+        *,
+        record: StudentAttendance,
+        actor_role: str,
+        marked_by: uuid.UUID,
+        status: Optional[str] = None,
+        method: Optional[str] = None,
+        period: Optional[str] = None,
+        notified_parent: Optional[bool] = None,
+    ) -> StudentAttendance:
+        """Update attendance through the same rule gate as marking it."""
+        with transaction.atomic():
+            cls(record=record, actor_role=actor_role).enforce_rules()
+
+            if status is not None:
+                record.status = status
+            if method is not None:
+                record.method = method
+            if period is not None:
+                record.period = period
+            if notified_parent is not None:
+                record.notified_parent = notified_parent
+            record.marked_by = marked_by
+            record.save()
+            cls._apply_absence_notification(record)
+            return record
+
+    @staticmethod
+    def _apply_absence_notification(record: StudentAttendance) -> None:
+        """Keep the notification flag consistent with the final absence state."""
+        if record.status == 'Absent':
+            has_approved_leave = LeaveRequest.objects.filter(
+                tenant=record.tenant,
+                requester_id=record.student_id,
+                requester_type='Student',
+                start_date__lte=record.date,
+                end_date__gte=record.date,
+                status='Approved',
+                is_deleted=False,
+            ).exists()
+            if not has_approved_leave and not record.notified_parent:
+                record.notified_parent = True
+                record.save(update_fields=['notified_parent', 'updated_at'])
+        elif record.notified_parent:
+            record.notified_parent = False
+            record.save(update_fields=['notified_parent', 'updated_at'])
 
     @classmethod
     def mark_roster(

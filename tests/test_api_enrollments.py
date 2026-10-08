@@ -1,11 +1,22 @@
 import uuid
 import pytest
-from datetime import date
+from datetime import date, datetime
+from types import SimpleNamespace
+from unittest.mock import patch
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, override_settings
 from jose import jwt
-from core.models import Student, Application, Document, Parent, EmergencyContact, AuditLog, FeeStructure
+from core.models import (
+    Student,
+    Application,
+    Document,
+    Parent,
+    EmergencyContact,
+    AuditLog,
+    FeeStructure,
+    Payment,
+)
 
 @pytest.mark.django_db
 class TestEnrollmentsAPI:
@@ -635,20 +646,58 @@ class TestEnrollmentsAPI:
         )
         assert invoice.status_code == 201
 
-        payment = self.client.post(
-            "/api/v1/payments",
-            data={
-                "invoice_id": invoice.json()["data"]["invoice_id"],
-                "parent_id": parent_id,
-                "amount": 320.0,
-                "method": "Card",
-                "txn_ref": "TXN-TEST-001",
-            },
-            content_type="application/json",
-            HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+        checkout_session = SimpleNamespace(
+            id="cs_test_offer_payment",
+            url="https://checkout.stripe.test/session",
+            expires_at=int(datetime.now().timestamp()) + 1800,
         )
-        assert payment.status_code == 201
-        assert payment.json()["data"]["status"] == "Completed"
+        stripe_event = {
+            "id": "evt_test_offer_payment",
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "id": checkout_session.id,
+                    "payment_status": "paid",
+                    "amount_total": 32000,
+                    "currency": "cad",
+                    "payment_intent": "pi_test_offer_payment",
+                    "metadata": {"tenant_id": str(tenant_a.tenant_id)},
+                }
+            },
+        }
+        with override_settings(
+            STRIPE_SECRET_KEY="sk_test_parent_checkout",
+            STRIPE_WEBHOOK_SECRET="whsec_parent_checkout",
+            STRIPE_CURRENCY="cad",
+        ):
+            with patch("core.api.v1.billing.stripe.StripeClient") as stripe_client:
+                stripe_client.return_value.v1.checkout.sessions.create.return_value = checkout_session
+                checkout = self.client.post(
+                    "/api/v1/parent/billing/checkout",
+                    data={
+                        "invoice_id": invoice.json()["data"]["invoice_id"],
+                        "amount": "320.00",
+                    },
+                    content_type="application/json",
+                    HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+                )
+                assert checkout.status_code == 201, checkout.json()
+                pending_payment = Payment.objects.get(
+                    payment_id=checkout.json()["data"]["payment_id"]
+                )
+                assert pending_payment.status == "Pending"
+
+            with patch(
+                "core.api.v1.billing.stripe.Webhook.construct_event",
+                return_value=stripe_event,
+            ):
+                webhook = self.client.post(
+                    "/api/v1/stripe/webhook",
+                    data="{}",
+                    content_type="application/json",
+                    HTTP_STRIPE_SIGNATURE="test-signature",
+                )
+                assert webhook.status_code == 200
 
         paid_status = self.client.get(
             f"/api/v1/enrollments/{application_id}/status",
@@ -658,6 +707,21 @@ class TestEnrollmentsAPI:
         assert paid_status.json()["data"]["payment_confirmed"] is True
         assert paid_status.json()["data"]["status"] == "Active"
         assert paid_status.json()["data"]["student"]["status"] == "Active"
+
+        my_applications = self.client.get(
+            "/api/v1/enrollments/my-applications",
+            HTTP_AUTHORIZATION=f"Bearer {parent_token_tenant_a}",
+        )
+        assert my_applications.status_code == 200, my_applications.json()
+        paid_application = next(
+            item for item in my_applications.json()["data"]
+            if item["application_id"] == application_id
+        )
+        paid_invoice = next(
+            item for item in paid_application["invoices"]
+            if item["invoice_id"] == invoice.json()["data"]["invoice_id"]
+        )
+        assert paid_invoice["balance_due"] == 0.0
 
     def test_owner_can_request_clarification_and_parent_can_resubmit(
         self, tenant_a, parent_token_tenant_a, owner_token_tenant_a
