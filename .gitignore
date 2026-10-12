@@ -18,6 +18,7 @@ coverage/
 .env
 .env.*
 !.env.example
+local.env
 .DS_Store
 .vscode/
 *.log

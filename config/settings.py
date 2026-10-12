@@ -14,9 +14,11 @@ import os
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env", override=False)
 
 
 # Quick-start development settings - unsuitable for production
@@ -26,20 +28,41 @@ def env_bool(name: str, default: bool = False) -> bool:
     return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
 
 
-DEBUG = env_bool("DJANGO_DEBUG", True)
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
-if not SECRET_KEY:
-    if not DEBUG:
-        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is false.")
-    SECRET_KEY = "django-insecure-development-key"
+DEBUG = env_bool("DJANGO_DEBUG", False)
 
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", SECRET_KEY)
-if not DEBUG and "JWT_SECRET_KEY" not in os.environ:
-    raise ImproperlyConfigured("JWT_SECRET_KEY must be set when DJANGO_DEBUG is false.")
 
-ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if host]
-if DEBUG and not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+def _required_secret(name: str, minimum_length: int = 50) -> str:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise ImproperlyConfigured(f"{name} must be set in the environment.")
+    if len(value) < minimum_length:
+        raise ImproperlyConfigured(
+            f"{name} must contain at least {minimum_length} characters."
+        )
+    if _is_placeholder(value):
+        raise ImproperlyConfigured(f"{name} still contains a placeholder value.")
+    return value
+
+
+def _is_placeholder(value: str) -> bool:
+    normalized = value.strip().lower()
+    return any(
+        marker in normalized
+        for marker in ("replace-me", "replace_with", "change-me", "changeme", "<placeholder")
+    )
+
+
+SECRET_KEY = _required_secret("DJANGO_SECRET_KEY")
+JWT_SECRET_KEY = _required_secret("JWT_SECRET_KEY")
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        "DJANGO_ALLOWED_HOSTS",
+        "localhost,127.0.0.1,testserver" if DEBUG else "",
+    ).split(",")
+    if host.strip()
+]
 
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -55,17 +78,78 @@ STRIPE_CHECKOUT_CANCEL_URL = os.environ.get(
 )
 
 CORS_ALLOWED_ORIGINS = {
-    origin.rstrip("/")
+    origin.strip().rstrip("/")
     for origin in os.environ.get(
         "CORS_ALLOWED_ORIGINS",
         "http://localhost:3000,http://127.0.0.1:3000" if DEBUG else "",
     ).split(",")
-    if origin
+    if origin.strip()
 }
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.environ.get(
+        "CSRF_TRUSTED_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000" if DEBUG else "",
+    ).split(",")
+    if origin.strip()
+]
 
 # Disabled by default, including development. Enable only for an isolated local
 # demo where the frontend session emulator is intentionally being used.
 ALLOW_INSECURE_DEV_TOKENS = DEBUG and env_bool("ALLOW_INSECURE_DEV_TOKENS")
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", not DEBUG)
+SECURE_HSTS_SECONDS = int(os.environ.get(
+    "DJANGO_SECURE_HSTS_SECONDS",
+    "0" if DEBUG else "31536000",
+))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = False
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = "DENY"
+
+if not DEBUG:
+    required_production_settings = {
+        "DB_NAME": os.environ.get("DB_NAME", "").strip(),
+        "DB_USER": os.environ.get("DB_USER", "").strip(),
+        "DB_PASSWORD": os.environ.get("DB_PASSWORD", "").strip(),
+        "DB_HOST": os.environ.get("DB_HOST", "").strip(),
+        "DB_PORT": os.environ.get("DB_PORT", "").strip(),
+        "DJANGO_ALLOWED_HOSTS": os.environ.get("DJANGO_ALLOWED_HOSTS", "").strip(),
+        "CORS_ALLOWED_ORIGINS": os.environ.get("CORS_ALLOWED_ORIGINS", "").strip(),
+        "CSRF_TRUSTED_ORIGINS": os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip(),
+        "STRIPE_SECRET_KEY": os.environ.get("STRIPE_SECRET_KEY", "").strip(),
+        "STRIPE_WEBHOOK_SECRET": os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip(),
+    }
+    missing_settings = [name for name, value in required_production_settings.items() if not value]
+    if missing_settings:
+        raise ImproperlyConfigured(
+            "Production configuration is missing required environment variables: "
+            + ", ".join(missing_settings)
+        )
+    placeholder_settings = [
+        name
+        for name, value in required_production_settings.items()
+        if _is_placeholder(value)
+    ]
+    if placeholder_settings:
+        raise ImproperlyConfigured(
+            "Production configuration contains placeholders for: "
+            + ", ".join(placeholder_settings)
+        )
+    if "*" in ALLOWED_HOSTS:
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain '*'.")
+    if any(not origin.startswith("https://") for origin in CORS_ALLOWED_ORIGINS):
+        raise ImproperlyConfigured("Production CORS_ALLOWED_ORIGINS must use HTTPS origins.")
+    if any(not origin.startswith("https://") for origin in CSRF_TRUSTED_ORIGINS):
+        raise ImproperlyConfigured("Production CSRF_TRUSTED_ORIGINS must use HTTPS origins.")
+    if not SECURE_SSL_REDIRECT or SECURE_HSTS_SECONDS <= 0:
+        raise ImproperlyConfigured(
+            "Production requires HTTPS redirects and a positive HSTS duration."
+        )
 
 
 # Application definition
@@ -118,12 +202,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'skool_crm_db',
-        'USER': 'soumyadeepbhadra',
-        'PASSWORD': '',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.environ.get('DB_NAME', 'skool_crm_db' if DEBUG else ''),
+        'USER': os.environ.get('DB_USER', os.environ.get('USER', 'postgres') if DEBUG else ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1' if DEBUG else ''),
+        'PORT': os.environ.get('DB_PORT', '5432' if DEBUG else ''),
+        'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '0' if DEBUG else '60')),
+        'CONN_HEALTH_CHECKS': True,
     }
 }
 
