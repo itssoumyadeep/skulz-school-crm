@@ -4,7 +4,7 @@
  * StudentWidget
  * =============
  * Renders student data for a portal according to the role's field policy
- * defined in student_access_control.md.
+ * defined in docs/reference/student_access_control.md.
  *
  * Rules enforced here:
  *  • Board / Trustee  → aggregate KPIs only, no individual rows
@@ -18,7 +18,7 @@
  *  • Vendor           → not rendered — backend returns 403 anyway
  *
  * Edit controls are driven by meta.permissions from the backend response,
- * NOT by hardcoded role checks. (student_access_control.md § 8)
+ * NOT by hardcoded role checks. (docs/reference/student_access_control.md § 8)
  */
 
 import { useState } from "react";
@@ -104,7 +104,7 @@ function Toolbar({
   grade: string;
   onGradeChange: (g: string) => void;
 }) {
-  // Teacher: no search bar, no grade filter (student_access_control.md § 7)
+  // Teacher: no search bar, no grade filter (docs/reference/student_access_control.md § 7)
   if (role === "teacher" || role === "caregiver") return null;
 
   return (
@@ -505,7 +505,7 @@ function StudentListView({ role, grade }: { role: Role; grade: string }) {
   if (students.length === 0)
     return <EmptyState message="No students found for this scope." />;
 
-  // Column definitions per role (student_access_control.md § 7)
+  // Column definitions per role (docs/reference/student_access_control.md § 7)
   const columns = getColumns(role);
 
   return (

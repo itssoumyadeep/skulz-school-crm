@@ -12,6 +12,7 @@
 The Purple Cubby handles child health records, financial transactions, school safety compliance, and multi-tenant institutional data. Validation is not a feature — it is a safety boundary. A missed validation in the wrong place can allow cross-tenant data leakage, financial fraud, an unauthorised medication administration log, or a child's report card being published before marks are moderated.
 
 This document defines:
+
 1. **The four classes of validation** and exactly where each one lives in the architecture
 2. **The rule naming convention** so every validation is traceable from spec to code to test
 3. **The enforcement hierarchy** — what happens when layers conflict
@@ -49,9 +50,11 @@ Every validation in the system belongs to exactly one of four classes. Misclassi
 ## Part 2 — Class 1: Input Validation
 
 ### Where it lives
+
 `core/schemas/` — Pydantic v2 models used by Django Ninja at the API boundary. This is the **outermost gate**. It fires before any BO or entity is touched.
 
 ### What it covers
+
 - Required fields are present
 - Field types are correct (string, UUID, date, decimal)
 - Format rules (email format, phone format, date not in past where required)
@@ -60,11 +63,13 @@ Every validation in the system belongs to exactly one of four classes. Misclassi
 - Numeric ranges (marks between 0 and max_marks)
 
 ### What it does NOT cover
+
 - Business logic ("can this student be enrolled?") — that is Class 2
 - Cross-entity checks ("does this date conflict with an exam?") — that is Class 2
 - Referential integrity ("does this student_id exist?") — that is Class 3
 
 ### Naming convention
+
 Input schema classes are named `{Resource}{Action}Schema`. There is no rule ID for input validation — it is structural, not domain logic.
 
 ```python
@@ -123,6 +128,7 @@ class MarksEntrySchema(BaseModel):
 ```
 
 ### Response on failure
+
 HTTP `422 Unprocessable Entity` with structured Pydantic error detail. Django Ninja handles this automatically.
 
 ---
@@ -130,9 +136,11 @@ HTTP `422 Unprocessable Entity` with structured Pydantic error detail. Django Ni
 ## Part 3 — Class 2: Business Rules
 
 ### Where it lives
+
 `core/business_objects/` — inside each BO class, in a method named `validate_{rule_id}()`, called by the BO's `enforce_rules()` orchestrator before any state change is committed.
 
 ### What it covers
+
 - Domain state machine transitions ("application cannot advance to Offered without verified documents")
 - Cross-entity checks that require querying multiple tables ("exam cannot be scheduled on a holiday")
 - Computed threshold checks ("attendance below 75% blocks report card publication")
@@ -150,11 +158,11 @@ BR-{P_NUMBER}-{SEQ:02d}
 
 Where `P_NUMBER` is the two-digit process number and `SEQ` is a two-digit sequence within that process.
 
-| Example | Meaning |
-|---|---|
+| Example    | Meaning                          |
+| ---------- | -------------------------------- |
 | `BR-01-01` | Process P01 (Enrollment), Rule 1 |
-| `BR-02-03` | Process P02 (Billing), Rule 3 |
-| `BR-04-07` | Process P04 (Academics), Rule 7 |
+| `BR-02-03` | Process P02 (Billing), Rule 3    |
+| `BR-04-07` | Process P04 (Academics), Rule 7  |
 
 Rule IDs are permanent. If a rule is removed, its ID is retired — never reused. Retired rule IDs are recorded in `docs/retired_rules.md`.
 
@@ -385,9 +393,11 @@ class LeaveCaseBO(BaseBusinessObject):
 ## Part 4 — Class 3: Data Integrity
 
 ### Where it lives
+
 `core/models/*.py` — Django model constraints, plus PostgreSQL `CHECK` constraints and `UNIQUE` constraints declared via `Meta.constraints`.
 
 ### What it covers
+
 - NOT NULL on required foreign keys and critical fields
 - UNIQUE constraints (e.g. student_number is unique per tenant)
 - FOREIGN KEY referential integrity (CASCADE, PROTECT, SET_NULL as appropriate)
@@ -395,10 +405,12 @@ class LeaveCaseBO(BaseBusinessObject):
 - Numeric precision for financial fields (`DecimalField(max_digits=12, decimal_places=2)`)
 
 ### What it does NOT cover
+
 - Business logic — this layer does not know about business state ("application is in Offered status")
 - Cross-request state — this layer validates one row at a time
 
 ### Naming convention
+
 Django `CheckConstraint` names follow the pattern: `chk_{table}_{field}_{description}`.
 
 ```python
@@ -487,7 +499,9 @@ total_due = models.FloatField()   # floating-point errors will corrupt financial
 ## Part 5 — Class 4: Security & Tenant Isolation
 
 ### Where it lives
+
 **Two enforced simultaneously — both are required:**
+
 1. **PostgreSQL RLS** — database-layer enforcement via `current_setting('app.current_tenant_id')`
 2. **Django middleware** — application-layer `TenantMiddleware` injects `tenant_id` into every request and validates JWT claims
 
@@ -611,26 +625,26 @@ Priority 4 — Pydantic input schemas   (enforced at API boundary)
 
 ### Decision table — where does this validation go?
 
-| Validation concern | Class | Layer |
-|---|---|---|
-| Required field is present | 1 — Input | Pydantic schema |
-| Email is well-formed | 1 — Input | Pydantic schema |
-| Date is not in the past | 1 — Input | Pydantic schema |
-| Marks not negative, not above max | 1 — Input | Pydantic schema + model CheckConstraint |
-| Status must be one of N values | 1 — Input AND 3 — Integrity | Pydantic enum AND model CheckConstraint |
-| Amount must be > 0 | 1 — Input AND 3 — Integrity | Pydantic AND model CheckConstraint |
-| Application cannot advance to Offered without verified docs | 2 — Business Rule | BO enforce_rules() |
-| Exam cannot fall on a holiday | 2 — Business Rule | BO (queries AcademicCalendarBO) |
-| Attendance below 75% blocks report card | 2 — Business Rule | BO enforce_rules() |
-| Discount above threshold requires Owner | 2 — Business Rule | BO enforce_rules() |
-| Marks locked after deadline | 2 — Business Rule | BO enforce_rules() |
-| Payment amount positive | 3 — Integrity | Django model CheckConstraint |
-| One attendance record per student per class per period per day | 3 — Integrity | Django UniqueConstraint |
-| Invoice due_date >= invoice_date | 3 — Integrity | Django CheckConstraint |
-| Total financial figures stored as Decimal not Float | 3 — Integrity | Django DecimalField |
-| Cross-tenant data access | 4 — Security | PostgreSQL RLS + middleware |
-| Role cannot access endpoint | 4 — Security | RBAC decorator |
-| tenant_id in JWT matches payload | 4 — Security | Middleware |
+| Validation concern                                             | Class                       | Layer                                   |
+| -------------------------------------------------------------- | --------------------------- | --------------------------------------- |
+| Required field is present                                      | 1 — Input                   | Pydantic schema                         |
+| Email is well-formed                                           | 1 — Input                   | Pydantic schema                         |
+| Date is not in the past                                        | 1 — Input                   | Pydantic schema                         |
+| Marks not negative, not above max                              | 1 — Input                   | Pydantic schema + model CheckConstraint |
+| Status must be one of N values                                 | 1 — Input AND 3 — Integrity | Pydantic enum AND model CheckConstraint |
+| Amount must be > 0                                             | 1 — Input AND 3 — Integrity | Pydantic AND model CheckConstraint      |
+| Application cannot advance to Offered without verified docs    | 2 — Business Rule           | BO enforce_rules()                      |
+| Exam cannot fall on a holiday                                  | 2 — Business Rule           | BO (queries AcademicCalendarBO)         |
+| Attendance below 75% blocks report card                        | 2 — Business Rule           | BO enforce_rules()                      |
+| Discount above threshold requires Owner                        | 2 — Business Rule           | BO enforce_rules()                      |
+| Marks locked after deadline                                    | 2 — Business Rule           | BO enforce_rules()                      |
+| Payment amount positive                                        | 3 — Integrity               | Django model CheckConstraint            |
+| One attendance record per student per class per period per day | 3 — Integrity               | Django UniqueConstraint                 |
+| Invoice due_date >= invoice_date                               | 3 — Integrity               | Django CheckConstraint                  |
+| Total financial figures stored as Decimal not Float            | 3 — Integrity               | Django DecimalField                     |
+| Cross-tenant data access                                       | 4 — Security                | PostgreSQL RLS + middleware             |
+| Role cannot access endpoint                                    | 4 — Security                | RBAC decorator                          |
+| tenant_id in JWT matches payload                               | 4 — Security                | Middleware                              |
 
 ---
 
@@ -643,18 +657,18 @@ Every Business Rule (Class 2) must be registered in `docs/rule_registry.md` befo
 ```markdown
 ## BR-{PROCESS}-{SEQ}: {Short title}
 
-| Field       | Value |
-|-------------|-------|
-| Rule ID     | BR-{PROCESS}-{SEQ} |
-| Process     | P{nn} — {Process Name} |
-| BO          | BO-{id} {Name} |
-| Status      | Active | Retired |
-| Added       | {YYYY-MM-DD} |
-| Retired     | {YYYY-MM-DD or —} |
-| Description | Full rule statement — testable, unambiguous |
-| Trigger     | When is this rule evaluated? |
+| Field       | Value                                                 |
+| ----------- | ----------------------------------------------------- | ------- |
+| Rule ID     | BR-{PROCESS}-{SEQ}                                    |
+| Process     | P{nn} — {Process Name}                                |
+| BO          | BO-{id} {Name}                                        |
+| Status      | Active                                                | Retired |
+| Added       | {YYYY-MM-DD}                                          |
+| Retired     | {YYYY-MM-DD or —}                                     |
+| Description | Full rule statement — testable, unambiguous           |
+| Trigger     | When is this rule evaluated?                          |
 | Violation   | What HTTP status and message does the client receive? |
-| Test ref    | test_br_{process}_{seq}() in {test file} |
+| Test ref    | test*br*{process}\_{seq}() in {test file}             |
 ```
 
 ### Example entries
@@ -662,44 +676,44 @@ Every Business Rule (Class 2) must be registered in `docs/rule_registry.md` befo
 ```markdown
 ## BR-01-01: Offered status requires all documents verified
 
-| Field       | Value |
-|-------------|-------|
-| Rule ID     | BR-01-01 |
-| Process     | P01 — Enrollment & Admissions |
-| BO          | BO-02 EnrollmentCase |
-| Status      | Active |
-| Added       | 2025-08-25 |
-| Retired     | — |
-| Description | Application cannot advance to 'Offered' status unless all required
-|             | document types (birth_certificate, previous_school_records, photo)
-|             | are marked verified by an Admin or above. |
-| Trigger     | On every call to EnrollmentCaseBO.advance_status('Offered') |
-| Violation   | HTTP 422 — { "code": "RULE_VIOLATION", "rule": "BR-01-01",
-|             |   "message": "Cannot advance to Offered: documents not verified: ['photo']" } |
-| Test ref    | test_br_01_01_blocks_offered_without_verified_docs() in
-|             | tests/enrollment/test_bo_enrollment_case.py |
+| Field       | Value                                                                       |
+| ----------- | --------------------------------------------------------------------------- |
+| Rule ID     | BR-01-01                                                                    |
+| Process     | P01 — Enrollment & Admissions                                               |
+| BO          | BO-02 EnrollmentCase                                                        |
+| Status      | Active                                                                      |
+| Added       | 2025-08-25                                                                  |
+| Retired     | —                                                                           |
+| Description | Application cannot advance to 'Offered' status unless all required          |
+|             | document types (birth_certificate, previous_school_records, photo)          |
+|             | are marked verified by an Admin or above.                                   |
+| Trigger     | On every call to EnrollmentCaseBO.advance_status('Offered')                 |
+| Violation   | HTTP 422 — { "code": "RULE_VIOLATION", "rule": "BR-01-01",                  |
+|             | "message": "Cannot advance to Offered: documents not verified: ['photo']" } |
+| Test ref    | test_br_01_01_blocks_offered_without_verified_docs() in                     |
+|             | tests/enrollment/test_bo_enrollment_case.py                                 |
 
 ---
 
 ## BR-02-03: Discount above threshold requires Owner approval
 
-| Field       | Value |
-|-------------|-------|
-| Rule ID     | BR-02-03 |
-| Process     | P02 — Billing & Fee Management |
-| BO          | BO-10 FeeAccount |
-| Status      | Active |
-| Added       | 2025-08-25 |
-| Retired     | — |
-| Description | Discount or waiver requests where the discount amount exceeds the
-|             | tenant-configured high_value_discount_threshold require the approving
-|             | user to hold the Owner role. Principal approval is sufficient below
-|             | the threshold. |
-| Trigger     | On DISCOUNT_WAIVER creation or approval |
-| Violation   | HTTP 422 — { "code": "RULE_VIOLATION", "rule": "BR-02-03",
-|             |   "message": "Discounts above [threshold] require Owner approval." } |
-| Test ref    | test_br_02_03_high_value_discount_requires_owner() in
-|             | tests/billing/test_bo_fee_account.py |
+| Field       | Value                                                                 |
+| ----------- | --------------------------------------------------------------------- |
+| Rule ID     | BR-02-03                                                              |
+| Process     | P02 — Billing & Fee Management                                        |
+| BO          | BO-10 FeeAccount                                                      |
+| Status      | Active                                                                |
+| Added       | 2025-08-25                                                            |
+| Retired     | —                                                                     |
+| Description | Discount or waiver requests where the discount amount exceeds the     |
+|             | tenant-configured high_value_discount_threshold require the approving |
+|             | user to hold the Owner role. Principal approval is sufficient below   |
+|             | the threshold.                                                        |
+| Trigger     | On DISCOUNT_WAIVER creation or approval                               |
+| Violation   | HTTP 422 — { "code": "RULE_VIOLATION", "rule": "BR-02-03",            |
+|             | "message": "Discounts above [threshold] require Owner approval." }    |
+| Test ref    | test_br_02_03_high_value_discount_requires_owner() in                 |
+|             | tests/billing/test_bo_fee_account.py                                  |
 ```
 
 ---
@@ -746,6 +760,7 @@ def apply_late_fee_task(self, invoice_id: str, tenant_id: str):
 ## Part 9 — Testing Policy
 
 Every business rule (Class 2) must have a corresponding test that:
+
 1. Tests the **passing case** (rule is satisfied, state change succeeds)
 2. Tests the **failing case** (rule is violated, `BusinessRuleError` is raised with correct `rule_id`)
 3. Is named `test_br_{process}_{seq}_{description}()`
@@ -952,10 +967,10 @@ return 403, {
 
 When raising a PR, every new validation must be justified in the PR description using this table:
 
-| Validation | Class | Layer | Justification |
-|---|---|---|---|
-| e.g. due_date >= invoice_date | 3 — Integrity | Django CheckConstraint | Structural data constraint, not business logic. Must hold even in migrations and fixtures. |
-| e.g. Offered requires verified docs | 2 — Business Rule | BO-02 enforce_rules() | Domain state machine rule, requires querying Document table, contextual to admission flow. |
+| Validation                          | Class             | Layer                  | Justification                                                                              |
+| ----------------------------------- | ----------------- | ---------------------- | ------------------------------------------------------------------------------------------ |
+| e.g. due_date >= invoice_date       | 3 — Integrity     | Django CheckConstraint | Structural data constraint, not business logic. Must hold even in migrations and fixtures. |
+| e.g. Offered requires verified docs | 2 — Business Rule | BO-02 enforce_rules()  | Domain state machine rule, requires querying Document table, contextual to admission flow. |
 
 ---
 
@@ -994,4 +1009,4 @@ HTTP STATUS CODES FOR VALIDATION FAILURES
 
 ---
 
-*This document is maintained in `docs/validation_architecture_policy.md` and is part of the Purple Cubby engineering handbook. All PRs that add or modify validation logic must reference this document.*
+_This document is maintained in `docs/reference/validation_architecture_policy.md` and is part of the Purple Cubby engineering handbook. All PRs that add or modify validation logic must reference this document._

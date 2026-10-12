@@ -605,7 +605,7 @@ def get_student_aggregate(request):
 
 def get_student_queryset(request):
     """
-    Returns student queryset scoped to requester role per student_access_control.md
+    Returns student queryset scoped to requester role per docs/reference/student_access_control.md.
     """
     role = getattr(request, 'user_role', 'Admin')
     tenant_id = getattr(request, 'tenant_id', None)

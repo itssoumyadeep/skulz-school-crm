@@ -3,7 +3,7 @@
 > **Task:** Implement student data visibility and access control across all 9 portals.
 > **Portals live at:** `localhost:3000` (Next.js 15 App Router)
 > **Backend:** Django Ninja API at `/api/v1/`
-> **Reference:** `validation_architecture_policy.md` for architecture rules, validation classes, and naming conventions.
+> **Reference:** [validation_architecture_policy.md](validation_architecture_policy.md) for architecture rules, validation classes, and naming conventions.
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Portal:** `/teacher`  
 **Reference design:** Greenfield International School — Teacher Console  
-**Architecture refs:** `AGENT.md`, `student_access_control.md`, `AGENT.md §16 P03/P04/P06`  
+**Architecture refs:** [root AGENTS.md](../../../../AGENTS.md), [student_access_control.md](../../student_access_control.md), [validation_architecture_policy.md](../../validation_architecture_policy.md), and the [sprint roadmap](../../sprint_development_doc.md).
 **Scope:** Teacher role only. All data scoped to teacher's assigned classes. No cross-class access.
 
 ---

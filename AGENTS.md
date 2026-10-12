@@ -1,5 +1,19 @@
 # AGENTS.md
 
+## Read First
+
+Read this file for repository-wide agent rules, then consult the relevant product/security/design sources before implementation:
+
+- [SECURITY.md](docs/SECURITY.md) — security posture and release checklist
+- [PRD.md](docs/PRD.md) — product scope and acceptance outcomes
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) — implemented architecture and known gaps
+- [DATA_AND_ENV.md](docs/DATA_AND_ENV.md) — entities, migrations, and environment configuration
+- [DESIGN.md](docs/DESIGN.md) — design-system and screen inventory
+- [PLAN.md](docs/PLAN.md) — task IDs, dependencies, and status
+- [MEMORY_LOG.md](docs/MEMORY_LOG.md) — durable decisions and project history
+
+Detailed source references and requirements live in [docs/reference/](docs/reference/).
+
 ## Project overview
 
 This repository is a multi-tenant School CRM platform built with:
@@ -14,13 +28,30 @@ The goal is to manage a school operation across student lifecycle, admissions, a
 
 ## Operating principles for AI agents
 
-- Read this file first and use it as the single source of truth for project context.
+- Read this file first for agent rules; use the linked documents as the source of truth for their respective domains.
 - Prefer minimal, targeted edits over broad refactors.
 - Keep changes aligned to tenant-scoped and role-scoped architecture.
 - Follow the existing patterns in the `core/business_objects` layer and `core/api/v1` route modules.
 - Do not invent new database tables or bypass tenant checks unless the task explicitly requires it.
 - Preserve the Django + Django Ninja structure; do not replace it with ad hoc logic.
 - Use same code styling, similar nomenclature, and same pattern while writing new code
+
+## Never Rules
+
+- Never commit, print, copy, or place real secrets, tokens, private keys, or credentials in source, documentation, tests, screenshots, or logs.
+- Never bypass authenticated tenant scope, role checks, object-level access checks, soft-delete filters, or established business-object rules.
+- Never add or materially change a database table without updating `docs/DATA_AND_ENV.md`, adding a migration, and testing tenant/access behavior.
+- Never implement a feature before recording its scope, dependencies, risks, and verification plan. For multi-step work, maintain a task plan and pause for approval where the request requires it.
+- Never make broad or unrelated edits; preserve existing user changes and keep diffs small and reviewable.
+- Never finish a code change without focused tests or a clear explanation of why a check could not run.
+- Never finish a task without appending a dated decision/status entry to `docs/MEMORY_LOG.md`.
+
+## Required Work Cycle
+
+1. Read the relevant architecture, security, data, design, and rule references.
+2. State the smallest scope, dependencies, and a check that can disprove the implementation hypothesis before editing.
+3. Implement a focused change and run the narrowest relevant tests first.
+4. Run required broader checks, update documentation, and append the result/decision to `docs/MEMORY_LOG.md`.
 
 ## Repository map
 

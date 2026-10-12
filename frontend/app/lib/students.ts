@@ -8,7 +8,7 @@
  * Django side restricts what each role receives. The frontend only calls
  * the correct endpoint for the role's scope.
  *
- * Reference: student_access_control.md § 5
+ * Reference: docs/reference/student_access_control.md § 5
  */
 
 import { apiFetch, type Envelope } from "./api";
