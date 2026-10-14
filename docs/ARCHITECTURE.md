@@ -81,7 +81,7 @@ The implemented API inventory is maintained in [ENTITY_MODEL_AND_SUPPORTED_APIS.
 
 ## Tenant Isolation Status
 
-Tenant query filters and object checks are required throughout the API. Authentication sets `app.current_tenant_id` on the database connection; middleware clears connection context around requests. Migration `0013` creates tenant/self-read policies for `core_portal_role_membership`, but database-wide RLS policies are not present in the migrations inspected. Treat PostgreSQL RLS as partial, not as a guaranteed boundary for every model, until full table coverage and cross-tenant tests are delivered.
+Tenant query filters and object checks are required throughout the API. Authentication sets `app.current_tenant_id` on the database connection; middleware clears connection context around requests. Migration `0020_enable_tenant_rls` enables and forces tenant policies for all concrete tenant-scoped core tables, while the `Tenant` table remains outside the tenant policy so authentication can resolve a tenant before context exists. Runtime enforcement still requires verification with a non-bypass application database role and cross-tenant tests.
 
 ## Errors, Logging, and Auditing
 

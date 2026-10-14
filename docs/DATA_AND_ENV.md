@@ -26,7 +26,7 @@ The full visual model references are the [ER diagram](er_diagram.md) and [DBML d
 - After a model change, generate a migration with `python manage.py makemigrations core`, inspect the generated operations, and commit the migration with the model change.
 - Before deployment, run `python manage.py makemigrations --check`, back up the database, and apply migrations with `python manage.py migrate` as a controlled deployment step.
 - Test migration state against the target PostgreSQL version. Do not edit an already-applied migration; add a forward migration instead.
-- New tenant-bound tables require tenant filters and soft-delete behavior. Current RLS coverage is partial: migration `0013` defines policies for portal-role membership, not every tenant table. See [ARCHITECTURE.md](ARCHITECTURE.md) and [SECURITY.md](SECURITY.md); do not assume a new table is protected by RLS.
+- New tenant-bound tables require tenant filters and soft-delete behavior. Migration `0020_enable_tenant_rls` enables and forces RLS policies for the current tenant-scoped table inventory; new tenant tables must extend that policy through a same-change migration and catalog test. See [ARCHITECTURE.md](ARCHITECTURE.md) and [SECURITY.md](SECURITY.md).
 
 ## Seed and Test Data
 

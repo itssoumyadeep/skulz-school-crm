@@ -62,9 +62,17 @@ This log records durable architecture, security, and product decisions so later 
 - **Consequences:** Rotate previous Django/JWT signing keys manually; provide environment values through deployment secret management; never commit `.env` or `local.env`.
 - **Evidence:** Phase 1 settings tests and `.env.example`; repository history contains earlier hardcoded signing-key assignments.
 
+### 2026-10-14 — Tenant-wide RLS migration
+
+- **Status:** Accepted
+- **Decision:** Enable and force tenant-isolation RLS policies for every current concrete tenant-scoped core table through migration `0020_enable_tenant_rls`; keep `Tenant` outside this policy so authentication can resolve the tenant first.
+- **Context:** Application query filters alone were not a sufficient database isolation boundary.
+- **Consequences:** The application database role must not bypass RLS, and request authentication must establish `app.current_tenant_id` before tenant-scoped queries. Runtime cross-tenant tests against a non-bypass role remain required.
+- **Evidence:** `core/migrations/0020_enable_tenant_rls.py` and `tests/test_rls_configuration.py`.
+
 ## Current Known Risks
 
-- PostgreSQL RLS coverage is partial; tenant query filters and object checks remain essential. See [`SECURITY.md`](SECURITY.md).
+- Runtime RLS enforcement still requires verification with a non-bypass application database role; the catalog test confirms policy coverage, not end-to-end role behavior. See [`SECURITY.md`](SECURITY.md).
 - Teacher and Caregiver student-list queries are not fully class/care-group scoped; do not expose real student rosters to those roles until fixed and tested.
 - The frontend Session Switcher creates unsigned development tokens; keep `ALLOW_INSECURE_DEV_TOKENS` disabled outside isolated local demos.
 - Rate limiting, verified backup/restore, and production monitoring/incident procedures are not established in the repository.
