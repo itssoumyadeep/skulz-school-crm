@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  fetchParentDashboardSummary,
+  type ParentDashboardSummary,
+} from "@/app/lib/api";
 import { StatCard, SectionCard } from "./ui";
 
 const skillProgress = [
@@ -45,6 +49,46 @@ export function ParentHub({
   view?: "dashboard" | "progress" | "events";
 }) {
   const [notice, setNotice] = useState("");
+  const [dashboard, setDashboard] = useState<ParentDashboardSummary | null>(
+    null,
+  );
+  const [dashboardStatus, setDashboardStatus] = useState<
+    "loading" | "ready" | "error"
+  >(view === "dashboard" ? "loading" : "ready");
+
+  useEffect(() => {
+    if (view !== "dashboard") return;
+
+    let active = true;
+    fetchParentDashboardSummary()
+      .then((response) => {
+        if (active) {
+          setDashboard(response.data);
+          setDashboardStatus("ready");
+        }
+      })
+      .catch(() => {
+        if (active) setDashboardStatus("error");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [view]);
+
+  const loadingValue =
+    dashboardStatus === "loading" ? "Loading…" : "Unavailable";
+  const balanceValue = dashboard
+    ? new Intl.NumberFormat("en-CA", {
+        style: "currency",
+        currency: "CAD",
+      }).format(dashboard.outstanding_balance)
+    : loadingValue;
+  const attendanceValue = dashboard
+    ? dashboard.attendance_rate === null
+      ? "No data"
+      : `${dashboard.attendance_rate.toFixed(1)}%`
+    : loadingValue;
 
   return (
     <div className="space-y-6">
@@ -53,8 +97,16 @@ export function ParentHub({
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Children Enrolled"
-            value="1 Enrolled"
-            trend="Sienna Miller vs last week"
+            value={
+              dashboard
+                ? `${dashboard.children_enrolled} Enrolled`
+                : loadingValue
+            }
+            trend={
+              dashboardStatus === "error"
+                ? "Unable to load dashboard data"
+                : "Active students linked to your account"
+            }
             icon={
               <svg
                 className="h-5 w-5"
@@ -73,8 +125,12 @@ export function ParentHub({
           />
           <StatCard
             label="Outstanding Balance"
-            value="$320.00"
-            trend="Due Oct 31 vs last week"
+            value={balanceValue}
+            trend={
+              dashboardStatus === "error"
+                ? "Unable to load dashboard data"
+                : "Unpaid issued invoices, less completed payments"
+            }
             iconBg="bg-indigo-50 text-indigo-600 border-indigo-100"
             icon={
               <svg
@@ -94,8 +150,14 @@ export function ParentHub({
           />
           <StatCard
             label="Attendance Rate"
-            value="96.4%"
-            trend="+1.2% Trend vs last week"
+            value={attendanceValue}
+            trend={
+              dashboardStatus === "error"
+                ? "Unable to load dashboard data"
+                : dashboard?.attendance_sessions
+                  ? `${dashboard.attendance_sessions} recorded sessions`
+                  : "No attendance records yet"
+            }
             iconBg="bg-emerald-50 text-emerald-600 border-emerald-100"
             icon={
               <svg
@@ -115,8 +177,14 @@ export function ParentHub({
           />
           <StatCard
             label="Upcoming Events"
-            value="3 Events"
-            trend="Parent-Teacher vs last week"
+            value={
+              dashboard ? `${dashboard.upcoming_events} Events` : loadingValue
+            }
+            trend={
+              dashboardStatus === "error"
+                ? "Unable to load dashboard data"
+                : "Open events scheduled for future dates"
+            }
             iconBg="bg-amber-50 text-amber-600 border-amber-100"
             icon={
               <svg

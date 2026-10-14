@@ -1,3 +1,7 @@
+import base64
+import json
+import uuid
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -82,6 +86,22 @@ class TestLoginAPI:
         assert data["user"]["username"] == f"teacher1_{tenant_a.subdomain}"
         assert claims["role"] == "teacher"
         assert claims["tenant_id"] == str(tenant_a.tenant_id)
+
+    def test_protected_api_rejects_an_unsigned_token(self, tenant_a):
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "tenant_id": str(tenant_a.tenant_id),
+            "role": "Admin",
+        }
+        encoded = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        forged_token = f"eyJhbGciOiJub25lIn0.{encoded}.signature"
+
+        response = self.client.get(
+            "/api/v1/students",
+            HTTP_AUTHORIZATION=f"Bearer {forged_token}",
+        )
+
+        assert response.status_code == 401
 
     def test_login_username_suffix_resolves_the_tenant(self, tenant_a):
         self.create_user(tenant_a)

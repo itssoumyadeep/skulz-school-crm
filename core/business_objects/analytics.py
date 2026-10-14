@@ -6,18 +6,22 @@ from decimal import Decimal
 from typing import Any, Dict, List
 from uuid import UUID
 
+from django.db import models
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from core.business_objects.base import BaseBusinessObject
 from core.models import (
     AnalyticsSnapshot,
     Application,
     CustomReport,
+    Event,
     Incident,
     Invoice,
     Payment,
     ReportSchedule,
+    Student,
     StudentAttendance,
     Tenant,
     WebhookDeliveryAttempt,
@@ -46,6 +50,81 @@ def _to_float(value: Decimal | int | float | None) -> float:
     if value is None:
         return 0.0
     return float(value)
+
+
+class ParentDashboardBO(BaseBusinessObject):
+    def __init__(
+        self,
+        tenant: Tenant,
+        user_id: str | None,
+        user_email: str | None,
+        linked_student_ids: list[str] | None = None,
+    ):
+        self.tenant = tenant
+        self.user_id = user_id
+        self.user_email = user_email
+        self.linked_student_ids = linked_student_ids or []
+
+    def to_dict(self) -> Dict[str, Any]:
+        linked_filter = models.Q(student_id__in=self.linked_student_ids)
+        if self.user_id:
+            try:
+                user_uuid = UUID(str(self.user_id))
+                linked_filter |= (
+                    models.Q(created_by=user_uuid)
+                    | models.Q(parents__created_by=user_uuid)
+                )
+            except (ValueError, TypeError):
+                pass
+        if self.user_email:
+            linked_filter |= models.Q(parents__email__iexact=self.user_email)
+
+        students = Student.objects.filter(
+            tenant=self.tenant,
+            is_deleted=False,
+        ).filter(linked_filter).distinct()
+        student_ids = list(students.values_list("student_id", flat=True))
+
+        open_invoices = Invoice.objects.filter(
+            tenant=self.tenant,
+            student_id__in=student_ids,
+            is_deleted=False,
+            status__in=["Issued", "Partially_Paid", "Overdue"],
+        )
+        total_due = open_invoices.aggregate(
+            total=Coalesce(Sum("total"), Decimal("0.00"))
+        )["total"]
+        total_paid = Payment.objects.filter(
+            tenant=self.tenant,
+            invoice__in=open_invoices,
+            is_deleted=False,
+            status="Completed",
+        ).aggregate(total=Coalesce(Sum("amount"), Decimal("0.00")))["total"]
+
+        attendance = StudentAttendance.objects.filter(
+            tenant=self.tenant,
+            student_id__in=student_ids,
+            is_deleted=False,
+        )
+        attendance_sessions = attendance.count()
+        attended_sessions = attendance.filter(status__in=["Present", "Late"]).count()
+
+        return {
+            "children_enrolled": students.filter(status="Active").count(),
+            "outstanding_balance": float(max(total_due - total_paid, Decimal("0.00"))),
+            "attendance_rate": (
+                round(attended_sessions / attendance_sessions * 100, 2)
+                if attendance_sessions
+                else None
+            ),
+            "attendance_sessions": attendance_sessions,
+            "upcoming_events": Event.objects.filter(
+                tenant=self.tenant,
+                is_deleted=False,
+                status="Open",
+                event_date__gte=timezone.localdate(),
+            ).count(),
+        }
 
 
 class AnalyticsDashboardBO(BaseBusinessObject):

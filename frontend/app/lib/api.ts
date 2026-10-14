@@ -1,4 +1,4 @@
-import { getClientSession, getCookieValue } from "./session";
+import { getCookieValue } from "./session";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000/api/v1";
@@ -13,7 +13,6 @@ export async function apiFetch<T>(
   init?: RequestInit,
 ): Promise<T> {
   const token = getCookieValue("pc_session");
-  const session = getClientSession();
 
   const headers = new Headers(init?.headers ?? {});
   if (!(typeof FormData !== "undefined" && init?.body instanceof FormData)) {
@@ -22,9 +21,6 @@ export async function apiFetch<T>(
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
-  }
-  if (session?.tenant_id) {
-    headers.set("X-Tenant-Id", session.tenant_id);
   }
 
   let response: Response;
@@ -80,6 +76,97 @@ export type Envelope<T> = {
     message: string;
     rule?: string;
   }>;
+};
+
+export type DataClassificationCategory = "Actors" | "Processes" | "Meta Data";
+export type SchoolSetupDatasetKey =
+  | "students"
+  | "teachers"
+  | "parents"
+  | "admins"
+  | "owners"
+  | "principals"
+  | "vendors"
+  | "assessments"
+  | "attendance"
+  | "curriculums"
+  | "events"
+  | "fee-structures"
+  | "marks"
+  | "lesson-plans"
+  | "leave-plans"
+  | "purchase-orders"
+  | "staff-details"
+  | "staff-attendances"
+  | "messages";
+
+export type SchoolSetupTemplate = {
+  key: SchoolSetupDatasetKey;
+  group: "students" | "people" | "operations";
+  label: string;
+  description: string;
+  fields: Array<{ name: string; required: boolean; example: string }>;
+};
+
+export type SchoolSetupContext = {
+  school: {
+    tenant_id: string;
+    name: string;
+    school_code: string;
+    region: string;
+    type: string;
+  };
+  datasets: SchoolSetupTemplate[];
+};
+
+export type SchoolSetupImportResult = {
+  dataset: SchoolSetupDatasetKey;
+  imported_count: number;
+  records: Array<Record<string, string | number | boolean | null>>;
+};
+
+export type StudentAttendanceStatus =
+  | "Present"
+  | "Absent"
+  | "On Leave"
+  | "Holiday"
+  | "Late"
+  | "Excused";
+
+export type StudentAttendanceRosterRow = {
+  student_id: string;
+  student_number: string;
+  name: string;
+  grade: string;
+  class_id: string;
+  attendance_id: string | null;
+  status: StudentAttendanceStatus | null;
+  notified_parent: boolean;
+};
+
+export type DataCatalogField = {
+  name: string;
+  label: string;
+  type: string;
+  related_model: string | null;
+  required: boolean;
+};
+
+export type DataCatalogElement = {
+  name: string;
+  label: string;
+  table: string;
+  category: DataClassificationCategory;
+  fields: DataCatalogField[];
+};
+
+export type DataClassificationCatalog = {
+  categories: Array<{
+    name: DataClassificationCategory;
+    description: string;
+    count: number;
+  }>;
+  elements: DataCatalogElement[];
 };
 
 export type LoginResponse = {
@@ -168,7 +255,14 @@ export type EnrollmentCase = {
   workflow_data: {
     is_draft?: boolean;
     preferred_intake?: string | null;
+    desired_start_date?: string | null;
     comments?: string;
+    emergency_contact?: {
+      name?: string;
+      phone?: string;
+      relationship?: string;
+      medical_consent?: boolean;
+    };
     assessment?: {
       assessor_id?: string;
       assessment_with?: "Principal" | "Teacher" | "Admin";
@@ -183,12 +277,6 @@ export type EnrollmentCase = {
     vp_recommendation?: {
       decision?: string;
       reason?: string;
-    };
-    emergency_contact?: {
-      name?: string;
-      phone?: string;
-      relationship?: string;
-      medical_consent?: boolean;
     };
     decision?: {
       status?: string;
@@ -214,7 +302,7 @@ export async function submitNewEnrollment(payload: {
   save_as_draft?: boolean;
   desired_start_date?: string;
   parent_name: string;
-  parent_email: string;
+  parent_email?: string;
   parent_phone: string;
   parent_relationship?: string;
   emergency_contact_name?: string;
@@ -239,9 +327,8 @@ export async function updateEnrollmentDraft(
     comments: string;
     desired_start_date: string;
     parent_name: string;
-    parent_email: string;
+    parent_email?: string;
     parent_phone: string;
-    emergency_contact_name: string;
     emergency_contact_phone: string;
     emergency_contact_relationship: string;
     medical_consent: boolean;
@@ -270,6 +357,18 @@ export async function uploadEnrollmentFile(
   payload.set("file", file);
   return apiFetch<Envelope<EnrollmentCase>>(
     `/enrollments/${applicationId}/documents/upload`,
+    { method: "POST", body: payload },
+  );
+}
+
+export async function acceptEnrollmentOffer(
+  applicationId: string,
+  photo: File,
+) {
+  const payload = new FormData();
+  payload.set("photo", photo);
+  return apiFetch<Envelope<EnrollmentCase>>(
+    `/enrollments/${applicationId}/accept-offer`,
     { method: "POST", body: payload },
   );
 }
@@ -308,7 +407,7 @@ export async function assignEnrollmentAssessment(
   applicationId: string,
   payload: {
     assessor_id: string;
-    scheduled_at: string;
+    scheduled_at?: string;
     assessment_with: "Principal" | "Teacher" | "Admin";
     assessor_name: string;
     comments: string;
@@ -372,7 +471,7 @@ export async function verifyEnrollmentDocument(
   documentId: string,
   payload: { verified: boolean },
 ) {
-  return apiFetch<Envelope<Record<string, unknown>>>(
+  return apiFetch<Envelope<EnrollmentCase>>(
     `/enrollments/${applicationId}/documents/${documentId}/verify`,
     {
       method: "PUT",
@@ -463,6 +562,76 @@ export async function fetchParentFeeAccount(studentId: string) {
   return apiFetch<Envelope<Record<string, unknown>>>(
     `/students/${studentId}/fee-account`,
   );
+}
+
+export type ParentBillingPayment = {
+  payment_id: string;
+  invoice_id: string;
+  amount: number;
+  date: string | null;
+  method: string;
+  status: string;
+  receipt_id: string | null;
+};
+
+export type ParentBillingInvoice = {
+  invoice_id: string;
+  invoice_type: string;
+  invoice_date: string;
+  due_date: string;
+  line_items: Array<{ description?: string; amount?: number }>;
+  total: number;
+  paid: number;
+  balance_due: number;
+  status: string;
+  payments: ParentBillingPayment[];
+};
+
+export type ParentBillingChild = {
+  student_id: string;
+  student_number: string;
+  name: string;
+  grade: string;
+  section: string;
+  outstanding_balance: number;
+  invoices: ParentBillingInvoice[];
+  payments: ParentBillingPayment[];
+};
+
+export type ParentBillingSummary = {
+  currency: string;
+  outstanding_balance: number;
+  children: ParentBillingChild[];
+};
+
+export type ParentCheckoutSession = {
+  payment_id: string;
+  checkout_url: string;
+  amount: number;
+  currency: string;
+};
+
+export async function fetchParentBilling() {
+  return apiFetch<Envelope<ParentBillingSummary>>("/parent/billing");
+}
+
+export async function startParentCheckout(invoiceId: string, amount: number) {
+  return apiFetch<Envelope<ParentCheckoutSession>>("/parent/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ invoice_id: invoiceId, amount }),
+  });
+}
+
+export type ParentDashboardSummary = {
+  children_enrolled: number;
+  outstanding_balance: number;
+  attendance_rate: number | null;
+  attendance_sessions: number;
+  upcoming_events: number;
+};
+
+export async function fetchParentDashboardSummary() {
+  return apiFetch<Envelope<ParentDashboardSummary>>("/parent/dashboard");
 }
 
 export async function createInvoice(payload: {
@@ -559,7 +728,7 @@ export async function submitAttendanceMark(payload: {
   student_id: string;
   class_id: string;
   date: string;
-  status: "Present" | "Absent" | "Late" | "Excused";
+  status: StudentAttendanceStatus;
   method?: "Manual" | "RFID" | "Face" | "Web" | "Biometric";
   period?: string;
 }) {
@@ -579,10 +748,40 @@ export async function fetchClassAttendance(classId: string, attDate: string) {
   );
 }
 
+export async function fetchStudentAttendanceRoster(attDate: string) {
+  return apiFetch<Envelope<StudentAttendanceRosterRow[]>>(
+    `/attendance/students/${encodeURIComponent(attDate)}`,
+  );
+}
+
+export async function bulkMarkStudentAttendance(
+  attDate: string,
+  records: Array<{
+    student_id: string;
+    status: StudentAttendanceStatus;
+  }>,
+) {
+  return apiFetch<
+    Envelope<{
+      date: string;
+      records: Array<{
+        attendance_id: string;
+        student_id: string;
+        class_id: string;
+        status: StudentAttendanceStatus;
+        notified_parent: boolean;
+      }>;
+    }>
+  >("/attendance/bulk-mark", {
+    method: "POST",
+    body: JSON.stringify({ date: attDate, records }),
+  });
+}
+
 export async function updateAttendanceRecord(
   attId: string,
   payload: {
-    status?: "Present" | "Absent" | "Late" | "Excused";
+    status?: StudentAttendanceStatus;
     method?: "Manual" | "RFID" | "Face" | "Web" | "Biometric";
     period?: string;
     notified_parent?: boolean;
@@ -1107,6 +1306,26 @@ export async function fetchAnalyticsDashboard(period?: string) {
   return apiFetch<Envelope<Record<string, unknown>>>(
     `/analytics/dashboard${suffix}`,
   );
+}
+
+export async function fetchDataClassification() {
+  return apiFetch<Envelope<DataClassificationCatalog>>(
+    "/metadata/data-classification",
+  );
+}
+
+export async function fetchSchoolSetupContext() {
+  return apiFetch<Envelope<SchoolSetupContext>>("/school-setup/config");
+}
+
+export async function importSchoolSetupDataset(
+  dataset: SchoolSetupDatasetKey,
+  records: Array<Record<string, unknown>>,
+) {
+  return apiFetch<Envelope<SchoolSetupImportResult>>("/school-setup/import", {
+    method: "POST",
+    body: JSON.stringify({ dataset, records }),
+  });
 }
 
 export async function fetchAnalyticsKpis(role: string, period?: string) {

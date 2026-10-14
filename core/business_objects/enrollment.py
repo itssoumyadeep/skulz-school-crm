@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Dict, Any, List, Optional
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Sum
 
 from .base import BaseBusinessObject, RuleViolation, BusinessRuleError
 from core.models import (
@@ -204,10 +205,14 @@ class StudentProfileBO(BaseBusinessObject):
         att_records = attendances.filter(is_deleted=False) if attendances else []
         att_total = att_records.count() if attendances else 0
         att_present = att_records.filter(status__in=['Present', 'Late']).count() if attendances else 0
-        attendance_pct = int(round((att_present / att_total) * 100)) if att_total > 0 else 96
+        attendance_pct = round((att_present / att_total) * 100, 2) if att_total else None
         latest_att = att_records.order_by('-date').first() if attendances else None
-        attendance_status = latest_att.status if latest_att else "Present"
-        attendance_summary = f"{attendance_pct}% attendance ({att_present}/{att_total or 30} days)"
+        attendance_status = latest_att.status if latest_att else None
+        attendance_summary = (
+            f"{attendance_pct}% attendance ({att_present}/{att_total} sessions)"
+            if att_total
+            else None
+        )
 
         # Health info
         health_prof = getattr(self.student, 'health_profile', None)
@@ -217,26 +222,87 @@ class StudentProfileBO(BaseBusinessObject):
         if not health_flags:
             health_flags = []
         medications = [m if isinstance(m, str) else f"{m.get('name', 'Med')} ({m.get('dosage', '')})" for m in (health_prof.medications if health_prof else [])]
-        dietary = "Standard Diet"
-        nap_schedule = "1:00 PM - 2:00 PM"
+        dietary = None
+        nap_schedule = None
 
         # Fee info
-        invoices_rel = getattr(self.student, 'invoices', None)
-        invoices_qs = invoices_rel.filter(is_deleted=False) if invoices_rel else []
-        has_overdue = invoices_qs.filter(status='Overdue').exists() if invoices_rel else False
-        fee_status = "Overdue" if has_overdue else "Current"
-        fee_account_summary = "Fees Current · $0.00 Outstanding" if not has_overdue else "Overdue Balance · Action Required"
-        fee_account = {"status": fee_status, "outstanding": 0.0 if not has_overdue else 450.0}
+        invoices_qs = self.student.invoices.filter(is_deleted=False).order_by('-invoice_date')
+        open_invoices = invoices_qs.filter(status__in=['Issued', 'Partially_Paid', 'Overdue'])
+        total_due = open_invoices.aggregate(total=Sum('total'))['total'] or Decimal('0.00')
+        total_paid = Payment.objects.filter(
+            tenant=self.student.tenant,
+            invoice__in=open_invoices,
+            is_deleted=False,
+            status='Completed',
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        outstanding = max(total_due - total_paid, Decimal('0.00'))
+        has_invoices = invoices_qs.exists()
+        has_overdue = open_invoices.filter(status='Overdue').exists()
+        fee_status = (
+            'Overdue' if has_overdue
+            else 'Outstanding' if outstanding > 0
+            else 'Current' if has_invoices
+            else None
+        )
+        fee_account_summary = (
+            f"{fee_status} · ${outstanding:.2f} outstanding"
+            if has_invoices
+            else None
+        )
+        fee_account = (
+            {'status': fee_status, 'outstanding': float(outstanding)}
+            if has_invoices
+            else None
+        )
+        invoices = [
+            {
+                'invoice_id': str(invoice.invoice_id),
+                'invoice_type': invoice.invoice_type,
+                'invoice_date': invoice.invoice_date.isoformat(),
+                'due_date': invoice.due_date.isoformat(),
+                'total': float(invoice.total),
+                'status': invoice.status,
+            }
+            for invoice in invoices_qs
+        ]
+        receipts = [
+            {
+                'receipt_id': payment.receipt_id,
+                'amount': float(payment.amount),
+                'date': payment.date.isoformat(),
+                'method': payment.method,
+                'invoice_id': str(payment.invoice_id),
+            }
+            for payment in Payment.objects.filter(
+                tenant=self.student.tenant,
+                invoice__student=self.student,
+                is_deleted=False,
+                status='Completed',
+            ).order_by('-date')
+        ]
 
         # Academic info
         report_cards_rel = getattr(self.student, 'report_cards', None)
-        latest_rc = report_cards_rel.filter(is_deleted=False).order_by('-year', '-published_date').first() if report_cards_rel else None
-        academic_summary = f"Grade {latest_rc.overall_grade} (GPA {latest_rc.gpa})" if latest_rc else "Grade A · Standard Progress"
-        report_card = {
-            "term": latest_rc.term if latest_rc else "Term 1",
-            "overall_grade": latest_rc.overall_grade if latest_rc else "A",
-            "gpa": float(latest_rc.gpa) if latest_rc else 3.85
-        }
+        latest_rc = report_cards_rel.filter(
+            is_deleted=False,
+            is_published=True,
+        ).order_by('-year', '-published_date').first() if report_cards_rel else None
+        academic_summary = (
+            f"Grade {latest_rc.overall_grade} (GPA {latest_rc.gpa})"
+            if latest_rc
+            else None
+        )
+        report_card = (
+            {
+                'term': latest_rc.term,
+                'year': latest_rc.year,
+                'overall_grade': latest_rc.overall_grade,
+                'gpa': float(latest_rc.gpa),
+                'published_date': latest_rc.published_date.isoformat(),
+            }
+            if latest_rc
+            else None
+        )
 
         # Computed completeness
         has_verified_docs = any(app["verified_documents_count"] >= 3 for app in applications) if applications else False
@@ -252,7 +318,7 @@ class StudentProfileBO(BaseBusinessObject):
             "section": self.student.section or "A",
             "status": self.student.status,
             "enrolled_date": self.student.enrolled_date.isoformat() if self.student.enrolled_date else (self.student.created_at.date().isoformat() if self.student.created_at else None),
-            "class_teacher": self.student.class_teacher or "Ms. Harper",
+            "class_teacher": self.student.class_teacher or None,
             "parent_contact": primary_contact,
             "emergency_contact": emergency_contact_str,
             "attendance_pct": attendance_pct,
@@ -267,11 +333,11 @@ class StudentProfileBO(BaseBusinessObject):
             "fee_status": fee_status,
             "fee_account_summary": fee_account_summary,
             "fee_account": fee_account,
-            "assignment_submissions": [{"title": "Weekly Math Worksheet", "status": "Submitted"}],
-            "marks_own_subject": {"Current Subject": 92},
+            "assignment_submissions": [],
+            "marks_own_subject": {},
             "report_card": report_card,
-            "invoices": [{"invoice_type": "Tuition", "total": 1200.0, "status": "Paid"}],
-            "receipts": [{"receipt_id": "REC-2026-0001", "amount": 1200.0}],
+            "invoices": invoices,
+            "receipts": receipts,
             "primary_contact": primary_parent,
             "parents": parents,
             "emergency_contacts": emergency_contacts,
@@ -387,6 +453,13 @@ class EnrollmentCaseBO(BaseBusinessObject):
             and self.target_status in final_decisions
             and self.target_status != self.application.status
         )
+        is_parent_accepting_offer = (
+            self.actor_role == 'Parent'
+            and self.application.status == 'Offered'
+            and self.target_status == 'Accepted'
+        )
+        if is_parent_accepting_offer:
+            return None
         if not is_decision_change:
             return None
 
@@ -448,7 +521,7 @@ class EnrollmentCaseBO(BaseBusinessObject):
         actor_role: str = 'Admin'
     ) -> 'EnrollmentCaseBO':
         """
-        Creates Student (Inquiry/Applied), Parent, EmergencyContact (if provided),
+        Creates an Inactive Student, Parent, EmergencyContact (if provided),
         Application, and assigns a tenant-scoped student number.
         """
         save_as_draft = data.get('save_as_draft', True)
@@ -463,7 +536,7 @@ class EnrollmentCaseBO(BaseBusinessObject):
                 name=data['student_name'],
                 dob=data['dob'],
                 grade=data['grade'],
-                status='Inquiry' if save_as_draft else 'Applied',
+                status='Inactive',
                 created_by=actor_id
             )
 
@@ -666,9 +739,7 @@ class EnrollmentCaseBO(BaseBusinessObject):
             workflow_data['parent_clarification_response'] = workflow_data.get('comments', '')
         self.application.workflow_data = workflow_data
         self.application.status = 'Under_Review'
-        self.student.status = 'Applied'
         with transaction.atomic():
-            self.student.save(update_fields=['status', 'updated_at'])
             self.application.save(update_fields=['workflow_data', 'status', 'updated_at'])
             AuditLog.objects.create(
                 tenant=self.application.tenant,
@@ -689,15 +760,17 @@ class EnrollmentCaseBO(BaseBusinessObject):
         actor_id: Optional[uuid.UUID] = None,
     ) -> None:
         workflow_data = dict(self.application.workflow_data or {})
-        workflow_data['assessment'] = {
+        assessment = {
             **workflow_data.get('assessment', {}),
             'assessor_id': str(assessor_id),
-            'scheduled_at': scheduled_at.isoformat(),
             'assessment_with': assessment_with,
             'assessor_name': assessor_name,
             'comments': comments,
-            'status': 'Scheduled',
+            'status': 'Scheduled' if scheduled_at else 'Assigned',
         }
+        if scheduled_at:
+            assessment['scheduled_at'] = scheduled_at.isoformat()
+        workflow_data['assessment'] = assessment
         self.application.workflow_data = workflow_data
         self.application.status = 'Under_Review'
         self.application.save(update_fields=['workflow_data', 'status', 'updated_at'])
@@ -908,20 +981,28 @@ class EnrollmentCaseBO(BaseBusinessObject):
                 'decided_by': str(actor_id) if actor_id else None,
                 'decided_at': self.application.decision_date.isoformat(),
             }
+            if new_status == 'Offered':
+                if invoice_amount is None:
+                    workflow_data.pop('offer_invoice_amount', None)
+                else:
+                    workflow_data['offer_invoice_amount'] = str(invoice_amount)
             self.application.workflow_data = workflow_data
 
             if new_status == 'Offered':
-                self.student.status = 'Offered'
+                self.student.status = 'Inactive'
                 self.student.save(update_fields=['status', 'updated_at'])
             elif new_status == 'Accepted':
-                self.student.status = 'Accepted'
+                self.student.status = 'Active'
                 self.student.save(update_fields=['status', 'updated_at'])
             elif new_status == 'Active':
                 self.student.status = 'Active'
                 self.student.enrolled_date = timezone.now().date()
                 self.student.save(update_fields=['status', 'enrolled_date', 'updated_at'])
-            elif new_status in ['Rejected', 'Waitlisted']:
-                self.student.status = new_status
+            elif new_status == 'Waitlisted':
+                self.student.status = 'Waitlisted'
+                self.student.save(update_fields=['status', 'updated_at'])
+            elif new_status == 'Rejected':
+                self.student.status = 'Inactive'
                 self.student.save(update_fields=['status', 'updated_at'])
 
             self.application.save(update_fields=[
@@ -953,6 +1034,54 @@ class EnrollmentCaseBO(BaseBusinessObject):
                     "owner_override": self.actor_role == 'Owner' and new_status in {'Accepted', 'Rejected'},
                 }
             )
+
+    def accept_offer(
+        self,
+        photo_file_path: str,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> None:
+        if self.application.status != 'Offered':
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-15',
+                    message="Only an offered application can be accepted by a parent.",
+                    field='status',
+                )
+            ])
+        if not photo_file_path:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-16',
+                    message="A student photograph is required to accept the offer.",
+                    field='photo',
+                )
+            ])
+
+        offer_invoice_amount = (self.application.workflow_data or {}).get(
+            'offer_invoice_amount'
+        )
+        with transaction.atomic():
+            self.upload_document(
+                application=self.application,
+                doc_type='photo',
+                file_path=photo_file_path,
+                actor_id=actor_id,
+            )
+            self.advance_status(
+                new_status='Accepted',
+                actor_id=actor_id,
+                actor_role='Parent',
+                reason='Offer accepted by parent.',
+            )
+            if not self.application.workflow_data.get('acceptance_invoice_id'):
+                self._create_acceptance_invoice(
+                    actor_id=actor_id,
+                    invoice_amount=(
+                        Decimal(str(offer_invoice_amount))
+                        if offer_invoice_amount is not None
+                        else None
+                    ),
+                )
 
     @classmethod
     def upload_document(

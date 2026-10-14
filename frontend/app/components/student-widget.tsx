@@ -4,7 +4,7 @@
  * StudentWidget
  * =============
  * Renders student data for a portal according to the role's field policy
- * defined in student_access_control.md.
+ * defined in docs/reference/student_access_control.md.
  *
  * Rules enforced here:
  *  • Board / Trustee  → aggregate KPIs only, no individual rows
@@ -14,11 +14,11 @@
  *  • Administrator    → full list including financial + health
  *  • Teacher          → class roster only, no search, no grade filter
  *  • Care Giver       → care-group roster, health/care fields only
- *  • Parent           → single child view, no list
+ *  • Parent           → all linked children, server-scoped list
  *  • Vendor           → not rendered — backend returns 403 anyway
  *
  * Edit controls are driven by meta.permissions from the backend response,
- * NOT by hardcoded role checks. (student_access_control.md § 8)
+ * NOT by hardcoded role checks. (docs/reference/student_access_control.md § 8)
  */
 
 import { useState } from "react";
@@ -26,12 +26,12 @@ import useSWR, { mutate } from "swr";
 import {
   fetchStudents,
   fetchStudentAggregate,
-  fetchStudent,
   type Student,
   type StudentAggregate,
   type StudentPermissions,
 } from "@/app/lib/students";
 import { updateStudent, uploadStudentDocument } from "@/app/lib/api";
+import { DatePicker } from "@/components/pc";
 
 // ── Role type (mirrors middleware.ts) ─────────────────────────────────────────
 type Role =
@@ -49,8 +49,6 @@ type Role =
 // ── Props ─────────────────────────────────────────────────────────────────────
 type StudentWidgetProps = {
   role: Role;
-  /** For the parent portal — child student ID from JWT claims */
-  childStudentId?: string;
   /** For the owner portal — currently selected school filter */
   defaultSchoolFilter?: string;
 };
@@ -80,8 +78,8 @@ function StatusPill({ value }: { value?: string }) {
   );
 }
 
-function AttPill({ value }: { value?: number }) {
-  if (value === undefined)
+function AttPill({ value }: { value?: number | null }) {
+  if (value === undefined || value === null)
     return <span className="text-gray-400 text-xs">—</span>;
   const colour =
     value >= 90
@@ -106,7 +104,7 @@ function Toolbar({
   grade: string;
   onGradeChange: (g: string) => void;
 }) {
-  // Teacher: no search bar, no grade filter (student_access_control.md § 7)
+  // Teacher: no search bar, no grade filter (docs/reference/student_access_control.md § 7)
   if (role === "teacher" || role === "caregiver") return null;
 
   return (
@@ -283,11 +281,11 @@ function EditStudentModal({
           </label>
           <label className="text-xs text-slate-600">
             Date of birth
-            <input
-              type="date"
+            <DatePicker
+              aria-label="Date of birth"
               value={form.dob}
-              onChange={(e) => handleChange("dob", e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:border-violet-500 focus:outline-none"
+              onChange={(value) => handleChange("dob", value)}
+              className="mt-1"
             />
           </label>
           <label className="text-xs text-slate-600">
@@ -507,7 +505,7 @@ function StudentListView({ role, grade }: { role: Role; grade: string }) {
   if (students.length === 0)
     return <EmptyState message="No students found for this scope." />;
 
-  // Column definitions per role (student_access_control.md § 7)
+  // Column definitions per role (docs/reference/student_access_control.md § 7)
   const columns = getColumns(role);
 
   return (
@@ -567,83 +565,170 @@ function StudentListView({ role, grade }: { role: Role; grade: string }) {
   );
 }
 
-// ── View: Single Child (Parent) ────────────────────────────────────────────────
-function SingleChildView({ childStudentId }: { childStudentId?: string }) {
-  const swrKey = childStudentId
-    ? `student-${childStudentId}`
-    : "student-parent-first";
-  const { data, error, isLoading } = useSWR(swrKey, async () => {
-    if (childStudentId) {
-      return fetchStudent(childStudentId);
+// ── View: All linked children (Parent) ────────────────────────────────────────
+function ParentChildrenView() {
+  const {
+    data: children,
+    error,
+    isLoading,
+  } = useSWR("parent-children", async () => {
+    const pageSize = 100;
+    const firstPage = await fetchStudents({ page: 1, page_size: pageSize });
+    const allChildren = [...firstPage.data];
+    const total = firstPage.meta?.pagination?.total ?? allChildren.length;
+    for (let page = 2; allChildren.length < total; page += 1) {
+      const response = await fetchStudents({ page, page_size: pageSize });
+      allChildren.push(...response.data);
     }
-    const listRes = await fetchStudents();
-    const first = listRes.data?.[0];
-    return { ...listRes, data: first };
+    return allChildren;
   });
-  const student = data?.data as Student | undefined;
 
   if (isLoading)
     return (
-      <div className="text-sm text-[var(--muted)] py-4">
-        Loading your child's profile…
+      <div className="py-4 text-sm text-muted-foreground">
+        Loading your children…
       </div>
     );
-  if (error) return <EmptyState message="Could not load student profile." />;
-  if (!student)
+  if (error)
+    return <EmptyState message="Could not load your children's profiles." />;
+  if (!children?.length)
     return (
-      <EmptyState message="No student profile found for this parent account." />
+      <EmptyState message="No children are linked to this parent account." />
     );
 
-  // Sections visible to parent (student_access_control.md § parent fields)
-  const sections: Array<{ key: keyof Student; label: string }> = [
-    { key: "grade", label: "Grade" },
-    { key: "section", label: "Section" },
-    { key: "status", label: "Status" },
-    { key: "attendance_summary", label: "Attendance Summary" },
-    { key: "report_card", label: "Report Card" },
-    { key: "fee_account", label: "Fee Account" },
-  ];
+  const currency = new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+  });
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <div className="h-12 w-12 rounded-full bg-[var(--purple)]/20 flex items-center justify-center text-xl font-bold text-[var(--purple-dark)]">
-          {student.name.charAt(0)}
-        </div>
-        <div>
-          <p className="font-semibold text-[var(--foreground)]">
-            {student.name}
-          </p>
-          <p className="text-xs text-[var(--muted)]">
-            {student.grade} · {student.section} · {student.student_number}
-          </p>
-        </div>
-        <StatusPill value={student.status} />
-      </div>
+    <div className="space-y-4">
+      {children.map((student) => {
+        const reportCard = student.report_card;
+        const feeAccount = student.fee_account;
+        const outstanding = Number(feeAccount?.outstanding);
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        {sections.map(({ key, label }) => {
-          const raw = student[key];
-          if (raw === undefined || raw === null) return null;
-          const display =
-            typeof raw === "object"
-              ? JSON.stringify(raw, null, 2)
-              : String(raw);
-          return (
-            <div
-              key={key}
-              className="rounded-xl border border-[var(--border)] bg-white/60 p-3"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                {label}
-              </p>
-              <p className="mt-1 text-sm whitespace-pre-wrap break-words text-[var(--foreground)]">
-                {display}
-              </p>
+        return (
+          <article
+            key={student.student_id ?? student.student_number}
+            className="rounded-lg border border-border bg-card p-4"
+          >
+            <header className="flex flex-wrap items-center gap-3 border-b border-border pb-3">
+              <div className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                {student.name.charAt(0)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-semibold text-foreground">
+                  {student.name}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Student number: {student.student_number || "Not assigned"}
+                </p>
+              </div>
+              <StatusPill value={student.status} />
+            </header>
+
+            <dl className="grid gap-x-6 gap-y-3 py-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <dt className="text-xs text-muted-foreground">Grade</dt>
+                <dd className="mt-1 text-foreground">
+                  {student.grade || "Not recorded"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Section</dt>
+                <dd className="mt-1 text-foreground">
+                  {student.section || "Not assigned"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Date of birth</dt>
+                <dd className="mt-1 text-foreground">
+                  {student.dob
+                    ? new Intl.DateTimeFormat(undefined, {
+                        dateStyle: "medium",
+                      }).format(new Date(`${student.dob}T00:00:00`))
+                    : "Not recorded"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Attendance</dt>
+                <dd className="mt-1 text-foreground">
+                  {student.attendance_summary || "No attendance records"}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="grid gap-3 border-t border-border pt-3 sm:grid-cols-2">
+              <section>
+                <h5 className="text-xs font-semibold text-foreground">
+                  Report card
+                </h5>
+                {reportCard ? (
+                  <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Term</dt>
+                      <dd className="mt-1 text-foreground">
+                        {String(reportCard.term ?? "") || "Not available"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">
+                        Overall grade
+                      </dt>
+                      <dd className="mt-1 text-foreground">
+                        {String(reportCard.overall_grade ?? "") ||
+                          "Not available"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">GPA</dt>
+                      <dd className="mt-1 text-foreground">
+                        {reportCard.gpa == null
+                          ? "Not available"
+                          : String(reportCard.gpa)}
+                      </dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No published report card
+                  </p>
+                )}
+              </section>
+              <section>
+                <h5 className="text-xs font-semibold text-foreground">
+                  Fee account
+                </h5>
+                {feeAccount ? (
+                  <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Status</dt>
+                      <dd className="mt-1 text-foreground">
+                        {String(feeAccount.status ?? "Not available")}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">
+                        Outstanding
+                      </dt>
+                      <dd className="mt-1 text-foreground">
+                        {Number.isFinite(outstanding)
+                          ? currency.format(outstanding)
+                          : "Not available"}
+                      </dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No fee records
+                  </p>
+                )}
+              </section>
             </div>
-          );
-        })}
-      </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -959,7 +1044,7 @@ function renderCell(student: Student, key: keyof Student): React.ReactNode {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-export function StudentWidget({ role, childStudentId }: StudentWidgetProps) {
+export function StudentWidget({ role }: StudentWidgetProps) {
   const [grade, setGrade] = useState("");
 
   // Vendor → never renders student data (403 on backend anyway)
@@ -995,14 +1080,14 @@ export function StudentWidget({ role, childStudentId }: StudentWidgetProps) {
     );
   }
 
-  // Parent → single child view
+  // Parent → all linked children
   if (role === "parent") {
     return (
       <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)]">
         <h3 className="mb-4 text-sm font-bold text-gray-900 md:text-base">
           My Child's Profile
         </h3>
-        <SingleChildView childStudentId={childStudentId} />
+        <ParentChildrenView />
       </div>
     );
   }

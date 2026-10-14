@@ -16,7 +16,7 @@ class TestEnrollmentCaseBO:
             name="Sophia Taylor",
             dob=date(2019, 3, 10),
             grade="Grade 1",
-            status="Applied"
+            status="Inactive"
         )
         app = Application.objects.create(
             tenant=tenant_a,
@@ -51,7 +51,7 @@ class TestEnrollmentCaseBO:
             name="Lucas Miller",
             dob=date(2019, 4, 15),
             grade="Grade 1",
-            status="Applied"
+            status="Inactive"
         )
         app = Application.objects.create(
             tenant=tenant_a,
@@ -68,13 +68,13 @@ class TestEnrollmentCaseBO:
                 file_path=f"/docs/{dtype}.pdf", verified=True
             )
 
-        bo = EnrollmentCaseBO(application=app, actor_role="Admin")
-        bo.advance_status("Offered")
+        bo = EnrollmentCaseBO(application=app, actor_role="Owner")
+        bo.advance_status("Offered", actor_role="Owner")
 
         app.refresh_from_db()
         student.refresh_from_db()
         assert app.status == "Offered"
-        assert student.status == "Offered"
+        assert student.status == "Inactive"
 
     # ── BR-01-02: Seat Confirmation Payment Gate ─────────────────────
     def test_br_01_02_fails_when_activating_without_payment_confirmed(self, tenant_a):
@@ -84,7 +84,7 @@ class TestEnrollmentCaseBO:
             name="Emily Davis",
             dob=date(2019, 6, 20),
             grade="Grade 1",
-            status="Offered"
+            status="Inactive"
         )
         app = Application.objects.create(
             tenant=tenant_a,
@@ -114,7 +114,7 @@ class TestEnrollmentCaseBO:
             name="Oliver Brown",
             dob=date(2019, 7, 25),
             grade="Grade 1",
-            status="Offered"
+            status="Inactive"
         )
         app = Application.objects.create(
             tenant=tenant_a,
@@ -138,7 +138,7 @@ class TestEnrollmentCaseBO:
             name="Charlotte Wilson",
             dob=date(2019, 8, 30),
             grade="Grade 1",
-            status="Rejected"
+            status="Inactive"
         )
         app = Application.objects.create(
             tenant=tenant_a,

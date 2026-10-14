@@ -13,6 +13,8 @@ from core.models import (
 )
 from core.business_objects.academic import AcademicCalendarBO
 
+DEFAULT_ATTENDANCE_CLASS_ID = uuid.UUID('11111111-1111-4111-8111-111111111111')
+
 
 class AttendanceSheetBO(BaseBusinessObject):
     """
@@ -83,23 +85,84 @@ class AttendanceSheetBO(BaseBusinessObject):
                     marked_by=marked_by
                 )
 
-            # BR-03-02: Check unexcused absence
-            if status == 'Absent':
-                has_approved_leave = LeaveRequest.objects.filter(
-                    tenant=tenant,
-                    requester_id=student.student_id,
-                    requester_type='Student',
-                    start_date__lte=att_date,
-                    end_date__gte=att_date,
-                    status='Approved',
-                    is_deleted=False
-                ).exists()
-
-                if not has_approved_leave:
-                    record.notified_parent = True
-                    record.save(update_fields=['notified_parent', 'updated_at'])
+            cls._apply_absence_notification(record)
 
             return record
+
+    @classmethod
+    def update_record(
+        cls,
+        *,
+        record: StudentAttendance,
+        actor_role: str,
+        marked_by: uuid.UUID,
+        status: Optional[str] = None,
+        method: Optional[str] = None,
+        period: Optional[str] = None,
+        notified_parent: Optional[bool] = None,
+    ) -> StudentAttendance:
+        """Update attendance through the same rule gate as marking it."""
+        with transaction.atomic():
+            cls(record=record, actor_role=actor_role).enforce_rules()
+
+            if status is not None:
+                record.status = status
+            if method is not None:
+                record.method = method
+            if period is not None:
+                record.period = period
+            if notified_parent is not None:
+                record.notified_parent = notified_parent
+            record.marked_by = marked_by
+            record.save()
+            cls._apply_absence_notification(record)
+            return record
+
+    @staticmethod
+    def _apply_absence_notification(record: StudentAttendance) -> None:
+        """Keep the notification flag consistent with the final absence state."""
+        if record.status == 'Absent':
+            has_approved_leave = LeaveRequest.objects.filter(
+                tenant=record.tenant,
+                requester_id=record.student_id,
+                requester_type='Student',
+                start_date__lte=record.date,
+                end_date__gte=record.date,
+                status='Approved',
+                is_deleted=False,
+            ).exists()
+            if not has_approved_leave and not record.notified_parent:
+                record.notified_parent = True
+                record.save(update_fields=['notified_parent', 'updated_at'])
+        elif record.notified_parent:
+            record.notified_parent = False
+            record.save(update_fields=['notified_parent', 'updated_at'])
+
+    @classmethod
+    def mark_roster(
+        cls,
+        *,
+        tenant: Tenant,
+        records: List[tuple[Student, str]],
+        att_date: date,
+        marked_by: uuid.UUID,
+        actor_role: str,
+    ) -> List[StudentAttendance]:
+        with transaction.atomic():
+            return [
+                cls.mark_attendance(
+                    tenant=tenant,
+                    student=student,
+                    class_id=student.class_id or DEFAULT_ATTENDANCE_CLASS_ID,
+                    att_date=att_date,
+                    status=status,
+                    marked_by=marked_by,
+                    method='Manual',
+                    period='Full_Day',
+                    actor_role=actor_role,
+                )
+                for student, status in records
+            ]
 
     @classmethod
     def compute_student_summary(cls, tenant: Tenant, student: Student) -> Dict[str, Any]:
@@ -108,10 +171,12 @@ class AttendanceSheetBO(BaseBusinessObject):
             student=student,
             is_deleted=False
         )
-        total = records.count()
-        present_count = records.filter(status__in=['Present', 'Late']).count()
-        absent_count = records.filter(status='Absent').count()
-        excused_count = records.filter(status='Excused').count()
+        sessions = records.exclude(status='Holiday')
+        total = sessions.count()
+        present_count = sessions.filter(status__in=['Present', 'Late']).count()
+        absent_count = sessions.filter(status='Absent').count()
+        excused_count = sessions.filter(status__in=['Excused', 'On Leave']).count()
+        holiday_count = records.filter(status='Holiday').count()
 
         pct = float(round((present_count / total) * 100, 2)) if total > 0 else 100.0
 
@@ -126,6 +191,7 @@ class AttendanceSheetBO(BaseBusinessObject):
             "present_count": present_count,
             "absent_count": absent_count,
             "excused_count": excused_count,
+            "holiday_count": holiday_count,
             "attendance_percentage": pct,
             "flagged_for_counselor": flagged_for_counselor
         }

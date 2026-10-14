@@ -13,6 +13,7 @@ import {
 } from "react-hook-form";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "./date-picker";
 import {
   Select,
   SelectContent,
@@ -243,16 +244,16 @@ export function DateField<
       helperText={helperText}
       errorMessage={errorMessage}
     >
-      <Input
-        {...field}
+      <DatePicker
         id={id}
-        type="date"
         value={field.value ?? ""}
+        onChange={field.onChange}
         min={min}
         max={max}
         disabled={disabled}
         aria-invalid={fieldState.invalid}
         aria-describedby={describedBy(id, helperText, errorMessage)}
+        label={label}
       />
     </FieldFrame>
   );

@@ -5,18 +5,18 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator, EmailStr
 
 class EnrollmentCreateSchema(BaseModel):
-    first_name: str
-    last_name: str
+    first_name: str = ""
+    last_name: str = ""
     dob: Optional[date] = None
-    grade: str
+    grade: str = ""
     desired_start_date: Optional[date] = None
     preferred_intake: Optional[str] = None
     comments: Optional[str] = None
     save_as_draft: bool = True
-    parent_name: str
+    parent_name: str = ""
     parent_relationship: str = "Parent"
-    parent_email: EmailStr
-    parent_phone: str
+    parent_email: Optional[EmailStr] = None
+    parent_phone: str = ""
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
@@ -54,7 +54,7 @@ class EnrollmentDraftUpdateSchema(BaseModel):
 
 class AssessmentAssignmentSchema(BaseModel):
     assessor_id: UUID
-    scheduled_at: datetime
+    scheduled_at: Optional[datetime] = None
     assessment_with: Literal['Principal', 'Teacher', 'Admin'] = 'Teacher'
     assessor_name: str = ''
     comments: str = ''
@@ -118,7 +118,7 @@ class StudentUpdateSchema(BaseModel):
     def valid_status(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
-        allowed = ['Inquiry', 'Applied', 'Offered', 'Accepted', 'Active', 'Waitlisted', 'Rejected', 'Withdrawn']
+        allowed = ['Active', 'Inactive', 'Waitlisted']
         if v not in allowed:
             raise ValueError(f"Status must be one of {allowed}")
         return v

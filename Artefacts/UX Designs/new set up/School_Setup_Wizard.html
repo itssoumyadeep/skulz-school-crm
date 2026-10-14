@@ -1,0 +1,2378 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin | New School Setup</title>
+    <link rel="stylesheet" href="../../../frontend/styles/tokens.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            background: var(--background);
+            color: var(--foreground);
+            font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+            font-size: 14px;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        a:focus-visible {
+            outline: 2px solid var(--ring);
+            outline-offset: 2px;
+        }
+
+        .shell {
+            display: grid;
+            min-height: 100vh;
+            grid-template-columns: 236px minmax(0, 1fr);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 18px 12px;
+            border-right: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 8px 18px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+
+        .brand-mark {
+            display: grid;
+            width: 34px;
+            height: 34px;
+            flex: 0 0 auto;
+            place-items: center;
+            border-radius: var(--app-radius-md);
+            background: var(--primary);
+            color: var(--primary-foreground);
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .brand-name {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .brand-subtitle {
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .nav-heading {
+            padding: 12px 10px 5px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .nav-link {
+            display: flex;
+            min-height: 38px;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: var(--app-radius-md);
+            color: var(--muted);
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .nav-link.active {
+            background: var(--primary-50);
+            color: var(--primary-800);
+            font-weight: 650;
+        }
+
+        .nav-symbol {
+            display: grid;
+            width: 19px;
+            height: 19px;
+            place-items: center;
+            border: 1px solid currentColor;
+            border-radius: 5px;
+            font-size: 10px;
+        }
+
+        .sidebar-foot {
+            margin-top: auto;
+            padding: 14px 10px 4px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .workspace {
+            min-width: 0;
+        }
+
+        .topbar {
+            display: flex;
+            min-height: 58px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 10px 28px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .crumbs {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .crumbs strong {
+            color: var(--foreground);
+            font-weight: 600;
+        }
+
+        .user {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .avatar {
+            display: grid;
+            width: 30px;
+            height: 30px;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--secondary);
+            color: var(--accent-foreground);
+            font-size: 11px;
+        }
+
+        main {
+            width: min(1280px, 100%);
+            margin: 0 auto;
+            padding: 28px;
+        }
+
+        .heading-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 26px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 25px;
+            line-height: 1.2;
+            font-weight: 680;
+        }
+
+        .subheading {
+            margin: 7px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .button {
+            display: inline-flex;
+            min-height: 36px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+            color: var(--foreground);
+            font-size: 12px;
+            font-weight: 650;
+            white-space: nowrap;
+        }
+
+        .button:hover {
+            background: var(--background);
+        }
+
+        .button:disabled {
+            cursor: not-allowed;
+            opacity: .55;
+        }
+
+        .button-primary {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+
+        .button-primary:hover {
+            background: var(--primary-700);
+        }
+
+        .button-quiet {
+            border-color: transparent;
+            background: transparent;
+            color: var(--muted);
+        }
+
+        .icon-plus {
+            display: grid;
+            width: 20px;
+            height: 20px;
+            place-items: center;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .content-panel {
+            min-height: 460px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+        }
+
+        .empty-state {
+            display: flex;
+            min-height: 460px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            display: grid;
+            width: 64px;
+            height: 64px;
+            place-items: center;
+            border: 1px dashed var(--primary-300);
+            border-radius: 50%;
+            background: var(--primary-50);
+            color: var(--primary);
+            font-size: 32px;
+            font-weight: 400;
+        }
+
+        .empty-state h2 {
+            margin: 18px 0 0;
+            font-size: 17px;
+            font-weight: 650;
+        }
+
+        .empty-state p {
+            max-width: 40ch;
+            margin: 7px 0 18px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .draft-banner {
+            display: none;
+            width: min(520px, 100%);
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 20px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--background);
+            text-align: left;
+        }
+
+        .draft-banner.visible {
+            display: flex;
+        }
+
+        .draft-title {
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .draft-date {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .wizard {
+            display: none;
+        }
+
+        .wizard.visible {
+            display: block;
+        }
+
+        .wizard-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            padding: 0;
+            margin: 0 0 22px;
+            list-style: none;
+        }
+
+        .step {
+            position: relative;
+            display: flex;
+            min-width: 0;
+            align-items: center;
+            gap: 9px;
+            padding-right: 10px;
+            color: var(--muted);
+        }
+
+        .step:not(:last-child)::after {
+            position: absolute;
+            top: 14px;
+            left: 32px;
+            right: 14px;
+            height: 1px;
+            background: var(--border);
+            content: "";
+        }
+
+        .step-dot {
+            z-index: 1;
+            display: grid;
+            width: 28px;
+            height: 28px;
+            flex: 0 0 auto;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: var(--surface);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .step-label {
+            z-index: 1;
+            overflow: hidden;
+            background: var(--background);
+            font-size: 11px;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .step.current {
+            color: var(--primary-800);
+        }
+
+        .step.current .step-dot {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+
+        .step.done .step-dot {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .wizard-card {
+            min-height: 430px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+        }
+
+        .card-heading {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-heading h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 650;
+        }
+
+        .card-heading p {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 17px;
+        }
+
+        .field {
+            display: grid;
+            min-width: 0;
+            gap: 6px;
+            color: var(--foreground);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            min-height: 38px;
+            padding: 0 11px;
+            border: 1px solid var(--input);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+            color: var(--foreground);
+            font-size: 13px;
+        }
+
+        .field small {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        .step-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .upload-zone {
+            display: grid;
+            min-height: 198px;
+            place-items: center;
+            padding: 22px;
+            border: 1px dashed var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--background);
+            text-align: center;
+        }
+
+        .upload-zone.dragging {
+            border-color: var(--primary);
+            background: var(--primary-50);
+        }
+
+        .upload-symbol {
+            display: grid;
+            width: 42px;
+            height: 42px;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+            color: var(--primary);
+            font-size: 19px;
+        }
+
+        .upload-zone h3 {
+            margin: 12px 0 0;
+            font-size: 13px;
+            font-weight: 650;
+        }
+
+        .upload-zone p {
+            margin: 5px 0 12px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .file-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            clip-path: inset(50%);
+        }
+
+        .file-chip {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            font-size: 11px;
+        }
+
+        .file-chip.visible {
+            display: inline-flex;
+        }
+
+        .upload-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .text-button {
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: var(--primary-800);
+            font-size: 12px;
+            font-weight: 650;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .notice {
+            display: none;
+            margin-top: 13px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--background);
+            color: var(--foreground);
+            font-size: 12px;
+        }
+
+        .notice.visible {
+            display: block;
+        }
+
+        .notice.error {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .review-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .metric {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--background);
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .metric-value {
+            margin-top: 4px;
+            font-size: 17px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+        }
+
+        table {
+            width: 100%;
+            min-width: 620px;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            background: var(--background);
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 7px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 650;
+        }
+
+        .status.valid {
+            border-color: color-mix(in srgb, var(--success) 40%, var(--border));
+            color: var(--success);
+        }
+
+        .status.invalid {
+            border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+            color: var(--danger);
+        }
+
+        .progress-row {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .progress-row.visible {
+            display: flex;
+        }
+
+        progress {
+            width: 100%;
+            height: 8px;
+            accent-color: var(--primary);
+        }
+
+        .progress-label {
+            min-width: 34px;
+            color: var(--muted);
+            font-size: 11px;
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+        }
+
+        .success-strip {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding: 13px 15px;
+            border: 1px solid color-mix(in srgb, var(--success) 40%, var(--border));
+            border-radius: var(--app-radius-md);
+            background: color-mix(in srgb, var(--success) 7%, var(--surface));
+        }
+
+        .success-mark {
+            display: grid;
+            width: 28px;
+            height: 28px;
+            flex: 0 0 auto;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--success);
+            color: var(--surface);
+            font-weight: 750;
+        }
+
+        .success-text {
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .success-subtext {
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .student-search {
+            width: min(300px, 100%);
+            min-height: 36px;
+            margin-bottom: 12px;
+            padding: 0 10px;
+            border: 1px solid var(--input);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+        }
+
+        .empty-table {
+            padding: 24px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .toast {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 10;
+            display: none;
+            max-width: min(400px, calc(100% - 32px));
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+            box-shadow: var(--app-shadow);
+            color: var(--foreground);
+            font-size: 12px;
+        }
+
+        .toast.visible {
+            display: block;
+        }
+
+        dialog {
+            width: min(500px, calc(100% - 28px));
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+            color: var(--foreground);
+            box-shadow: var(--app-shadow);
+        }
+
+        dialog::backdrop {
+            background: color-mix(in srgb, var(--foreground) 45%, transparent);
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-head h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .modal-head p {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .modal-body {
+            padding: 16px 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+            color: var(--muted);
+            font-size: 17px;
+            line-height: 1;
+        }
+
+        .template-fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            padding: 0;
+            margin: 13px 0 0;
+            list-style: none;
+        }
+
+        .template-fields li {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--background);
+            font-size: 11px;
+        }
+
+        .import-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .import-card {
+            display: grid;
+            grid-template-columns: minmax(160px, 1fr) minmax(100px, 1fr) auto;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+        }
+
+        .import-title {
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .import-description {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .import-file {
+            display: flex;
+            min-width: 0;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .import-file-name {
+            overflow: hidden;
+            color: var(--muted);
+            font-size: 10px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .import-card-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .import-count {
+            min-width: 74px;
+            color: var(--muted);
+            font-size: 10px;
+            text-align: right;
+        }
+
+        .summary-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .summary-heading h3 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 650;
+        }
+
+        .summary-heading p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .import-category {
+            margin: 18px 0 9px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .import-category:first-child {
+            margin-top: 0;
+        }
+
+        .import-empty {
+            padding: 22px;
+            border: 1px dashed var(--border);
+            border-radius: var(--app-radius-md);
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .import-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .import-card {
+            display: grid;
+            grid-template-columns: minmax(180px, 1.1fr) minmax(180px, 1fr) auto;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--app-radius-md);
+            background: var(--surface);
+        }
+
+        .import-title {
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .import-description {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .import-file {
+            display: flex;
+            min-width: 0;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .import-file-name {
+            overflow: hidden;
+            color: var(--muted);
+            font-size: 10px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .import-card-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .import-count {
+            min-width: 76px;
+            color: var(--muted);
+            font-size: 10px;
+            text-align: right;
+        }
+
+        .data-summary {
+            display: grid;
+            gap: 14px;
+        }
+
+        .summary-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .summary-heading h3 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 650;
+        }
+
+        .summary-heading p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .import-category {
+            margin: 18px 0 9px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .import-category:first-child {
+            margin-top: 0;
+        }
+
+        .validation-note {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (max-width: 820px) {
+            .shell {
+                grid-template-columns: 194px minmax(0, 1fr);
+            }
+
+            .sidebar {
+                padding-inline: 8px;
+            }
+
+            main {
+                padding: 22px 17px;
+            }
+
+            .topbar {
+                padding-inline: 17px;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .shell {
+                display: block;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .topbar {
+                min-height: 50px;
+                padding: 8px 13px;
+            }
+
+            main {
+                padding: 18px 12px 28px;
+            }
+
+            .heading-row {
+                align-items: flex-start;
+                margin-bottom: 19px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .heading-row .button {
+                min-height: 32px;
+                padding-inline: 9px;
+                font-size: 11px;
+            }
+
+            .steps {
+                gap: 3px;
+            }
+
+            .step {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .step:not(:last-child)::after {
+                top: 14px;
+                left: 30px;
+                right: 6px;
+            }
+
+            .step-label {
+                max-width: 100%;
+                font-size: 9px;
+            }
+
+            .card-heading {
+                padding: 15px;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+
+            .field-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .step-footer {
+                align-items: stretch;
+                flex-direction: column;
+                padding: 12px 15px;
+            }
+
+            .footer-actions {
+                width: 100%;
+            }
+
+            .footer-actions .button {
+                flex: 1;
+            }
+
+            .review-summary {
+                gap: 6px;
+            }
+
+            .metric {
+                padding: 9px;
+            }
+
+            .metric-value {
+                font-size: 15px;
+            }
+
+            .modal-body,
+            .modal-head {
+                padding-inline: 15px;
+            }
+
+            .modal-actions {
+                padding-inline: 15px;
+            }
+
+            .template-fields {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .import-card {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 8px;
+            }
+
+            .import-card-actions {
+                justify-content: space-between;
+            }
+
+            .import-count {
+                text-align: left;
+            }
+
+            .import-card {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 8px;
+            }
+
+            .import-card-actions {
+                justify-content: space-between;
+            }
+
+            .import-count {
+                text-align: left;
+            }
+
+            .toast {
+                right: 12px;
+                bottom: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="shell">
+        <aside class="sidebar" aria-label="Primary navigation">
+            <div class="brand">
+                <div class="brand-mark" aria-hidden="true">PC</div>
+                <div>
+                    <div class="brand-name">Purple Cubby</div>
+                    <div class="brand-subtitle">School CRM</div>
+                </div>
+            </div>
+            <div class="nav-heading">Administration</div>
+            <a class="nav-link" href="#"><span class="nav-symbol" aria-hidden="true">D</span>Dashboard</a>
+            <a class="nav-link" href="#"><span class="nav-symbol" aria-hidden="true">S</span>Schools</a>
+            <a class="nav-link active" href="#setup" aria-current="page"><span class="nav-symbol"
+                    aria-hidden="true">+</span>New Setup</a>
+            <a class="nav-link" href="#"><span class="nav-symbol" aria-hidden="true">A</span>Admissions</a>
+            <div class="sidebar-foot">Platform administration</div>
+        </aside>
+
+        <div class="workspace">
+            <header class="topbar">
+                <div class="crumbs">Administration <span aria-hidden="true">/</span> <strong>New Setup</strong></div>
+                <div class="user"><span class="avatar" aria-hidden="true">AD</span><span>Admin</span></div>
+            </header>
+
+            <main id="setup">
+                <section id="landing-view">
+                    <div class="heading-row">
+                        <div>
+                            <h1>New Setup</h1>
+                            <p class="subheading">Create a school workspace and bring its student records into Purple
+                                Cubby.</p>
+                        </div>
+                        <button class="button" id="landing-save" type="button">Save draft</button>
+                    </div>
+                    <div class="content-panel">
+                        <div class="empty-state">
+                            <button class="empty-icon" id="start-setup" type="button"
+                                aria-label="Start a new school setup">+</button>
+                            <h2>Set up a new school</h2>
+                            <p>Start with school details, then upload and review the student database.</p>
+                            <button class="button button-primary" type="button" id="start-setup-text"><span
+                                    class="icon-plus" aria-hidden="true">+</span>New school setup</button>
+                            <div class="draft-banner" id="draft-banner">
+                                <div>
+                                    <div class="draft-title">Saved setup draft</div>
+                                    <div class="draft-date" id="draft-date"></div>
+                                </div>
+                                <button class="button" id="resume-draft" type="button">Resume</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="wizard" id="wizard-view" aria-live="polite">
+                    <div class="wizard-top">
+                        <div>
+                            <h1>New school setup</h1>
+                            <p class="subheading" id="wizard-school-name">New school</p>
+                        </div>
+                        <button class="button" id="save-draft" type="button">Save draft</button>
+                    </div>
+                    <ol class="steps" aria-label="Setup progress">
+                        <li class="step current" data-step-indicator="1"><span class="step-dot">1</span><span
+                                class="step-label">School details</span></li>
+                        <li class="step" data-step-indicator="2"><span class="step-dot">2</span><span
+                                class="step-label">Students</span></li>
+                        <li class="step" data-step-indicator="3"><span class="step-dot">3</span><span
+                                class="step-label">Review</span></li>
+                        <li class="step" data-step-indicator="4"><span class="step-dot">4</span><span
+                                class="step-label">Students</span></li>
+                        <li class="step" data-step-indicator="5"><span class="step-dot">5</span><span
+                                class="step-label">People</span></li>
+                        <li class="step" data-step-indicator="6"><span class="step-dot">6</span><span
+                                class="step-label">School data</span></li>
+                    </ol>
+
+                    <section class="wizard-card" data-step-panel="1">
+                        <header class="card-heading">
+                            <h2>School details</h2>
+                            <p>Enter the information used to create this school workspace.</p>
+                        </header>
+                        <div class="card-body">
+                            <div class="field-grid">
+                                <label class="field">School name <input id="school-name" name="school_name"
+                                        autocomplete="organization" placeholder="e.g. Maple Grove Academy"
+                                        required></label>
+                                <label class="field">School code <input id="school-code" name="school_code"
+                                        placeholder="e.g. maple-grove" required><small>Used for school access and
+                                        student numbering.</small></label>
+                                <label class="field">School type <select id="school-type" name="school_type">
+                                        <option value="">Select type</option>
+                                        <option>Daycare</option>
+                                        <option>Preschool</option>
+                                        <option>K-12 School</option>
+                                        <option>Other</option>
+                                    </select></label>
+                                <label class="field">Region <input id="school-region" name="school_region"
+                                        autocomplete="address-level1" placeholder="City, province / state"></label>
+                                <label class="field">Admin contact name <input id="admin-name" name="admin_name"
+                                        autocomplete="name" placeholder="Full name"></label>
+                                <label class="field">Admin contact email <input id="admin-email" name="admin_email"
+                                        type="email" autocomplete="email" placeholder="admin@school.example"></label>
+                            </div>
+                        </div>
+                        <footer class="step-footer"><span class="draft-date">Step 1 of 6</span>
+                            <div class="footer-actions"><button class="button button-primary" data-next="2"
+                                    type="button">Continue</button></div>
+                        </footer>
+                    </section>
+
+                    <section class="wizard-card" data-step-panel="2" hidden>
+                        <header class="card-heading">
+                            <h2>Upload student database</h2>
+                            <p>Import student records from a CSV file for this school.</p>
+                        </header>
+                        <div class="card-body">
+                            <div class="upload-zone" id="upload-zone">
+                                <div>
+                                    <div class="upload-symbol" aria-hidden="true">↑</div>
+                                    <h3>Choose a CSV file</h3>
+                                    <p>CSV format · One student per row</p>
+                                    <label class="button" for="student-csv">Browse files</label>
+                                    <input class="file-input" id="student-csv" type="file" accept=".csv,text/csv"
+                                        aria-label="Upload student database CSV">
+                                    <div class="file-chip" id="selected-file"></div>
+                                </div>
+                            </div>
+                            <div class="upload-actions">
+                                <button class="text-button" id="open-template" type="button">Download CSV
+                                    template</button>
+                                <button class="button button-primary" id="upload-csv" type="button" disabled>Upload
+                                    CSV</button>
+                            </div>
+                            <div class="notice" id="upload-notice" role="status" aria-live="polite"></div>
+                        </div>
+                        <footer class="step-footer"><span class="draft-date">Step 2 of 6</span>
+                            <div class="footer-actions"><button class="button" data-back="1"
+                                    type="button">Back</button><button class="button button-primary"
+                                    id="continue-review" type="button" disabled>Review students</button></div>
+                        </footer>
+                    </section>
+
+                    <section class="wizard-card" data-step-panel="3" hidden>
+                        <header class="card-heading">
+                            <h2>Review student records</h2>
+                            <p>Check the parsed student rows before starting school setup.</p>
+                        </header>
+                        <div class="card-body">
+                            <div class="review-summary">
+                                <div class="metric">
+                                    <div class="metric-label">Rows detected</div>
+                                    <div class="metric-value" id="row-count">0</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Ready to import</div>
+                                    <div class="metric-value" id="ready-count">0</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Needs attention</div>
+                                    <div class="metric-value" id="issue-count">0</div>
+                                </div>
+                            </div>
+                            <div class="table-wrap">
+                                <table>
+                                    <caption class="visually-hidden">Preview of student CSV rows to be imported
+                                    </caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Student</th>
+                                            <th scope="col">Student number</th>
+                                            <th scope="col">Date of birth</th>
+                                            <th scope="col">Grade</th>
+                                            <th scope="col">Section</th>
+                                            <th scope="col">Validation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="review-body"></tbody>
+                                </table>
+                            </div>
+                            <p class="validation-note">Rows missing a student name or grade are flagged and excluded
+                                from the import. Student numbers are generated during setup.</p>
+                            <div class="progress-row" id="import-progress-row"><progress id="import-progress" max="100"
+                                    value="0"></progress><span class="progress-label" id="progress-label">0%</span>
+                            </div>
+                            <div class="notice" id="import-notice" role="status" aria-live="polite"></div>
+                        </div>
+                        <footer class="step-footer"><span class="draft-date">Step 3 of 6</span>
+                            <div class="footer-actions"><button class="button" data-back="2" id="back-review"
+                                    type="button">Back</button><button class="button button-primary"
+                                    id="import-students" type="button">Create student records</button></div>
+                        </footer>
+                    </section>
+
+                    <section class="wizard-card" data-step-panel="4" hidden>
+                        <header class="card-heading">
+                            <h2>Student records</h2>
+                            <p id="student-list-subtitle">Records created for this school.</p>
+                        </header>
+                        <div class="card-body">
+                            <div class="success-strip"><span class="success-mark" aria-hidden="true">✓</span>
+                                <div>
+                                    <div class="success-text" id="success-title">School setup complete</div>
+                                    <div class="success-subtext" id="success-subtitle"></div>
+                                </div>
+                            </div>
+                            <input class="student-search" id="student-search" type="search"
+                                placeholder="Search imported students" aria-label="Search imported students">
+                            <div class="table-wrap">
+                                <table>
+                                    <caption class="visually-hidden">Imported students for the new school</caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Student</th>
+                                            <th scope="col">Student number</th>
+                                            <th scope="col">Date of birth</th>
+                                            <th scope="col">Grade</th>
+                                            <th scope="col">Section</th>
+                                            <th scope="col">Parent contact</th>
+                                            <th scope="col">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="students-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <footer class="step-footer"><span class="draft-date">Step 4 of 6</span>
+                            <div class="footer-actions"><button class="button" id="save-complete-draft"
+                                    type="button">Save draft</button><button class="button button-primary"
+                                    id="continue-to-people" type="button">Continue to people</button></div>
+                        </footer>
+                    </section>
+
+                    <section class="wizard-card" data-step-panel="5" hidden>
+                        <header class="card-heading">
+                            <h2>People and school access</h2>
+                            <p>Upload each people dataset in order. Every file has its own schema-based template.</p>
+                        </header>
+                        <div class="card-body">
+                            <div class="import-list" id="people-imports"></div>
+                        </div>
+                        <footer class="step-footer"><span class="draft-date">Step 5 of 6</span>
+                            <div class="footer-actions"><button class="button" data-back="4"
+                                    type="button">Back</button><button class="button button-primary" data-next="6"
+                                    type="button">Continue to school data</button></div>
+                        </footer>
+                    </section>
+
+                    <section class="wizard-card" data-step-panel="6" hidden>
+                        <header class="card-heading">
+                            <h2>School data</h2>
+                            <p>Choose templates for the academic, attendance, finance, event, and operations data to
+                                import.</p>
+                        </header>
+                        <div class="card-body">
+                            <div class="import-list" id="operations-imports"></div>
+                            <section class="data-summary" id="final-review" hidden>
+                                <div class="summary-heading">
+                                    <div>
+                                        <h3>Review school data imports</h3>
+                                        <p id="final-import-count">No data files selected.</p>
+                                    </div>
+                                    <span class="status" id="final-import-state">Ready to review</span>
+                                </div>
+                                <div class="table-wrap">
+                                    <table>
+                                        <caption class="visually-hidden">Supplemental import files and row counts
+                                        </caption>
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Dataset</th>
+                                                <th scope="col">File</th>
+                                                <th scope="col">Rows</th>
+                                                <th scope="col">Required fields</th>
+                                                <th scope="col">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="import-summary-body"></tbody>
+                                    </table>
+                                </div>
+                            </section>
+                            <div class="progress-row" id="supplemental-progress-row"><progress
+                                    id="supplemental-progress" max="100" value="0"></progress><span
+                                    class="progress-label" id="supplemental-progress-label">0%</span></div>
+                            <div class="notice" id="supplemental-notice" role="status" aria-live="polite"></div>
+                            <section class="data-summary" id="setup-complete" hidden>
+                                <div class="success-strip"><span class="success-mark" aria-hidden="true">✓</span>
+                                    <div>
+                                        <div class="success-text" id="setup-complete-title">School setup complete</div>
+                                        <div class="success-subtext" id="setup-complete-subtitle"></div>
+                                    </div>
+                                </div>
+                                <div class="table-wrap">
+                                    <table>
+                                        <caption class="visually-hidden">Completed supplemental imports</caption>
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Dataset</th>
+                                                <th scope="col">Imported rows</th>
+                                                <th scope="col">Result</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="completed-import-body"></tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </div>
+                        <footer class="step-footer"><span class="draft-date">Step 6 of 6</span>
+                            <div class="footer-actions"><button class="button" data-back="5" id="back-school-data"
+                                    type="button">Back</button><button class="button button-primary"
+                                    id="start-supplemental-import" type="button">Review and import</button><button
+                                    class="button button-primary" id="finish-setup" type="button" hidden>Finish
+                                    setup</button></div>
+                        </footer>
+                    </section>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <dialog id="template-dialog" aria-labelledby="template-title">
+        <header class="modal-head">
+            <div>
+                <h2 id="template-title">CSV template</h2>
+                <p id="template-description">Use the listed columns to prepare this dataset.</p>
+            </div><button class="modal-close" id="close-template" type="button"
+                aria-label="Close template dialog">×</button>
+        </header>
+        <div class="modal-body">
+            <ul class="template-fields" id="template-fields"></ul>
+            <p class="validation-note" id="template-note"></p>
+        </div>
+        <footer class="modal-actions"><button class="button" id="cancel-template" type="button">Close</button><button
+                class="button button-primary" id="download-template" type="button">Download template</button></footer>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+        const draftKey = "purple-cubby-new-school-setup-draft";
+        const landingView = document.getElementById("landing-view");
+        const wizardView = document.getElementById("wizard-view");
+        const uploadInput = document.getElementById("student-csv");
+        const uploadButton = document.getElementById("upload-csv");
+        const templateDialog = document.getElementById("template-dialog");
+        const toast = document.getElementById("toast");
+        let currentStep = 1;
+        let selectedFile = null;
+        let studentRows = [];
+        let importedRows = [];
+        let importTimer = null;
+        let supplementalTimer = null;
+        let pendingImportFiles = {};
+        let reviewingSupplemental = false;
+
+        const schoolFields = {
+            schoolName: document.getElementById("school-name"),
+            schoolCode: document.getElementById("school-code"),
+            schoolType: document.getElementById("school-type"),
+            schoolRegion: document.getElementById("school-region"),
+            adminName: document.getElementById("admin-name"),
+            adminEmail: document.getElementById("admin-email")
+        };
+
+        const studentTemplate = {
+            key: "students",
+            label: "Students",
+            description: "Student and guardian fields based on the enrollment request schema.",
+            note: "Required fields are marked. Student numbers are generated during setup.",
+            group: "people",
+            fields: [
+                ["first_name", true, "Ava"], ["last_name", true, "Collins"],
+                ["dob", false, "2018-06-01"], ["grade", true, "Pre-K"],
+                ["preferred_intake", false, "Fall 2026"], ["desired_start_date", false, "2026-09-01"],
+                ["comments", false, ""], ["parent_name", true, "Sarah Collins"],
+                ["parent_relationship", false, "Mother"], ["parent_email", false, "sarah@example.com"],
+                ["parent_phone", true, "+15550100"], ["emergency_contact_name", false, "Morgan Collins"],
+                ["emergency_contact_phone", false, "+15550101"], ["emergency_contact_relationship", false, "Aunt"],
+                ["medical_consent", false, "false"]
+            ]
+        };
+
+        const datasetCatalog = [
+            {
+                key: "teachers", group: "people", label: "Teachers",
+                description: "StaffCreateSchema plus Teacher portal account fields.",
+                required: ["name", "email", "role", "dept", "start_date"],
+                fields: [["name", true, "Avery Rivera"], ["email", true, "avery@school.example"], ["role", true, "Teacher"], ["dept", true, "Early Learning"], ["employment_type", false, "Full_Time"], ["start_date", true, "2026-09-01"], ["salary", false, "0.00"], ["certifications", false, "[]"], ["dbs_ref", false, ""], ["dbs_expiry", false, ""]]
+            },
+            {
+                key: "parents", group: "people", label: "Parents",
+                description: "Parent model fields, linked using the imported student number.",
+                required: ["student_number", "name", "relationship", "phone"],
+                fields: [["student_number", true, "STU-2026-0001"], ["name", true, "Jordan Rivera"], ["relationship", true, "Parent"], ["phone", true, "+15550102"], ["email", false, "jordan@example.com"], ["notification_prefs", false, "{}"], ["media_consent", false, "false"]]
+            },
+            {
+                key: "admins", group: "people", label: "Admins",
+                description: "Admin account and tenant role-membership fields.",
+                required: ["first_name", "last_name", "email", "school_code"],
+                fields: [["first_name", true, "Taylor"], ["last_name", true, "Morgan"], ["email", true, "taylor@school.example"], ["school_code", true, "maple-grove"], ["role", true, "Admin"], ["is_active", false, "true"]]
+            },
+            {
+                key: "owners", group: "people", label: "Owners",
+                description: "Owner account and tenant role-membership fields.",
+                required: ["first_name", "last_name", "email", "school_code"],
+                fields: [["first_name", true, "Casey"], ["last_name", true, "Morgan"], ["email", true, "casey@school.example"], ["school_code", true, "maple-grove"], ["role", true, "Owner"], ["is_active", false, "true"]]
+            },
+            {
+                key: "principals", group: "people", label: "Principals",
+                description: "Principal account and tenant role-membership fields.",
+                required: ["first_name", "last_name", "email", "school_code"],
+                fields: [["first_name", true, "Riley"], ["last_name", true, "Morgan"], ["email", true, "riley@school.example"], ["school_code", true, "maple-grove"], ["role", true, "Principal"], ["is_active", false, "true"]]
+            },
+            {
+                key: "vendors", group: "people", label: "Vendors",
+                description: "VendorCreateSchema fields.",
+                required: ["name"],
+                fields: [["name", true, "Bright Supplies"], ["contact_name", false, "Jamie Lee"], ["phone", false, "+15550103"], ["email", false, "contact@vendor.example"], ["payment_terms", false, "Net 30"]]
+            },
+            {
+                key: "assessments", group: "operations", label: "Assessments",
+                description: "ExamCreateSchema fields for exams and assessments.",
+                required: ["calendar_id", "class_id", "name", "date"],
+                fields: [["calendar_id", true, ""], ["class_id", true, ""], ["name", true, "Fall assessment"], ["exam_type", false, "Unit_Test"], ["date", true, "2026-10-15"], ["start_time", false, "09:00"], ["end_time", false, "12:00"], ["duration_mins", false, "180"], ["room", false, "Room 1"], ["invigilator_id", false, ""], ["max_marks", false, "100.00"]]
+            },
+            {
+                key: "attendance", group: "operations", label: "Attendance Data",
+                description: "AttendanceMarkSchema fields. Use a student UUID from the imported student list.",
+                required: ["student_id", "class_id", "date", "status"],
+                fields: [["student_id", true, ""], ["class_id", true, ""], ["date", true, "2026-09-30"], ["status", true, "Present"], ["method", false, "Manual"], ["period", false, "Full_Day"]]
+            },
+            {
+                key: "curriculums", group: "operations", label: "Curriculums",
+                description: "CurriculumCreateSchema fields. JSON columns should contain valid JSON arrays.",
+                required: ["grade"],
+                fields: [["grade", true, "Pre-K"], ["version", false, "1.0"], ["subjects", false, "[]"], ["learning_outcomes", false, "[]"]]
+            },
+            {
+                key: "events", group: "operations", label: "Events",
+                description: "EventCreateSchema fields.",
+                required: ["title", "event_date", "registration_deadline", "location"],
+                fields: [["title", true, "Family open house"], ["event_date", true, "2026-10-15"], ["registration_deadline", true, "2026-10-10"], ["location", true, "School hall"], ["description", false, ""], ["fee_amount", false, "0.00"], ["capacity", false, "0"], ["requires_permission_slip", false, "true"]]
+            },
+            {
+                key: "fee-structures", group: "operations", label: "Fee Structures",
+                description: "FeeStructureCreateSchema fields. JSON columns should contain valid JSON.",
+                required: ["grade", "term"],
+                fields: [["grade", true, "Pre-K"], ["term", true, "Fall 2026"], ["components", false, "[]"], ["discount_rules", false, "[]"], ["penalty_rules", false, "{}"], ["version", false, "1.0"]]
+            },
+            {
+                key: "marks", group: "operations", label: "Marks",
+                description: "MarksEntrySchema fields. Use existing exam and student UUIDs.",
+                required: ["exam_id", "student_id", "subject", "marks"],
+                fields: [["exam_id", true, ""], ["student_id", true, ""], ["subject", true, "Literacy"], ["marks", true, "85"], ["max_marks", false, "100"]]
+            },
+            {
+                key: "lesson-plans", group: "operations", label: "Lesson Plans",
+                description: "LessonPlanCreateSchema fields.",
+                required: ["curriculum_id", "class_id", "week", "topic"],
+                fields: [["curriculum_id", true, ""], ["class_id", true, ""], ["week", true, "1"], ["topic", true, "Number patterns"], ["learning_outcomes", false, "[]"]]
+            },
+            {
+                key: "leave-plans", group: "operations", label: "Leave Plans",
+                description: "LeaveRequestCreateSchema fields.",
+                required: ["requester_id", "requester_type", "leave_type", "start_date", "end_date", "reason"],
+                fields: [["requester_id", true, ""], ["requester_type", true, "Staff"], ["leave_type", true, "Annual"], ["start_date", true, "2026-10-12"], ["end_date", true, "2026-10-13"], ["days", false, "2"], ["reason", true, "Personal leave"]]
+            },
+            {
+                key: "purchase-orders", group: "operations", label: "Purchase Orders",
+                description: "PurchaseOrderCreateSchema fields.",
+                required: ["vendor_id", "po_number", "amount"],
+                fields: [["vendor_id", true, ""], ["requisition_id", false, ""], ["po_number", true, "PO-2026-001"], ["amount", true, "250.00"], ["expected_delivery_date", false, "2026-10-20"]]
+            },
+            {
+                key: "staff-details", group: "operations", label: "Staff Details",
+                description: "StaffCreateSchema fields.",
+                required: ["name", "role", "dept", "start_date"],
+                fields: [["name", true, "Avery Rivera"], ["role", true, "Teacher"], ["dept", true, "Early Learning"], ["employment_type", false, "Full_Time"], ["start_date", true, "2026-09-01"], ["salary", false, "0.00"], ["certifications", false, "[]"], ["dbs_ref", false, ""], ["dbs_expiry", false, ""]]
+            },
+            {
+                key: "staff-attendance", group: "operations", label: "Staff Attendances",
+                description: "StaffAttendance model fields. Use staff UUIDs from Staff Details.",
+                required: ["staff_id", "date", "status"],
+                fields: [["staff_id", true, ""], ["date", true, "2026-09-30"], ["check_in", false, "08:30"], ["check_out", false, "16:30"], ["method", false, "Manual"], ["status", true, "Present"], ["substitute_id", false, ""], ["latitude", false, ""], ["longitude", false, ""], ["geofence_verified", false, "false"]]
+            },
+            {
+                key: "messages", group: "operations", label: "Messages",
+                description: "MessageCreateSchema fields. JSON payload should be valid JSON.",
+                required: ["channel", "body"],
+                fields: [["channel", true, "Email"], ["subject", false, "School update"], ["body", true, "Message body"], ["recipient_id", false, ""], ["recipient_role", false, "Parent"], ["trigger_event", false, ""], ["payload", false, "{}"]]
+            }
+        ];
+
+        let supplementalImports = {};
+        let activeTemplateKey = "students";
+        let supplementalComplete = false;
+
+        function announce(message) {
+            toast.textContent = message;
+            toast.classList.add("visible");
+            window.clearTimeout(announce.timeout);
+            announce.timeout = window.setTimeout(() => toast.classList.remove("visible"), 2800);
+        }
+
+        function formState() {
+            return Object.fromEntries(Object.entries(schoolFields).map(([key, field]) => [key, field.value]));
+        }
+
+        function showWizard(step) {
+            currentStep = step;
+            landingView.hidden = true;
+            wizardView.classList.add("visible");
+            document.querySelectorAll("[data-step-panel]").forEach((panel) => {
+                panel.hidden = Number(panel.dataset.stepPanel) !== step;
+            });
+            document.querySelectorAll("[data-step-indicator]").forEach((indicator) => {
+                const indicatorStep = Number(indicator.dataset.stepIndicator);
+                indicator.classList.toggle("current", indicatorStep === step);
+                indicator.classList.toggle("done", indicatorStep < step);
+                const dot = indicator.querySelector(".step-dot");
+                dot.textContent = indicatorStep < step ? "✓" : String(indicatorStep);
+            });
+            document.getElementById("wizard-school-name").textContent = schoolFields.schoolName.value || "New school";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function openLanding() {
+            wizardView.classList.remove("visible");
+            landingView.hidden = false;
+            currentStep = 1;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function saveDraft(showMessage = true) {
+            const draft = {
+                savedAt: new Date().toISOString(),
+                step: currentStep,
+                school: formState(),
+                rows: studentRows,
+                importedRows,
+                supplementalImports,
+                supplementalComplete
+            };
+            localStorage.setItem(draftKey, JSON.stringify(draft));
+            refreshDraftBanner();
+            if (showMessage) announce("Setup saved as a draft on this device.");
+        }
+
+        function refreshDraftBanner() {
+            const raw = localStorage.getItem(draftKey);
+            const banner = document.getElementById("draft-banner");
+            if (!raw) return banner.classList.remove("visible");
+            const draft = JSON.parse(raw);
+            const saved = new Date(draft.savedAt);
+            document.getElementById("draft-date").textContent = `Saved ${saved.toLocaleString()}`;
+            banner.classList.add("visible");
+        }
+
+        function resumeDraft() {
+            const raw = localStorage.getItem(draftKey);
+            if (!raw) return;
+            const draft = JSON.parse(raw);
+            Object.entries(draft.school ?? {}).forEach(([key, value]) => {
+                if (schoolFields[key]) schoolFields[key].value = value;
+            });
+            studentRows = draft.rows ?? [];
+            importedRows = draft.importedRows ?? [];
+            supplementalImports = draft.supplementalImports ?? {};
+            supplementalComplete = Boolean(draft.supplementalComplete);
+            renderImportCards();
+            renderSupplementalSummary();
+            if (studentRows.length) {
+                renderReview();
+                renderStudentList();
+            }
+            showWizard(Math.min(Math.max(Number(draft.step) || 1, 1), 6));
+            if (supplementalComplete) showSupplementalComplete();
+            announce("Draft restored.");
+        }
+
+        function parseCsvRows(text) {
+            const rows = [];
+            let row = [];
+            let cell = "";
+            let quoted = false;
+            for (let index = 0; index < text.length; index += 1) {
+                const char = text[index];
+                if (char === '"' && quoted && text[index + 1] === '"') {
+                    cell += '"';
+                    index += 1;
+                } else if (char === '"') {
+                    quoted = !quoted;
+                } else if (char === "," && !quoted) {
+                    row.push(cell.trim());
+                    cell = "";
+                } else if ((char === "\n" || char === "\r") && !quoted) {
+                    if (char === "\r" && text[index + 1] === "\n") index += 1;
+                    row.push(cell.trim());
+                    if (row.some(Boolean)) rows.push(row);
+                    row = [];
+                    cell = "";
+                } else {
+                    cell += char;
+                }
+            }
+            row.push(cell.trim());
+            if (row.some(Boolean)) rows.push(row);
+            if (rows.length < 2) return { headers: [], records: [] };
+            const headers = rows.shift().map((header) => header.trim().toLowerCase());
+            return {
+                headers,
+                records: rows.map((values) => Object.fromEntries(
+                    headers.map((header, index) => [header, values[index] ?? ""])
+                ))
+            };
+        }
+
+        function parseStudentCsv(text) {
+            const { records } = parseCsvRows(text);
+            return records.map((record) => ({
+                first_name: record.first_name ?? "",
+                last_name: record.last_name ?? "",
+                dob: record.dob ?? record.date_of_birth ?? "",
+                grade: record.grade ?? "",
+                section: record.section ?? "",
+                parent_name: record.parent_name ?? "",
+                parent_email: record.parent_email ?? "",
+                parent_phone: record.parent_phone ?? "",
+                valid: Boolean(record.first_name?.trim() && record.last_name?.trim() && record.grade?.trim())
+            }));
+        }
+
+        function getTemplateDefinition(key) {
+            return key === "students"
+                ? studentTemplate
+                : datasetCatalog.find((dataset) => dataset.key === key);
+        }
+
+        function requiredColumns(definition) {
+            return definition.fields.filter((field) => field[1]).map((field) => field[0]);
+        }
+
+        function renderTemplateDialog(key) {
+            const definition = getTemplateDefinition(key);
+            if (!definition) return;
+            activeTemplateKey = key;
+            const title = key === "students" ? "Student" : definition.label;
+            document.getElementById("template-title").textContent = `${title} CSV template`;
+            document.getElementById("template-description").textContent = definition.description;
+            document.getElementById("template-note").textContent = definition.note || "Use one row per record. Date values use YYYY-MM-DD; JSON fields must contain valid JSON.";
+            const list = document.getElementById("template-fields");
+            list.replaceChildren();
+            definition.fields.forEach(([name, required, example]) => {
+                const item = document.createElement("li");
+                const strong = document.createElement("strong");
+                strong.textContent = name;
+                item.append(strong, document.createTextNode(` · ${required ? "Required" : "Optional"}${example ? ` · e.g. ${example}` : ""}`));
+                list.append(item);
+            });
+            templateDialog.showModal();
+        }
+
+        function csvCell(value) {
+            const text = String(value ?? "");
+            return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+        }
+
+        function downloadTemplate(key) {
+            const definition = getTemplateDefinition(key);
+            if (!definition) return;
+            const headers = definition.fields.map((field) => field[0]);
+            const exampleRow = definition.fields.map((field) => field[2] ?? "");
+            const csv = `${headers.map(csvCell).join(",")}\r\n${exampleRow.map(csvCell).join(",")}\r\n`;
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${key.replace(/[^a-z0-9-]/gi, "_")}_template.csv`;
+            link.click();
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+            templateDialog.close();
+        }
+
+        function importCardStatus(key) {
+            const state = supplementalImports[key];
+            if (!state) return { label: "No file selected", variant: "" };
+            if (state.missingColumns?.length) {
+                return { label: `Missing ${state.missingColumns.length} columns`, variant: "invalid" };
+            }
+            return { label: `${state.readyRows} ready · ${state.issueRows} issues`, variant: state.issueRows ? "invalid" : "valid" };
+        }
+
+        function updateImportCard(key) {
+            const card = document.querySelector(`[data-import-key="${key}"]`);
+            if (!card) return;
+            const state = supplementalImports[key];
+            const status = importCardStatus(key);
+            card.querySelector("[data-file-name]").textContent = state?.fileName || pendingImportFiles[key]?.name || "No file selected";
+            const badge = card.querySelector("[data-import-status]");
+            badge.textContent = status.label;
+            badge.className = `status ${status.variant}`.trim();
+            card.querySelector("[data-upload-dataset]").disabled = !pendingImportFiles[key];
+        }
+
+        async function readDatasetFile(definition, file) {
+            if (!file) return;
+            try {
+                const parsed = parseCsvRows(await file.text());
+                const required = requiredColumns(definition);
+                const missingColumns = required.filter((field) => !parsed.headers.includes(field));
+                const readyRows = missingColumns.length
+                    ? 0
+                    : parsed.records.filter((record) => required.every((field) => String(record[field] ?? "").trim())).length;
+                supplementalImports[definition.key] = {
+                    fileName: file.name,
+                    records: parsed.records,
+                    headers: parsed.headers,
+                    totalRows: parsed.records.length,
+                    readyRows,
+                    issueRows: Math.max(parsed.records.length - readyRows, 0),
+                    missingColumns,
+                    completed: false
+                };
+                supplementalComplete = false;
+                reviewingSupplemental = false;
+                document.getElementById("final-review").hidden = true;
+                document.getElementById("setup-complete").hidden = true;
+                document.getElementById("operations-imports").hidden = false;
+                document.getElementById("back-school-data").hidden = false;
+                document.getElementById("back-school-data").disabled = false;
+                document.getElementById("start-supplemental-import").hidden = false;
+                document.getElementById("start-supplemental-import").disabled = false;
+                document.getElementById("start-supplemental-import").textContent = "Review and import";
+                document.getElementById("finish-setup").hidden = true;
+                Object.values(supplementalImports).forEach((item) => { item.completed = false; });
+                updateImportCard(definition.key);
+                renderSupplementalSummary();
+                saveDraft(false);
+            } catch (error) {
+                announce(error?.message || `Unable to read ${definition.label} CSV.`);
+            }
+        }
+
+        function renderImportCards() {
+            const groups = {
+                people: document.getElementById("people-imports"),
+                operations: document.getElementById("operations-imports")
+            };
+            Object.values(groups).forEach((container) => container?.replaceChildren());
+
+            const categoryRendered = new Set();
+            datasetCatalog.forEach((definition) => {
+                const container = groups[definition.group];
+                if (!container) return;
+                if (!categoryRendered.has(definition.group)) {
+                    const heading = document.createElement("h3");
+                    heading.className = "import-category";
+                    heading.textContent = definition.group === "people" ? "People import order" : "School operations data";
+                    container.append(heading);
+                    categoryRendered.add(definition.group);
+                }
+
+                const card = document.createElement("article");
+                card.className = "import-card";
+                card.dataset.importKey = definition.key;
+                const details = document.createElement("div");
+                const title = document.createElement("div");
+                title.className = "import-title";
+                title.textContent = definition.label;
+                const description = document.createElement("div");
+                description.className = "import-description";
+                description.textContent = definition.description;
+                details.append(title, description);
+
+                const fileArea = document.createElement("div");
+                fileArea.className = "import-file";
+                const fileId = `dataset-file-${definition.key}`;
+                const fileLabel = document.createElement("label");
+                fileLabel.className = "button";
+                fileLabel.htmlFor = fileId;
+                fileLabel.textContent = "Choose CSV";
+                const fileInput = document.createElement("input");
+                fileInput.className = "file-input";
+                fileInput.id = fileId;
+                fileInput.type = "file";
+                fileInput.accept = ".csv,text/csv";
+                fileInput.setAttribute("aria-label", `Upload ${definition.label} CSV`);
+                fileInput.addEventListener("change", () => {
+                    pendingImportFiles[definition.key] = fileInput.files?.[0] ?? null;
+                    updateImportCard(definition.key);
+                });
+                const fileName = document.createElement("span");
+                fileName.className = "import-file-name";
+                fileName.dataset.fileName = "";
+                fileName.textContent = "No file selected";
+                fileArea.append(fileLabel, fileInput, fileName);
+
+                const actions = document.createElement("div");
+                actions.className = "import-card-actions";
+                const templateButton = document.createElement("button");
+                templateButton.className = "text-button";
+                templateButton.type = "button";
+                templateButton.textContent = "Template";
+                templateButton.setAttribute("aria-label", `Download ${definition.label} CSV template`);
+                templateButton.addEventListener("click", () => renderTemplateDialog(definition.key));
+                const uploadButton = document.createElement("button");
+                uploadButton.className = "button button-primary";
+                uploadButton.type = "button";
+                uploadButton.textContent = "Upload CSV";
+                uploadButton.dataset.uploadDataset = "";
+                uploadButton.disabled = true;
+                uploadButton.addEventListener("click", () => readDatasetFile(definition, pendingImportFiles[definition.key]));
+                const badge = document.createElement("span");
+                badge.dataset.importStatus = "";
+                actions.append(templateButton, uploadButton, badge);
+                card.append(details, fileArea, actions);
+                container.append(card);
+                updateImportCard(definition.key);
+            });
+        }
+
+        function renderSupplementalSummary() {
+            const body = document.getElementById("import-summary-body");
+            if (!body) return;
+            body.replaceChildren();
+            let selectedCount = 0;
+            let totalReady = 0;
+            datasetCatalog.forEach((definition) => {
+                const imported = supplementalImports[definition.key];
+                if (imported) {
+                    selectedCount += 1;
+                    totalReady += imported.readyRows;
+                }
+                const row = document.createElement("tr");
+                const values = [
+                    definition.label,
+                    imported?.fileName || "Not selected",
+                    imported ? String(imported.readyRows) : "—",
+                    imported ? String(imported.issueRows) : "—",
+                    imported?.missingColumns?.length ? "Template mismatch" : imported ? "Ready" : "Skipped"
+                ];
+                values.forEach((value, index) => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    if (index === values.length - 1 && imported && !imported.missingColumns?.length) {
+                        const badge = document.createElement("span");
+                        badge.className = `status ${imported.issueRows ? "invalid" : "valid"}`;
+                        badge.textContent = imported.issueRows ? "Review rows" : "Ready";
+                        cell.replaceChildren(badge);
+                    }
+                    row.append(cell);
+                });
+                body.append(row);
+            });
+            document.getElementById("final-import-count").textContent = `${selectedCount} of ${datasetCatalog.length} datasets selected · ${totalReady} rows ready`;
+            const state = document.getElementById("final-import-state");
+            state.textContent = selectedCount ? "Review" : "No files selected";
+            state.className = `status ${selectedCount ? "valid" : ""}`.trim();
+        }
+
+        function showSupplementalComplete() {
+            supplementalComplete = true;
+            document.getElementById("final-review").hidden = true;
+            document.getElementById("supplemental-progress-row").classList.remove("visible");
+            document.getElementById("supplemental-notice").classList.remove("visible");
+            document.getElementById("setup-complete").hidden = false;
+            document.getElementById("operations-imports").hidden = true;
+            document.getElementById("start-supplemental-import").hidden = true;
+            document.getElementById("back-school-data").hidden = true;
+            document.getElementById("finish-setup").hidden = false;
+
+            const completed = datasetCatalog.filter((definition) => supplementalImports[definition.key]?.completed);
+            const totalRows = completed.reduce((sum, definition) => sum + supplementalImports[definition.key].readyRows, 0);
+            document.getElementById("setup-complete-title").textContent = `${totalRows} additional records imported`;
+            document.getElementById("setup-complete-subtitle").textContent = `${completed.length} datasets completed for ${schoolFields.schoolName.value || "this school"}.`;
+            const body = document.getElementById("completed-import-body");
+            body.replaceChildren();
+            completed.forEach((definition) => {
+                const row = document.createElement("tr");
+                [definition.label, String(supplementalImports[definition.key].readyRows), "Complete"].forEach((value) => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.append(cell);
+                });
+                body.append(row);
+            });
+            saveDraft(false);
+        }
+
+        function handleSupplementalImport() {
+            const ready = datasetCatalog.filter((definition) => {
+                const item = supplementalImports[definition.key];
+                return item && !item.missingColumns?.length && item.readyRows > 0;
+            });
+            const button = document.getElementById("start-supplemental-import");
+
+            if (!reviewingSupplemental) {
+                renderSupplementalSummary();
+                document.getElementById("final-review").hidden = false;
+                reviewingSupplemental = true;
+                if (!ready.length) {
+                    document.getElementById("supplemental-notice").textContent = "Choose at least one valid CSV before importing.";
+                    document.getElementById("supplemental-notice").classList.add("visible", "error");
+                    button.disabled = true;
+                    return;
+                }
+                button.textContent = `Start import · ${ready.length} datasets`;
+                return;
+            }
+
+            if (!ready.length || supplementalTimer) return;
+            button.disabled = true;
+            button.textContent = "Importing records…";
+            document.getElementById("back-school-data").disabled = true;
+            document.getElementById("supplemental-notice").textContent = "Importing the selected datasets asynchronously. You can save this setup as a draft while it runs.";
+            document.getElementById("supplemental-notice").classList.add("visible");
+            const progressRow = document.getElementById("supplemental-progress-row");
+            const progressBar = document.getElementById("supplemental-progress");
+            const progressLabel = document.getElementById("supplemental-progress-label");
+            progressRow.classList.add("visible");
+            let progress = 0;
+            supplementalTimer = window.setInterval(() => {
+                progress = Math.min(progress + 15, 100);
+                progressBar.value = progress;
+                progressLabel.textContent = `${progress}%`;
+                if (progress >= 100) {
+                    window.clearInterval(supplementalTimer);
+                    supplementalTimer = null;
+                    ready.forEach((definition) => {
+                        supplementalImports[definition.key].completed = true;
+                    });
+                    showSupplementalComplete();
+                }
+            }, 180);
+        }
+
+        function setUploadNotice(message, isError = false) {
+            const element = document.getElementById("upload-notice");
+            element.textContent = message;
+            element.classList.toggle("visible", Boolean(message));
+            element.classList.toggle("error", isError);
+        }
+
+        function setImportNotice(message, isError = false) {
+            const element = document.getElementById("import-notice");
+            element.textContent = message;
+            element.classList.toggle("visible", Boolean(message));
+            element.classList.toggle("error", isError);
+        }
+
+        async function uploadCsv() {
+            if (!selectedFile) return;
+            uploadButton.disabled = true;
+            uploadButton.textContent = "Reading file…";
+            setUploadNotice("");
+            try {
+                studentRows = parseStudentCsv(await selectedFile.text());
+                if (!studentRows.length) {
+                    setUploadNotice("This CSV has no student rows. Check the template and try again.", true);
+                    return;
+                }
+                renderReview();
+                document.getElementById("continue-review").disabled = false;
+                setUploadNotice(`${studentRows.length} student rows uploaded and ready to review.`);
+                saveDraft(false);
+            } catch (error) {
+                setUploadNotice(error?.message || "The CSV file could not be read.", true);
+            } finally {
+                uploadButton.disabled = false;
+                uploadButton.textContent = "Upload CSV";
+            }
+        }
+
+        function renderReview() {
+            const body = document.getElementById("review-body");
+            body.replaceChildren();
+            const ready = studentRows.filter((row) => row.valid).length;
+            document.getElementById("row-count").textContent = String(studentRows.length);
+            document.getElementById("ready-count").textContent = String(ready);
+            document.getElementById("issue-count").textContent = String(studentRows.length - ready);
+            studentRows.slice(0, 100).forEach((row) => {
+                const tableRow = document.createElement("tr");
+                const studentCell = document.createElement("td");
+                studentCell.textContent = `${row.first_name} ${row.last_name}`.trim() || "Unnamed student";
+                const dobCell = document.createElement("td");
+                dobCell.textContent = row.dob || "—";
+                const gradeCell = document.createElement("td");
+                gradeCell.textContent = row.grade || "—";
+                const sectionCell = document.createElement("td");
+                sectionCell.textContent = row.section || "—";
+                const validationCell = document.createElement("td");
+                const validation = document.createElement("span");
+                validation.className = `status ${row.valid ? "valid" : "invalid"}`;
+                validation.textContent = row.valid ? "Ready" : "Needs details";
+                validationCell.append(validation);
+                tableRow.append(studentCell, dobCell, gradeCell, sectionCell, validationCell);
+                body.append(tableRow);
+            });
+            if (studentRows.length > 100) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 5;
+                cell.className = "empty-table";
+                cell.textContent = `Showing first 100 of ${studentRows.length} rows in the review preview.`;
+                row.append(cell);
+                body.append(row);
+            }
+        }
+
+        function renderStudentList() {
+            const body = document.getElementById("students-body");
+            const query = document.getElementById("student-search").value.trim().toLowerCase();
+            const visible = importedRows.filter((row) => `${row.first_name} ${row.last_name} ${row.grade} ${row.parent_email}`.toLowerCase().includes(query));
+            body.replaceChildren();
+            visible.forEach((row, index) => {
+                const tableRow = document.createElement("tr");
+                const nameCell = document.createElement("td");
+                nameCell.textContent = `${row.first_name} ${row.last_name}`.trim();
+                const numberCell = document.createElement("td");
+                numberCell.textContent = row.student_number || "—";
+                const dobCell = document.createElement("td");
+                dobCell.textContent = row.dob || "—";
+                const gradeCell = document.createElement("td");
+                gradeCell.textContent = row.grade;
+                const sectionCell = document.createElement("td");
+                sectionCell.textContent = row.section || "—";
+                const parentCell = document.createElement("td");
+                parentCell.textContent = row.parent_email || row.parent_name || "—";
+                const statusCell = document.createElement("td");
+                const badge = document.createElement("span");
+                badge.className = "status valid";
+                badge.textContent = row.status || "Inactive";
+                statusCell.append(badge);
+                tableRow.append(nameCell, numberCell, dobCell, gradeCell, sectionCell, parentCell, statusCell);
+                body.append(tableRow);
+            });
+            if (!visible.length) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 7;
+                cell.className = "empty-table";
+                cell.textContent = "No students match this search.";
+                row.append(cell);
+                body.append(row);
+            }
+            document.getElementById("success-subtitle").textContent = `${importedRows.length} student records created for ${schoolFields.schoolName.value || "this school"}.`;
+        }
+
+        function beginImport() {
+            const validRows = studentRows.filter((row) => row.valid);
+            if (!validRows.length) {
+                setImportNotice("No valid student rows are ready to import.", true);
+                return;
+            }
+            const button = document.getElementById("import-students");
+            button.disabled = true;
+            button.textContent = "Creating student records…";
+            document.getElementById("back-review").disabled = true;
+            const progressRow = document.getElementById("import-progress-row");
+            const progressBar = document.getElementById("import-progress");
+            const progressLabel = document.getElementById("progress-label");
+            progressRow.classList.add("visible");
+            setImportNotice("Creating student records in the background. You can save this setup as a draft at any time.");
+            let progress = 0;
+            window.clearInterval(importTimer);
+            importTimer = window.setInterval(() => {
+                progress = Math.min(progress + 17, 100);
+                progressBar.value = progress;
+                progressLabel.textContent = `${progress}%`;
+                if (progress >= 100) {
+                    window.clearInterval(importTimer);
+                    importedRows = validRows.map((row, index) => ({
+                        ...row,
+                        student_number: `${(schoolFields.schoolCode.value || "STU").toUpperCase()}-2026-${String(index + 1).padStart(4, "0")}`,
+                        status: "Inactive"
+                    }));
+                    renderStudentList();
+                    document.getElementById("success-title").textContent = `${importedRows.length} student records created`;
+                    document.getElementById("student-list-subtitle").textContent = schoolFields.schoolName.value || "New school";
+                    document.getElementById("import-notice").classList.remove("visible");
+                    saveDraft(false);
+                    showWizard(4);
+                }
+            }, 220);
+        }
+
+        function updateSelectedFile(file) {
+            selectedFile = file;
+            const chip = document.getElementById("selected-file");
+            if (!file) {
+                chip.classList.remove("visible");
+                uploadButton.disabled = true;
+                return;
+            }
+            chip.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB`;
+            chip.classList.add("visible");
+            uploadButton.disabled = false;
+            setUploadNotice("");
+        }
+
+        document.getElementById("start-setup").addEventListener("click", () => showWizard(1));
+        document.getElementById("start-setup-text").addEventListener("click", () => showWizard(1));
+        document.getElementById("resume-draft").addEventListener("click", resumeDraft);
+        document.getElementById("save-draft").addEventListener("click", () => saveDraft());
+        document.getElementById("save-complete-draft").addEventListener("click", () => saveDraft());
+        document.getElementById("landing-save").addEventListener("click", () => {
+            if (!wizardView.classList.contains("visible")) showWizard(1);
+            saveDraft();
+        });
+        document.querySelectorAll("[data-next]").forEach((button) => button.addEventListener("click", () => {
+            if (currentStep === 1 && (!schoolFields.schoolName.value.trim() || !schoolFields.schoolCode.value.trim())) {
+                announce("Enter a school name and school code to continue.");
+                return;
+            }
+            showWizard(Number(button.dataset.next));
+            saveDraft(false);
+        }));
+        document.querySelectorAll("[data-back]").forEach((button) => button.addEventListener("click", () => showWizard(Number(button.dataset.back))));
+        Object.values(schoolFields).forEach((field) => field.addEventListener("input", () => {
+            document.getElementById("wizard-school-name").textContent = schoolFields.schoolName.value || "New school";
+        }));
+        uploadInput.addEventListener("change", () => updateSelectedFile(uploadInput.files?.[0] ?? null));
+        document.getElementById("upload-zone").addEventListener("dragover", (event) => {
+            event.preventDefault();
+            event.currentTarget.classList.add("dragging");
+        });
+        document.getElementById("upload-zone").addEventListener("dragleave", (event) => event.currentTarget.classList.remove("dragging"));
+        document.getElementById("upload-zone").addEventListener("drop", (event) => {
+            event.preventDefault();
+            event.currentTarget.classList.remove("dragging");
+            updateSelectedFile(event.dataTransfer.files?.[0] ?? null);
+        });
+        uploadButton.addEventListener("click", uploadCsv);
+        document.getElementById("continue-review").addEventListener("click", () => showWizard(3));
+        document.getElementById("import-students").addEventListener("click", beginImport);
+        document.getElementById("continue-to-people").addEventListener("click", () => {
+            renderImportCards();
+            showWizard(5);
+        });
+        document.getElementById("start-supplemental-import").addEventListener("click", handleSupplementalImport);
+        document.getElementById("student-search").addEventListener("input", renderStudentList);
+        document.getElementById("finish-setup").addEventListener("click", () => {
+            localStorage.removeItem(draftKey);
+            refreshDraftBanner();
+            openLanding();
+            announce("School setup finished.");
+        });
+        document.getElementById("open-template").addEventListener("click", () => renderTemplateDialog("students"));
+        document.getElementById("close-template").addEventListener("click", () => templateDialog.close());
+        document.getElementById("cancel-template").addEventListener("click", () => templateDialog.close());
+        document.getElementById("download-template").addEventListener("click", () => downloadTemplate(activeTemplateKey));
+        renderImportCards();
+        renderSupplementalSummary();
+        document.getElementById("school-code").addEventListener("input", (event) => {
+            event.currentTarget.value = event.currentTarget.value.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+        });
+        refreshDraftBanner();
+    </script>
+</body>
+
+</html>

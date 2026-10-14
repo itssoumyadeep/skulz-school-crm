@@ -1,342 +1,256 @@
 "use client";
 
-import React, { useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
-import { submitNewEnrollment, type Envelope } from "@/app/lib/api";
+import { Activity, Banknote, ClipboardList, GraduationCap } from "lucide-react";
+
 import {
-  StatCard,
-  SectionCard,
-  StatusBadge,
-  FunnelProgress,
-  ActionCard,
-} from "./ui";
+  fetchAdmissionsPipeline,
+  fetchAnalyticsDashboard,
+  type EnrollmentCase,
+} from "@/app/lib/api";
+import {
+  createDataTableColumnHelper,
+  DataTable,
+  KpiCard,
+  SectionPanel,
+  StatusPill,
+} from "@/components/pc";
+import { Button } from "@/components/ui/button";
 
-const funnelStages = [
-  { name: "Applications", percentage: 100, color: "bg-[#6E3FF3]" },
-  { name: "Document Verification", percentage: 85, color: "bg-indigo-500" },
-  { name: "Principal Interview", percentage: 62, color: "bg-purple-500" },
-  { name: "Enrolled & Invoiced", percentage: 48, color: "bg-emerald-500" },
-];
-
-const sampleInvoices = [
-  {
-    id: "INV-2024-001",
-    student: "Nathan Drake",
-    amount: "$450.00",
-    status: "Paid",
-    due: "Oct 15, 2024",
-  },
-  {
-    id: "INV-2024-002",
-    student: "Emma Watson",
-    amount: "$600.00",
-    status: "Overdue",
-    due: "Oct 05, 2024",
-  },
-  {
-    id: "INV-2024-003",
-    student: "James Howlett",
-    amount: "$450.00",
-    status: "Sent",
-    due: "Oct 25, 2024",
-  },
-];
-
-const billingBarData = [
-  { label: "Collected", value: 38200, color: "bg-emerald-500" },
-  { label: "Pending", value: 12450, color: "bg-[#6E3FF3]" },
-  { label: "Overdue", value: 4200, color: "bg-rose-500" },
-];
-
-export function AdminConsole() {
-  const [newStudent, setNewStudent] = useState({
-    name: "",
-    grade: "",
-    email: "",
-    dob: "2018-05-15",
-  });
-  const [submitNotice, setSubmitNotice] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleRegisterStudent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newStudent.name || !newStudent.email) return;
-    setLoading(true);
-    setSubmitNotice("Creating student admission record in BO-02...");
-    try {
-      const names = newStudent.name.split(" ");
-      await submitNewEnrollment({
-        first_name: names[0] || "Student",
-        last_name: names.slice(1).join(" ") || "Doe",
-        dob: newStudent.dob,
-        grade: newStudent.grade || "Grade 1",
-        parent_name: "Guardian " + (names[1] || ""),
-        parent_email: newStudent.email,
-        parent_phone: "555-0199",
-        save_as_draft: true,
-      });
-      setSubmitNotice(
-        `Student '${newStudent.name}' enrolled into admissions pipeline.`,
-      );
-      setNewStudent({ name: "", grade: "", email: "", dob: "2018-05-15" });
-    } catch (error: unknown) {
-      const message =
-        error && typeof error === "object" && "message" in error
-          ? String(error.message)
-          : "Unable to create the admissions draft.";
-      setSubmitNotice(message);
-    } finally {
-      setLoading(false);
-    }
+type DashboardRole = "admin" | "owner";
+type AnalyticsDashboard = {
+  enrollment_funnel?: Record<string, number>;
+  financial?: {
+    outstanding?: number;
+    invoiced?: number;
+    revenue?: number;
   };
+  attendance?: {
+    attendance_rate?: number | null;
+    total_records?: number;
+  };
+};
 
-  const maxBilling = Math.max(...billingBarData.map((d) => d.value));
+const applicationColumns = createDataTableColumnHelper<EnrollmentCase>();
+
+function statusVariant(status: string) {
+  if (["Active", "Accepted"].includes(status)) return "success" as const;
+  if (["Pending_Clarification", "Pending", "Under_Review"].includes(status)) {
+    return "warning" as const;
+  }
+  if (status === "Rejected") return "danger" as const;
+  return "info" as const;
+}
+
+function applicationColumnsFor(role: DashboardRole) {
+  const admissionsHref =
+    role === "owner" ? "/governance/owner/admissions" : "/admin/admissions";
+
+  return [
+    applicationColumns.accessor((application) => application.student.name, {
+      id: "student",
+      header: "Student",
+      cell: ({ row }) => (
+        <span className="font-medium text-foreground">
+          {row.original.student.name || "Unnamed student"}
+        </span>
+      ),
+    }),
+    applicationColumns.accessor((application) => application.student.grade, {
+      id: "grade",
+      header: "Grade / programme",
+    }),
+    applicationColumns.accessor((application) => application.status, {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <StatusPill variant={statusVariant(row.original.status)}>
+          {row.original.status.replaceAll("_", " ")}
+        </StatusPill>
+      ),
+    }),
+    applicationColumns.accessor(
+      (application) =>
+        application.updated_at
+          ? new Date(application.updated_at).toLocaleDateString()
+          : "—",
+      {
+        id: "updated",
+        header: "Last updated",
+      },
+    ),
+    applicationColumns.display({
+      id: "action",
+      header: "Action",
+      cell: () => (
+        <Button asChild size="sm" variant="outline">
+          <Link href={admissionsHref}>Open queue</Link>
+        </Button>
+      ),
+    }),
+  ];
+}
+
+export function AdminConsole({ role = "admin" }: { role?: DashboardRole }) {
+  const {
+    data: analyticsResponse,
+    error: analyticsError,
+    isLoading: analyticsLoading,
+  } = useSWR(["tenant-analytics-dashboard", role], () =>
+    fetchAnalyticsDashboard(),
+  );
+  const {
+    data: applicationsResponse,
+    error: applicationsError,
+    isLoading: applicationsLoading,
+  } = useSWR(["tenant-admissions-pipeline", role], fetchAdmissionsPipeline);
+
+  const analytics = analyticsResponse?.data as AnalyticsDashboard | undefined;
+  const applications = applicationsResponse?.data ?? [];
+  const funnel = analytics?.enrollment_funnel ?? {};
+  const financial = analytics?.financial ?? {};
+  const attendance = analytics?.attendance ?? {};
+  const pendingApplications = applications.filter(
+    (application) =>
+      !application.workflow_data.is_draft &&
+      ["Pending", "Under_Review", "Pending_Clarification"].includes(
+        application.status,
+      ),
+  ).length;
+  const attendanceValue =
+    attendance.total_records === 0
+      ? "No records"
+      : attendance.attendance_rate == null
+        ? "—"
+        : `${attendance.attendance_rate}%`;
+  const currency = (amount?: number) =>
+    new Intl.NumberFormat("en-CA", {
+      style: "currency",
+      currency: "CAD",
+      maximumFractionDigits: 0,
+    }).format(amount ?? 0);
+  const admissionsHref =
+    role === "owner" ? "/governance/owner/admissions" : "/admin/admissions";
 
   return (
     <div className="space-y-6">
-      {/* ── Top 4 KPI Tiles (PDF Page 3) ────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Pending Registrations"
-          value="18"
-          trend="+5.4% vs last month"
-          icon={
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-              />
-            </svg>
-          }
-        />
-        <StatCard
-          label="Outstanding Billing"
-          value="$12,450"
-          trend="-3.2% vs last month"
-          iconBg="bg-indigo-50 text-indigo-600 border-indigo-100"
-          icon={
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          }
-        />
-        <StatCard
-          label="Overdue Invoices"
-          value="4"
-          trend="+1% vs last month"
-          iconBg="bg-rose-50 text-rose-600 border-rose-100"
-          icon={
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          }
-        />
-        <StatCard
-          label="Active Vendors"
-          value="15"
-          trend="0% vs last month"
-          iconBg="bg-emerald-50 text-emerald-600 border-emerald-100"
-          icon={
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-              />
-            </svg>
-          }
-        />
-      </div>
-
-      {submitNotice && (
-        <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs font-semibold text-[#6E3FF3]">
-          ✨ {submitNotice}
-        </div>
+      {(analyticsError || applicationsError) && (
+        <p className="text-sm text-destructive" role="alert">
+          Dashboard data could not be loaded. Check your connection and try
+          again.
+        </p>
       )}
 
-      {/* ── Middle Row: Admission Funnel + Billing Breakdown ─────────── */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        <div id="admissions" className="scroll-mt-20 lg:col-span-8">
-          <SectionCard title="Admission Funnel Pipeline">
-            <FunnelProgress stages={funnelStages} />
-          </SectionCard>
+      <section
+        aria-label="School overview"
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <KpiCard
+          label="Applications to review"
+          value={
+            applicationsLoading
+              ? "Loading…"
+              : applicationsError
+                ? "Unavailable"
+                : pendingApplications
+          }
+          icon={<ClipboardList aria-hidden="true" />}
+          link={{ href: admissionsHref, label: "Open queue" }}
+        />
+        <KpiCard
+          label="Outstanding balance"
+          value={
+            analyticsLoading
+              ? "Loading…"
+              : analyticsError
+                ? "Unavailable"
+                : currency(financial.outstanding)
+          }
+          icon={<Banknote aria-hidden="true" />}
+        />
+        <KpiCard
+          label="Attendance rate"
+          value={
+            analyticsLoading
+              ? "Loading…"
+              : analyticsError
+                ? "Unavailable"
+                : attendanceValue
+          }
+          delta={
+            attendance.total_records
+              ? `${attendance.total_records} recorded sessions`
+              : "No attendance records yet"
+          }
+          icon={<Activity aria-hidden="true" />}
+        />
+        <KpiCard
+          label="Enrolled students"
+          value={
+            analyticsLoading
+              ? "Loading…"
+              : analyticsError
+                ? "Unavailable"
+                : (funnel.Active ?? 0)
+          }
+          icon={<GraduationCap aria-hidden="true" />}
+          link={{ href: "/admin/students", label: "View records" }}
+        />
+      </section>
+
+      <SectionPanel
+        title="Admissions queue"
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link href={admissionsHref}>View all applications</Link>
+          </Button>
+        }
+      >
+        {applicationsError ? (
+          <p className="text-sm text-destructive">
+            Admissions data could not be loaded.
+          </p>
+        ) : (
+          <DataTable
+            columns={applicationColumnsFor(role)}
+            data={applications.slice(0, 8)}
+            loading={applicationsLoading}
+            pageSize={8}
+          />
+        )}
+      </SectionPanel>
+
+      <SectionPanel title="Enrollment funnel">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            ["Pending", funnel.Pending ?? 0],
+            ["Under review", funnel.Under_Review ?? 0],
+            ["Offered", funnel.Offered ?? 0],
+            ["Enrolled", funnel.Active ?? 0],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2"
+            >
+              <span className="text-sm text-muted-foreground">{label}</span>
+              <span className="font-semibold tabular-nums text-foreground">
+                {analyticsLoading || analyticsError ? "—" : value}
+              </span>
+            </div>
+          ))}
         </div>
-        <div id="billing" className="scroll-mt-20 lg:col-span-4">
-          <SectionCard title="Billing Breakdown ($)">
-            <div className="flex h-44 items-end justify-around gap-4 pt-6 pb-2 px-2">
-              {billingBarData.map((item, idx) => {
-                const heightPct = Math.round((item.value / maxBilling) * 100);
-                return (
-                  <div key={idx} className="flex flex-col items-center gap-2">
-                    <div className="relative flex h-32 w-14 items-end justify-center">
-                      <div
-                        style={{ height: `${heightPct}%` }}
-                        className={`w-full rounded-lg ${item.color} shadow-sm transition-all duration-500`}
-                      />
-                    </div>
-                    <span className="text-[11px] font-semibold text-gray-500">
-                      {item.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </SectionCard>
-        </div>
-      </div>
-
-      {/* ── Bottom Row: Recent System Billing Invoices + Register Student ─ */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        <div id="invoices" className="scroll-mt-20 lg:col-span-8">
-          <SectionCard
-            title="Recent System Billing Invoices"
-            actionText="Billing Ledger"
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider">
-                    <th className="pb-3 font-semibold">Invoice ID</th>
-                    <th className="pb-3 font-semibold">Student</th>
-                    <th className="pb-3 font-semibold">Amount</th>
-                    <th className="pb-3 font-semibold">Status</th>
-                    <th className="pb-3 font-semibold">Due Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {sampleInvoices.map((inv, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/60 transition">
-                      <td className="py-3.5 font-bold text-gray-900">
-                        {inv.id}
-                      </td>
-                      <td className="py-3.5 text-gray-700 font-semibold">
-                        {inv.student}
-                      </td>
-                      <td className="py-3.5 font-bold text-gray-900">
-                        {inv.amount}
-                      </td>
-                      <td className="py-3.5">
-                        <StatusBadge status={inv.status} />
-                      </td>
-                      <td className="py-3.5 text-gray-500 font-medium">
-                        {inv.due}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </SectionCard>
-        </div>
-
-        <div id="register-student" className="scroll-mt-20 lg:col-span-4">
-          <ActionCard
-            title="Register New Student"
-            onSubmit={handleRegisterStudent}
-            submitLabel="Submit"
-            loading={loading}
-            onCancel={() =>
-              setNewStudent({
-                name: "",
-                grade: "",
-                email: "",
-                dob: "2018-05-15",
-              })
-            }
-          >
-            <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                Student Full Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Liam Neeson"
-                value={newStudent.name}
-                onChange={(e) =>
-                  setNewStudent({ ...newStudent, name: e.target.value })
-                }
-                className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2 text-xs text-gray-900 focus:border-[#6E3FF3] focus:bg-white focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                Grade Assignment
-              </label>
-              <select
-                value={newStudent.grade}
-                onChange={(e) =>
-                  setNewStudent({ ...newStudent, grade: e.target.value })
-                }
-                className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2 text-xs text-gray-900 focus:border-[#6E3FF3] focus:bg-white focus:outline-none"
-              >
-                <option value="">Select Grade...</option>
-                <option value="Kindergarten">Kindergarten</option>
-                <option value="Grade 1">Grade 1</option>
-                <option value="Grade 2">Grade 2</option>
-                <option value="Grade 3">Grade 3</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                Parent / Guardian Email
-              </label>
-              <input
-                type="email"
-                placeholder="e.g. parent@domain.com"
-                value={newStudent.email}
-                onChange={(e) =>
-                  setNewStudent({ ...newStudent, email: e.target.value })
-                }
-                className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2 text-xs text-gray-900 focus:border-[#6E3FF3] focus:bg-white focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                Supporting Documents
-              </label>
-              <div className="mt-1 flex items-center justify-center rounded-xl border border-dashed border-gray-300 px-3 py-2.5 text-xs text-gray-500 hover:border-purple-400 bg-gray-50/50 cursor-pointer">
-                📎 Upload immunization or ID...
-              </div>
-            </div>
-          </ActionCard>
-        </div>
-      </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Billed{" "}
+          {analyticsLoading || analyticsError
+            ? "—"
+            : currency(financial.invoiced)}{" "}
+          · Collected{" "}
+          {analyticsLoading || analyticsError
+            ? "—"
+            : currency(financial.revenue)}
+        </p>
+      </SectionPanel>
     </div>
   );
 }

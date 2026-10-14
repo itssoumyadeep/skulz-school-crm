@@ -761,6 +761,6 @@ erDiagram
 
 ## Notes
 
-- This diagram covers the main domain model from [core/models.py](core/models.py).
+- This diagram covers the main domain model from [core/models.py](../core/models.py).
 - Fields are intentionally abbreviated for readability; the Mermaid source remains editable and easy to expand.
 - For a more detailed schema view, you can add additional attributes or split the diagram into domain-specific sections such as core enrollment, academics, billing, or HR.

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KpiCard, PageHeader, SectionPanel, StatusPill } from "@/components/pc";
+import { fetchStudents } from "@/app/lib/students";
 
 const statCards = [
   {
@@ -105,6 +107,28 @@ const quickActions = [
 ];
 
 export function TeacherWorkbench({ embedded = false }: { embedded?: boolean }) {
+  const [studentCount, setStudentCount] = useState("Loading");
+
+  useEffect(() => {
+    let active = true;
+
+    fetchStudents({ page_size: 1 })
+      .then((response) => {
+        if (active) {
+          setStudentCount(
+            String(response.meta?.pagination?.total ?? response.data.length),
+          );
+        }
+      })
+      .catch(() => {
+        if (active) setStudentCount("Unavailable");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div className={`space-y-6 ${embedded ? "min-h-full" : ""}`}>
       <PageHeader
@@ -126,7 +150,7 @@ export function TeacherWorkbench({ embedded = false }: { embedded?: boolean }) {
           <KpiCard
             key={card.label}
             label={card.label}
-            value={card.value}
+            value={card.label === "Students" ? studentCount : card.value}
             icon={card.icon}
             link={{ href: card.href, label: card.detail }}
           />

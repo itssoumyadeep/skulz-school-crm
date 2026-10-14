@@ -123,11 +123,17 @@ def generate_student_number(tenant: Tenant, year: int = None) -> str:
             year=year,
             defaults={'last_value': 0}
         )
-        seq_obj.last_value += 1
+        while True:
+            seq_obj.last_value += 1
+            student_number = f"{prefix}-{year}-{seq_obj.last_value:04d}"
+            if not Student.objects.filter(
+                tenant=tenant,
+                student_number=student_number,
+            ).exists():
+                break
         seq_obj.save(update_fields=['last_value', 'updated_at'])
-        sequence_num = seq_obj.last_value
 
-    return f"{prefix}-{year}-{sequence_num:04d}"
+    return student_number
 
 
 class Student(TenantScopedModel):
@@ -141,16 +147,11 @@ class Student(TenantScopedModel):
     class_teacher = models.CharField(max_length=255, blank=True, default='')
     status = models.CharField(
         max_length=50,
-        default='Inquiry',
+        default='Inactive',
         choices=[
-            ('Inquiry', 'Inquiry'),
-            ('Applied', 'Applied'),
-            ('Offered', 'Offered'),
-            ('Accepted', 'Accepted'),
             ('Active', 'Active'),
+            ('Inactive', 'Inactive'),
             ('Waitlisted', 'Waitlisted'),
-            ('Rejected', 'Rejected'),
-            ('Withdrawn', 'Withdrawn')
         ]
     )
     enrolled_date = models.DateField(null=True, blank=True)
@@ -164,7 +165,7 @@ class Student(TenantScopedModel):
             ),
             models.CheckConstraint(
                 check=models.Q(status__in=[
-                    'Inquiry', 'Applied', 'Offered', 'Accepted', 'Active', 'Waitlisted', 'Rejected', 'Withdrawn'
+                    'Active', 'Inactive', 'Waitlisted'
                 ]),
                 name='chk_student_status_enum'
             )
@@ -481,7 +482,14 @@ class StudentAttendance(TenantScopedModel):
     period = models.CharField(max_length=50, default='Full_Day')
     status = models.CharField(
         max_length=50,
-        choices=[('Present', 'Present'), ('Absent', 'Absent'), ('Late', 'Late'), ('Excused', 'Excused')]
+        choices=[
+            ('Present', 'Present'),
+            ('Absent', 'Absent'),
+            ('Late', 'Late'),
+            ('Excused', 'Excused'),
+            ('On Leave', 'On Leave'),
+            ('Holiday', 'Holiday'),
+        ]
     )
     method = models.CharField(
         max_length=50,
@@ -501,7 +509,9 @@ class StudentAttendance(TenantScopedModel):
                 name='uq_student_attendance_record'
             ),
             models.CheckConstraint(
-                check=models.Q(status__in=['Present', 'Absent', 'Late', 'Excused']),
+                check=models.Q(status__in=[
+                    'Present', 'Absent', 'Late', 'Excused', 'On Leave', 'Holiday'
+                ]),
                 name='chk_student_attendance_status_enum'
             )
         ]
@@ -767,6 +777,10 @@ class Payment(TenantScopedModel):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
     parent = models.ForeignKey(Parent, on_delete=models.CASCADE, related_name='payments')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    stripe_checkout_session_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    stripe_payment_intent_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    stripe_currency = models.CharField(max_length=3, blank=True, default='')
+    checkout_expires_at = models.DateTimeField(null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True)
     method = models.CharField(
         max_length=50,

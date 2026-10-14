@@ -8,7 +8,7 @@
  * Django side restricts what each role receives. The frontend only calls
  * the correct endpoint for the role's scope.
  *
- * Reference: student_access_control.md § 5
+ * Reference: docs/reference/student_access_control.md § 5
  */
 
 import { apiFetch, type Envelope } from "./api";
@@ -33,15 +33,15 @@ export type Student = StudentBase & {
   dob?: string;
   parent_contact?: string;
   emergency_contact?: string;
-  attendance_pct?: number;
-  attendance_status?: string;
-  attendance_summary?: string;
+  attendance_pct?: number | null;
+  attendance_status?: string | null;
+  attendance_summary?: string | null;
   academic_summary?: string;
   health_flags?: string[];
   health_observations?: string;
   health_profile?: Record<string, unknown>;
   fee_status?: string;
-  fee_account?: Record<string, unknown>;
+  fee_account?: Record<string, unknown> | null;
   fee_account_summary?: string;
   invoice_history?: unknown[];
   invoices?: unknown[];
@@ -51,7 +51,7 @@ export type Student = StudentBase & {
   marks_own_subject?: Record<string, unknown>;
   assignment_submissions?: unknown[];
   assignments?: unknown[];
-  report_card?: Record<string, unknown>;
+  report_card?: Record<string, unknown> | null;
   allergies?: string[];
   medications?: string[];
   dietary_restrictions?: string;
@@ -69,6 +69,11 @@ export type StudentPermissions = {
 export type StudentEnvelope<T> = Envelope<T> & {
   meta?: Envelope<T>["meta"] & {
     permissions?: StudentPermissions;
+    pagination?: {
+      total?: number;
+      page?: number;
+      page_size?: number;
+    };
   };
 };
 

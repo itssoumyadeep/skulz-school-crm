@@ -60,6 +60,20 @@ class PaymentCreateSchema(BaseModel):
         return value
 
 
+class ParentCheckoutCreateSchema(BaseModel):
+    invoice_id: UUID4
+    amount: Decimal
+
+    @field_validator("amount")
+    @classmethod
+    def validate_amount(cls, value: Decimal) -> Decimal:
+        if value <= 0:
+            raise ValueError("amount must be greater than zero")
+        if value.as_tuple().exponent < -2:
+            raise ValueError("amount must have at most two decimal places")
+        return value
+
+
 class RefundCreateSchema(BaseModel):
     refund_amount: Decimal
     reason: Optional[str] = None
