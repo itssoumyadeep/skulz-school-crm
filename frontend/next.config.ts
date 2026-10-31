@@ -15,6 +15,7 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["10.0.0.156"],
   async headers() {
     return [
       {

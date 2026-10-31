@@ -118,5 +118,32 @@ This log records durable architecture, security, and product decisions so later 
 - **Consequences:** All remaining sprint tasks (`S1-02`..`S8-04`) and top 5 release blockers are mapped to verifiable user stories (`US-P0-01` through `US-P3-05`).
 - **Evidence:** [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md), [`docs/2_PRD.md`](2_PRD.md), [`docs/6_PLAN.md`](6_PLAN.md), [`docs/rule_registry.md`](rule_registry.md).
 
+### 2026-10-31 — Streamline `2_PRD.md` to high-level requirements aligned with `8_PRODUCT_BACKLOG_STORIES.md`
+
+- **Status:** Accepted
+- **Decision:** Refactor `docs/2_PRD.md` to contain strictly high-level product requirements, personas, release priorities, and non-functional outcomes mapped directly to the user story IDs (`US-P0-01`–`US-P3-05`) in `docs/8_PRODUCT_BACKLOG_STORIES.md`.
+- **Context:** Avoid duplicating granular acceptance criteria, business rules, and implementation status notes between the high-level PRD and the detailed backlog.
+- **Consequences:** `docs/2_PRD.md` serves as the high-level executive product summary while `docs/8_PRODUCT_BACKLOG_STORIES.md` holds granular stories and acceptance test gates.
+- **Evidence:** [`docs/2_PRD.md`](2_PRD.md), [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md).
+
+### 2026-10-31 — Condense `AGENTS.md` with task-scoped file routing
+
+- **Status:** Accepted
+- **Decision:** Condense `AGENTS.md` from 234 lines to 59 lines and replace the upfront multi-document reading list with a task-to-file routing table so coding agents read only the specific files required for their active task.
+- **Context:** Reading all architecture, security, data, design, and router files before every task wasted context and slowed execution.
+- **Consequences:** Agents retain all mandatory security, tenant/role isolation, BO layer, and UI design-system guardrails while loading only task-relevant files.
+- **Evidence:** [`AGENTS.md`](../AGENTS.md).
+
+### 2026-10-31 — Author Technical Execution Plan for Complete CRUD & ICD Coverage (`9_CRUD_EXECUTION_PLAN.md`)
+
+- **Status:** Accepted
+- **Decision:** Author `docs/9_CRUD_EXECUTION_PLAN.md` defining the target Interface Control Document (ICD) matrix (77 existing + 127 new endpoints = 204 total CRUD endpoints) across all 7 Base Objects and 35 Derived Objects, sequenced into 4 delivery phases and 12 independently testable work packages (`WP-1.1` through `WP-4.3`).
+- **Context:** Auditing `core/models.py` against `core/api/v1/` revealed missing standalone list, detail, partial update (`PATCH`), and soft-delete (`DELETE`) endpoints required by role portals (`US-P2-01`..`08`) and core operational epics (`US-P0-01`..`US-P3-04`).
+- **Consequences:** All new CRUD endpoints must follow the 3-layer split (`core/schemas/` -> `core/business_objects/` -> `core/api/v1/`), enforce tenant/role/object scoping (`verify_student_access`, `verify_application_access`, `verify_vendor_access`), preserve immutable records (`AuditLog`, signed-off `SafetyDrill` per `BR-07-04`, financial ledgers), and use soft deletion (`is_deleted=True`).
+- **Evidence:** [`docs/9_CRUD_EXECUTION_PLAN.md`](9_CRUD_EXECUTION_PLAN.md), [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md), [`docs/rule_registry.md`](rule_registry.md).
+
+
+
+
 
 

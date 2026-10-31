@@ -1,233 +1,57 @@
 # AGENTS.md
 
-## Read First
+Multi-tenant School CRM built with **Django + Django Ninja** (`core/`), **PostgreSQL** (`TenantScopedModel` + RLS), **JWT RBAC** (`core/auth/`), and **Next.js App Router** (`frontend/`).
 
-Read this file for repository-wide agent rules, then consult the relevant product/security/design sources before implementation:
+## 1. Selective Reading Rule (Do NOT Read Everything Upfront)
 
-- [SECURITY.md](docs/SECURITY.md) — security posture and release checklist
-- [PRD.md](docs/PRD.md) — product scope and acceptance outcomes
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) — implemented architecture and known gaps
-- [DATA_AND_ENV.md](docs/DATA_AND_ENV.md) — entities, migrations, and environment configuration
-- [DESIGN.md](docs/DESIGN.md) — design-system and screen inventory
-- [PLAN.md](docs/PLAN.md) — task IDs, dependencies, and status
-- [MEMORY_LOG.md](docs/MEMORY_LOG.md) — durable decisions and project history
+Read **only** the files required for your current task:
 
-Detailed source references and requirements live in [docs/reference/](docs/reference/).
+| Task Type | Read Only These Files Before Editing |
+| :--- | :--- |
+| **Product / Backlog Scope** | [`docs/2_PRD.md`](docs/2_PRD.md), [`docs/8_PRODUCT_BACKLOG_STORIES.md`](docs/8_PRODUCT_BACKLOG_STORIES.md) |
+| **Business Rules (BO Layer)** | Target `core/business_objects/<domain>.py` + matching section in [`docs/rule_registry.md`](docs/rule_registry.md) |
+| **API Route / Schema Change** | Target `core/api/v1/<domain>.py` + `core/schemas/<domain>.py` |
+| **Database / Model / Env Change** | `core/models.py` + [`docs/4_DATA_AND_ENV.md`](docs/4_DATA_AND_ENV.md) |
+| **Auth / RBAC / Tenant RLS** | `core/auth/` (`bearer.py`, `decorators.py`, `scoping.py`) + [`docs/1_SECURITY.md`](docs/1_SECURITY.md) |
+| **Frontend / Portal UI Change** | Target route in `frontend/app/`, `frontend/styles/tokens.css`, `frontend/components/ui`, `frontend/components/pc` + [`docs/5_DESIGN.md`](docs/5_DESIGN.md) |
+| **Architecture / Sprint Status** | [`docs/3_ARCHITECTURE.md`](docs/3_ARCHITECTURE.md), [`docs/6_PLAN.md`](docs/6_PLAN.md) |
 
-## Project overview
+*Ignore `docs/reference/` unless explicitly requested.*
 
-This repository is a multi-tenant School CRM platform built with:
+---
 
-- Django backend
-- Django Ninja API
-- PostgreSQL-friendly model layer
-- Next.js frontend with App Router
-- JWT-based role-aware access control
+## 2. Never Rules
 
-The goal is to manage a school operation across student lifecycle, admissions, academics, attendance, health and safety, billing, analytics, HR/payroll, procurement, and governance.
+1. **No Secrets:** Never commit, log, or hardcode real secrets, tokens, private keys, or credentials.
+2. **No Scope Bypass:** Never bypass `tenant_id=request.tenant_id`, `is_deleted=False`, `@require_roles(...)`, object-level guards (`verify_student_access`, `verify_application_access`, `verify_vendor_access`), or Business Object (`BO`) rules.
+3. **No Unchecked Schema Changes:** Never add/alter a database table without a migration, RLS policy coverage (`0020_enable_tenant_rls`), and an update to [`docs/4_DATA_AND_ENV.md`](docs/4_DATA_AND_ENV.md).
+4. **No Broad Refactors:** Keep edits minimal, targeted, and consistent with existing naming and patterns.
+5. **No Untested Changes:** Always run the narrowest relevant test/build check before finishing.
+6. **Memory Log Required:** Append a brief dated decision/status entry to [`docs/7_MEMORY_LOG.md`](docs/7_MEMORY_LOG.md) when completing a task.
 
-## Operating principles for AI agents
+---
 
-- Read this file first for agent rules; use the linked documents as the source of truth for their respective domains.
-- Prefer minimal, targeted edits over broad refactors.
-- Keep changes aligned to tenant-scoped and role-scoped architecture.
-- Follow the existing patterns in the `core/business_objects` layer and `core/api/v1` route modules.
-- Do not invent new database tables or bypass tenant checks unless the task explicitly requires it.
-- Preserve the Django + Django Ninja structure; do not replace it with ad hoc logic.
-- Use same code styling, similar nomenclature, and same pattern while writing new code
+## 3. Backend Conventions (`core/`)
 
-## Never Rules
+- **3-Layer Split:** Persistence in `core/models.py` (`TenantScopedModel`) $\rightarrow$ domain rules in `core/business_objects/` $\rightarrow$ payload schemas in `core/schemas/` $\rightarrow$ HTTP routes in `core/api/v1/`.
+- **Route Pattern:** Authenticate via `JWTAuthBearer()`, authorize via `@require_roles(...)` and `core/auth/scoping.py`, query with `get_object_or_404(..., tenant_id=request.tenant_id, is_deleted=False)`, and return `build_response(...)` / `build_error(...)`.
+- **Router Map (`core/api/v1/`):** `auth.py`, `enrollments.py`, `academics.py`, `attendance.py`, `health.py`, `billing.py`, `sprint5.py` (HR/payroll/vendors/events/comms), `analytics.py`, `school_setup.py`, `metadata.py`.
 
-- Never commit, print, copy, or place real secrets, tokens, private keys, or credentials in source, documentation, tests, screenshots, or logs.
-- Never bypass authenticated tenant scope, role checks, object-level access checks, soft-delete filters, or established business-object rules.
-- Never add or materially change a database table without updating `docs/DATA_AND_ENV.md`, adding a migration, and testing tenant/access behavior.
-- Never implement a feature before recording its scope, dependencies, risks, and verification plan. For multi-step work, maintain a task plan and pause for approval where the request requires it.
-- Never make broad or unrelated edits; preserve existing user changes and keep diffs small and reviewable.
-- Never finish a code change without focused tests or a clear explanation of why a check could not run.
-- Never finish a task without appending a dated decision/status entry to `docs/MEMORY_LOG.md`.
+---
 
-## Required Work Cycle
+## 4. Mandatory Frontend UI Rules (`frontend/`)
 
-1. Read the relevant architecture, security, data, design, and rule references.
-2. State the smallest scope, dependencies, and a check that can disprove the implementation hypothesis before editing.
-3. Implement a focused change and run the narrowest relevant tests first.
-4. Run required broader checks, update documentation, and append the result/decision to `docs/MEMORY_LOG.md`.
+1. **Reuse Design System:** Import primitives from `frontend/components/ui` and shared product components (`data-table`, etc.) from `frontend/components/pc`. Do not build duplicate controls or raw HTML tables/inputs.
+2. **No Hardcoded Colors:** Use semantic Tailwind utilities backed by `frontend/styles/tokens.css`. Never use hex/RGB/HSL literals or arbitrary color classes.
+3. **App Router Only:** Product workflows belong in `frontend/app/`. Static HTML mockups belong only in `Artefacts/UX Designs/` when explicitly requested.
 
-## Repository map
+---
 
-### Root
+## 5. Required Work Cycle & Validation Commands
 
-- `manage.py` – Django project entrypoint
-- `requirements.txt` – Python dependencies
-- `pytest.ini` – pytest config
-- `seed_test_data.py` – test data seeding script
-- `config/` – Django settings and URL config
-- `core/` – primary backend app
-- `tests/` – backend test suite
-- `frontend/` – Next.js app
-- `Artefacts/` and `docs/` – design and documentation assets
-
-### Backend core areas
-
-- `core/models.py` – primary shared domain model for Tenant, Student, Application, Parent, Staff, Invoice, etc.
-- `core/api/__init__.py` – central API registry and router mounting
-- `core/api/v1/` – domain-specific Django Ninja routers
-- `core/business_objects/` – BO layer containing business rules and workflows
-- `core/schemas/` – request/response schema definitions
-- `core/auth/` – JWT auth, roles, scoping, access checks
-- `core/migrations/` – schema migration history
-
-### Frontend areas
-
-- `frontend/app/` – app router pages and portal screens
-- `frontend/app/components/` – reusable UI widgets and role portals
-- `frontend/app/lib/` – session/auth helpers
-
-## Core architecture
-
-### Backend model pattern
-
-The model layer is built around `TenantScopedModel`, which all tenant-bound entities inherit from. This enforces tenant isolation and supports multi-tenant operations.
-
-Main domain groups in `core/models.py` include:
-
-- Student lifecycle and admissions
-  - `Tenant`, `TenantSequence`, `Student`, `Application`, `Parent`, `EmergencyContact`, `Document`, `AuditLog`
-- Academics
-  - `Curriculum`, `AcademicCalendar`, `LessonPlan`, `Assignment`, `Exam`, `MarksRecord`, `ReportCard`
-- Attendance / health
-  - `StudentAttendance`, `LeaveRequest`, `StudentHealth`, `HealthObservation`, `MedicationLog`, `Incident`, `SafetyDrill`
-- Billing / finance
-  - `FeeStructure`, `Invoice`, `Payment`, `DiscountWaiver`, `Reconciliation`
-- HR / procurement / events
-  - `Staff`, `PayrollRun`, `Appraisal`, `Vendor`, `Requisition`, `PurchaseOrder`, `DeliveryRecord`, `VendorInvoice`, `Event`, `EventVolunteer`
-- Reporting / integration
-  - `CustomReport`, `ReportSchedule`, `WebhookSubscription`
-
-### API pattern
-
-All API routes are registered in `core/api/__init__.py` and mounted under `/api`.
-
-Key router files:
-
-- `core/api/v1/enrollments.py` – admissions and student profile flows
-- `core/api/v1/academics.py` – curriculum, lesson plans, exams, marks
-- `core/api/v1/attendance.py` – attendance, leave, staffing coverage
-- `core/api/v1/health.py` – health records, medication, incident logs, safety
-- `core/api/v1/billing.py` – invoices, payments, discounts, reconciliation
-- `core/api/v1/analytics.py` – dashboards, reports, webhooks
-- `core/api/v1/sprint5.py` – HR, payroll, vendor, events, communication, procurement
-
-All routes typically follow this pattern:
-
-- JWT auth through `JWTAuthBearer()`
-- role enforcement through `@require_roles(...)`
-- tenant lookup from `request.tenant_id`
-- object-level guard using `verify_student_access`, `verify_application_access`, etc.
-- JSON response via `build_response(...)` or `build_error(...)`
-
-### Frontend pattern
-
-The frontend is a Next.js app using App Router.
-
-Important UI flow:
-
-- [frontend/app/page.tsx](frontend/app/page.tsx) loads the landing screen
-- [frontend/app/components/session-switcher.tsx](frontend/app/components/session-switcher.tsx) creates a mock JWT session and routes to a role portal
-- role pages render dashboard screens and usually include the student widget
-- [frontend/app/components/student-widget.tsx](frontend/app/components/student-widget.tsx) is the reusable student summary widget
-- Parent-specific widget behavior is wrapped in [frontend/app/components/student-widget-parent-wrapper.tsx](frontend/app/components/student-widget-parent-wrapper.tsx)
-
-### Mandatory frontend UI rules
-
-These rules apply to every UI change, including dashboards, portals, forms, tables, menus, dialogs, empty states, and responsive states. They take precedence over one-off visual implementations.
-
-1. Reuse the design system. Before writing UI, inspect the relevant page, `frontend/styles/tokens.css`, and existing components under `frontend/components/ui` and `frontend/components/pc`. Use those components and their established APIs. Do not create a second button, input, select, panel, status badge, modal, table, or other primitive when an equivalent already exists.
-2. Do not build a parallel component system. Do not add page-local or feature-local copies of shared UI components. If a genuinely missing reusable primitive is required, add it under `frontend/components/pc`, export it through the existing barrel, and add or update its Storybook story. Keep route-specific composition in the route or its existing feature component.
-3. Do not build interfaces from ad hoc raw HTML. Use the shared UI components for interactive or styled controls, and `frontend/components/pc/data-table` for data tables. Raw semantic elements such as `main`, `section`, `form`, headings, and descriptive text are appropriate for structure; do not hand-build styled controls or replace shared components with raw elements.
-4. Do not use static HTML documents as application UI. HTML mockups belong only in `Artefacts/UX Designs` folder. when a task explicitly requests a static mockup, create accordingly using component designed already as mentioned above. Product workflows belong in the Next.js App Router and must use the existing components and API/session patterns.
-5. Never hardcode colors. Use semantic Tailwind utilities backed by the design tokens or CSS variables from `frontend/styles/tokens.css` and the existing theme files. Do not use hex, RGB/HSL literals, named-color utilities, arbitrary color values, inline color styles, or new one-off color variables. If a semantic color is missing, add a named design token first and use it consistently.
-6. Preserve the established visual language and responsive behavior. Use stable layout dimensions, accessible labels and keyboard behavior, and the existing icon library. Do not add explanatory UI copy or decorative styling that conflicts with the current product patterns.
-7. Before adding any component, search for an existing equivalent. Before finishing a UI change, run focused ESLint on changed frontend files and `npm run build` from `frontend/`; report any pre-existing lint failures separately instead of adding suppressions.
-
-For a quick reference, application code should import UI primitives from `frontend/components/ui` and shared product components from `frontend/components/pc`; design values belong in `frontend/styles/tokens.css` or the established theme files, never in page-local literals.
-
-## Core business logic layers
-
-Follow the repository split:
-
-- `core/models.py` – persistence model
-- `core/business_objects/` – enforce business rules
-- `core/api/v1/*.py` – API entrypoints
-- `core/schemas/*.py` – validating request payloads and response shapes
-
-Do not place business rule validation directly in route handlers unless the task is extremely small and local. Reuse existing BO patterns.
-
-## Key conventions
-
-- Use tenant-aware queries in all reads and writes.
-- Respect `is_deleted` soft-deletion patterns.
-- Prefer explicit `get_object_or_404(..., tenant_id=request.tenant_id, is_deleted=False)` patterns.
-- Use UUID-based lookups for domain identifiers.
-- Build responses in the project’s response envelope format; do not return raw payloads when the existing API structure expects `build_response(...)`.
-- Keep Pydantic/Ninja schema names consistent with existing file naming conventions.
-
-## Build and validation commands
-
-From the repo root:
-
-- `python manage.py test` – run Django tests
-- `pytest` – run test suite if configured in project
-
-From `frontend/`:
-
-- `npm install`
-- `npm run dev` – local frontend development
-- `npm run build` – production build validation
-
-## Important files to review before change
-
-These are the highest-signal files for onboarding and feature work:
-
-- `config/urls.py`
-- `core/api/__init__.py`
-- `core/models.py`
-- `core/auth/bearer.py`
-- `core/auth/decorators.py`
-- `core/auth/scoping.py`
-- `core/api/v1/enrollments.py`
-- `core/api/v1/attendance.py`
-- `core/api/v1/billing.py`
-- `core/api/v1/analytics.py`
-- `core/api/v1/sprint5.py`
-- `frontend/app/components/session-switcher.tsx`
-- `frontend/app/components/student-widget.tsx`
-
-## Development guidance for new tasks
-
-When implementing new features:
-
-1. Identify the correct domain and router file.
-2. Determine whether the change belongs in `core/models.py`, `core/business_objects`, or `core/schemas`. If there's a confusion ask.
-3. Add/adjust the route only after the BO and schema logic are in place.
-4. Keep tenant and role checks explicit.
-5. Cover the behavior with tests in `tests/` when the change affects backend domain logic.
-
-## Known implementation notes
-
-- The app uses session-emulated role portal access in the frontend rather than direct URL state for core access flows.
-- Student widget visibility depends on the selected role and linked student claims in the JWT session.
-- The backend is designed around strong access-control and tenant isolation; avoid bypassing those guarantees.
-
-## Output expectations
-
-When making code changes:
-
-- Keep modifications narrowly scoped.
-- Prefer consistent naming with current project patterns.
-- Update tests when business rules or API contracts change.
-- Validate relevant commands before concluding the task.
-
-## One-sentence summary
-
-This repository is a tenant-aware school CRM with a Django + Django Ninja backend, role-based access control, and a Next.js portal front end; new work should follow existing domain, BO, schema, and route conventions rather than introducing parallel patterns.
+1. Read only the target code and domain files from the table above.
+2. Implement the minimal change across Schema / BO / Route / UI.
+3. Run focused verification:
+   - **Backend:** `pytest <path/to/test_file.py>` (or `python manage.py test`)
+   - **Frontend:** focused ESLint on changed files + `npm run build` (from `frontend/`)
+4. Append a dated entry to [`docs/7_MEMORY_LOG.md`](docs/7_MEMORY_LOG.md).

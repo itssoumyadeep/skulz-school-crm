@@ -33,6 +33,7 @@ DEBUG = env_bool("DJANGO_DEBUG", False)
 
 def _required_secret(name: str, minimum_length: int = 50) -> str:
     value = os.environ.get(name, "").strip()
+    
     if not value:
         raise ImproperlyConfigured(f"{name} must be set in the environment.")
     if len(value) < minimum_length:
@@ -53,6 +54,7 @@ def _is_placeholder(value: str) -> bool:
 
 
 SECRET_KEY = _required_secret("DJANGO_SECRET_KEY")
+
 JWT_SECRET_KEY = _required_secret("JWT_SECRET_KEY")
 
 ALLOWED_HOSTS = [
