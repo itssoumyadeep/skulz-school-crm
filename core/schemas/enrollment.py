@@ -129,3 +129,49 @@ class EmergencyContactCreateSchema(BaseModel):
     phone: str
     relationship: str
     medical_consent: bool = False
+
+
+class EmergencyContactUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    relationship: Optional[str] = None
+    medical_consent: Optional[bool] = None
+
+
+class StudentCreateInput(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    dob: Optional[date] = None
+    grade: str = Field(min_length=1, max_length=50)
+    section: str = "A"
+    class_id: Optional[UUID] = None
+    class_teacher: str = ""
+    status: Literal["Active", "Inactive", "Waitlisted"] = "Inactive"
+    enrolled_date: Optional[date] = None
+    parent_name: Optional[str] = None
+    parent_relationship: str = "Parent"
+    parent_email: Optional[EmailStr] = None
+    parent_phone: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    emergency_contact_relationship: str = "Emergency Contact"
+    medical_consent: bool = False
+
+
+class ParentCreateInput(BaseModel):
+    student_id: UUID
+    name: str = Field(min_length=1, max_length=255)
+    relationship: str = "Parent"
+    phone: str = Field(min_length=3, max_length=50)
+    email: EmailStr
+    notification_prefs: dict = Field(default_factory=dict)
+    media_consent: bool = True
+
+
+class ParentUpdateInput(BaseModel):
+    name: Optional[str] = None
+    relationship: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    notification_prefs: Optional[dict] = None
+    media_consent: Optional[bool] = None
+

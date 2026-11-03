@@ -132,3 +132,76 @@ class SafetyDrillCreateSchema(BaseModel):
     duration_seconds: int = 120
     participation_rate: Decimal = Decimal("100.00")
     issues_noted: List[str] = Field(default_factory=list)
+    signed_off: bool = True
+
+
+class StaffAttendanceCreateInput(BaseModel):
+    staff_id: UUID
+    date: date
+    check_in: str = ""
+    check_out: str = ""
+    method: str = "Manual"
+    status: str = "Present"  # Present, Absent, Late, Half_Day, On_Leave
+    substitute_id: Optional[UUID] = None
+    geofence_verified: bool = False
+
+
+class StaffAttendanceUpdateInput(BaseModel):
+    check_in: Optional[str] = None
+    check_out: Optional[str] = None
+    method: Optional[str] = None
+    status: Optional[str] = None
+    substitute_id: Optional[UUID] = None
+    geofence_verified: Optional[bool] = None
+
+
+class AttendanceRosterCreateInput(BaseModel):
+    class_id: UUID
+    date: date
+    window_start: str = "08:00"
+    window_end: str = "10:00"
+
+
+class RosterUpdateInput(BaseModel):
+    window_start: Optional[str] = None
+    window_end: Optional[str] = None
+
+
+class StudentHealthUpsertInput(BaseModel):
+    allergies: Optional[List[Any]] = None
+    conditions: Optional[List[Any]] = None
+    medications: Optional[List[Any]] = None
+    vaccinations: Optional[List[Any]] = None
+    doctor_name: Optional[str] = None
+    doctor_phone: Optional[str] = None
+    consent_flag: Optional[bool] = None
+
+
+class HealthObservationUpdateInput(BaseModel):
+    mood: Optional[str] = None
+    appetite: Optional[str] = None
+    nap_duration_mins: Optional[int] = None
+    feeding_notes: Optional[str] = None
+    general_notes: Optional[str] = None
+
+
+class MedicationLogUpdateInput(BaseModel):
+    medicine_name: Optional[str] = None
+    dose: Optional[str] = None
+    notes: Optional[str] = None
+    parent_notified: Optional[bool] = None
+
+
+class IncidentAcknowledgeInput(BaseModel):
+    actions_taken: Optional[str] = None
+    escalated_to_principal: Optional[bool] = None
+    parent_notified: Optional[bool] = None
+    acknowledge: bool = True
+
+
+class SafetyDrillUpdateInput(BaseModel):
+    duration_seconds: Optional[int] = None
+    participation_rate: Optional[Decimal] = None
+    issues_noted: Optional[List[str]] = None
+    signed_off: Optional[bool] = None
+

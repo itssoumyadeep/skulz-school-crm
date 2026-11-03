@@ -60,7 +60,7 @@ class FeeAccountBO(BaseBusinessObject):
         self.actor_role = actor_role
         self.tenant = tenant or (student.tenant if student else None)
         self.invoice = invoice
-        self.fee_structure = fee_structure
+        self.fee_structure = fee_structure or (invoice.fee_structure if invoice and invoice.fee_structure_id else None)
         self.payment = payment
         self.reconciliation = reconciliation
         self.amount = amount
@@ -149,13 +149,13 @@ class FeeAccountBO(BaseBusinessObject):
         """
         BR-02-05: An invoice cannot be finalized as Paid while any balance remains.
         """
-        if self.operation != 'record_payment' or not self.invoice or self.amount is None:
+        if self.operation not in {'record_payment', 'update_invoice'} or not self.invoice:
             return None
 
         completed_paid = sum(
             payment.amount for payment in self.invoice.payments.filter(status='Completed', is_deleted=False)
         )
-        projected_paid = completed_paid + self.amount
+        projected_paid = completed_paid + (self.amount or Decimal('0.00'))
         if self.target_invoice_status == 'Paid' and projected_paid < self.invoice.total:
             return RuleViolation(
                 rule_id='BR-02-05',
@@ -379,7 +379,7 @@ class FeeAccountBO(BaseBusinessObject):
     def to_dict(self) -> Dict[str, Any]:
         return self.compute_account_summary()
 
-    def apply_late_fee(self, fee_amount: Decimal) -> Invoice:
+    def apply_late_fee(self, fee_amount: Optional[Decimal] = None) -> Invoice:
         bo = FeeAccountBO(
             student=self.student,
             actor_role=self.actor_role,
@@ -390,9 +390,87 @@ class FeeAccountBO(BaseBusinessObject):
         )
         bo.enforce_rules()
 
-        self.invoice.total += fee_amount
+        resolved_amount = fee_amount
+        if resolved_amount is None and self.fee_structure:
+            resolved_amount = Decimal(str((self.fee_structure.penalty_rules or {}).get('late_fee_amount', 0)))
+        resolved_amount = resolved_amount or Decimal('0.00')
+
+        self.invoice.total += resolved_amount
         self.invoice.save(update_fields=['total', 'updated_at'])
         return self.invoice
+
+    @classmethod
+    def update_invoice(
+        cls,
+        invoice: Invoice,
+        actor_role: str = 'Admin',
+        due_date: Optional[date] = None,
+        line_items: Optional[List[Dict[str, Any]]] = None,
+        status: Optional[str] = None,
+        invoice_type: Optional[str] = None,
+    ) -> Invoice:
+        if status == 'Paid':
+            bo = cls(
+                invoice=invoice,
+                actor_role=actor_role,
+                tenant=invoice.tenant,
+                target_invoice_status=status,
+                operation='update_invoice',
+            )
+            bo.enforce_rules()
+
+        if due_date is not None:
+            if due_date < invoice.invoice_date:
+                raise BusinessRuleError([RuleViolation(
+                    rule_id='BR-02-01',
+                    message='due_date cannot be earlier than invoice_date.',
+                    field='due_date',
+                )])
+            invoice.due_date = due_date
+
+        if line_items is not None:
+            if invoice.status in {'Paid', 'Cancelled', 'Waived'}:
+                raise BusinessRuleError([RuleViolation(
+                    rule_id='BR-02-05',
+                    message=f'Cannot modify line_items of a {invoice.status} invoice.',
+                    field='line_items',
+                )])
+            invoice.line_items = line_items
+            invoice.total = sum(Decimal(str(item.get('amount', 0))) for item in line_items)
+
+        if invoice_type is not None:
+            invoice.invoice_type = invoice_type
+        if status is not None:
+            invoice.status = status
+
+        invoice.save()
+        return invoice
+
+    @classmethod
+    def create_fee_structure(cls, tenant: Tenant, data: Dict[str, Any]) -> FeeStructure:
+        return FeeStructure.objects.create(
+            tenant=tenant,
+            grade=data['grade'],
+            term=data['term'],
+            components=data.get('components') or [],
+            discount_rules=data.get('discount_rules') or [],
+            penalty_rules=data.get('penalty_rules') or {},
+            version=data.get('version') or '1.0',
+        )
+
+    @classmethod
+    def update_fee_structure(cls, fee_structure: FeeStructure, data: Dict[str, Any]) -> FeeStructure:
+        for field in ['grade', 'term', 'components', 'discount_rules', 'penalty_rules', 'version']:
+            if data.get(field) is not None:
+                setattr(fee_structure, field, data[field])
+        fee_structure.save()
+        return fee_structure
+
+    @classmethod
+    def delete_fee_structure(cls, fee_structure: FeeStructure) -> FeeStructure:
+        fee_structure.is_deleted = True
+        fee_structure.save(update_fields=['is_deleted', 'updated_at'])
+        return fee_structure
 
 
 class ParentBillingBO(BaseBusinessObject):

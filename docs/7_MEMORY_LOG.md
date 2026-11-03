@@ -142,6 +142,15 @@ This log records durable architecture, security, and product decisions so later 
 - **Consequences:** All new CRUD endpoints must follow the 3-layer split (`core/schemas/` -> `core/business_objects/` -> `core/api/v1/`), enforce tenant/role/object scoping (`verify_student_access`, `verify_application_access`, `verify_vendor_access`), preserve immutable records (`AuditLog`, signed-off `SafetyDrill` per `BR-07-04`, financial ledgers), and use soft deletion (`is_deleted=True`).
 - **Evidence:** [`docs/9_CRUD_EXECUTION_PLAN.md`](9_CRUD_EXECUTION_PLAN.md), [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md), [`docs/rule_registry.md`](rule_registry.md).
 
+### 2026-10-31 — Implement Full CRUD Operations Across All 7 Base Objects and 35 Derived Objects (`WP-1.1`–`WP-4.3`)
+
+- **Status:** Accepted
+- **Decision:** Implement all missing CRUD endpoints, Pydantic schemas, and Business Object (`BO`) lifecycle methods across all 42 domain objects (`WP-1.1` through `WP-4.3` in `docs/9_CRUD_EXECUTION_PLAN.md`), harden Teacher/CareGiver class and grade scoping in `core/auth/scoping.py`, and fix the relative-date grace period test in `tests/test_bo_billing.py`.
+- **Context:** Role portals and operational workflows required complete list, detail, create, partial update (`PATCH`), and soft-delete (`DELETE`) coverage while strictly preserving tenant isolation (`tenant_id=request.tenant_id`, `is_deleted=False`), RBAC (`@require_roles`), object-level guards, and Class 2 Business Rules (`BR-01-01`..`BR-09-01`).
+- **Consequences:** All 7 Base Objects (`Tenant`, `Student`, `Parent`, `Staff`, `Vendor`, `PortalRoleMembership`, `TenantSequence`) and 35 Derived Objects now expose standardized CRUD routes under `/api/v1/` with full BO rule enforcement and audit logging.
+- **Evidence:** `core/auth/bearer.py`, `core/auth/scoping.py`, `core/schemas/`, `core/business_objects/`, `core/api/v1/`, `tests/test_crud_execution_plan.py`, `tests/test_bo_billing.py`.
+
+
 
 
 

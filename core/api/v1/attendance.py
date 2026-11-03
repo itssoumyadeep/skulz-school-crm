@@ -7,8 +7,8 @@ from django.http import JsonResponse
 from ninja import Router
 
 from core.models import (
-    Tenant, Student, StudentAttendance,
-    LeaveRequest, AcademicCalendar
+    Tenant, Student, StudentAttendance, StaffAttendance,
+    AttendanceRoster, LeaveRequest, AcademicCalendar
 )
 from core.auth.bearer import JWTAuthBearer
 from core.auth.decorators import require_roles
@@ -18,6 +18,10 @@ from core.schemas.attendance_health import (
     AttendanceMarkSchema,
     AttendanceRosterBulkMarkSchema,
     AttendanceUpdateSchema,
+    AttendanceRosterCreateInput,
+    RosterUpdateInput,
+    StaffAttendanceCreateInput,
+    StaffAttendanceUpdateInput,
     LeaveRequestCreateSchema,
     LeaveRequestApproveSchema,
     StaffSubstitutionSchema
@@ -384,3 +388,133 @@ def get_attendance_reports(request, report_type: str):
         "overall_attendance_rate": pct
     }
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')), status=200)
+
+
+@router.delete("/attendance/{uuid:att_id}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Admin', 'Principal', 'Owner')
+def delete_attendance_record(request, att_id: UUID):
+    record = get_object_or_404(
+        StudentAttendance.objects.select_related('student', 'tenant'),
+        att_id=att_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    data = AttendanceSheetBO.delete_attendance(record=record, actor_role=actor_role, actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/staff/attendance", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
+def mark_staff_attendance(request, payload: StaffAttendanceCreateInput):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = StaffRosterBO(tenant=tenant, roster_date=payload.date, actor_role=actor_role)
+    data = bo.mark_staff_attendance(data=payload.model_dump(exclude_none=True), actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.get("/staff/attendance", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner', 'Staff', 'Teacher')
+def list_staff_attendance(request, staff_id: UUID = None, att_date: date = None):
+    actor_role = getattr(request, 'user_role', 'Admin')
+    if actor_role in ('Staff', 'Teacher') and getattr(request, 'user_id', None):
+        try:
+            staff_id = UUID(str(request.user_id))
+        except (ValueError, TypeError):
+            pass
+    data = StaffRosterBO.list_staff_attendance(
+        tenant_id=request.tenant_id,
+        staff_id=staff_id,
+        att_date=att_date,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.patch("/staff/attendance/{uuid:staff_att_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
+def update_staff_attendance(request, staff_att_id: UUID, payload: StaffAttendanceUpdateInput):
+    att = get_object_or_404(
+        StaffAttendance.objects.select_related('tenant'),
+        staff_att_id=staff_att_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = StaffRosterBO(tenant=att.tenant, roster_date=att.date, actor_role=actor_role)
+    data = bo.update_staff_attendance(att=att, data=payload.model_dump(exclude_none=True), actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/attendance/rosters", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
+def create_attendance_roster(request, payload: AttendanceRosterCreateInput):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = StaffRosterBO.create_roster(
+        tenant=tenant,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.patch("/attendance/rosters/{uuid:roster_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
+def update_attendance_roster(request, roster_id: UUID, payload: RosterUpdateInput):
+    roster = get_object_or_404(
+        AttendanceRoster,
+        roster_id=roster_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = StaffRosterBO.update_roster(roster=roster, data=payload.model_dump(exclude_none=True))
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/leave-requests", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner', 'Parent', 'Staff', 'Teacher')
+def list_leave_requests(request, requester_id: UUID = None, status: str = None):
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = LeaveCaseBO.list_leave_requests(
+        tenant_id=request.tenant_id,
+        requester_id=requester_id,
+        status=status,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/leave-requests/{uuid:leave_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner', 'Parent', 'Staff', 'Teacher')
+def get_leave_request(request, leave_id: UUID):
+    leave = get_object_or_404(
+        LeaveRequest,
+        leave_id=leave_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = LeaveCaseBO(leave_request=leave, actor_role=actor_role)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/leave-requests/{uuid:leave_id}", auth=JWTAuthBearer())
+@require_roles('Parent', 'Staff', 'Teacher', 'Admin', 'Principal', 'Owner')
+def cancel_leave_request(request, leave_id: UUID):
+    leave = get_object_or_404(
+        LeaveRequest.objects.select_related('tenant'),
+        leave_id=leave_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Staff')
+    bo = LeaveCaseBO(leave_request=leave, actor_role=actor_role)
+    data = bo.cancel_leave_request(actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+

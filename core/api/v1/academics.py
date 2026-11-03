@@ -7,18 +7,27 @@ from ninja import Router
 
 from core.models import (
     Tenant, Student, Curriculum, AcademicCalendar,
-    LessonPlan, Exam, ReportCard
+    LessonPlan, Assignment, Exam, MarksRecord, ReportCard
 )
 from core.auth.bearer import JWTAuthBearer
 from core.auth.decorators import require_roles
 from core.auth.scoping import verify_student_access
 from core.schemas.base import build_response, build_error
 from core.schemas.academic import (
+    CurriculumCreateSchema,
+    CurriculumUpdateInput,
+    AcademicCalendarCreateSchema,
+    AcademicCalendarUpdateInput,
     LessonPlanCreateSchema,
+    LessonPlanUpdateInput,
     AssignmentCreateSchema,
+    AssignmentUpdateInput,
     ExamCreateSchema,
+    ExamUpdateInput,
     MarksEntrySchema,
-    ReportCardGenerateSchema
+    MarksUpdateInput,
+    ReportCardGenerateSchema,
+    ReportCardUpdateInput,
 )
 from core.business_objects.academic import (
     AcademicCalendarBO,
@@ -258,14 +267,17 @@ def get_academic_record(request, student_id: UUID, term: str):
         term=term,
         is_deleted=False
     ).first()
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if actor_role == 'Parent' and report_card and not report_card.is_published:
+        report_card = None
 
     bo = AcademicRecordBO(
         student=student,
         calendar=calendar,
         report_card=report_card,
-        actor_role=getattr(request, 'user_role', 'Parent')
+        actor_role=actor_role
     )
-    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Parent')), status=200)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
 
 
 @router.post("/academic-records/{report_id}/publish", auth=JWTAuthBearer())
@@ -313,3 +325,397 @@ def get_exam_hall_tickets(request, exam_id: UUID):
         build_response(data=tickets, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
         status=200
     )
+
+
+@router.get("/curriculums", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'Owner')
+def list_curriculums(request, grade: str = None):
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = ClassroomPlanBO.list_curriculums(tenant_id=request.tenant_id, grade=grade)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/curriculums", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def create_curriculum(request, payload: CurriculumCreateSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = ClassroomPlanBO.create_curriculum(
+        tenant=tenant,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.get("/curriculums/{uuid:curriculum_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'Owner')
+def get_curriculum(request, curriculum_id: UUID):
+    curriculum = get_object_or_404(
+        Curriculum,
+        curriculum_id=curriculum_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = ClassroomPlanBO.serialize_curriculum(curriculum)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.patch("/curriculums/{uuid:curriculum_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def update_curriculum(request, curriculum_id: UUID, payload: CurriculumUpdateInput):
+    curriculum = get_object_or_404(
+        Curriculum.objects.select_related('tenant'),
+        curriculum_id=curriculum_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = ClassroomPlanBO.update_curriculum(
+        curriculum=curriculum,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/curriculums/{uuid:curriculum_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def delete_curriculum(request, curriculum_id: UUID):
+    curriculum = get_object_or_404(
+        Curriculum.objects.select_related('tenant'),
+        curriculum_id=curriculum_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = ClassroomPlanBO.delete_curriculum(curriculum=curriculum, actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/calendars", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'Parent', 'Owner')
+def list_calendars(request):
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = AcademicCalendarBO.list_calendars(tenant_id=request.tenant_id, actor_role=actor_role)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/calendars", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def create_calendar(request, payload: AcademicCalendarCreateSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    calendar = AcademicCalendarBO.create_calendar(
+        tenant=tenant,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+        actor_role=actor_role,
+    )
+    bo = AcademicCalendarBO(calendar=calendar, actor_role=actor_role)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.get("/calendars/{uuid:calendar_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'Parent', 'Owner')
+def get_calendar(request, calendar_id: UUID):
+    calendar = get_object_or_404(
+        AcademicCalendar,
+        calendar_id=calendar_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = AcademicCalendarBO(calendar=calendar, actor_role=actor_role)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.patch("/calendars/{uuid:calendar_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def update_calendar(request, calendar_id: UUID, payload: AcademicCalendarUpdateInput):
+    calendar = get_object_or_404(
+        AcademicCalendar.objects.select_related('tenant'),
+        calendar_id=calendar_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = AcademicCalendarBO(calendar=calendar, actor_role=actor_role)
+    data = bo.update_calendar(data=payload.model_dump(exclude_none=True), actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/calendars/{uuid:calendar_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Owner')
+def delete_calendar(request, calendar_id: UUID):
+    calendar = get_object_or_404(
+        AcademicCalendar.objects.select_related('tenant'),
+        calendar_id=calendar_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = AcademicCalendarBO(calendar=calendar, actor_role=actor_role)
+    data = bo.delete_calendar(actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/lesson-plans", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Owner')
+def list_lesson_plans(request, class_id: UUID = None):
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    data = ClassroomPlanBO.list_lesson_plans(tenant_id=request.tenant_id, class_id=class_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.patch("/lesson-plans/{uuid:plan_id}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Owner')
+def update_lesson_plan(request, plan_id: UUID, payload: LessonPlanUpdateInput):
+    plan = get_object_or_404(
+        LessonPlan.objects.select_related('curriculum', 'tenant'),
+        plan_id=plan_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    updated = ClassroomPlanBO.update_lesson_plan(
+        lesson_plan=plan,
+        data=payload.model_dump(exclude_none=True),
+        actor_role=actor_role,
+        actor_id=actor_id,
+    )
+    bo = ClassroomPlanBO(lesson_plan=updated, actor_role=actor_role)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/lesson-plans/{uuid:plan_id}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Admin', 'Owner')
+def delete_lesson_plan(request, plan_id: UUID):
+    plan = get_object_or_404(
+        LessonPlan.objects.select_related('tenant'),
+        plan_id=plan_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    data = ClassroomPlanBO.delete_lesson_plan(lesson_plan=plan, actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/assignments", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Parent', 'Owner')
+def list_assignments(request, class_id: UUID = None):
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    data = ClassroomPlanBO.list_assignments(tenant_id=request.tenant_id, class_id=class_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/assignments/{uuid:assignment_id}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Parent', 'Owner')
+def get_assignment(request, assignment_id: UUID):
+    assignment = get_object_or_404(
+        Assignment,
+        assignment_id=assignment_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    bo = ClassroomPlanBO(assignment=assignment, actor_role=actor_role)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.patch("/assignments/{uuid:assignment_id}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Owner')
+def update_assignment(request, assignment_id: UUID, payload: AssignmentUpdateInput):
+    assignment = get_object_or_404(
+        Assignment.objects.select_related('tenant'),
+        assignment_id=assignment_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    calendar = AcademicCalendar.objects.filter(
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    ).order_by('-academic_year').first()
+    updated = ClassroomPlanBO.update_assignment(
+        assignment=assignment,
+        data=payload.model_dump(exclude_none=True),
+        calendar=calendar,
+        actor_role=actor_role,
+        actor_id=actor_id,
+    )
+    bo = ClassroomPlanBO(assignment=updated, actor_role=actor_role)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/assignments/{uuid:assignment_id}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Admin', 'Owner')
+def delete_assignment(request, assignment_id: UUID):
+    assignment = get_object_or_404(
+        Assignment.objects.select_related('tenant'),
+        assignment_id=assignment_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    data = ClassroomPlanBO.delete_assignment(assignment=assignment, actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/exams", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'Parent', 'Owner')
+def list_exams(request, class_id: UUID = None):
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = ExamPackageBO.list_exams(tenant_id=request.tenant_id, class_id=class_id, actor_role=actor_role)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/exams/{uuid:exam_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'Parent', 'Owner')
+def get_exam(request, exam_id: UUID):
+    exam = get_object_or_404(
+        Exam.objects.select_related('calendar', 'tenant'),
+        exam_id=exam_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = ExamPackageBO(exam=exam, actor_role=actor_role)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.patch("/exams/{uuid:exam_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
+def update_exam(request, exam_id: UUID, payload: ExamUpdateInput):
+    exam = get_object_or_404(
+        Exam.objects.select_related('calendar', 'tenant'),
+        exam_id=exam_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = ExamPackageBO(exam=exam, actor_role=actor_role)
+    bo.update_exam(data=payload.model_dump(exclude_none=True), actor_id=actor_id)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/exams/{uuid:exam_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def delete_exam(request, exam_id: UUID):
+    exam = get_object_or_404(
+        Exam.objects.select_related('calendar', 'tenant'),
+        exam_id=exam_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = ExamPackageBO(exam=exam, actor_role=actor_role)
+    data = bo.delete_exam(actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/exams/{uuid:exam_id}/marks", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Owner')
+def list_exam_marks(request, exam_id: UUID):
+    exam = get_object_or_404(
+        Exam.objects.select_related('tenant'),
+        exam_id=exam_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    data = AcademicRecordBO.list_exam_marks(exam=exam)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.patch("/marks/{uuid:marks_id}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Owner')
+def update_marks_record(request, marks_id: UUID, payload: MarksUpdateInput):
+    record = get_object_or_404(
+        MarksRecord.objects.select_related('student', 'exam', 'tenant'),
+        marks_id=marks_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Teacher')
+    data = AcademicRecordBO.update_marks_record(
+        record=record,
+        data=payload.model_dump(exclude_none=True),
+        actor_role=actor_role,
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/academic-records", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Owner')
+def create_draft_report_card(request, payload: ReportCardGenerateSchema):
+    if not payload.student_id:
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "VALIDATION_ERROR", "field": "student_id", "message": "student_id is required."}],
+                tenant_id=request.tenant_id,
+                role=getattr(request, 'user_role', 'Admin'),
+            ),
+            status=422,
+        )
+    student = get_object_or_404(
+        Student.objects.select_related('tenant'),
+        student_id=payload.student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    calendar = get_object_or_404(
+        AcademicCalendar,
+        calendar_id=payload.calendar_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = AcademicRecordBO(student=student, calendar=calendar, actor_role=actor_role)
+    bo.generate_report_card(
+        term=payload.term,
+        year=payload.year,
+        published_date=payload.published_date,
+        attendance_pct=payload.attendance_percentage,
+        actor_id=actor_id,
+    )
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.patch("/academic-records/{uuid:report_id}", auth=JWTAuthBearer())
+@require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Owner')
+def update_report_card(request, report_id: UUID, payload: ReportCardUpdateInput):
+    report_card = get_object_or_404(
+        ReportCard.objects.select_related('student', 'calendar', 'tenant'),
+        report_id=report_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = AcademicRecordBO(
+        student=report_card.student,
+        calendar=report_card.calendar,
+        report_card=report_card,
+        actor_role=actor_role,
+    )
+    bo.update_report_card(data=payload.model_dump(exclude_none=True), actor_id=actor_id)
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+

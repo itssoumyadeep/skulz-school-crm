@@ -306,6 +306,42 @@ class CustomReportBO(BaseBusinessObject):
             active=active,
         )
 
+    def update_report(self, report: CustomReport, data: Dict[str, Any]) -> CustomReport:
+        if data.get('name') is not None:
+            report.name = data['name']
+        if data.get('fields') is not None:
+            selected = [field for field in data['fields'] if field in self.ALLOWED_FIELDS]
+            if selected:
+                report.fields = selected
+                report.result = {'values': {field: self._compute_field(field) for field in selected}}
+        if data.get('filters') is not None:
+            report.filters = data['filters']
+        if data.get('group_by') is not None:
+            report.group_by = data['group_by']
+        report.save()
+        return report
+
+    @staticmethod
+    def delete_report(report: CustomReport) -> CustomReport:
+        report.is_deleted = True
+        report.save(update_fields=['is_deleted', 'updated_at'])
+        return report
+
+    @staticmethod
+    def update_schedule(schedule: ReportSchedule, data: Dict[str, Any]) -> ReportSchedule:
+        for field in ['cron_expression', 'destination', 'active']:
+            if data.get(field) is not None:
+                setattr(schedule, field, data[field])
+        schedule.save()
+        return schedule
+
+    @staticmethod
+    def delete_schedule(schedule: ReportSchedule) -> ReportSchedule:
+        schedule.active = False
+        schedule.is_deleted = True
+        schedule.save(update_fields=['active', 'is_deleted', 'updated_at'])
+        return schedule
+
     def to_dict(self) -> Dict[str, Any]:
         return {'bo': 'CustomReport'}
 
@@ -316,6 +352,7 @@ class WebhookDispatcherBO(BaseBusinessObject):
         self.actor_role = actor_role
 
     def register_subscription(self, event_type: str, target_url: str, secret: str, active: bool = True, retry_limit: int = 5) -> WebhookSubscription:
+        self._validate_target_url(target_url)
         return WebhookSubscription.objects.create(
             tenant=self.tenant,
             event_type=event_type,
@@ -324,6 +361,53 @@ class WebhookDispatcherBO(BaseBusinessObject):
             active=active,
             retry_limit=retry_limit,
         )
+
+    @staticmethod
+    def _validate_target_url(target_url: str) -> None:
+        from urllib.parse import urlparse
+        import ipaddress
+        from core.business_objects.base import BusinessRuleError, RuleViolation
+
+        parsed = urlparse(target_url)
+        host = (parsed.hostname or '').lower()
+        if not host:
+            raise BusinessRuleError([RuleViolation(
+                rule_id='BR-10-01',
+                message='Invalid target_url hostname.',
+                field='target_url',
+            )])
+        if host in {'localhost', '127.0.0.1', '::1', '0.0.0.0'}:
+            raise BusinessRuleError([RuleViolation(
+                rule_id='BR-10-01',
+                message='Webhook target_url cannot point to loopback/private addresses (SSRF blocked).',
+                field='target_url',
+            )])
+        try:
+            ip = ipaddress.ip_address(host)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                raise BusinessRuleError([RuleViolation(
+                    rule_id='BR-10-01',
+                    message='Webhook target_url cannot point to private/loopback IP ranges.',
+                    field='target_url',
+                )])
+        except ValueError:
+            pass
+
+    def update_subscription(self, webhook: WebhookSubscription, data: Dict[str, Any]) -> WebhookSubscription:
+        if data.get('target_url') is not None:
+            self._validate_target_url(data['target_url'])
+        for field in ['event_type', 'target_url', 'secret', 'active', 'retry_limit']:
+            if data.get(field) is not None:
+                setattr(webhook, field, data[field])
+        webhook.save()
+        return webhook
+
+    @staticmethod
+    def delete_subscription(webhook: WebhookSubscription) -> WebhookSubscription:
+        webhook.active = False
+        webhook.is_deleted = True
+        webhook.save(update_fields=['active', 'is_deleted', 'updated_at'])
+        return webhook
 
     def dispatch_event(self, event_type: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         serialized = json.dumps(payload, sort_keys=True, separators=(',', ':'))

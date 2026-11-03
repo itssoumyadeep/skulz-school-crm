@@ -362,6 +362,318 @@ class StudentProfileBO(BaseBusinessObject):
                 result[k] = v
         return result
 
+    @classmethod
+    def create_direct_student(
+        cls,
+        tenant: Tenant,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+        actor_role: str = 'Admin',
+    ) -> 'StudentProfileBO':
+        status = data.get('status', 'Inactive')
+        if status == 'Active' and not (data.get('emergency_contact_name') and data.get('emergency_contact_phone')):
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-03',
+                    message="At least one emergency contact must be recorded before creating an Active student.",
+                    field='emergency_contacts',
+                )
+            ])
+        with transaction.atomic():
+            student_num = generate_student_number(tenant)
+            student = Student.objects.create(
+                tenant=tenant,
+                student_number=student_num,
+                name=data['name'],
+                dob=data.get('dob'),
+                grade=data['grade'],
+                section=data.get('section') or 'A',
+                class_id=data.get('class_id'),
+                class_teacher=data.get('class_teacher') or '',
+                status=status,
+                enrolled_date=data.get('enrolled_date') or (timezone.now().date() if status == 'Active' else None),
+                created_by=actor_id,
+            )
+            if data.get('parent_name') and data.get('parent_email'):
+                Parent.objects.create(
+                    tenant=tenant,
+                    student=student,
+                    name=data['parent_name'],
+                    relationship=data.get('parent_relationship', 'Parent'),
+                    phone=data.get('parent_phone') or '',
+                    email=str(data['parent_email']),
+                    created_by=actor_id,
+                )
+            if data.get('emergency_contact_name') and data.get('emergency_contact_phone'):
+                EmergencyContact.objects.create(
+                    tenant=tenant,
+                    student=student,
+                    name=data['emergency_contact_name'],
+                    phone=data['emergency_contact_phone'],
+                    relationship=data.get('emergency_contact_relationship', 'Emergency Contact'),
+                    medical_consent=bool(data.get('medical_consent', False)),
+                    consent_date=timezone.now() if data.get('medical_consent') else None,
+                    created_by=actor_id,
+                )
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action='CREATE',
+                entity='Student',
+                entity_id=str(student.student_id),
+                new_values={
+                    'student_number': student.student_number,
+                    'name': student.name,
+                    'grade': student.grade,
+                    'status': student.status,
+                },
+            )
+        return cls(student=student, actor_role=actor_role)
+
+    @staticmethod
+    def soft_delete_student(
+        student: Student,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        if student.invoices.filter(
+            is_deleted=False,
+            status__in=['Issued', 'Partially_Paid', 'Overdue'],
+        ).exists():
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-02-01',
+                    message="Cannot delete student while open unpaid invoices exist.",
+                    field='invoices',
+                )
+            ])
+        with transaction.atomic():
+            student.is_deleted = True
+            student.status = 'Inactive'
+            student.save(update_fields=['is_deleted', 'status', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=student.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='Student',
+                entity_id=str(student.student_id),
+                new_values={'is_deleted': True, 'status': 'Inactive'},
+            )
+        return {'student_id': str(student.student_id), 'is_deleted': True}
+
+    @staticmethod
+    def _serialize_parent(parent: Parent) -> Dict[str, Any]:
+        return {
+            'parent_id': str(parent.parent_id),
+            'student_id': str(parent.student_id),
+            'name': parent.name,
+            'relationship': parent.relationship,
+            'phone': parent.phone,
+            'email': parent.email,
+            'notification_prefs': parent.notification_prefs or {},
+            'media_consent': parent.media_consent,
+        }
+
+    @classmethod
+    def list_parents(cls, tenant_id: uuid.UUID, student_id: Optional[uuid.UUID] = None) -> List[Dict[str, Any]]:
+        qs = Parent.objects.filter(tenant_id=tenant_id, is_deleted=False).order_by('name')
+        if student_id:
+            qs = qs.filter(student_id=student_id)
+        return [cls._serialize_parent(p) for p in qs]
+
+    @classmethod
+    def create_parent(
+        cls,
+        tenant: Tenant,
+        student: Student,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        with transaction.atomic():
+            parent = Parent.objects.create(
+                tenant=tenant,
+                student=student,
+                name=data['name'],
+                relationship=data.get('relationship', 'Parent'),
+                phone=data['phone'],
+                email=str(data['email']),
+                notification_prefs=data.get('notification_prefs') or {},
+                media_consent=bool(data.get('media_consent', True)),
+                created_by=actor_id,
+            )
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action='CREATE',
+                entity='Parent',
+                entity_id=str(parent.parent_id),
+                new_values=cls._serialize_parent(parent),
+            )
+        return cls._serialize_parent(parent)
+
+    @classmethod
+    def update_parent(
+        cls,
+        parent: Parent,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        old_vals = cls._serialize_parent(parent)
+        with transaction.atomic():
+            for field in ('name', 'relationship', 'phone', 'email', 'notification_prefs', 'media_consent'):
+                if field in data and data[field] is not None:
+                    setattr(parent, field, str(data[field]) if field == 'email' else data[field])
+            parent.save()
+            AuditLog.objects.create(
+                tenant=parent.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='Parent',
+                entity_id=str(parent.parent_id),
+                old_values=old_vals,
+                new_values=cls._serialize_parent(parent),
+            )
+        return cls._serialize_parent(parent)
+
+    @staticmethod
+    def soft_delete_parent(
+        parent: Parent,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        student = parent.student
+        remaining = Parent.objects.filter(
+            tenant=parent.tenant,
+            student=student,
+            is_deleted=False,
+        ).exclude(parent_id=parent.parent_id).count()
+        if not student.is_deleted and student.status == 'Active' and remaining == 0:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-13',
+                    message="Cannot delete the only active parent contact for an Active student.",
+                    field='parent',
+                )
+            ])
+        with transaction.atomic():
+            parent.is_deleted = True
+            parent.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=parent.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='Parent',
+                entity_id=str(parent.parent_id),
+                new_values={'is_deleted': True},
+            )
+        return {'parent_id': str(parent.parent_id), 'is_deleted': True}
+
+    @staticmethod
+    def _serialize_emergency_contact(contact: EmergencyContact) -> Dict[str, Any]:
+        return {
+            'contact_id': str(contact.contact_id),
+            'student_id': str(contact.student_id),
+            'name': contact.name,
+            'phone': contact.phone,
+            'relationship': contact.relationship,
+            'medical_consent': contact.medical_consent,
+            'consent_date': contact.consent_date.isoformat() if contact.consent_date else None,
+        }
+
+    @classmethod
+    def list_emergency_contacts(cls, student: Student) -> List[Dict[str, Any]]:
+        qs = EmergencyContact.objects.filter(
+            tenant=student.tenant,
+            student=student,
+            is_deleted=False,
+        ).order_by('created_at')
+        return [cls._serialize_emergency_contact(c) for c in qs]
+
+    @classmethod
+    def add_emergency_contact(
+        cls,
+        student: Student,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        with transaction.atomic():
+            med_consent = bool(data.get('medical_consent', False))
+            contact = EmergencyContact.objects.create(
+                tenant=student.tenant,
+                student=student,
+                name=data['name'],
+                phone=data['phone'],
+                relationship=data['relationship'],
+                medical_consent=med_consent,
+                consent_date=timezone.now() if med_consent else None,
+                created_by=actor_id,
+            )
+            AuditLog.objects.create(
+                tenant=student.tenant,
+                actor_id=actor_id,
+                action='CREATE',
+                entity='EmergencyContact',
+                entity_id=str(contact.contact_id),
+                new_values=cls._serialize_emergency_contact(contact),
+            )
+        return cls._serialize_emergency_contact(contact)
+
+    @classmethod
+    def update_emergency_contact(
+        cls,
+        contact: EmergencyContact,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        old_vals = cls._serialize_emergency_contact(contact)
+        with transaction.atomic():
+            for field in ('name', 'phone', 'relationship', 'medical_consent'):
+                if field in data and data[field] is not None:
+                    setattr(contact, field, data[field])
+            if data.get('medical_consent') is True and not contact.consent_date:
+                contact.consent_date = timezone.now()
+            contact.save()
+            AuditLog.objects.create(
+                tenant=contact.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='EmergencyContact',
+                entity_id=str(contact.contact_id),
+                old_values=old_vals,
+                new_values=cls._serialize_emergency_contact(contact),
+            )
+        return cls._serialize_emergency_contact(contact)
+
+    @staticmethod
+    def delete_emergency_contact(
+        contact: EmergencyContact,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        student = contact.student
+        remaining = EmergencyContact.objects.filter(
+            tenant=contact.tenant,
+            student=student,
+            is_deleted=False,
+        ).exclude(contact_id=contact.contact_id).count()
+        if not student.is_deleted and student.status == 'Active' and remaining == 0:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-03',
+                    message="At least one emergency contact must remain on file for an Active student.",
+                    field='emergency_contacts',
+                )
+            ])
+        with transaction.atomic():
+            contact.is_deleted = True
+            contact.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=contact.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='EmergencyContact',
+                entity_id=str(contact.contact_id),
+                new_values={'is_deleted': True},
+            )
+        return {'contact_id': str(contact.contact_id), 'is_deleted': True}
+
 
 
 class EnrollmentCaseBO(BaseBusinessObject):
@@ -1112,6 +1424,104 @@ class EnrollmentCaseBO(BaseBusinessObject):
         document.verified_at = timezone.now() if verified else None
         document.save(update_fields=['verified', 'verified_by', 'verified_at', 'updated_at'])
         return document
+
+    @staticmethod
+    def list_documents(application: Application) -> List[Dict[str, Any]]:
+        return [
+            {
+                "document_id": str(d.document_id),
+                "application_id": str(application.application_id),
+                "doc_type": d.doc_type,
+                "file_path": d.file_path,
+                "verified": d.verified,
+                "verified_by": str(d.verified_by) if d.verified_by else None,
+                "verified_at": d.verified_at.isoformat() if d.verified_at else None,
+            }
+            for d in application.documents.filter(is_deleted=False).order_by('created_at')
+        ]
+
+    @classmethod
+    def delete_document(
+        cls,
+        document: Document,
+        actor_role: str = 'Admin',
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        application = document.application
+        if actor_role == 'Parent' and document.verified:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-01',
+                    message="Parents cannot delete a document that has already been verified.",
+                    field='documents',
+                )
+            ])
+        if (
+            document.verified
+            and document.doc_type in cls.REQUIRED_DOCUMENT_TYPES
+            and application.status in {'Offered', 'Accepted', 'Active'}
+        ):
+            remaining_verified = Document.objects.filter(
+                tenant=document.tenant,
+                application=application,
+                doc_type=document.doc_type,
+                verified=True,
+                is_deleted=False,
+            ).exclude(document_id=document.document_id).exists()
+            if not remaining_verified:
+                raise BusinessRuleError([
+                    RuleViolation(
+                        rule_id='BR-01-01',
+                        message=f"Cannot delete required verified document '{document.doc_type}' after application has reached {application.status}.",
+                        field='documents',
+                    )
+                ])
+        with transaction.atomic():
+            document.is_deleted = True
+            document.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=document.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='Document',
+                entity_id=str(document.document_id),
+                new_values={'is_deleted': True, 'doc_type': document.doc_type},
+            )
+        return {'document_id': str(document.document_id), 'is_deleted': True}
+
+    def withdraw_application(
+        self,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        is_draft = bool((self.application.workflow_data or {}).get('is_draft', False))
+        if self.actor_role == 'Parent' and not (is_draft or self.application.status == 'Pending'):
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-06',
+                    message="Parents can only withdraw draft or pending applications.",
+                    field='status',
+                )
+            ])
+        if self.application.notification_dispatched and self.actor_role != 'Owner':
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-01-04',
+                    message="Cannot withdraw or delete an application after decision notification has been dispatched. Contact Owner to override.",
+                    field='status',
+                )
+            ])
+        with transaction.atomic():
+            self.application.is_deleted = True
+            self.application.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=self.application.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='Application',
+                entity_id=str(self.application.application_id),
+                new_values={'is_deleted': True, 'previous_status': self.application.status},
+            )
+        return {'application_id': str(self.application.application_id), 'is_deleted': True}
 
     def to_dict(self) -> Dict[str, Any]:
         docs = [

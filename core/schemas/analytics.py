@@ -48,3 +48,35 @@ class WebhookDispatchSchema(BaseModel):
 class DashboardFilterSchema(BaseModel):
     period: Optional[str] = None
     as_of: Optional[datetime] = None
+
+
+class CustomReportUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    fields: Optional[List[str]] = None
+    filters: Optional[Dict[str, Any]] = None
+    group_by: Optional[List[str]] = None
+
+
+class ReportScheduleUpdateSchema(BaseModel):
+    cron_expression: Optional[str] = None
+    destination: Optional[str] = None
+    active: Optional[bool] = None
+
+    @field_validator('cron_expression')
+    @classmethod
+    def validate_cron(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        parts = value.strip().split()
+        if len(parts) < 5:
+            raise ValueError('cron_expression must have at least 5 parts')
+        return value.strip()
+
+
+class WebhookSubscriptionUpdateSchema(BaseModel):
+    event_type: Optional[str] = None
+    target_url: Optional[str] = None
+    secret: Optional[str] = None
+    active: Optional[bool] = None
+    retry_limit: Optional[int] = None
+

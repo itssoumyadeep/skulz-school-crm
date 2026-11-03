@@ -604,3 +604,331 @@ class SchoolSetupImportBO:
             return {'event_id': str(event.event_id), 'title': event.title, 'event_date': event.event_date.isoformat()}
 
         raise ValueError(f"Unsupported setup dataset: {dataset}")
+
+
+class SchoolSetupBO:
+    """
+    Business Object for Tenant configuration, sequence inspection, and append-only AuditLog queries.
+    """
+
+    @staticmethod
+    def update_tenant_config(
+        tenant: Tenant,
+        data: Dict[str, Any],
+        actor_id: Optional[UUID] = None,
+    ) -> Dict[str, Any]:
+        from core.models import AuditLog
+
+        old_values = {
+            "name": tenant.name,
+            "region": tenant.region,
+            "type": tenant.type,
+            "subscription_tier": tenant.subscription_tier,
+            "config": dict(tenant.config or {}),
+        }
+        with transaction.atomic():
+            if data.get("name") is not None:
+                tenant.name = data["name"]
+            if data.get("region") is not None:
+                tenant.region = data["region"]
+            if data.get("type") is not None:
+                tenant.type = data["type"]
+            if data.get("subscription_tier") is not None:
+                tenant.subscription_tier = data["subscription_tier"]
+            if data.get("config") is not None:
+                merged_cfg = dict(tenant.config or {})
+                merged_cfg.update(data["config"])
+                tenant.config = merged_cfg
+            tenant.save()
+
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action="UPDATE",
+                entity="Tenant",
+                entity_id=str(tenant.tenant_id),
+                old_values=old_values,
+                new_values={
+                    "name": tenant.name,
+                    "region": tenant.region,
+                    "type": tenant.type,
+                    "subscription_tier": tenant.subscription_tier,
+                    "config": dict(tenant.config or {}),
+                },
+            )
+        return {
+            "tenant_id": str(tenant.tenant_id),
+            "name": tenant.name,
+            "school_code": tenant.subdomain,
+            "region": tenant.region,
+            "type": tenant.type,
+            "subscription_tier": tenant.subscription_tier,
+            "config": tenant.config or {},
+        }
+
+    @staticmethod
+    def deactivate_tenant(
+        tenant: Tenant,
+        reason: str,
+        actor_id: Optional[UUID] = None,
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        from core.business_objects.base import BusinessRuleError, RuleViolation
+        from core.models import AuditLog, Invoice
+
+        if not force and Invoice.objects.filter(
+            tenant=tenant,
+            is_deleted=False,
+            status__in=["Issued", "Partially_Paid", "Overdue"],
+        ).exists():
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id="BR-02-01",
+                    message="Cannot deactivate school while open unpaid invoices exist.",
+                    field="tenant",
+                )
+            ])
+
+        with transaction.atomic():
+            cfg = dict(tenant.config or {})
+            cfg["deactivated"] = True
+            cfg["deactivated_reason"] = reason
+            tenant.config = cfg
+            tenant.save(update_fields=["config", "updated_at"])
+
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action="DELETE",
+                entity="Tenant",
+                entity_id=str(tenant.tenant_id),
+                new_values={"deactivated": True, "reason": reason},
+            )
+        return {
+            "tenant_id": str(tenant.tenant_id),
+            "status": "Deactivated",
+            "reason": reason,
+        }
+
+    @staticmethod
+    def list_sequences(tenant: Tenant) -> List[Dict[str, Any]]:
+        from core.models import TenantSequence
+
+        qs = TenantSequence.objects.filter(tenant=tenant, is_deleted=False).order_by("sequence_type", "-year")
+        return [
+            {
+                "sequence_id": str(seq.sequence_id),
+                "sequence_type": seq.sequence_type,
+                "year": seq.year,
+                "last_value": seq.last_value,
+            }
+            for seq in qs
+        ]
+
+    @staticmethod
+    def list_audit_logs(
+        tenant: Tenant,
+        entity: Optional[str] = None,
+        action: Optional[str] = None,
+        actor_id: Optional[UUID] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        from core.models import AuditLog
+
+        qs = AuditLog.objects.filter(tenant=tenant, is_deleted=False).order_by("-timestamp")
+        if entity:
+            qs = qs.filter(entity__iexact=entity)
+        if action:
+            qs = qs.filter(action__iexact=action)
+        if actor_id:
+            qs = qs.filter(actor_id=actor_id)
+        return [
+            {
+                "log_id": str(log.log_id),
+                "actor_id": str(log.actor_id) if log.actor_id else None,
+                "action": log.action,
+                "entity": log.entity,
+                "entity_id": log.entity_id,
+                "old_values": log.old_values,
+                "new_values": log.new_values,
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+            }
+            for log in qs[: max(1, min(limit, 500))]
+        ]
+
+
+class RoleMembershipBO:
+    """
+    Business Object for PortalRoleMembership CRUD within a tenant.
+    """
+
+    @staticmethod
+    def list_memberships(tenant: Tenant, role: Optional[str] = None, is_active: Optional[bool] = None) -> List[Dict[str, Any]]:
+        qs = PortalRoleMembership.objects.filter(tenant=tenant).select_related("user", "group").order_by("role", "user__username")
+        if role:
+            qs = qs.filter(role=role)
+        if is_active is not None:
+            qs = qs.filter(is_active=is_active)
+        return [
+            {
+                "membership_id": m.pk,
+                "user_id": m.user_id,
+                "username": m.user.username,
+                "email": m.user.email,
+                "role": m.role,
+                "is_active": m.is_active,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            }
+            for m in qs
+        ]
+
+    @staticmethod
+    def assign_role(
+        tenant: Tenant,
+        data: Dict[str, Any],
+        actor_role: str = "Admin",
+        actor_id: Optional[UUID] = None,
+    ) -> Dict[str, Any]:
+        from core.business_objects.base import BusinessRuleError, RuleViolation
+        from core.models import AuditLog
+
+        target_role = data["role"]
+        if target_role == "Owner" and actor_role != "Owner":
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id="BR-05-03",
+                    message="Only an Owner can grant the Owner role.",
+                    field="role",
+                )
+            ])
+
+        user_model = get_user_model()
+        user = None
+        if data.get("user_id") is not None:
+            user = user_model.objects.filter(pk=data["user_id"]).first()
+        elif data.get("username"):
+            user = user_model.objects.filter(username__iexact=data["username"]).first()
+        elif data.get("email"):
+            user = user_model.objects.filter(email__iexact=data["email"]).first()
+
+        if user is None:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id="BR-05-03",
+                    message="Target user account not found.",
+                    field="user",
+                )
+            ])
+
+        with transaction.atomic():
+            group, _ = Group.objects.get_or_create(name=target_role)
+            user.groups.add(group)
+            membership, _ = PortalRoleMembership.objects.update_or_create(
+                user=user,
+                tenant=tenant,
+                defaults={
+                    "group": group,
+                    "role": target_role,
+                    "is_active": data.get("is_active", True),
+                },
+            )
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action="CREATE",
+                entity="PortalRoleMembership",
+                entity_id=str(membership.pk),
+                new_values={"user_id": user.pk, "role": membership.role, "is_active": membership.is_active},
+            )
+
+        return {
+            "membership_id": membership.pk,
+            "user_id": user.pk,
+            "username": user.username,
+            "email": user.email,
+            "role": membership.role,
+            "is_active": membership.is_active,
+        }
+
+    @staticmethod
+    def update_membership(
+        membership: PortalRoleMembership,
+        data: Dict[str, Any],
+        actor_role: str = "Admin",
+        actor_id: Optional[UUID] = None,
+    ) -> Dict[str, Any]:
+        from core.business_objects.base import BusinessRuleError, RuleViolation
+        from core.models import AuditLog
+
+        new_role = data.get("role")
+        new_active = data.get("is_active")
+
+        if (membership.role == "Owner" or new_role == "Owner") and actor_role != "Owner":
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id="BR-05-03",
+                    message="Only an Owner can modify an Owner role membership.",
+                    field="role",
+                )
+            ])
+
+        demoting_or_deactivating_owner = (
+            membership.role == "Owner"
+            and membership.is_active
+            and ((new_role and new_role != "Owner") or new_active is False)
+        )
+        if demoting_or_deactivating_owner:
+            active_owners = PortalRoleMembership.objects.filter(
+                tenant=membership.tenant,
+                role="Owner",
+                is_active=True,
+            ).exclude(pk=membership.pk).count()
+            if active_owners == 0:
+                raise BusinessRuleError([
+                    RuleViolation(
+                        rule_id="BR-05-03",
+                        message="Cannot revoke or demote the last active Owner in the tenant.",
+                        field="role",
+                    )
+                ])
+
+        with transaction.atomic():
+            if new_role is not None:
+                group, _ = Group.objects.get_or_create(name=new_role)
+                membership.group = group
+                membership.role = new_role
+            if new_active is not None:
+                membership.is_active = new_active
+            membership.save()
+
+            AuditLog.objects.create(
+                tenant=membership.tenant,
+                actor_id=actor_id,
+                action="UPDATE",
+                entity="PortalRoleMembership",
+                entity_id=str(membership.pk),
+                new_values={"role": membership.role, "is_active": membership.is_active},
+            )
+
+        return {
+            "membership_id": membership.pk,
+            "user_id": membership.user_id,
+            "username": membership.user.username,
+            "email": membership.user.email,
+            "role": membership.role,
+            "is_active": membership.is_active,
+        }
+
+    @classmethod
+    def revoke_membership(
+        cls,
+        membership: PortalRoleMembership,
+        actor_role: str = "Admin",
+        actor_id: Optional[UUID] = None,
+    ) -> Dict[str, Any]:
+        return cls.update_membership(
+            membership=membership,
+            data={"is_active": False},
+            actor_role=actor_role,
+            actor_id=actor_id,
+        )

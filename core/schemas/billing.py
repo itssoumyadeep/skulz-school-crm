@@ -15,6 +15,28 @@ class FeeStructureCreateSchema(BaseModel):
     version: str = "1.0"
 
 
+class FeeStructureUpdateSchema(BaseModel):
+    grade: Optional[str] = None
+    term: Optional[str] = None
+    components: Optional[List[Dict[str, Any]]] = None
+    discount_rules: Optional[List[Dict[str, Any]]] = None
+    penalty_rules: Optional[Dict[str, Any]] = None
+    version: Optional[str] = None
+
+
+class InvoiceUpdateSchema(BaseModel):
+    due_date: Optional[date] = None
+    line_items: Optional[List[Dict[str, Any]]] = None
+    status: Optional[Literal["Draft", "Issued", "Partially_Paid", "Paid", "Overdue", "Cancelled", "Waived"]] = None
+    invoice_type: Optional[str] = None
+
+
+class LateFeeApplySchema(BaseModel):
+    fee_amount: Optional[Decimal] = None
+    fee_struct_id: Optional[UUID4] = None
+
+
+
 class InvoiceCreateSchema(BaseModel):
     student_id: UUID4
     parent_id: UUID4

@@ -8,14 +8,17 @@ from uuid import UUID
 from django.db import transaction
 from django.utils import timezone
 
-from core.business_objects.base import BaseBusinessObject, RuleViolation
+from core.business_objects.base import BaseBusinessObject, RuleViolation, BusinessRuleError
 from core.models import (
     Appraisal,
+    Contract,
+    CPDRecord,
     DeliveryRecord,
     Event,
     EventVolunteer,
     EventRegistration,
     EventReport,
+    Inventory,
     LeaveRequest,
     Message,
     NotificationRule,
@@ -57,6 +60,97 @@ class StaffMemberBO(BaseBusinessObject):
         bo.enforce_rules()
         staff.save()
         return staff
+
+    @classmethod
+    def update_staff(cls, staff: Staff, data: Dict[str, Any], actor_role: str = 'Admin') -> Staff:
+        for field, value in data.items():
+            if value is not None:
+                setattr(staff, field, value)
+        bo = cls(staff=staff, actor_role=actor_role)
+        bo.enforce_rules()
+        staff.save()
+        return staff
+
+    @classmethod
+    def delete_staff(cls, staff: Staff) -> Staff:
+        staff.active = False
+        staff.is_deleted = True
+        staff.save(update_fields=['active', 'is_deleted', 'updated_at'])
+        return staff
+
+    @classmethod
+    def create_contract(cls, tenant: Tenant, staff_id: UUID, data: Dict[str, Any]) -> Contract:
+        return Contract.objects.create(
+            tenant=tenant,
+            staff_id=staff_id,
+            contract_type=data.get('contract_type', 'Standard'),
+            start_date=data['start_date'],
+            end_date=data.get('end_date'),
+            esigned_at=timezone.now() if data.get('esigned') else None,
+            renewal_alert_sent=data.get('renewal_alert_sent', False),
+        )
+
+    @classmethod
+    def update_contract(cls, contract: Contract, data: Dict[str, Any]) -> Contract:
+        new_start = data.get('start_date') or contract.start_date
+        new_end = data.get('end_date') if 'end_date' in data else contract.end_date
+        if new_end and new_end < new_start:
+            raise BusinessRuleError([RuleViolation(
+                rule_id='BR-05-01',
+                message='Contract end_date cannot be earlier than start_date.',
+                field='end_date',
+            )])
+        for field in ['contract_type', 'start_date', 'end_date', 'renewal_alert_sent']:
+            if data.get(field) is not None:
+                setattr(contract, field, data[field])
+        if data.get('esigned') is True and not contract.esigned_at:
+            contract.esigned_at = timezone.now()
+        contract.save()
+        return contract
+
+    @classmethod
+    def delete_contract(cls, contract: Contract) -> Contract:
+        contract.is_deleted = True
+        contract.save(update_fields=['is_deleted', 'updated_at'])
+        return contract
+
+    @classmethod
+    def update_appraisal(cls, appraisal: Appraisal, data: Dict[str, Any]) -> Appraisal:
+        for field in ['self_score', 'manager_score', 'outcome', 'status', 'notes']:
+            if data.get(field) is not None:
+                setattr(appraisal, field, data[field])
+        appraisal.save()
+        return appraisal
+
+    @classmethod
+    def create_cpd(cls, tenant: Tenant, staff_id: UUID, data: Dict[str, Any]) -> CPDRecord:
+        completed_at = timezone.now() if data.get('completion_status') == 'Completed' else None
+        return CPDRecord.objects.create(
+            tenant=tenant,
+            staff_id=staff_id,
+            activity=data['activity'],
+            activity_type=data['activity_type'],
+            hours=data.get('hours', Decimal('0.00')),
+            mandatory=data.get('mandatory', False),
+            completion_status=data.get('completion_status', 'Planned'),
+            completed_at=completed_at,
+        )
+
+    @classmethod
+    def update_cpd(cls, cpd: CPDRecord, data: Dict[str, Any]) -> CPDRecord:
+        for field in ['activity', 'activity_type', 'hours', 'mandatory', 'completion_status']:
+            if data.get(field) is not None:
+                setattr(cpd, field, data[field])
+        if cpd.completion_status == 'Completed' and not cpd.completed_at:
+            cpd.completed_at = timezone.now()
+        cpd.save()
+        return cpd
+
+    @classmethod
+    def delete_cpd(cls, cpd: CPDRecord) -> CPDRecord:
+        cpd.is_deleted = True
+        cpd.save(update_fields=['is_deleted', 'updated_at'])
+        return cpd
 
     @classmethod
     def compliance_status(cls, staff: Staff) -> Dict[str, Any]:
@@ -288,12 +382,95 @@ class ProcurementOrderBO(BaseBusinessObject):
         return invoice
 
     def approve_vendor_invoice(self, approved_by: UUID) -> VendorInvoice:
+        if not self.requisition or not self.delivery_record:
+            raise BusinessRuleError([RuleViolation(
+                rule_id='BR-08-01',
+                message='Vendor payments are blocked until requisition, delivery, and invoice records exist and match.',
+                field='amount',
+            )])
         self.enforce_rules()
         self.vendor_invoice.status = 'Approved'
+        self.vendor_invoice.verified = True
         self.vendor_invoice.approved_by = approved_by
         self.vendor_invoice.approved_at = timezone.now()
-        self.vendor_invoice.save(update_fields=['status', 'approved_by', 'approved_at', 'updated_at'])
+        self.vendor_invoice.save(update_fields=['status', 'verified', 'approved_by', 'approved_at', 'updated_at'])
         return self.vendor_invoice
+
+    @classmethod
+    def update_requisition(cls, requisition: Requisition, data: Dict[str, Any], actor_id: Optional[UUID] = None) -> Requisition:
+        for field in ['item_name', 'quantity', 'amount', 'reason', 'status']:
+            if data.get(field) is not None:
+                setattr(requisition, field, data[field])
+        if requisition.status == 'Approved' and actor_id and not requisition.approved_by:
+            requisition.approved_by = actor_id
+            requisition.approved_at = timezone.now()
+        requisition.save()
+        return requisition
+
+    @classmethod
+    def delete_requisition(cls, requisition: Requisition) -> Requisition:
+        if PurchaseOrder.objects.filter(requisition=requisition, is_deleted=False).exists():
+            raise BusinessRuleError([RuleViolation(
+                rule_id='BR-08-01',
+                message='Cannot delete a requisition with an active Purchase Order.',
+                field='requisition_id',
+            )])
+        requisition.is_deleted = True
+        requisition.save(update_fields=['is_deleted', 'updated_at'])
+        return requisition
+
+    @classmethod
+    def update_purchase_order(cls, po: PurchaseOrder, data: Dict[str, Any], actor_id: Optional[UUID] = None) -> PurchaseOrder:
+        for field in ['amount', 'expected_delivery_date', 'status']:
+            if data.get(field) is not None:
+                setattr(po, field, data[field])
+        if actor_id and po.status in {'Issued', 'Received', 'Closed'} and not po.approved_by:
+            po.approved_by = actor_id
+            po.approved_at = timezone.now()
+        po.save()
+        return po
+
+    @classmethod
+    def update_delivery_record(cls, delivery: DeliveryRecord, data: Dict[str, Any], actor_id: Optional[UUID] = None) -> DeliveryRecord:
+        for field in ['amount', 'notes', 'accepted']:
+            if data.get(field) is not None:
+                setattr(delivery, field, data[field])
+        if actor_id and not delivery.received_by:
+            delivery.received_by = actor_id
+        delivery.save()
+        return delivery
+
+    @classmethod
+    def create_inventory_item(cls, tenant: Tenant, data: Dict[str, Any]) -> Inventory:
+        vendor = None
+        if data.get('vendor_id'):
+            vendor = Vendor.objects.get(vendor_id=data['vendor_id'], tenant=tenant, is_deleted=False)
+        return Inventory.objects.create(
+            tenant=tenant,
+            vendor=vendor,
+            item_name=data['item_name'],
+            sku=data.get('sku', ''),
+            quantity_on_hand=data.get('quantity_on_hand', 0),
+            reorder_level=data.get('reorder_level', 0),
+            unit_cost=data.get('unit_cost', Decimal('0.00')),
+            last_restocked=data.get('last_restocked'),
+        )
+
+    @classmethod
+    def update_inventory_item(cls, item: Inventory, data: Dict[str, Any]) -> Inventory:
+        if 'vendor_id' in data and data['vendor_id'] is not None:
+            item.vendor = Vendor.objects.get(vendor_id=data['vendor_id'], tenant=item.tenant, is_deleted=False)
+        for field in ['item_name', 'sku', 'quantity_on_hand', 'reorder_level', 'unit_cost', 'last_restocked']:
+            if data.get(field) is not None:
+                setattr(item, field, data[field])
+        item.save()
+        return item
+
+    @classmethod
+    def delete_inventory_item(cls, item: Inventory) -> Inventory:
+        item.is_deleted = True
+        item.save(update_fields=['is_deleted', 'updated_at'])
+        return item
 
     def to_dict(self) -> Dict[str, Any]:
         return {'bo': 'ProcurementOrder'}
@@ -303,6 +480,21 @@ class VendorAccountBO(BaseBusinessObject):
     @classmethod
     def create_vendor(cls, tenant: Tenant, data: Dict[str, Any]) -> Vendor:
         return Vendor.objects.create(tenant=tenant, **data)
+
+    @classmethod
+    def update_vendor(cls, vendor: Vendor, data: Dict[str, Any]) -> Vendor:
+        for field in ['name', 'contact_name', 'phone', 'email', 'payment_terms', 'active']:
+            if data.get(field) is not None:
+                setattr(vendor, field, data[field])
+        vendor.save()
+        return vendor
+
+    @classmethod
+    def delete_vendor(cls, vendor: Vendor) -> Vendor:
+        vendor.active = False
+        vendor.is_deleted = True
+        vendor.save(update_fields=['active', 'is_deleted', 'updated_at'])
+        return vendor
 
     @classmethod
     def summary(cls, tenant: Tenant, vendor: Vendor) -> Dict[str, Any]:
@@ -347,6 +539,56 @@ class SchoolEventBO(BaseBusinessObject):
         bo.enforce_rules()
         event.save()
         return event
+
+    @classmethod
+    def update_event(cls, event: Event, data: Dict[str, Any]) -> Event:
+        for field in [
+            'title', 'event_date', 'registration_deadline', 'location',
+            'description', 'fee_amount', 'capacity', 'requires_permission_slip', 'status',
+        ]:
+            if data.get(field) is not None:
+                setattr(event, field, data[field])
+        bo = cls(event=event)
+        bo.enforce_rules()
+        event.save()
+        return event
+
+    @classmethod
+    def delete_event(cls, event: Event) -> Event:
+        event.is_deleted = True
+        event.save(update_fields=['is_deleted', 'updated_at'])
+        return event
+
+    @classmethod
+    def update_registration(cls, registration: EventRegistration, data: Dict[str, Any]) -> EventRegistration:
+        for field in ['registration_status', 'permission_slip_received', 'payment_status']:
+            if data.get(field) is not None:
+                setattr(registration, field, data[field])
+        registration.save()
+        return registration
+
+    @classmethod
+    def delete_registration(cls, registration: EventRegistration) -> EventRegistration:
+        registration.registration_status = 'Cancelled'
+        registration.is_deleted = True
+        registration.save(update_fields=['registration_status', 'is_deleted', 'updated_at'])
+        return registration
+
+    @classmethod
+    def delete_volunteer(cls, volunteer: EventVolunteer) -> EventVolunteer:
+        volunteer.is_deleted = True
+        volunteer.save(update_fields=['is_deleted', 'updated_at'])
+        return volunteer
+
+    @classmethod
+    def update_report(cls, tenant: Tenant, event: Event, data: Dict[str, Any]) -> EventReport:
+        report = cls.create_report(tenant, event)
+        for field in ['attendees_count', 'revenue', 'expenses', 'summary']:
+            if data.get(field) is not None:
+                setattr(report, field, data[field])
+        report.published_at = timezone.now()
+        report.save()
+        return report
 
     @classmethod
     def register_participant(cls, tenant: Tenant, event: Event, data: Dict[str, Any]) -> EventRegistration:
@@ -413,8 +655,38 @@ class CommunicationBundleBO(BaseBusinessObject):
         return NotificationRule.objects.create(tenant=tenant, **data)
 
     @classmethod
+    def update_rule(cls, rule: NotificationRule, data: Dict[str, Any]) -> NotificationRule:
+        for field in ['template_name', 'conditions', 'active', 'priority', 'emergency']:
+            if data.get(field) is not None:
+                setattr(rule, field, data[field])
+        rule.save()
+        return rule
+
+    @classmethod
+    def delete_rule(cls, rule: NotificationRule) -> NotificationRule:
+        if rule.emergency:
+            raise BusinessRuleError([RuleViolation(
+                rule_id='BR-06-01',
+                message='Emergency notification rules cannot be deleted.',
+                field='emergency',
+            )])
+        rule.active = False
+        rule.is_deleted = True
+        rule.save(update_fields=['active', 'is_deleted', 'updated_at'])
+        return rule
+
+    @classmethod
     def create_message(cls, tenant: Tenant, data: Dict[str, Any]) -> Message:
         return Message.objects.create(tenant=tenant, **data)
+
+    @classmethod
+    def update_message(cls, message: Message, data: Dict[str, Any]) -> Message:
+        if data.get('delivery_status') is not None:
+            message.delivery_status = data['delivery_status']
+            if message.delivery_status == 'Delivered' and not message.delivery_confirmed_at:
+                message.delivery_confirmed_at = timezone.now()
+            message.save()
+        return message
 
     @classmethod
     def send_emergency_broadcast(cls, tenant: Tenant, subject: str, body: str, recipients: List[UUID]) -> List[Message]:

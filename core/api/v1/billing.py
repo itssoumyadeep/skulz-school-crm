@@ -27,11 +27,16 @@ from core.models import (
     FeeStructure,
     Invoice,
     Payment,
+    DiscountWaiver,
     Reconciliation,
 )
 from core.schemas.base import build_response, build_error
 from core.schemas.billing import (
+    FeeStructureCreateSchema,
+    FeeStructureUpdateSchema,
     InvoiceCreateSchema,
+    InvoiceUpdateSchema,
+    LateFeeApplySchema,
     BulkInvoiceGenerateSchema,
     PaymentCreateSchema,
     RefundCreateSchema,
@@ -519,3 +524,230 @@ def get_statement(request, period: str):
         build_response(bo.to_dict(), tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
         status=200,
     )
+
+
+def _fee_structure_to_dict(fs: FeeStructure) -> dict:
+    return {
+        "fee_struct_id": str(fs.fee_struct_id),
+        "grade": fs.grade,
+        "term": fs.term,
+        "components": fs.components,
+        "discount_rules": fs.discount_rules,
+        "penalty_rules": fs.penalty_rules,
+        "version": fs.version,
+    }
+
+
+@router.post("/fee-structures", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def create_fee_structure(request, payload: FeeStructureCreateSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    fs = FeeAccountBO.create_fee_structure(tenant=tenant, data=payload.model_dump())
+    return JsonResponse(
+        build_response(_fee_structure_to_dict(fs), tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=201,
+    )
+
+
+@router.get("/fee-structures", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def list_fee_structures(request, grade: str = None, term: str = None):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    qs = FeeStructure.objects.filter(tenant=tenant, is_deleted=False).order_by('-created_at')
+    if grade:
+        qs = qs.filter(grade=grade)
+    if term:
+        qs = qs.filter(term=term)
+    data = [_fee_structure_to_dict(fs) for fs in qs]
+    return JsonResponse(
+        build_response({"count": len(data), "fee_structures": data}, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
+
+
+@router.get("/fee-structures/{fee_struct_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def get_fee_structure(request, fee_struct_id: UUID):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    fs = get_object_or_404(FeeStructure, fee_struct_id=fee_struct_id, tenant=tenant, is_deleted=False)
+    return JsonResponse(
+        build_response(_fee_structure_to_dict(fs), tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
+
+
+@router.patch("/fee-structures/{fee_struct_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def update_fee_structure(request, fee_struct_id: UUID, payload: FeeStructureUpdateSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    fs = get_object_or_404(FeeStructure, fee_struct_id=fee_struct_id, tenant=tenant, is_deleted=False)
+    updated = FeeAccountBO.update_fee_structure(fs, payload.model_dump(exclude_unset=True))
+    return JsonResponse(
+        build_response(_fee_structure_to_dict(updated), tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
+
+
+@router.delete("/fee-structures/{fee_struct_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def delete_fee_structure(request, fee_struct_id: UUID):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    fs = get_object_or_404(FeeStructure, fee_struct_id=fee_struct_id, tenant=tenant, is_deleted=False)
+    FeeAccountBO.delete_fee_structure(fs)
+    return JsonResponse(
+        build_response({"fee_struct_id": str(fee_struct_id), "is_deleted": True}, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
+
+
+@router.get("/invoices", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner', 'Parent')
+def list_invoices(request, student_id: UUID = None, status: str = None):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, 'user_role', 'Admin')
+    qs = Invoice.objects.filter(tenant=tenant, is_deleted=False).order_by('-due_date', '-invoice_date')
+    if actor_role == 'Parent':
+        linked_ids = getattr(request, 'linked_student_ids', []) or []
+        qs = qs.filter(student_id__in=linked_ids)
+    if student_id:
+        qs = qs.filter(student_id=student_id)
+    if status:
+        qs = qs.filter(status=status)
+    data = [_invoice_to_dict(inv) for inv in qs]
+    return JsonResponse(
+        build_response({"count": len(data), "invoices": data}, tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
+
+@router.get("/invoices/{invoice_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner', 'Parent')
+def get_invoice(request, invoice_id: UUID):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    invoice = get_object_or_404(Invoice, invoice_id=invoice_id, tenant=tenant, is_deleted=False)
+    actor_role = getattr(request, 'user_role', 'Admin')
+    if actor_role == 'Parent' and not verify_student_access(request, invoice.student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to view this invoice."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    return JsonResponse(
+        build_response(_invoice_to_dict(invoice), tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
+
+@router.patch("/invoices/{invoice_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def update_invoice(request, invoice_id: UUID, payload: InvoiceUpdateSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    invoice = get_object_or_404(Invoice, invoice_id=invoice_id, tenant=tenant, is_deleted=False)
+    actor_role = getattr(request, 'user_role', 'Admin')
+    updated = FeeAccountBO.update_invoice(
+        invoice=invoice,
+        actor_role=actor_role,
+        due_date=payload.due_date,
+        line_items=payload.line_items,
+        status=payload.status,
+        invoice_type=payload.invoice_type,
+    )
+    return JsonResponse(
+        build_response(_invoice_to_dict(updated), tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
+
+@router.post("/invoices/{invoice_id}/late-fee", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def apply_late_fee(request, invoice_id: UUID, payload: LateFeeApplySchema = None):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    invoice = get_object_or_404(Invoice, invoice_id=invoice_id, tenant=tenant, is_deleted=False)
+    fee_structure = invoice.fee_structure
+    if payload and payload.fee_struct_id:
+        fee_structure = get_object_or_404(FeeStructure, fee_struct_id=payload.fee_struct_id, tenant=tenant, is_deleted=False)
+    bo = FeeAccountBO(
+        student=invoice.student,
+        actor_role=getattr(request, 'user_role', 'Admin'),
+        tenant=tenant,
+        invoice=invoice,
+        fee_structure=fee_structure,
+    )
+    fee_amount = payload.fee_amount if payload else None
+    updated = bo.apply_late_fee(fee_amount=fee_amount)
+    return JsonResponse(
+        build_response(_invoice_to_dict(updated), tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
+
+
+@router.get("/payments", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner', 'Parent')
+def list_payments(request, invoice_id: UUID = None, student_id: UUID = None, status: str = None):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, 'user_role', 'Admin')
+    qs = Payment.objects.filter(tenant=tenant, is_deleted=False).order_by('-date')
+    if actor_role == 'Parent':
+        linked_ids = getattr(request, 'linked_student_ids', []) or []
+        qs = qs.filter(invoice__student_id__in=linked_ids)
+    if invoice_id:
+        qs = qs.filter(invoice_id=invoice_id)
+    if student_id:
+        qs = qs.filter(invoice__student_id=student_id)
+    if status:
+        qs = qs.filter(status=status)
+    data = [_payment_to_dict(p) for p in qs]
+    return JsonResponse(
+        build_response({"count": len(data), "payments": data}, tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
+
+@router.get("/discounts", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def list_discounts(request, invoice_id: UUID = None, student_id: UUID = None):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    qs = DiscountWaiver.objects.filter(tenant=tenant, is_deleted=False).order_by('-approval_date')
+    if invoice_id:
+        qs = qs.filter(invoice_id=invoice_id)
+    if student_id:
+        qs = qs.filter(student_id=student_id)
+    data = [_discount_to_dict(d) for d in qs]
+    return JsonResponse(
+        build_response({"count": len(data), "discounts": data}, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
+
+
+@router.get("/discounts/{discount_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def get_discount(request, discount_id: UUID):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    discount = get_object_or_404(DiscountWaiver, discount_id=discount_id, tenant=tenant, is_deleted=False)
+    return JsonResponse(
+        build_response(_discount_to_dict(discount), tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
+
+
+@router.post("/financials/reconciliation/{period}/finalize", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def finalize_reconciliation(request, period: str):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    recon = FinancialStatementBO.get_or_create_reconciliation(tenant=tenant, period=period)
+    actor_role = getattr(request, 'user_role', 'Admin')
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    bo = FinancialStatementBO(tenant=tenant, period=period, actor_role=actor_role)
+    bo.finalize_reconciliation(recon, actor_role=actor_role)
+    if actor_id:
+        recon.finalized_by = actor_id
+        recon.save(update_fields=['finalized_by', 'updated_at'])
+    recon.refresh_from_db()
+    return JsonResponse(
+        build_response(_reconciliation_to_dict(recon), tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+

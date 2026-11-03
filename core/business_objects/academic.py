@@ -97,6 +97,81 @@ class AcademicCalendarBO(BaseBusinessObject):
             "blackout_dates": self.calendar.blackout_dates
         }
 
+    @classmethod
+    def create_calendar(
+        cls,
+        tenant: Tenant,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+        actor_role: str = 'Admin',
+    ) -> AcademicCalendar:
+        with transaction.atomic():
+            calendar = AcademicCalendar.objects.create(
+                tenant=tenant,
+                academic_year=data['academic_year'],
+                terms=data.get('terms') or [],
+                holidays=data.get('holidays') or [],
+                exam_weeks=data.get('exam_weeks') or [],
+                blackout_dates=data.get('blackout_dates') or [],
+                created_by=actor_id,
+            )
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action='CREATE',
+                entity='AcademicCalendar',
+                entity_id=str(calendar.calendar_id),
+                new_values={'academic_year': calendar.academic_year},
+            )
+        return calendar
+
+    @classmethod
+    def list_calendars(cls, tenant_id: uuid.UUID, actor_role: str = 'Admin') -> List[Dict[str, Any]]:
+        qs = AcademicCalendar.objects.filter(tenant_id=tenant_id, is_deleted=False).order_by('-academic_year')
+        return [cls(calendar=c, actor_role=actor_role).to_dict() for c in qs]
+
+    def update_calendar(self, data: Dict[str, Any], actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        with transaction.atomic():
+            for field in ('academic_year', 'terms', 'holidays', 'exam_weeks', 'blackout_dates'):
+                if field in data and data[field] is not None:
+                    setattr(self.calendar, field, data[field])
+            self.calendar.save()
+            AuditLog.objects.create(
+                tenant=self.calendar.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='AcademicCalendar',
+                entity_id=str(self.calendar.calendar_id),
+                new_values=self.to_dict(),
+            )
+        return self.to_dict()
+
+    def delete_calendar(self, actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        active_count = AcademicCalendar.objects.filter(
+            tenant=self.calendar.tenant,
+            is_deleted=False,
+        ).count()
+        if active_count <= 1 or self.calendar.exams.filter(is_deleted=False).exists():
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-04-02',
+                    message="Cannot delete the active academic calendar or a calendar with scheduled exams.",
+                    field='calendar_id',
+                )
+            ])
+        with transaction.atomic():
+            self.calendar.is_deleted = True
+            self.calendar.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=self.calendar.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='AcademicCalendar',
+                entity_id=str(self.calendar.calendar_id),
+                new_values={'is_deleted': True},
+            )
+        return {'calendar_id': str(self.calendar.calendar_id), 'is_deleted': True}
+
 
 class ClassroomPlanBO(BaseBusinessObject):
     """
@@ -206,12 +281,233 @@ class ClassroomPlanBO(BaseBusinessObject):
         if self.assignment:
             res["assignment"] = {
                 "assignment_id": str(self.assignment.assignment_id),
+                "class_id": str(self.assignment.class_id),
                 "subject": self.assignment.subject,
                 "title": self.assignment.title,
+                "description": self.assignment.description,
                 "due_date": self.assignment.due_date.isoformat(),
                 "max_marks": float(self.assignment.max_marks)
             }
         return res
+
+    @staticmethod
+    def serialize_curriculum(curriculum: Curriculum) -> Dict[str, Any]:
+        return {
+            "curriculum_id": str(curriculum.curriculum_id),
+            "grade": curriculum.grade,
+            "version": curriculum.version,
+            "subjects": curriculum.subjects or [],
+            "learning_outcomes": curriculum.learning_outcomes or [],
+            "approved_by": str(curriculum.approved_by) if curriculum.approved_by else None,
+        }
+
+    @classmethod
+    def create_curriculum(
+        cls,
+        tenant: Tenant,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        with transaction.atomic():
+            curriculum = Curriculum.objects.create(
+                tenant=tenant,
+                grade=data['grade'],
+                version=data.get('version') or '1.0',
+                subjects=data.get('subjects') or [],
+                learning_outcomes=data.get('learning_outcomes') or [],
+                approved_by=actor_id,
+                created_by=actor_id,
+            )
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action='CREATE',
+                entity='Curriculum',
+                entity_id=str(curriculum.curriculum_id),
+                new_values=cls.serialize_curriculum(curriculum),
+            )
+        return cls.serialize_curriculum(curriculum)
+
+    @classmethod
+    def list_curriculums(cls, tenant_id: uuid.UUID, grade: Optional[str] = None) -> List[Dict[str, Any]]:
+        qs = Curriculum.objects.filter(tenant_id=tenant_id, is_deleted=False).order_by('grade', '-version')
+        if grade:
+            qs = qs.filter(grade__iexact=grade)
+        return [cls.serialize_curriculum(c) for c in qs]
+
+    @classmethod
+    def update_curriculum(
+        cls,
+        curriculum: Curriculum,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        with transaction.atomic():
+            for field in ('grade', 'version', 'subjects', 'learning_outcomes'):
+                if field in data and data[field] is not None:
+                    setattr(curriculum, field, data[field])
+            curriculum.save()
+            AuditLog.objects.create(
+                tenant=curriculum.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='Curriculum',
+                entity_id=str(curriculum.curriculum_id),
+                new_values=cls.serialize_curriculum(curriculum),
+            )
+        return cls.serialize_curriculum(curriculum)
+
+    @staticmethod
+    def delete_curriculum(curriculum: Curriculum, actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        if curriculum.lesson_plans.filter(is_deleted=False).exists():
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-04-01',
+                    message="Cannot delete curriculum while active lesson plans reference it.",
+                    field='curriculum_id',
+                )
+            ])
+        with transaction.atomic():
+            curriculum.is_deleted = True
+            curriculum.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=curriculum.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='Curriculum',
+                entity_id=str(curriculum.curriculum_id),
+                new_values={'is_deleted': True},
+            )
+        return {'curriculum_id': str(curriculum.curriculum_id), 'is_deleted': True}
+
+    @classmethod
+    def list_lesson_plans(cls, tenant_id: uuid.UUID, class_id: Optional[uuid.UUID] = None) -> List[Dict[str, Any]]:
+        qs = LessonPlan.objects.filter(tenant_id=tenant_id, is_deleted=False).select_related('curriculum').order_by('week')
+        if class_id:
+            qs = qs.filter(class_id=class_id)
+        return [
+            {
+                "plan_id": str(lp.plan_id),
+                "class_id": str(lp.class_id),
+                "curriculum_id": str(lp.curriculum_id),
+                "week": lp.week,
+                "topic": lp.topic,
+                "learning_outcomes": lp.learning_outcomes,
+                "status": lp.status,
+            }
+            for lp in qs
+        ]
+
+    @classmethod
+    def update_lesson_plan(
+        cls,
+        lesson_plan: LessonPlan,
+        data: Dict[str, Any],
+        actor_role: str = 'Teacher',
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> LessonPlan:
+        for field in ('week', 'topic', 'learning_outcomes', 'status'):
+            if field in data and data[field] is not None:
+                setattr(lesson_plan, field, data[field])
+        if data.get('curriculum_id'):
+            curriculum = Curriculum.objects.filter(
+                curriculum_id=data['curriculum_id'],
+                tenant=lesson_plan.tenant,
+                is_deleted=False,
+            ).first()
+            if curriculum:
+                lesson_plan.curriculum = curriculum
+        bo = cls(lesson_plan=lesson_plan, actor_role=actor_role)
+        bo.enforce_rules()
+        with transaction.atomic():
+            lesson_plan.save()
+            AuditLog.objects.create(
+                tenant=lesson_plan.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='LessonPlan',
+                entity_id=str(lesson_plan.plan_id),
+                new_values={'topic': lesson_plan.topic, 'week': lesson_plan.week, 'status': lesson_plan.status},
+            )
+        return lesson_plan
+
+    @staticmethod
+    def delete_lesson_plan(lesson_plan: LessonPlan, actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        with transaction.atomic():
+            lesson_plan.is_deleted = True
+            lesson_plan.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=lesson_plan.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='LessonPlan',
+                entity_id=str(lesson_plan.plan_id),
+                new_values={'is_deleted': True},
+            )
+        return {'plan_id': str(lesson_plan.plan_id), 'is_deleted': True}
+
+    @classmethod
+    def list_assignments(cls, tenant_id: uuid.UUID, class_id: Optional[uuid.UUID] = None) -> List[Dict[str, Any]]:
+        qs = Assignment.objects.filter(tenant_id=tenant_id, is_deleted=False).order_by('due_date')
+        if class_id:
+            qs = qs.filter(class_id=class_id)
+        return [
+            {
+                "assignment_id": str(a.assignment_id),
+                "class_id": str(a.class_id),
+                "subject": a.subject,
+                "title": a.title,
+                "description": a.description,
+                "due_date": a.due_date.isoformat(),
+                "max_marks": float(a.max_marks),
+            }
+            for a in qs
+        ]
+
+    @classmethod
+    def update_assignment(
+        cls,
+        assignment: Assignment,
+        data: Dict[str, Any],
+        calendar: Optional[AcademicCalendar] = None,
+        actor_role: str = 'Teacher',
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Assignment:
+        if 'due_date' in data and data['due_date'] is not None:
+            if calendar:
+                cal_bo = AcademicCalendarBO(calendar, actor_role=actor_role)
+                date_violation = cal_bo.validate_date_window(data['due_date'], context='assignment')
+                if date_violation:
+                    raise BusinessRuleError([date_violation])
+        for field in ('subject', 'title', 'description', 'due_date', 'max_marks'):
+            if field in data and data[field] is not None:
+                setattr(assignment, field, data[field])
+        with transaction.atomic():
+            assignment.save()
+            AuditLog.objects.create(
+                tenant=assignment.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='Assignment',
+                entity_id=str(assignment.assignment_id),
+                new_values={'title': assignment.title, 'due_date': assignment.due_date.isoformat()},
+            )
+        return assignment
+
+    @staticmethod
+    def delete_assignment(assignment: Assignment, actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        with transaction.atomic():
+            assignment.is_deleted = True
+            assignment.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=assignment.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='Assignment',
+                entity_id=str(assignment.assignment_id),
+                new_values={'is_deleted': True},
+            )
+        return {'assignment_id': str(assignment.assignment_id), 'is_deleted': True}
 
 
 class ExamPackageBO(BaseBusinessObject):
@@ -309,6 +605,8 @@ class ExamPackageBO(BaseBusinessObject):
         return {
             "bo": "ExamPackage",
             "exam_id": str(self.exam.exam_id),
+            "class_id": str(self.exam.class_id),
+            "calendar_id": str(self.exam.calendar_id),
             "name": self.exam.name,
             "exam_type": self.exam.exam_type,
             "date": self.exam.date.isoformat(),
@@ -320,6 +618,52 @@ class ExamPackageBO(BaseBusinessObject):
             "status": self.exam.status,
             "marks_count": self.exam.marks_records.filter(is_deleted=False).count()
         }
+
+    @classmethod
+    def list_exams(cls, tenant_id: uuid.UUID, class_id: Optional[uuid.UUID] = None, actor_role: str = 'Admin') -> List[Dict[str, Any]]:
+        qs = Exam.objects.filter(tenant_id=tenant_id, is_deleted=False).select_related('calendar').order_by('date', 'start_time')
+        if class_id:
+            qs = qs.filter(class_id=class_id)
+        return [cls(exam=e, actor_role=actor_role).to_dict() for e in qs]
+
+    def update_exam(self, data: Dict[str, Any], actor_id: Optional[uuid.UUID] = None) -> Exam:
+        for field in ('name', 'exam_type', 'date', 'start_time', 'end_time', 'duration_mins', 'room', 'max_marks', 'status'):
+            if field in data and data[field] is not None:
+                setattr(self.exam, field, data[field])
+        self.enforce_rules()
+        with transaction.atomic():
+            self.exam.save()
+            AuditLog.objects.create(
+                tenant=self.exam.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='Exam',
+                entity_id=str(self.exam.exam_id),
+                new_values=self.to_dict(),
+            )
+        return self.exam
+
+    def delete_exam(self, actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        if self.exam.marks_records.filter(is_deleted=False, locked=True).exists():
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-04-07',
+                    message="Cannot delete exam with locked moderated marks records.",
+                    field='exam_id',
+                )
+            ])
+        with transaction.atomic():
+            self.exam.is_deleted = True
+            self.exam.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=self.exam.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='Exam',
+                entity_id=str(self.exam.exam_id),
+                new_values={'is_deleted': True},
+            )
+        return {'exam_id': str(self.exam.exam_id), 'is_deleted': True}
 
 
 class AcademicRecordBO(BaseBusinessObject):
@@ -523,6 +867,128 @@ class AcademicRecordBO(BaseBusinessObject):
             entity_id=str(self.report_card.report_id),
             new_values={"is_published": True, "published_date": self.report_card.published_date.isoformat()}
         )
+
+    @staticmethod
+    def list_exam_marks(exam: Exam) -> List[Dict[str, Any]]:
+        qs = MarksRecord.objects.filter(tenant=exam.tenant, exam=exam, is_deleted=False).select_related('student').order_by('student__name')
+        return [
+            {
+                "marks_id": str(m.marks_id),
+                "exam_id": str(m.exam_id),
+                "student_id": str(m.student_id),
+                "student_name": m.student.name,
+                "subject": m.subject,
+                "marks": float(m.marks),
+                "max_marks": float(m.max_marks),
+                "grade": m.grade,
+                "locked": m.locked,
+                "moderated_by": str(m.moderated_by) if m.moderated_by else None,
+                "moderation_date": m.moderation_date.isoformat() if m.moderation_date else None,
+            }
+            for m in qs
+        ]
+
+    @staticmethod
+    def update_marks_record(
+        record: MarksRecord,
+        data: Dict[str, Any],
+        actor_role: str = 'Teacher',
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        if record.locked and ('marks' in data or 'max_marks' in data):
+            if actor_role not in ('Principal', 'Owner'):
+                raise BusinessRuleError([
+                    RuleViolation(
+                        rule_id='BR-04-07',
+                        message="Marks record is locked after moderation. Modifications require Principal or Owner authorization.",
+                        field='locked',
+                    )
+                ])
+            if not (data.get('audit_note') or '').strip():
+                raise BusinessRuleError([
+                    RuleViolation(
+                        rule_id='BR-04-07',
+                        message="Overriding a locked marks record requires an audit_note.",
+                        field='audit_note',
+                    )
+                ])
+
+        if data.get('moderated') is True and actor_role not in ('Principal', 'Vice_Principal', 'Admin', 'Owner'):
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-04-04',
+                    message="Only Principal, Vice Principal, Admin, or Owner can sign off on marks moderation.",
+                    field='moderated',
+                )
+            ])
+
+        old_vals = {"marks": float(record.marks), "max_marks": float(record.max_marks), "locked": record.locked}
+        with transaction.atomic():
+            if data.get('marks') is not None:
+                record.marks = data['marks']
+            if data.get('max_marks') is not None:
+                record.max_marks = data['max_marks']
+            pct = float((record.marks / record.max_marks) * 100) if record.max_marks > 0 else 0.0
+            record.grade = calculate_grade_letter(pct)
+
+            if data.get('moderated') is True:
+                record.moderated_by = actor_id
+                record.moderation_date = timezone.now()
+                record.locked = True
+            elif data.get('locked') is not None:
+                record.locked = bool(data['locked'])
+
+            record.save()
+            AuditLog.objects.create(
+                tenant=record.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='MarksRecord',
+                entity_id=str(record.marks_id),
+                old_values=old_vals,
+                new_values={
+                    "marks": float(record.marks),
+                    "max_marks": float(record.max_marks),
+                    "locked": record.locked,
+                    "moderated_by": str(record.moderated_by) if record.moderated_by else None,
+                    "audit_note": data.get('audit_note') or '',
+                },
+            )
+        return {
+            "marks_id": str(record.marks_id),
+            "student_id": str(record.student_id),
+            "exam_id": str(record.exam_id),
+            "subject": record.subject,
+            "marks": float(record.marks),
+            "max_marks": float(record.max_marks),
+            "grade": record.grade,
+            "locked": record.locked,
+            "moderated_by": str(record.moderated_by) if record.moderated_by else None,
+        }
+
+    def update_report_card(
+        self,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> ReportCard:
+        if not self.report_card:
+            raise ValueError("No report card to update.")
+        with transaction.atomic():
+            for field in ('overall_grade', 'gpa', 'attendance_percentage', 'published_date', 'parent_ack'):
+                if field in data and data[field] is not None:
+                    setattr(self.report_card, field, data[field])
+            if data.get('parent_ack') is True and not self.report_card.parent_ack_date:
+                self.report_card.parent_ack_date = timezone.now()
+            self.report_card.save()
+            AuditLog.objects.create(
+                tenant=self.student.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='ReportCard',
+                entity_id=str(self.report_card.report_id),
+                new_values={"overall_grade": self.report_card.overall_grade, "gpa": float(self.report_card.gpa)},
+            )
+        return self.report_card
 
     def to_dict(self) -> Dict[str, Any]:
         return {

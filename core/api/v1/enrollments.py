@@ -11,10 +11,10 @@ from django.utils import timezone
 from django.http import JsonResponse
 from ninja import Router
 
-from core.models import Tenant, Application, Student, Document, EmergencyContact, AuditLog, PortalRoleMembership
+from core.models import Tenant, Application, Student, Parent, Document, EmergencyContact, AuditLog, PortalRoleMembership
 from core.auth.bearer import JWTAuthBearer
 from core.auth.decorators import require_roles
-from core.auth.scoping import verify_student_access, verify_application_access
+from core.auth.scoping import get_student_queryset, verify_student_access, verify_application_access
 from core.schemas.base import build_response, build_error
 from core.schemas.enrollment import (
     EnrollmentCreateSchema,
@@ -25,7 +25,12 @@ from core.schemas.enrollment import (
     EnrollmentRecommendationSchema,
     DocumentUploadSchema,
     DocumentVerifySchema,
+    StudentCreateInput,
     StudentUpdateSchema,
+    ParentCreateInput,
+    ParentUpdateInput,
+    EmergencyContactCreateSchema,
+    EmergencyContactUpdateSchema,
 )
 from core.business_objects.analytics import ParentDashboardBO
 from core.business_objects.enrollment import StudentProfileBO, EnrollmentCaseBO
@@ -603,46 +608,6 @@ def get_student_aggregate(request):
     }, status=200)
 
 
-def get_student_queryset(request):
-    """
-    Returns student queryset scoped to requester role per docs/reference/student_access_control.md.
-    """
-    role = getattr(request, 'user_role', 'Admin')
-    tenant_id = getattr(request, 'tenant_id', None)
-    base_qs = Student.objects.filter(tenant_id=tenant_id, is_deleted=False)
-
-    if role in ('Owner', 'Admin', 'Administrator', 'Principal', 'Vice_Principal', 'Staff'):
-        return base_qs
-
-    if role == 'Teacher':
-        return base_qs
-
-    if role in ('CareGiver', 'Care_Giver'):
-        return base_qs
-
-    if role == 'Parent':
-        user_id = getattr(request, 'user_id', None)
-        user_email = getattr(request, 'user_email', None)
-        linked_ids = getattr(request, 'linked_student_ids', [])
-
-        filter_q = models.Q(student_id__in=linked_ids)
-        if user_id:
-            try:
-                user_uuid = UUID(str(user_id))
-                filter_q |= models.Q(created_by=user_uuid) | models.Q(parents__created_by=user_uuid)
-            except (ValueError, TypeError):
-                pass
-        if user_email:
-            filter_q |= models.Q(parents__email__iexact=user_email)
-
-        return base_qs.filter(filter_q).distinct()
-
-    if role in ('Board', 'Board_Member', 'Trustee', 'Vendor'):
-        return base_qs.none()
-
-    return base_qs
-
-
 @router.get("/students", auth=JWTAuthBearer())
 @require_roles('Owner', 'Principal', 'Vice_Principal', 'Admin', 'Administrator', 'Teacher', 'CareGiver', 'Care_Giver', 'Parent')
 def list_students(
@@ -894,5 +859,329 @@ def get_student_profile(request, student_id: UUID):
         ),
         status=200
     )
+
+
+@router.post("/students", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def create_direct_student(request, payload: StudentCreateInput):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = StudentProfileBO.create_direct_student(
+        tenant=tenant,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+        actor_role=actor_role,
+    )
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.delete("/students/{uuid:student_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Owner')
+def delete_student(request, student_id: UUID):
+    student = get_object_or_404(
+        Student.objects.select_related('tenant'),
+        student_id=student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = StudentProfileBO.soft_delete_student(student=student, actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/enrollments/{uuid:application_id}", auth=JWTAuthBearer())
+@require_roles('Parent', 'Admin', 'Owner')
+def delete_enrollment_application(request, application_id: UUID):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not verify_application_access(request, application):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to delete this application."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    bo = EnrollmentCaseBO(application=application, actor_role=actor_role)
+    data = bo.withdraw_application(actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/enrollments/{uuid:application_id}/documents", auth=JWTAuthBearer())
+@require_roles('Parent', 'Admin', 'Principal', 'Vice_Principal', 'Owner')
+def list_application_documents(request, application_id: UUID):
+    application = get_object_or_404(
+        Application.objects.select_related('student', 'tenant'),
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not verify_application_access(request, application):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to view documents for this application."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    data = EnrollmentCaseBO.list_documents(application=application)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/enrollments/{uuid:application_id}/documents/{uuid:document_id}", auth=JWTAuthBearer())
+@require_roles('Parent', 'Admin', 'Owner')
+def delete_application_document(request, application_id: UUID, document_id: UUID):
+    document = get_object_or_404(
+        Document.objects.select_related('application', 'application__student', 'tenant'),
+        document_id=document_id,
+        application_id=application_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not verify_application_access(request, document.application):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to delete this document."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    data = EnrollmentCaseBO.delete_document(
+        document=document,
+        actor_role=actor_role,
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+def _verify_parent_record_access(request, parent: Parent) -> bool:
+    role = getattr(request, 'user_role', 'Parent')
+    if role in ('Admin', 'Administrator', 'Principal', 'Vice_Principal', 'Owner'):
+        return True
+    if role == 'Parent':
+        user_email = getattr(request, 'user_email', None)
+        user_id = getattr(request, 'user_id', None)
+        if user_email and parent.email and parent.email.lower() == str(user_email).lower():
+            return True
+        if user_id and parent.created_by and str(parent.created_by) == str(user_id):
+            return True
+        return verify_student_access(request, parent.student)
+    return False
+
+
+@router.get("/parents", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
+def list_parents(request, student_id: UUID = None):
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = StudentProfileBO.list_parents(tenant_id=request.tenant_id, student_id=student_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/parents", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def create_parent(request, payload: ParentCreateInput):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    student = get_object_or_404(
+        Student,
+        student_id=payload.student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = StudentProfileBO.create_parent(
+        tenant=tenant,
+        student=student,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.get("/parents/{uuid:parent_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Parent', 'Owner')
+def get_parent(request, parent_id: UUID):
+    parent = get_object_or_404(
+        Parent.objects.select_related('student', 'tenant'),
+        parent_id=parent_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not _verify_parent_record_access(request, parent):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to access this parent record."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    data = StudentProfileBO._serialize_parent(parent)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.patch("/parents/{uuid:parent_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Parent', 'Owner')
+def update_parent(request, parent_id: UUID, payload: ParentUpdateInput):
+    parent = get_object_or_404(
+        Parent.objects.select_related('student', 'tenant'),
+        parent_id=parent_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not _verify_parent_record_access(request, parent):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to update this parent record."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    data = StudentProfileBO.update_parent(
+        parent=parent,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/parents/{uuid:parent_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Owner')
+def delete_parent(request, parent_id: UUID):
+    parent = get_object_or_404(
+        Parent.objects.select_related('student', 'tenant'),
+        parent_id=parent_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = StudentProfileBO.soft_delete_parent(parent=parent, actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/students/{uuid:student_id}/emergency-contacts", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'CareGiver', 'Parent', 'Owner')
+def list_student_emergency_contacts(request, student_id: UUID):
+    student = get_object_or_404(
+        Student.objects.select_related('tenant'),
+        student_id=student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not verify_student_access(request, student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to view emergency contacts for this student."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    data = StudentProfileBO.list_emergency_contacts(student=student)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/students/{uuid:student_id}/emergency-contacts", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Parent', 'Owner')
+def create_student_emergency_contact(request, student_id: UUID, payload: EmergencyContactCreateSchema):
+    student = get_object_or_404(
+        Student.objects.select_related('tenant'),
+        student_id=student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not verify_student_access(request, student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to add emergency contacts for this student."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    data = StudentProfileBO.add_emergency_contact(
+        student=student,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.patch("/emergency-contacts/{uuid:contact_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Parent', 'Owner')
+def update_emergency_contact(request, contact_id: UUID, payload: EmergencyContactUpdateSchema):
+    contact = get_object_or_404(
+        EmergencyContact.objects.select_related('student', 'tenant'),
+        contact_id=contact_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not verify_student_access(request, contact.student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to update this emergency contact."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    data = StudentProfileBO.update_emergency_contact(
+        contact=contact,
+        data=payload.model_dump(exclude_none=True),
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/emergency-contacts/{uuid:contact_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Parent', 'Owner')
+def delete_emergency_contact(request, contact_id: UUID):
+    contact = get_object_or_404(
+        EmergencyContact.objects.select_related('student', 'tenant'),
+        contact_id=contact_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'Parent')
+    if not verify_student_access(request, contact.student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to delete this emergency contact."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    data = StudentProfileBO.delete_emergency_contact(
+        contact=contact,
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
 
 

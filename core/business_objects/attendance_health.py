@@ -211,6 +211,27 @@ class AttendanceSheetBO(BaseBusinessObject):
             } if self.record else None
         }
 
+    @classmethod
+    def delete_attendance(
+        cls,
+        record: StudentAttendance,
+        actor_role: str = 'Teacher',
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        with transaction.atomic():
+            cls(record=record, actor_role=actor_role).enforce_rules()
+            record.is_deleted = True
+            record.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=record.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='StudentAttendance',
+                entity_id=str(record.att_id),
+                new_values={'is_deleted': True, 'date': record.date.isoformat(), 'actor_role': actor_role},
+            )
+        return {'att_id': str(record.att_id), 'is_deleted': True}
+
 
 class LeaveCaseBO(BaseBusinessObject):
     """
@@ -302,6 +323,43 @@ class LeaveCaseBO(BaseBusinessObject):
             "reason": self.leave_request.reason
         }
 
+    @classmethod
+    def list_leave_requests(
+        cls,
+        tenant_id: uuid.UUID,
+        requester_id: Optional[uuid.UUID] = None,
+        status: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        qs = LeaveRequest.objects.filter(tenant_id=tenant_id, is_deleted=False).order_by('-start_date')
+        if requester_id:
+            qs = qs.filter(requester_id=requester_id)
+        if status:
+            qs = qs.filter(status__iexact=status)
+        return [cls(leave_request=lr).to_dict() for lr in qs]
+
+    def cancel_leave_request(self, actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        if self.leave_request.status == 'Approved' and self.actor_role not in ('Admin', 'Principal', 'Owner'):
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-03-04',
+                    message="Approved leave requests can only be cancelled by Admin, Principal, or Owner.",
+                    field='status',
+                )
+            ])
+        with transaction.atomic():
+            self.leave_request.status = 'Cancelled'
+            self.leave_request.is_deleted = True
+            self.leave_request.save(update_fields=['status', 'is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=self.leave_request.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='LeaveRequest',
+                entity_id=str(self.leave_request.leave_id),
+                new_values={'status': 'Cancelled', 'is_deleted': True},
+            )
+        return {'leave_id': str(self.leave_request.leave_id), 'status': 'Cancelled', 'is_deleted': True}
+
 
 class StaffRosterBO(BaseBusinessObject):
     """
@@ -364,6 +422,145 @@ class StaffRosterBO(BaseBusinessObject):
             "total_staff_logged": attendances.count(),
             "absent_count": attendances.filter(status='Absent').count(),
             "substitutions_count": attendances.filter(substitute_id__isnull=False).count()
+        }
+
+    @staticmethod
+    def _serialize_staff_attendance(att: StaffAttendance, cover_alert: bool = False) -> Dict[str, Any]:
+        return {
+            "staff_att_id": str(att.staff_att_id),
+            "staff_id": str(att.staff_id),
+            "date": att.date.isoformat(),
+            "check_in": att.check_in,
+            "check_out": att.check_out,
+            "method": att.method,
+            "status": att.status,
+            "substitute_id": str(att.substitute_id) if att.substitute_id else None,
+            "geofence_verified": att.geofence_verified,
+            "cover_alert_triggered": cover_alert,
+        }
+
+    def mark_staff_attendance(
+        self,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        sub_id = data.get('substitute_id')
+        if sub_id:
+            violation = self.validate_substitute_availability(sub_id)
+            if violation:
+                raise BusinessRuleError([violation])
+
+        status = data.get('status', 'Present')
+        has_approved_leave = LeaveRequest.objects.filter(
+            tenant=self.tenant,
+            requester_id=data['staff_id'],
+            requester_type='Staff',
+            start_date__lte=self.roster_date,
+            end_date__gte=self.roster_date,
+            status='Approved',
+            is_deleted=False,
+        ).exists()
+        # BR-03-03: Unexcused staff absence triggers cover alert if no substitute assigned
+        cover_alert = (status == 'Absent' and not has_approved_leave and not sub_id)
+
+        with transaction.atomic():
+            att, _ = StaffAttendance.objects.update_or_create(
+                tenant=self.tenant,
+                staff_id=data['staff_id'],
+                date=self.roster_date,
+                defaults={
+                    "check_in": data.get('check_in') or '',
+                    "check_out": data.get('check_out') or '',
+                    "method": data.get('method') or 'Manual',
+                    "status": status,
+                    "substitute_id": sub_id,
+                    "geofence_verified": bool(data.get('geofence_verified', False)),
+                    "created_by": actor_id,
+                },
+            )
+            AuditLog.objects.create(
+                tenant=self.tenant,
+                actor_id=actor_id,
+                action='CREATE',
+                entity='StaffAttendance',
+                entity_id=str(att.staff_att_id),
+                new_values=self._serialize_staff_attendance(att, cover_alert=cover_alert),
+            )
+        return self._serialize_staff_attendance(att, cover_alert=cover_alert)
+
+    @classmethod
+    def list_staff_attendance(
+        cls,
+        tenant_id: uuid.UUID,
+        staff_id: Optional[uuid.UUID] = None,
+        att_date: Optional[date] = None,
+    ) -> List[Dict[str, Any]]:
+        qs = StaffAttendance.objects.filter(tenant_id=tenant_id, is_deleted=False).order_by('-date')
+        if staff_id:
+            qs = qs.filter(staff_id=staff_id)
+        if att_date:
+            qs = qs.filter(date=att_date)
+        return [cls._serialize_staff_attendance(a, cover_alert=(a.status == 'Absent' and not a.substitute_id)) for a in qs]
+
+    def update_staff_attendance(
+        self,
+        att: StaffAttendance,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        if data.get('substitute_id'):
+            violation = self.validate_substitute_availability(data['substitute_id'])
+            if violation:
+                raise BusinessRuleError([violation])
+        with transaction.atomic():
+            for field in ('check_in', 'check_out', 'method', 'status', 'substitute_id', 'geofence_verified'):
+                if field in data and data[field] is not None:
+                    setattr(att, field, data[field])
+            att.save()
+            cover_alert = (att.status == 'Absent' and not att.substitute_id)
+            AuditLog.objects.create(
+                tenant=self.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='StaffAttendance',
+                entity_id=str(att.staff_att_id),
+                new_values=self._serialize_staff_attendance(att, cover_alert=cover_alert),
+            )
+        return self._serialize_staff_attendance(att, cover_alert=cover_alert)
+
+    @staticmethod
+    def create_roster(tenant: Tenant, data: Dict[str, Any], actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        with transaction.atomic():
+            roster, _ = AttendanceRoster.objects.update_or_create(
+                tenant=tenant,
+                class_id=data['class_id'],
+                date=data['date'],
+                defaults={
+                    "window_start": data.get('window_start') or '08:00',
+                    "window_end": data.get('window_end') or '10:00',
+                    "created_by": actor_id,
+                },
+            )
+        return {
+            "roster_id": str(roster.roster_id),
+            "class_id": str(roster.class_id),
+            "date": roster.date.isoformat(),
+            "window_start": roster.window_start,
+            "window_end": roster.window_end,
+        }
+
+    @staticmethod
+    def update_roster(roster: AttendanceRoster, data: Dict[str, Any]) -> Dict[str, Any]:
+        for field in ('window_start', 'window_end'):
+            if field in data and data[field] is not None:
+                setattr(roster, field, data[field])
+        roster.save()
+        return {
+            "roster_id": str(roster.roster_id),
+            "class_id": str(roster.class_id),
+            "date": roster.date.isoformat(),
+            "window_start": roster.window_start,
+            "window_end": roster.window_end,
         }
 
 
@@ -459,6 +656,129 @@ class HealthRecordBO(BaseBusinessObject):
             "recent_medication_logs": meds
         }
 
+    def upsert_health_record(self, data: Dict[str, Any], actor_id: Optional[uuid.UUID] = None) -> StudentHealth:
+        with transaction.atomic():
+            defaults = {}
+            for field in ('allergies', 'conditions', 'medications', 'vaccinations', 'doctor_name', 'doctor_phone', 'consent_flag'):
+                if field in data and data[field] is not None:
+                    defaults[field] = data[field]
+            if data.get('consent_flag') is True:
+                defaults['consent_date'] = timezone.now()
+            profile, _ = StudentHealth.objects.update_or_create(
+                tenant=self.student.tenant,
+                student=self.student,
+                defaults={**defaults, 'is_deleted': False},
+            )
+            self.health_profile = profile
+            AuditLog.objects.create(
+                tenant=self.student.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='StudentHealth',
+                entity_id=str(profile.health_id),
+                new_values={'consent_flag': profile.consent_flag, 'doctor_name': profile.doctor_name},
+            )
+        return profile
+
+    def list_observations(self) -> List[Dict[str, Any]]:
+        return [
+            {
+                "obs_id": str(o.obs_id),
+                "student_id": str(self.student.student_id),
+                "staff_id": str(o.staff_id),
+                "date": o.date.isoformat(),
+                "mood": o.mood,
+                "appetite": o.appetite,
+                "nap_duration_mins": o.nap_duration_mins,
+                "feeding_notes": o.feeding_notes,
+                "general_notes": o.general_notes,
+            }
+            for o in self.student.health_observations.filter(is_deleted=False).order_by('-date')
+        ]
+
+    @staticmethod
+    def update_observation(obs: HealthObservation, data: Dict[str, Any], actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        with transaction.atomic():
+            for field in ('mood', 'appetite', 'nap_duration_mins', 'feeding_notes', 'general_notes'):
+                if field in data and data[field] is not None:
+                    setattr(obs, field, data[field])
+            obs.save()
+            AuditLog.objects.create(
+                tenant=obs.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='HealthObservation',
+                entity_id=str(obs.obs_id),
+                new_values={'mood': obs.mood, 'appetite': obs.appetite},
+            )
+        return {
+            "obs_id": str(obs.obs_id),
+            "student_id": str(obs.student_id),
+            "date": obs.date.isoformat(),
+            "mood": obs.mood,
+            "appetite": obs.appetite,
+            "nap_duration_mins": obs.nap_duration_mins,
+            "feeding_notes": obs.feeding_notes,
+            "general_notes": obs.general_notes,
+        }
+
+    @staticmethod
+    def delete_observation(obs: HealthObservation, actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        with transaction.atomic():
+            obs.is_deleted = True
+            obs.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=obs.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='HealthObservation',
+                entity_id=str(obs.obs_id),
+                new_values={'is_deleted': True},
+            )
+        return {'obs_id': str(obs.obs_id), 'is_deleted': True}
+
+    def list_medication_logs(self) -> List[Dict[str, Any]]:
+        return [
+            {
+                "med_log_id": str(m.med_log_id),
+                "student_id": str(self.student.student_id),
+                "staff_id": str(m.staff_id),
+                "medicine_name": m.medicine_name,
+                "dose": m.dose,
+                "time_administered": m.time_administered.isoformat(),
+                "parent_notified": m.parent_notified,
+                "notes": m.notes,
+            }
+            for m in self.student.medication_logs.filter(is_deleted=False).order_by('-time_administered')
+        ]
+
+    def update_medication_log(self, med_log: MedicationLog, data: Dict[str, Any], actor_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+        violation = self.validate_medication_consent()
+        if violation:
+            raise BusinessRuleError([violation])
+        with transaction.atomic():
+            for field in ('medicine_name', 'dose', 'notes', 'parent_notified'):
+                if field in data and data[field] is not None:
+                    setattr(med_log, field, data[field])
+            med_log.save()
+            AuditLog.objects.create(
+                tenant=med_log.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='MedicationLog',
+                entity_id=str(med_log.med_log_id),
+                new_values={'medicine_name': med_log.medicine_name, 'dose': med_log.dose},
+            )
+        return {
+            "med_log_id": str(med_log.med_log_id),
+            "student_id": str(med_log.student_id),
+            "medicine_name": med_log.medicine_name,
+            "dose": med_log.dose,
+            "time_administered": med_log.time_administered.isoformat(),
+            "parent_notified": med_log.parent_notified,
+            "notes": med_log.notes,
+        }
+
 
 class SafetyComplianceBO(BaseBusinessObject):
     """
@@ -480,7 +800,8 @@ class SafetyComplianceBO(BaseBusinessObject):
         duration_seconds: int,
         participation_rate: Decimal,
         completed_by: uuid.UUID,
-        issues_noted: List[str] = None
+        issues_noted: List[str] = None,
+        signed_off: bool = True,
     ) -> SafetyDrill:
         return SafetyDrill.objects.create(
             tenant=tenant,
@@ -490,8 +811,125 @@ class SafetyComplianceBO(BaseBusinessObject):
             participation_rate=participation_rate,
             completed_by=completed_by,
             issues_noted=issues_noted or [],
-            signed_off=True
+            signed_off=signed_off
         )
+
+    @staticmethod
+    def list_drills(tenant_id: uuid.UUID) -> List[Dict[str, Any]]:
+        qs = SafetyDrill.objects.filter(tenant_id=tenant_id, is_deleted=False).order_by('-scheduled_date')
+        return [
+            {
+                "drill_id": str(d.drill_id),
+                "drill_type": d.drill_type,
+                "scheduled_date": d.scheduled_date.isoformat(),
+                "duration_seconds": d.duration_seconds,
+                "participation_rate": float(d.participation_rate),
+                "issues_noted": d.issues_noted or [],
+                "signed_off": d.signed_off,
+            }
+            for d in qs
+        ]
+
+    @staticmethod
+    def update_or_signoff_drill(
+        drill: SafetyDrill,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        # BR-07-04: Signed-off safety drills are strictly immutable
+        if drill.signed_off:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-07-04',
+                    message="Safety drill record is signed off and strictly immutable. Create a superseding drill record for corrections.",
+                    field='signed_off',
+                )
+            ])
+        with transaction.atomic():
+            for field in ('duration_seconds', 'participation_rate', 'issues_noted', 'signed_off'):
+                if field in data and data[field] is not None:
+                    setattr(drill, field, data[field])
+            drill.save()
+            AuditLog.objects.create(
+                tenant=drill.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='SafetyDrill',
+                entity_id=str(drill.drill_id),
+                new_values={'signed_off': drill.signed_off},
+            )
+        return {
+            "drill_id": str(drill.drill_id),
+            "drill_type": drill.drill_type,
+            "scheduled_date": drill.scheduled_date.isoformat(),
+            "duration_seconds": drill.duration_seconds,
+            "participation_rate": float(drill.participation_rate),
+            "issues_noted": drill.issues_noted or [],
+            "signed_off": drill.signed_off,
+        }
+
+    @staticmethod
+    def list_incidents(tenant_id: uuid.UUID, severity: Optional[str] = None) -> List[Dict[str, Any]]:
+        qs = Incident.objects.filter(tenant_id=tenant_id, is_deleted=False).order_by('-date', '-created_at')
+        if severity:
+            qs = qs.filter(severity__iexact=severity)
+        now = timezone.now()
+        results = []
+        for inc in qs:
+            sla_breached = (not inc.acknowledged_at) and ((now - inc.created_at) > timedelta(hours=1))
+            results.append({
+                "incident_id": str(inc.incident_id),
+                "incident_type": inc.incident_type,
+                "severity": inc.severity,
+                "date": inc.date.isoformat(),
+                "location": inc.location,
+                "description": inc.description,
+                "actions_taken": inc.actions_taken,
+                "acknowledged_by": str(inc.acknowledged_by) if inc.acknowledged_by else None,
+                "acknowledged_at": inc.acknowledged_at.isoformat() if inc.acknowledged_at else None,
+                "escalated_to_principal": inc.escalated_to_principal,
+                "parent_notified": inc.parent_notified,
+                "sla_breached": sla_breached,
+            })
+        return results
+
+    @staticmethod
+    def acknowledge_incident(
+        incident: Incident,
+        data: Dict[str, Any],
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        with transaction.atomic():
+            if data.get('acknowledge', True) and not incident.acknowledged_at:
+                incident.acknowledged_by = actor_id
+                incident.acknowledged_at = timezone.now()
+            for field in ('actions_taken', 'escalated_to_principal', 'parent_notified'):
+                if field in data and data[field] is not None:
+                    setattr(incident, field, data[field])
+            incident.save()
+            AuditLog.objects.create(
+                tenant=incident.tenant,
+                actor_id=actor_id,
+                action='UPDATE',
+                entity='Incident',
+                entity_id=str(incident.incident_id),
+                new_values={
+                    'acknowledged_by': str(incident.acknowledged_by) if incident.acknowledged_by else None,
+                    'escalated_to_principal': incident.escalated_to_principal,
+                },
+            )
+        return {
+            "incident_id": str(incident.incident_id),
+            "incident_type": incident.incident_type,
+            "severity": incident.severity,
+            "date": incident.date.isoformat(),
+            "location": incident.location,
+            "actions_taken": incident.actions_taken,
+            "acknowledged_by": str(incident.acknowledged_by) if incident.acknowledged_by else None,
+            "acknowledged_at": incident.acknowledged_at.isoformat() if incident.acknowledged_at else None,
+            "escalated_to_principal": incident.escalated_to_principal,
+            "parent_notified": incident.parent_notified,
+        }
 
     @classmethod
     def report_incident(

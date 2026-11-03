@@ -91,8 +91,69 @@ class MarksEntrySchema(BaseModel):
 
 
 class ReportCardGenerateSchema(BaseModel):
+    student_id: Optional[UUID] = None
     calendar_id: UUID
     term: str
     year: int
     published_date: date
     attendance_percentage: Decimal = Decimal("100.00")
+
+
+class CurriculumUpdateInput(BaseModel):
+    grade: Optional[str] = None
+    version: Optional[str] = None
+    subjects: Optional[List[Dict[str, Any]]] = None
+    learning_outcomes: Optional[List[str]] = None
+
+
+class AcademicCalendarUpdateInput(BaseModel):
+    academic_year: Optional[str] = None
+    terms: Optional[List[Dict[str, Any]]] = None
+    holidays: Optional[List[str]] = None
+    exam_weeks: Optional[List[Dict[str, Any]]] = None
+    blackout_dates: Optional[List[str]] = None
+
+
+class LessonPlanUpdateInput(BaseModel):
+    curriculum_id: Optional[UUID] = None
+    week: Optional[int] = None
+    topic: Optional[str] = None
+    learning_outcomes: Optional[List[str]] = None
+    status: Optional[str] = None
+
+
+class AssignmentUpdateInput(BaseModel):
+    subject: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    due_date: Optional[date] = None
+    max_marks: Optional[Decimal] = None
+
+
+class ExamUpdateInput(BaseModel):
+    name: Optional[str] = None
+    exam_type: Optional[str] = None
+    date: Optional[date] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    duration_mins: Optional[int] = None
+    room: Optional[str] = None
+    max_marks: Optional[Decimal] = None
+    status: Optional[str] = None
+
+
+class MarksUpdateInput(BaseModel):
+    marks: Optional[Decimal] = None
+    max_marks: Optional[Decimal] = None
+    moderated: Optional[bool] = None
+    locked: Optional[bool] = None
+    audit_note: Optional[str] = None
+
+
+class ReportCardUpdateInput(BaseModel):
+    overall_grade: Optional[str] = None
+    gpa: Optional[Decimal] = None
+    attendance_percentage: Optional[Decimal] = None
+    published_date: Optional[date] = None
+    parent_ack: Optional[bool] = None
+

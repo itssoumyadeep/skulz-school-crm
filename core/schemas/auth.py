@@ -1,6 +1,34 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+
+
+RoleChoice = Literal[
+    "Admin",
+    "Principal",
+    "Vice_Principal",
+    "Teacher",
+    "CareGiver",
+    "Parent",
+    "Vendor",
+    "Owner",
+    "Board",
+    "Trustee",
+    "Staff",
+]
+
+
+class RoleMembershipCreateInput(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    user_id: Optional[int] = None
+    role: RoleChoice
+    is_active: bool = True
+
+
+class RoleMembershipUpdateInput(BaseModel):
+    role: Optional[RoleChoice] = None
+    is_active: Optional[bool] = None
 
 
 class LoginSchema(BaseModel):

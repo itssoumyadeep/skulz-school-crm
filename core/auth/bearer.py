@@ -63,6 +63,10 @@ class JWTAuthBearer(HttpBearer):
         request.user_name = payload.get("user_name")
         raw_linked = payload.get("linked_student_ids") or []
         request.linked_student_ids = [str(sid) for sid in raw_linked]
+        raw_classes = payload.get("assigned_class_ids") or []
+        request.assigned_class_ids = [str(cid) for cid in raw_classes]
+        raw_grades = payload.get("assigned_grades") or payload.get("assigned_care_groups") or []
+        request.assigned_grades = [str(g) for g in raw_grades]
         request.vendor_id = payload.get("vendor_id")
 
         raw_role = payload.get("role", "Parent")

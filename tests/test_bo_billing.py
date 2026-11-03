@@ -65,6 +65,9 @@ class TestBR0202:
             grade="Grade 1",
             status="Active",
         )
+        from django.utils import timezone
+        from datetime import timedelta
+
         invoice = Invoice.objects.create(
             tenant=tenant_a,
             student=student,
@@ -76,8 +79,8 @@ class TestBR0202:
                 phone="+1-555-0102",
                 email="late@example.com",
             ),
-            invoice_date=date(2026, 9, 1),
-            due_date=date(2026, 9, 15),
+            invoice_date=timezone.localdate() - timedelta(days=5),
+            due_date=timezone.localdate() - timedelta(days=2),
             line_items=[{"description": "Tuition", "amount": 1000.00}],
             total=Decimal("1000.00"),
             status="Issued",

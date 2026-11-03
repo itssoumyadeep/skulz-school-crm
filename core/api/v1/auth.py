@@ -12,9 +12,18 @@ from django.http import JsonResponse
 from jose import jwt
 from ninja import Router
 
+from core.auth.bearer import JWTAuthBearer
+from core.auth.decorators import require_roles
 from core.models import PortalRoleMembership, Student, Tenant
+from core.business_objects.school_setup import RoleMembershipBO
 from core.business_objects.trial import TrialSignupBO, TrialSignupError
-from core.schemas.auth import LoginSchema, SignupSchema, TrialSignupSchema
+from core.schemas.auth import (
+    LoginSchema,
+    RoleMembershipCreateInput,
+    RoleMembershipUpdateInput,
+    SignupSchema,
+    TrialSignupSchema,
+)
 from core.schemas.base import build_error, build_response
 
 router = Router(tags=["Authentication"])
@@ -332,3 +341,85 @@ def signup(request, payload: SignupSchema):
         ),
         status=201,
     )
+
+
+@router.get("/role-memberships", auth=JWTAuthBearer())
+@require_roles("Admin", "Principal", "Owner")
+def list_role_memberships(request, role: str = None, is_active: bool = None):
+    from django.shortcuts import get_object_or_404
+
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, "user_role", "Admin")
+    data = RoleMembershipBO.list_memberships(tenant=tenant, role=role, is_active=is_active)
+    return JsonResponse(
+        build_response(data=data, tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
+
+@router.post("/role-memberships", auth=JWTAuthBearer())
+@require_roles("Admin", "Owner")
+def create_role_membership(request, payload: RoleMembershipCreateInput):
+    from django.shortcuts import get_object_or_404
+
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, "user_role", "Admin")
+    actor_id = UUID(request.user_id) if getattr(request, "user_id", None) else None
+    data = RoleMembershipBO.assign_role(
+        tenant=tenant,
+        data=payload.model_dump(exclude_none=True),
+        actor_role=actor_role,
+        actor_id=actor_id,
+    )
+    return JsonResponse(
+        build_response(data=data, tenant_id=request.tenant_id, role=actor_role),
+        status=201,
+    )
+
+
+@router.patch("/role-memberships/{int:membership_id}", auth=JWTAuthBearer())
+@require_roles("Admin", "Owner")
+def update_role_membership(request, membership_id: int, payload: RoleMembershipUpdateInput):
+    from django.shortcuts import get_object_or_404
+
+    membership = get_object_or_404(
+        PortalRoleMembership.objects.select_related("user", "tenant"),
+        pk=membership_id,
+        tenant_id=request.tenant_id,
+    )
+    actor_role = getattr(request, "user_role", "Admin")
+    actor_id = UUID(request.user_id) if getattr(request, "user_id", None) else None
+    data = RoleMembershipBO.update_membership(
+        membership=membership,
+        data=payload.model_dump(exclude_none=True),
+        actor_role=actor_role,
+        actor_id=actor_id,
+    )
+    return JsonResponse(
+        build_response(data=data, tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
+
+@router.delete("/role-memberships/{int:membership_id}", auth=JWTAuthBearer())
+@require_roles("Admin", "Owner")
+def delete_role_membership(request, membership_id: int):
+    from django.shortcuts import get_object_or_404
+
+    membership = get_object_or_404(
+        PortalRoleMembership.objects.select_related("user", "tenant"),
+        pk=membership_id,
+        tenant_id=request.tenant_id,
+    )
+    actor_role = getattr(request, "user_role", "Admin")
+    actor_id = UUID(request.user_id) if getattr(request, "user_id", None) else None
+    data = RoleMembershipBO.revoke_membership(
+        membership=membership,
+        actor_role=actor_role,
+        actor_id=actor_id,
+    )
+    return JsonResponse(
+        build_response(data=data, tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
