@@ -247,6 +247,18 @@ This log records durable architecture, security, and product decisions so later 
   - `docs/7_MEMORY_LOG.md`: Historical references sanitized.
 - **Verification:** Full repository AST/regex scan confirms 0 occurrences of `Lumina` / `LuminaEd` remain across all code and artifact files; TypeScript verification (`tsc -p frontend/tsconfig.json --noEmit`) passes with 0 errors.
 
+---
+
+### [2026-11-04] Repository Cleanliness & Developer Onboarding Overhaul
+- **Status:** Complete & Committed
+- **Scope:** 
+  1. Accepted and committed all cumulative changes across backend, frontend, design tokens, and UX prototypes into Git (`working tree clean`).
+  2. Created root [`README.md`](../README.md) establishing project architecture, visual UX directory, 15-minute quickstart, and persona test credentials cheat sheet.
+  3. Added [`docker-compose.yml`](../docker-compose.yml) for 1-command local PostgreSQL 15 setup.
+  4. Authored [`docs/ONBOARDING.md`](../docs/ONBOARDING.md) detailing prerequisites, multi-tenant PostgreSQL RLS fundamentals, end-to-end feature walkthroughs, and troubleshooting tips for new engineers.
+- **Verification:** `git status` clean; TypeScript validation (`tsc -p frontend/tsconfig.json --noEmit`) passes with 0 errors.
+
+
 ### 2026-11-05 — Prospective Parent Admissions Onboarding & Sibling Enrollment Lifecycle
 
 - **Status:** Accepted
@@ -451,6 +463,18 @@ This log records durable architecture, security, and product decisions so later 
   - `frontend/app/teacher/page.tsx`: Replaced `LuminaAI` copilot / assistant and footer copyright with `The Purple Cubby Inc.`.
   - `docs/7_MEMORY_LOG.md`: Historical references sanitized.
 - **Verification:** Full repository AST/regex scan confirms 0 occurrences of `Lumina` / `LuminaEd` remain across all code and artifact files; TypeScript verification (`tsc -p frontend/tsconfig.json --noEmit`) passes with 0 errors.
+
+---
+
+### [2026-11-04] Repository Cleanliness & Developer Onboarding Overhaul
+- **Status:** Complete & Committed
+- **Scope:** 
+  1. Accepted and committed all cumulative changes across backend, frontend, design tokens, and UX prototypes into Git (`working tree clean`).
+  2. Created root [`README.md`](../README.md) establishing project architecture, visual UX directory, 15-minute quickstart, and persona test credentials cheat sheet.
+  3. Added [`docker-compose.yml`](../docker-compose.yml) for 1-command local PostgreSQL 15 setup.
+  4. Authored [`docs/ONBOARDING.md`](../docs/ONBOARDING.md) detailing prerequisites, multi-tenant PostgreSQL RLS fundamentals, end-to-end feature walkthroughs, and troubleshooting tips for new engineers.
+- **Verification:** `git status` clean; TypeScript validation (`tsc -p frontend/tsconfig.json --noEmit`) passes with 0 errors.
+
 
 ### 2026-11-05 — Prospective Parent Admissions Onboarding & Sibling Enrollment Lifecycle
 
