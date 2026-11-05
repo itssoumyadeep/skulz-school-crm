@@ -181,3 +181,4 @@ cd frontend && npm run lint
   Ensure your JWT token includes the expected `role` and `tenant_id`. Re-generate a fresh token via `python seed_test_data.py` or use `python manage.py create_role_users`.
 - **Styling inconsistencies:**
   Never use arbitrary Tailwind colors (e.g. `bg-[#123456]`). Always use semantic tokens mapped in `frontend/styles/tokens.css` (e.g. `bg-primary`, `bg-surface`, `text-charcoal`).
+

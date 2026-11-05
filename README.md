@@ -189,3 +189,4 @@ cd frontend && npm run lint
 - **UI Design System:** [`docs/5_DESIGN.md`](docs/5_DESIGN.md)
 - **Business Object Rules:** [`docs/rule_registry.md`](docs/rule_registry.md)
 - **Developer Guidelines & Rules:** [`AGENTS.md`](AGENTS.md)
+
