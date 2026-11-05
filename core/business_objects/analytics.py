@@ -1,3 +1,5 @@
+"""Domain business logic for analytics aggregation, custom report execution, report scheduling, and HMAC-signed webhook dispatching."""
+
 import hashlib
 import hmac
 import json

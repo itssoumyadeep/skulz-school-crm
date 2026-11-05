@@ -1,3 +1,5 @@
+"""Multi-tenant PostgreSQL Row Level Security (RLS) context middleware setting app.current_tenant_id per request."""
+
 from django.db import connection
 from django.conf import settings
 from django.http import HttpResponse

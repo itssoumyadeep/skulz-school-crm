@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School CRM — Master UX Design Showcase (68 Screens)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FFF8F2',
+            surface: '#FFFFFF',
+            border: '#EAD8C7',
+            charcoal: '#121417',
+            muted: '#687787',
+            terracotta: '#E07A5F',
+            mint: '#90BE6D',
+            marigold: '#FDBA3B',
+            cerulean: '#64B5F6',
+            lilac: '#B39DDB',
+            surfaceLow: '#F9F3EC',
+            surfaceHigh: '#EDE7E0'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #FFF8F2; font-family: 'Plus Jakarta Sans', sans-serif; color: #121417; }
+    .serif-title { font-family: 'Fraunces', serif; }
+    .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 9999px; }
+  </style>
+</head>
+<body class="min-h-screen antialiased flex flex-col">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-30 bg-surface/90 backdrop-blur-md border-b border-border shadow-xs px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-terracotta text-white flex items-center justify-center shadow-sm">
+        <span class="material-symbols-outlined text-[22px]">auto_stories</span>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-lg font-bold text-charcoal tracking-tight">The Purple Cubby Inc.</h1>
+          <span class="badge bg-mint/20 text-[#2E6B1D] font-bold">100% Complete (68/68)</span>
+        </div>
+        <p class="text-xs text-muted">Warm Editorial Pedagogic UX Prototype Library</p>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="flex items-center gap-4 text-xs font-semibold">
+      <div class="hidden md:flex items-center gap-2 bg-surfaceLow px-3 py-1.5 rounded-full border border-border">
+        <span class="w-2 h-2 rounded-full bg-mint animate-pulse"></span>
+        <span class="text-charcoal font-bold">59 Approved Prototypes</span>
+      </div>
+      <div class="hidden sm:flex items-center gap-2 bg-surfaceLow px-3 py-1.5 rounded-full border border-border text-muted">
+        <span>15 Operational Domains</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+    <div class="bg-gradient-to-br from-surface to-surfaceLow border border-border rounded-3xl p-8 mb-8 shadow-sm">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-1.5 bg-terracotta/10 text-terracotta px-3 py-1 rounded-full text-xs font-bold mb-3">
+          <span class="material-symbols-outlined text-sm">palette</span> Stage 1 Visual Prototypes & Mockups
+        </div>
+        <h2 class="serif-title text-3xl md:text-4xl font-bold text-charcoal tracking-tight mb-3">
+          School CRM Experience Suite
+        </h2>
+        <p class="text-muted text-sm md:text-base leading-relaxed mb-6">
+          Explore all 68 production-grade, interactive HTML mockups (59 Master Cards + 9 Compact Lists) built with the <strong>Stitch Warm Editorial Pedagogic</strong> design tokens. Filter by category, search by screen or role, launch prototypes in preview mode or open full screens in separate browser tabs.
+        </p>
+
+        <!-- Search Bar & Filters -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <span class="material-symbols-outlined absolute left-3.5 top-3 text-muted text-lg">search</span>
+            <input type="text" id="searchInput" placeholder="Search by screen name, domain, role, or keyword..." 
+              class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-surface border border-border text-sm text-charcoal placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-terracotta/40 shadow-xs">
+          </div>
+          <button onclick="resetFilters()" class="px-4 py-2.5 rounded-2xl bg-surface hover:bg-surfaceHigh border border-border text-xs font-bold text-muted hover:text-charcoal transition-all">
+            Reset Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Domain Category Tabs -->
+      <div class="flex flex-wrap gap-2 mt-6 pt-6 border-t border-border/60" id="filterContainer">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Active Filter Summary -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="text-sm font-semibold text-charcoal flex items-center gap-2">
+        <span>Showing <span id="matchCount" class="text-terracotta font-bold">59</span> screens</span>
+        <span id="activeFilterBadge" class="badge bg-terracotta/15 text-terracotta hidden"></span>
+      </div>
+      <div class="text-xs text-muted">
+        Click any card to open in an interactive viewer, or open directly in a new tab.
+      </div>
+    </div>
+
+    <!-- Screen Cards Grid -->
+    <div id="screenGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Cards populated dynamically by JS -->
+    </div>
+  </main>
+
+  <!-- Interactive Modal Viewer -->
+  <div id="previewModal" class="fixed inset-0 z-50 bg-charcoal/70 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-surface rounded-3xl w-full max-w-6xl h-[92vh] flex flex-col shadow-2xl border border-border overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-surfaceLow border-b border-border flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-terracotta text-white flex items-center justify-center">
+            <span class="material-symbols-outlined text-sm">visibility</span>
+          </div>
+          <div>
+            <h3 id="modalTitle" class="text-base font-bold text-charcoal"></h3>
+            <p id="modalPath" class="text-xs text-muted font-mono"></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <a id="modalExternalLink" href="#" target="_blank" class="px-3 py-1.5 rounded-full bg-surface hover:bg-surfaceHigh border border-border text-xs font-semibold text-charcoal flex items-center gap-1.5 transition-all">
+            <span class="material-symbols-outlined text-sm">open_in_new</span> Fullscreen Tab
+          </a>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full hover:bg-surfaceHigh flex items-center justify-center text-muted hover:text-charcoal">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      </div>
+      <!-- Modal Iframe -->
+      <div class="flex-1 bg-neutral-100 relative">
+        <iframe id="previewIframe" src="" class="w-full h-full border-0"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-auto border-t border-border bg-surface py-6 px-6 text-center text-xs text-muted">
+    School CRM (The Purple Cubby Inc.) • Built with Stitch Design System • 59 Production Mockups Approved
+  </footer>
+
+  <script>
+    const screens = [
+      // 1. Role Dashboards
+      { title: "Admin Operational Console", domain: "Role Portals", type: "Dashboard", file: "Admin/Admin_Operational_Console.html", desc: "Central operational hub: daily admissions pipeline, fee ledger, attendance, safety queue.", icon: "admin_panel_settings", color: "bg-terracotta" },
+      { title: "Principal & Leadership Portal", domain: "Role Portals", type: "Dashboard", file: "Principal/Principal_Leadership_Portal.html", desc: "Executive dashboard: student retention, faculty coverage, compliance, and academic health.", icon: "school", color: "bg-mint" },
+      { title: "Teacher Dashboard Overview", domain: "Role Portals", type: "Dashboard", file: "Teacher/Teacher_Dashboard_Overview.html", desc: "Daily classroom schedule, roll call roster, pending grading queue, class feed.", icon: "assignment_ind", color: "bg-cerulean" },
+      { title: "Caregiver Daily Care Portal", domain: "Role Portals", type: "Dashboard", file: "Caregiver/Caregiver_Daily_Care_Portal.html", desc: "Early childhood log: feeding schedule, nap tracker, diaper/washroom log, incidents.", icon: "child_care", color: "bg-peach-apricot" },
+      { title: "Parent Multi-Child Family Portal", domain: "Role Portals", type: "Dashboard", file: "Parent/Parent_Multi_Child_Portal.html", desc: "Consolidated multi-student overview: attendance, pending invoices, report cards.", icon: "family_restroom", color: "bg-lilac" },
+      { title: "Staff Self-Service Portal", domain: "Role Portals", type: "Dashboard", file: "Staff/Staff_Self_Service.html", desc: "Personal biometric punch, leave bank balance, CRA payslips, compliance tracker.", icon: "badge", color: "bg-marigold" },
+      { title: "Vendor Partner Portal", domain: "Role Portals", type: "Dashboard", file: "Vendor/Vendor_Partner_Portal.html", desc: "Purchase order fulfillment, delivery receipt signoff, invoice upload, 3-way match.", icon: "store", color: "bg-charcoal" },
+      { title: "School Owner Portal", domain: "Role Portals", type: "Dashboard", file: "Owner/School_Owner_Portal.html", desc: "Multi-campus business intelligence: net margins, enrollment velocity, ARR realization.", icon: "insights", color: "bg-terracotta" },
+      { title: "Board Trustee Portal", domain: "Role Portals", type: "Dashboard", file: "Board/Board_Trustee_Portal.html", desc: "Fiduciary oversight: budget variance, regulatory audits, strategic risk heatmap.", icon: "account_balance", color: "bg-mint" },
+
+      // 2. Authentication & Setup
+      { title: "Multi-Tenant Login Page", domain: "Auth & Setup", type: "Page", file: "Login/Login_page.html", desc: "Tenant slug resolution, credential & MFA verification, password recovery flow.", icon: "lock", color: "bg-terracotta" },
+      { title: "School Setup Wizard", domain: "Auth & Setup", type: "Wizard", file: "new set up/School_Setup_Wizard.html", desc: "5-step onboarding: institution profile, academic terms, rooms, fee catalog, staff import.", icon: "tune", color: "bg-cerulean" },
+
+      // 3. Admissions & Enrollment
+      { title: "Parent Sign Up & Application Portal", domain: "Admissions", type: "Page", file: "Parent/Parent_Apply_Registration.html", desc: "Public parent registration and 4-step student admission intake wizard.", icon: "person_add", color: "bg-terracotta" },
+      { title: "Parent Admissions Tracker (Applicant Mode)", domain: "Admissions", type: "Dashboard", file: "Parent/Parent_Applicant_Dashboard.html", desc: "Pre-enrolled parent dashboard: 5-stage tracker, sibling switcher, and offer acceptance with photo upload.", icon: "pending_actions", color: "bg-mint" },
+      { title: "Enrollment Intake Wizard", domain: "Admissions", type: "Wizard", file: "Admissions/Enrollment_Intake_Wizard.html", desc: "Multi-step registration: student info, guardian KYC, medical disclosures, contract sign.", icon: "how_to_reg", color: "bg-mint" },
+      { title: "Admissions Pipeline Kanban", domain: "Admissions", type: "Widget", file: "Admissions/Admissions_Pipeline_Kanban.html", desc: "Visual pipeline: Inquiry -> Applied -> Assessment -> Offer -> Enrolled drag-and-drop.", icon: "view_kanban", color: "bg-terracotta" },
+      { title: "Application Detail Modal", domain: "Admissions", type: "Modal", file: "Admissions/Application_Detail_Modal.html", desc: "Document inspection, transcript verification, status transitions, internal notes.", icon: "description", color: "bg-cerulean" },
+      { title: "Assessment Schedule Modal", domain: "Admissions", type: "Modal", file: "Admissions/Assessment_Schedule_Modal.html", desc: "Calendar booking for entrance exams, interviewer allocation, room assignment.", icon: "calendar_month", color: "bg-lilac" },
+      { title: "Assessment Scoring Modal", domain: "Admissions", type: "Modal", file: "Admissions/Assessment_Scoring_Modal.html", desc: "Rubric evaluation, cognitive & behavioral scores, admission recommendations.", icon: "grade", color: "bg-marigold" },
+      { title: "Decision & Offer Letter Modal", domain: "Admissions", type: "Modal", file: "Admissions/Decision_Offer_Letter_Modal.html", desc: "Offer letter template builder, scholarship allocation, enrollment expiry timer.", icon: "mark_email_read", color: "bg-mint" },
+
+      // 4. Student Directory
+      { title: "Student Directory Widget", domain: "Students", type: "Widget", file: "Students/Student_Directory_Widget.html", desc: "Filterable student directory with avatars, grade tags, status pills, and bulk actions.", icon: "groups", color: "bg-cerulean" },
+      { title: "Student Profile Drawer", domain: "Students", type: "Drawer", file: "Students/Student_Profile_Drawer.html", desc: "360-degree student summary: demographics, emergency contacts, medical flags, fee status.", icon: "contact_page", color: "bg-lilac" },
+      { title: "Student Edit Modal", domain: "Students", type: "Modal", file: "Students/Student_Edit_Modal.html", desc: "Edit personal records, contact info, grade/section reassignment, enrollment state.", icon: "edit", color: "bg-terracotta" },
+      { title: "Emergency Contact Modal", domain: "Students", type: "Modal", file: "Students/Emergency_Contact_Modal.html", desc: "Authorized guardians, pickup privileges, verified phones, legal custody flags.", icon: "contact_phone", color: "bg-mint" },
+
+      // 5. Academics & Grading
+      { title: "Academic Calendar Widget", domain: "Academics", type: "Widget", file: "Academics/Academic_Calendar_Widget.html", desc: "Term dates, statutory holidays, examination windows, and school-wide events.", icon: "event", color: "bg-terracotta" },
+      { title: "Curriculum Planner Widget", domain: "Academics", type: "Widget", file: "Academics/Curriculum_Planner_Widget.html", desc: "Unit plan progression against ministry standards, syllabus milestones, resources.", icon: "menu_book", color: "bg-mint" },
+      { title: "Lesson Plan Modal", domain: "Academics", type: "Modal", file: "Academics/Lesson_Plan_Modal.html", desc: "Daily lesson objectives, pedagogical outcomes, homework assignments, materials.", icon: "edit_note", color: "bg-cerulean" },
+      { title: "Assignment & Homework Modal", domain: "Academics", type: "Modal", file: "Academics/Assignment_Homework_Modal.html", desc: "Create homework, rubric attachments, submission deadlines, parent visibility.", icon: "assignment", color: "bg-lilac" },
+      { title: "Exam Schedule Modal", domain: "Academics", type: "Modal", file: "Academics/Exam_Schedule_Modal.html", desc: "Examination timetable, invigilator assignments, room allocations, seating caps.", icon: "quiz", color: "bg-marigold" },
+      { title: "Marks Entry Grid Widget", domain: "Academics", type: "Widget", file: "Academics/Marks_Entry_Grid_Widget.html", desc: "Fast spreadsheet-like batch grade entry for tests with auto-sum and validation.", icon: "table_chart", color: "bg-mint" },
+      { title: "Marks Moderation Modal", domain: "Academics", type: "Modal", file: "Academics/Marks_Moderation_Modal.html", desc: "Grade distribution curves, statistical scaling, term grade lock authorization.", icon: "analytics", color: "bg-terracotta" },
+      { title: "Report Card Generator Drawer", domain: "Academics", type: "Drawer", file: "Academics/Report_Card_Generator_Drawer.html", desc: "Interactive student report card preview with teacher comments, PDF export.", icon: "picture_as_pdf", color: "bg-cerulean" },
+
+      // 6. Attendance & Leaves
+      { title: "Attendance Roster Widget", domain: "Attendance", type: "Widget", file: "Attendance/Attendance_Roster_Widget.html", desc: "Daily roll-call roster (Present, Absent, Late, Excused) with 'Mark All Present'.", icon: "fact_check", color: "bg-mint" },
+      { title: "Attendance Mark Modal", domain: "Attendance", type: "Modal", file: "Attendance/Attendance_Mark_Modal.html", desc: "Log specific absence reasons, late arrival timestamps, parent doctor notes.", icon: "schedule", color: "bg-terracotta" },
+      { title: "Attendance Override Modal", domain: "Attendance", type: "Modal", file: "Attendance/Attendance_Override_Modal.html", desc: "Retroactive audit corrections with mandatory justification and timestamp log.", icon: "history_toggle_off", color: "bg-marigold" },
+      { title: "Leave Request Modal", domain: "Attendance", type: "Modal", file: "Attendance/Leave_Request_Modal.html", desc: "Staff leave applications (medical, personal, vacation) with doc attachments.", icon: "time_to_leave", color: "bg-lilac" },
+      { title: "Leave Approval Modal", domain: "Attendance", type: "Modal", file: "Attendance/Leave_Approval_Modal.html", desc: "Principal review, department staffing conflict heatmap, approve/reject workflow.", icon: "rule", color: "bg-cerulean" },
+      { title: "Staff Coverage & Relief Widget", domain: "Attendance", type: "Widget", file: "Attendance/Staff_Coverage_Widget.html", desc: "Relief staff matching, timetable swapping, substitute assignment push notifications.", icon: "swap_horiz", color: "bg-mint" },
+
+      // 7. Health & Safeguarding
+      { title: "Health Profile Widget", domain: "Health", type: "Widget", file: "Health/Health_Profile_Widget.html", desc: "Medical alert badges, anaphylaxis alerts, dietary restrictions, emergency protocols.", icon: "medical_services", color: "bg-terracotta" },
+      { title: "Medication Administration Log Modal", domain: "Health", type: "Modal", file: "Health/Medication_Log_Modal.html", desc: "Nurse prescription log: dosage administered, timestamp, witness signoff.", icon: "medication", color: "bg-cerulean" },
+      { title: "Incident & Injury Report Modal", domain: "Health", type: "Modal", file: "Health/Incident_Report_Modal.html", desc: "Incident triage: injury location body map, severity, first aid rendered, parent alert.", icon: "personal_injury", color: "bg-marigold" },
+      { title: "Safety Drill & Evacuation Widget", domain: "Health", type: "Widget", file: "Health/Safety_Drill_Widget.html", desc: "Real-time emergency evacuation headcount roll call, missing child alerts, timer.", icon: "emergency", color: "bg-mint" },
+
+      // 8. Billing & Finance
+      { title: "Fee Structure & Schedule Modal", domain: "Billing", type: "Modal", file: "Billing/Fee_Structure_Modal.html", desc: "Tuition tiers, installment cadences (Annual, Termly, Monthly), sibling discounts.", icon: "request_quote", color: "bg-mint" },
+      { title: "Invoice Ledger Widget", domain: "Billing", type: "Widget", file: "Billing/Invoice_Ledger_Widget.html", desc: "AR ledger with aging buckets (Current, 30, 60, 90+ days), PDF batch export.", icon: "receipt_long", color: "bg-terracotta" },
+      { title: "Create Invoice Modal", domain: "Billing", type: "Modal", file: "Billing/Create_Invoice_Modal.html", desc: "Ad-hoc & batch fee invoices, line items, HST/tax exemption toggles, terms.", icon: "add_notes", color: "bg-cerulean" },
+      { title: "Discount & Waiver Modal", domain: "Billing", type: "Modal", file: "Billing/Discount_Waiver_Modal.html", desc: "Bursaries, hardship discounts, financial relief with dual Bursar/Principal signoff.", icon: "loyalty", color: "bg-lilac" },
+      { title: "Parent Online Checkout Modal", domain: "Billing", type: "Modal", file: "Billing/Parent_Checkout_Modal.html", desc: "Parent payment portal: split/full payment slider, Stripe card/Apple Pay, receipt.", icon: "credit_card", color: "bg-mint" },
+      { title: "Refund & Credit Note Modal", domain: "Billing", type: "Modal", file: "Billing/Refund_Credit_Note_Modal.html", desc: "Reversal management, Stripe charge reversal, credit note issuance, e-signature.", icon: "currency_exchange", color: "bg-marigold" },
+      { title: "Financial Reconciliation Widget", domain: "Billing", type: "Widget", file: "Billing/Financial_Reconciliation_Widget.html", desc: "Stripe payout settlement matching, bank deposit ledger, variance tracker.", icon: "account_balance_wallet", color: "bg-charcoal" },
+
+      // 9. HR & Staff Management
+      { title: "Staff Compliance & Vetting Modal", domain: "HR", type: "Modal", file: "HR/Staff_Compliance_Modal.html", desc: "Vulnerable Sector Check (VSC), teacher license status, First Aid CPR expiry flags.", icon: "verified_user", color: "bg-mint" },
+      { title: "Staff Appraisal & Review Modal", domain: "HR", type: "Modal", file: "HR/Staff_Appraisal_Modal.html", desc: "Annual educator evaluation with 4-level rubric scoring and digital signatures.", icon: "rate_review", color: "bg-terracotta" },
+      { title: "Payroll Run Widget", domain: "HR", type: "Widget", file: "HR/Payroll_Run_Widget.html", desc: "Direct deposit batch table, gross pay, deductions, statutory CRA taxes, EFT export.", icon: "payments", color: "bg-cerulean" },
+
+      // 10. Procurement & Vendors
+      { title: "Purchase Order Modal", domain: "Procurement", type: "Modal", file: "Procurement/Purchase_Order_Modal.html", desc: "Approved vendor PO creator: cost code allocation, itemized line items, approval flow.", icon: "shopping_cart_checkout", color: "bg-terracotta" },
+      { title: "Delivery Receipt Modal", domain: "Procurement", type: "Modal", file: "Procurement/Delivery_Receipt_Modal.html", desc: "Goods Received Note (GRN) logging against PO, damage inspection, receiver signature.", icon: "inventory", color: "bg-mint" },
+      { title: "Vendor Invoice Modal", domain: "Procurement", type: "Modal", file: "Procurement/Vendor_Invoice_Modal.html", desc: "Accounts payable invoice intake with OCR PDF document preview and EFT details.", icon: "receipt", color: "bg-cerulean" },
+      { title: "Three-Way Match Widget", domain: "Procurement", type: "Widget", file: "Procurement/Three_Way_Match_Widget.html", desc: "PO vs GRN vs Vendor Invoice variance validation with release authorization.", icon: "compare_arrows", color: "bg-marigold" },
+
+      // 11. Communications & Events
+      { title: "Broadcast Composer Modal", domain: "Communications", type: "Modal", file: "Comms/Broadcast_Composer_Modal.html", desc: "Multi-channel announcement composer (Email, SMS, Portal Banner) with audience cohorts.", icon: "campaign", color: "bg-terracotta" },
+      { title: "Event Calendar Widget", domain: "Events", type: "Widget", file: "Events/Event_Calendar_Widget.html", desc: "School-wide activities calendar with timeline cards and parent RSVP tracker.", icon: "event_available", color: "bg-mint" },
+      { title: "Event Permission Slip Modal", domain: "Events", type: "Modal", file: "Events/Event_Permission_Slip_Modal.html", desc: "Digital excursion waiver with medical alert notes, payment gate, parent e-signature.", icon: "draw", color: "bg-cerulean" },
+
+      // 12. Analytics & Governance
+      { title: "KPI Metrics Overview Widget", domain: "Analytics", type: "Widget", file: "Analytics/Kpi_Metrics_Overview_Widget.html", desc: "Executive metrics: enrollment trajectory vs campus capacity, retention, student-faculty ratio.", icon: "bar_chart", color: "bg-terracotta" },
+      { title: "Custom Report Builder Modal", domain: "Analytics", type: "Modal", file: "Analytics/Custom_Report_Builder_Modal.html", desc: "Modular reporting engine with data picker, column projection, XLSX/CSV/PDF export.", icon: "dashboard_customize", color: "bg-mint" },
+      { title: "Board Governance Widget", domain: "Governance", type: "Widget", file: "Board/Board_Governance_Widget.html", desc: "Trustee governance: active board motion voting cards, signed minutes repository.", icon: "gavel", color: "bg-charcoal" },
+
+      // 13. Compact List Views (High Density)
+      { title: "Admin Console (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Admin/Admin_Operational_Console_Compact.html", desc: "High-density row list: admissions pipeline, 3-way match queue, ledger waivers with inline micro-actions.", icon: "view_list", color: "bg-terracotta" },
+      { title: "Principal Portal (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Principal/Principal_Leadership_Portal_Compact.html", desc: "Dense row list: marks moderation queue, blackout leaves, safeguarding SLAs, coverage overrides.", icon: "view_list", color: "bg-mint" },
+      { title: "Teacher Dashboard (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Teacher/Teacher_Dashboard_Overview_Compact.html", desc: "Compact timeline schedule, homeroom 5A roll, grading tasks, and medical alerts in dense rows.", icon: "view_list", color: "bg-cerulean" },
+      { title: "Caregiver Care Portal (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Caregiver/Caregiver_Daily_Care_Portal_Compact.html", desc: "Toddler room daily care matrix: meals, naps, diaper checks, and health/mood notes by child.", icon: "view_list", color: "bg-peach-apricot" },
+      { title: "Parent Family Portal (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Parent/Parent_Multi_Child_Portal_Compact.html", desc: "Multi-child compact roster row cards with inline quick actions ('Pay', 'Sign Slip', 'Report Card').", icon: "view_list", color: "bg-lilac" },
+      { title: "Staff Self-Service (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Staff/Staff_Self_Service_Compact.html", desc: "Dense duty timetable, PTO/sick quota strips, payslip downloads, and vetting expiry alerts.", icon: "view_list", color: "bg-marigold" },
+      { title: "Vendor Partner Portal (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Vendor/Vendor_Partner_Portal_Compact.html", desc: "Dense procurement ledger: POs, delivery GRNs, 3-way match invoices, and EFT remittance.", icon: "view_list", color: "bg-charcoal" },
+      { title: "School Owner Portal (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Owner/School_Owner_Portal_Compact.html", desc: "Multi-campus benchmark matrix, revenue realization velocity, and high-value waiver queue.", icon: "view_list", color: "bg-terracotta" },
+      { title: "Board Trustee Portal (Compact List)", domain: "Compact Lists", type: "Dashboard", file: "Board/Board_Trustee_Portal_Compact.html", desc: "Fiduciary motions table with live voting buttons, signed minutes repository, and risk radar.", icon: "view_list", color: "bg-mint" }
+    ];
+
+    const domains = ["All", ...new Set(screens.map(s => s.domain))];
+    let selectedDomain = "All";
+    let searchQuery = "";
+
+    function renderFilters() {
+      const container = document.getElementById('filterContainer');
+      container.innerHTML = domains.map(d => {
+        const count = d === "All" ? screens.length : screens.filter(s => s.domain === d).length;
+        const isActive = d === selectedDomain;
+        return `
+          <button onclick="setDomain('${d}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+            isActive 
+              ? 'bg-terracotta text-white shadow-xs' 
+              : 'bg-surface hover:bg-surfaceHigh text-charcoal border border-border'
+          }">
+            <span>${d}</span>
+            <span class="text-[10px] opacity-80 px-1.5 py-0.2 rounded-full ${isActive ? 'bg-white/20' : 'bg-surfaceLow'}">${count}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setDomain(domain) {
+      selectedDomain = domain;
+      renderFilters();
+      renderScreens();
+    }
+
+    function resetFilters() {
+      selectedDomain = "All";
+      searchQuery = "";
+      document.getElementById('searchInput').value = "";
+      renderFilters();
+      renderScreens();
+    }
+
+    function renderScreens() {
+      const grid = document.getElementById('screenGrid');
+      const filtered = screens.filter(s => {
+        const matchesDomain = selectedDomain === "All" || s.domain === selectedDomain;
+        const matchesSearch = !searchQuery || 
+          s.title.toLowerCase().includes(searchQuery) ||
+          s.desc.toLowerCase().includes(searchQuery) ||
+          s.domain.toLowerCase().includes(searchQuery) ||
+          s.type.toLowerCase().includes(searchQuery);
+        return matchesDomain && matchesSearch;
+      });
+
+      document.getElementById('matchCount').innerText = filtered.length;
+      const activeBadge = document.getElementById('activeFilterBadge');
+      if (selectedDomain !== "All") {
+        activeBadge.innerText = selectedDomain;
+        activeBadge.classList.remove('hidden');
+      } else {
+        activeBadge.classList.add('hidden');
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center text-muted">
+            <span class="material-symbols-outlined text-4xl mb-2 text-border">search_off</span>
+            <p class="font-semibold text-charcoal">No screens match your query</p>
+            <p class="text-xs">Try searching for a different keyword or select "All".</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(s => `
+        <div class="group bg-surface border border-border hover:border-terracotta/40 rounded-3xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div>
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="w-10 h-10 rounded-2xl ${s.color} text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                <span class="material-symbols-outlined text-xl">${s.icon}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="badge bg-surfaceLow border border-border text-charcoal text-[11px]">${s.type}</span>
+                <span class="badge bg-mint/15 text-[#2E6B1D] text-[11px]">Approved</span>
+              </div>
+            </div>
+
+            <h4 class="font-bold text-base text-charcoal group-hover:text-terracotta transition-colors mb-1.5 leading-snug">
+              ${s.title}
+            </h4>
+            <p class="text-xs text-muted leading-relaxed mb-4">
+              ${s.desc}
+            </p>
+          </div>
+
+          <div class="pt-4 border-t border-border/60 flex items-center justify-between gap-2">
+            <span class="text-[11px] font-mono text-muted truncate max-w-[150px]" title="${s.file}">
+              ${s.file.split('/').pop()}
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="previewScreen('${s.title}', '${s.file}')" class="px-3 py-1.5 rounded-full bg-surfaceLow hover:bg-surfaceHigh text-charcoal text-xs font-semibold flex items-center gap-1 transition-all">
+                <span class="material-symbols-outlined text-sm">visibility</span> Preview
+              </button>
+              <a href="${s.file}" target="_blank" class="w-7 h-7 rounded-full bg-surface border border-border hover:bg-terracotta hover:text-white hover:border-terracotta flex items-center justify-center text-muted transition-all" title="Open directly in tab">
+                <span class="material-symbols-outlined text-sm">open_in_new</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function previewScreen(title, filePath) {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalPath').innerText = filePath;
+      document.getElementById('previewIframe').src = filePath;
+      document.getElementById('modalExternalLink').href = filePath;
+      document.getElementById('previewModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('previewModal').classList.add('hidden');
+      document.getElementById('previewIframe').src = "";
+    }
+
+    // Keyboard ESC to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Search input listener
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      renderScreens();
+    });
+
+    // Initialize
+    renderFilters();
+    renderScreens();
+  </script>
+</body>
+</html>

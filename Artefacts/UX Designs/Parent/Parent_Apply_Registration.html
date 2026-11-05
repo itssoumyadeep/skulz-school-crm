@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Student Admission — Parent Application Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FFF8F2',
+            surface: '#FFFFFF',
+            border: '#EAD8C7',
+            charcoal: '#121417',
+            muted: '#687787',
+            terracotta: '#E07A5F',
+            mint: '#90BE6D',
+            marigold: '#FDBA3B',
+            cerulean: '#64B5F6',
+            lilac: '#B39DDB',
+            surfaceLow: '#F9F3EC',
+            surfaceHigh: '#EDE7E1'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #FFF8F2; font-family: 'Plus Jakarta Sans', sans-serif; color: #121417; }
+    .serif-title { font-family: 'Fraunces', serif; }
+    .step-active { background-color: #E07A5F; color: #FFFFFF; border-color: #E07A5F; }
+    .step-done { background-color: #90BE6D; color: #FFFFFF; border-color: #90BE6D; }
+    .step-pending { background-color: #FFFFFF; color: #687787; border-color: #EAD8C7; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+  <!-- Top Admissions Header -->
+  <header class="bg-surface/90 backdrop-blur-md border-b border-border sticky top-0 z-30 px-6 py-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-terracotta text-white flex items-center justify-center shadow-xs">
+          <span class="material-symbols-outlined text-[22px]">school</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold text-charcoal tracking-tight font-serif">Maple Leaf Academy</h1>
+            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-mint/20 text-[#2E6B1D] border border-mint/30">
+              Admissions Open 2026–2027
+            </span>
+          </div>
+          <p class="text-xs text-muted">Online Student Application & Family Onboarding</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs">
+        <span class="text-muted hidden sm:inline">Already started an application?</span>
+        <a href="../Login/Login_page.html" class="px-4 py-2 rounded-full bg-surface hover:bg-surfaceHigh border border-border text-charcoal font-semibold transition-all">
+          Sign In to Portal
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero & Progress Stepper -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
+    <div class="bg-surface border border-border rounded-3xl p-6 sm:p-8 shadow-xs mb-8">
+      
+      <!-- Stepper Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-border/60">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-terracotta/10 text-terracotta text-xs font-bold mb-2">
+            <span class="material-symbols-outlined text-sm">person_add</span> Parent Registration & Student Application
+          </div>
+          <h2 class="serif-title text-2xl sm:text-3xl font-bold text-charcoal">
+            Welcome to the Admissions Portal
+          </h2>
+          <p class="text-sm text-muted mt-1">
+            Create your parent profile and complete your child's application in 4 simple steps.
+          </p>
+        </div>
+
+        <!-- Live Step Indicator -->
+        <div class="flex items-center gap-2 bg-surfaceLow px-4 py-2 rounded-2xl border border-border self-start md:self-auto">
+          <span class="text-xs text-muted">Current Step:</span>
+          <span id="stepCounterBadge" class="text-xs font-bold text-terracotta">Step 1 of 4</span>
+        </div>
+      </div>
+
+      <!-- 4-Step Visual Stepper Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+        <div id="stepTab-1" class="p-3 rounded-2xl border-2 border-terracotta bg-terracotta/5 flex items-center gap-3 transition-all">
+          <div id="stepNum-1" class="w-8 h-8 rounded-full bg-terracotta text-white font-bold text-xs flex items-center justify-center">1</div>
+          <div class="min-w-0">
+            <p class="text-[10px] uppercase font-bold text-terracotta">Step 1</p>
+            <p class="text-xs font-bold text-charcoal truncate">Parent Account</p>
+          </div>
+        </div>
+
+        <div id="stepTab-2" class="p-3 rounded-2xl border border-border bg-surface flex items-center gap-3 transition-all opacity-60">
+          <div id="stepNum-2" class="w-8 h-8 rounded-full bg-surfaceHigh text-muted font-bold text-xs flex items-center justify-center">2</div>
+          <div class="min-w-0">
+            <p class="text-[10px] uppercase font-semibold text-muted">Step 2</p>
+            <p class="text-xs font-bold text-charcoal truncate">Student Profile</p>
+          </div>
+        </div>
+
+        <div id="stepTab-3" class="p-3 rounded-2xl border border-border bg-surface flex items-center gap-3 transition-all opacity-60">
+          <div id="stepNum-3" class="w-8 h-8 rounded-full bg-surfaceHigh text-muted font-bold text-xs flex items-center justify-center">3</div>
+          <div class="min-w-0">
+            <p class="text-[10px] uppercase font-semibold text-muted">Step 3</p>
+            <p class="text-xs font-bold text-charcoal truncate">Health & Emergency</p>
+          </div>
+        </div>
+
+        <div id="stepTab-4" class="p-3 rounded-2xl border border-border bg-surface flex items-center gap-3 transition-all opacity-60">
+          <div id="stepNum-4" class="w-8 h-8 rounded-full bg-surfaceHigh text-muted font-bold text-xs flex items-center justify-center">4</div>
+          <div class="min-w-0">
+            <p class="text-[10px] uppercase font-semibold text-muted">Step 4</p>
+            <p class="text-xs font-bold text-charcoal truncate">Docs & Submit</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Application Form Multi-Step Container -->
+    <form id="admissionsForm" onsubmit="handleFormSubmit(event)" class="bg-surface border border-border rounded-3xl p-6 sm:p-10 shadow-xs mb-8">
+
+      <!-- ================= STEP 1: PARENT ACCOUNT SETUP ================= -->
+      <section id="stepSection-1" class="space-y-6">
+        <div class="border-b border-border/60 pb-4">
+          <h3 class="serif-title text-xl font-bold text-charcoal">Primary Parent / Guardian Profile</h3>
+          <p class="text-xs text-muted mt-1">This will be your parent login to track application status, receive offer letters, and pay tuition.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Parent / Guardian Full Name *</label>
+            <input type="text" id="parentName" required placeholder="e.g. Elena Lin" value="Elena Lin"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Relationship to Student *</label>
+            <select id="parentRel" class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+              <option value="Mother" selected>Mother</option>
+              <option value="Father">Father</option>
+              <option value="Legal Guardian">Legal Guardian</option>
+              <option value="Step-Parent">Step-Parent</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Parent Email (Username for Login) *</label>
+            <input type="email" id="parentEmail" required placeholder="elena.lin@example.com" value="elena.lin@example.com"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+            <span class="text-[11px] text-muted mt-1 block">Your application updates and admission offers will be sent here.</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Mobile Phone (For Emergency SMS) *</label>
+            <input type="tel" id="parentPhone" required placeholder="+1 (416) 555-0192" value="+1 (416) 555-0192"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Residential Street Address *</label>
+            <input type="text" id="parentAddress" required placeholder="742 Evergreen Terrace, Toronto, ON M4B 1B3" value="742 Evergreen Terrace, Toronto, ON"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Create Portal Password *</label>
+            <input type="password" id="parentPassword" required value="SecurePass2026!"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+            <span class="text-[11px] text-muted mt-1 block">Min. 8 characters with at least one letter and number.</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Confirm Password *</label>
+            <input type="password" id="parentPasswordConfirm" required value="SecurePass2026!"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STEP 2: STUDENT PROFILE ================= -->
+      <section id="stepSection-2" class="space-y-6 hidden">
+        <div class="border-b border-border/60 pb-4">
+          <h3 class="serif-title text-xl font-bold text-charcoal">Child (Student) Information</h3>
+          <p class="text-xs text-muted mt-1">Please provide accurate legal identity details matching your child's birth certificate.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Child's First Name *</label>
+            <input type="text" id="studentFirst" required placeholder="e.g. Maya" value="Maya"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Child's Last Name *</label>
+            <input type="text" id="studentLast" required placeholder="e.g. Lin-Vance" value="Lin-Vance"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Date of Birth *</label>
+            <input type="date" id="studentDob" required value="2022-04-14"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Gender *</label>
+            <select id="studentGender" class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+              <option value="Female" selected>Female</option>
+              <option value="Male">Male</option>
+              <option value="Other">Non-Binary / Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Grade Level Applying For *</label>
+            <select id="studentGrade" class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+              <option value="Toddler (18m-2.5y)">Toddler (18m - 2.5y)</option>
+              <option value="Pre-K (Junior Kindergarten)" selected>Pre-K (Junior Kindergarten)</option>
+              <option value="Senior Kindergarten">Senior Kindergarten</option>
+              <option value="Grade 1">Grade 1</option>
+              <option value="Grade 2">Grade 2</option>
+              <option value="Grade 3">Grade 3</option>
+              <option value="Grade 4">Grade 4</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Desired Start Term *</label>
+            <select id="studentTerm" class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+              <option value="Fall Term 2026" selected>Fall Term (September 2026)</option>
+              <option value="Winter Term 2027">Winter Term (January 2027)</option>
+            </select>
+          </div>
+
+          <!-- Sibling Discount Checkbox -->
+          <div class="sm:col-span-2 bg-marigold/10 border border-marigold/30 rounded-2xl p-4 flex items-start gap-3">
+            <input type="checkbox" id="siblingDiscountCheck" checked class="mt-1 w-4 h-4 rounded text-terracotta accent-terracotta">
+            <div>
+              <label for="siblingDiscountCheck" class="text-xs font-bold text-charcoal cursor-pointer">
+                Sibling Enrollment Discount (-10% to -15%)
+              </label>
+              <p class="text-xs text-muted mt-0.5">
+                Check this if you already have an older child attending Maple Leaf Academy (e.g. Leo Lin-Vance). Our Bursar will verify and automatically attach the sibling discount to your tuition schedule.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STEP 3: HEALTH & EMERGENCY ================= -->
+      <section id="stepSection-3" class="space-y-6 hidden">
+        <div class="border-b border-border/60 pb-4">
+          <h3 class="serif-title text-xl font-bold text-charcoal">Medical, Dietary & Emergency Contacts</h3>
+          <p class="text-xs text-muted mt-1">Ontario Sabrina's Law & Child Care Safety Compliance requires verified emergency contacts.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Secondary Emergency Contact Name *</label>
+            <input type="text" id="emName" required placeholder="e.g. Robert Vance (Father)" value="Robert Vance"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Emergency Contact Phone *</label>
+            <input type="tel" id="emPhone" required placeholder="+1 (416) 555-0988" value="+1 (416) 555-0988"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Authorized for Student Pickup? *</label>
+            <select id="pickupAuth" class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+              <option value="Yes" selected>Yes, authorized for afternoon pickup</option>
+              <option value="Emergency Only">Emergency pickup only</option>
+              <option value="No">No, emergency contact only</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Family Physician / Pediatrician</label>
+            <input type="text" id="physician" placeholder="Dr. Sarah Campbell (416-555-3200)" value="Dr. Sarah Campbell (416-555-3200)"
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-charcoal mb-1.5">Allergies & Medical Alerts (Sabrina's Law / Anaphylaxis)</label>
+            <textarea id="medAlerts" rows="2" placeholder="e.g. Mild dairy intolerance. No known anaphylactic allergies. Carries no EpiPen."
+              class="w-full px-4 py-2.5 rounded-2xl bg-surfaceLow border border-border text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/40">Mild peanut sensitivity (non-airborne). No EpiPen required at this stage.</textarea>
+          </div>
+
+          <div class="sm:col-span-2 bg-surfaceLow border border-border rounded-2xl p-4 flex items-start gap-3">
+            <input type="checkbox" id="medConsent" checked required class="mt-1 w-4 h-4 rounded text-terracotta accent-terracotta">
+            <div>
+              <label for="medConsent" class="text-xs font-bold text-charcoal cursor-pointer">
+                Medical & First Aid Authorization *
+              </label>
+              <p class="text-xs text-muted mt-0.5">
+                I authorize school staff to administer urgent first aid or dispatch paramedics if an immediate medical crisis occurs during school hours.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STEP 4: DOCUMENTS & TERMS ================= -->
+      <section id="stepSection-4" class="space-y-6 hidden">
+        <div class="border-b border-border/60 pb-4">
+          <h3 class="serif-title text-xl font-bold text-charcoal">Required Documents & Fee Agreement</h3>
+          <p class="text-xs text-muted mt-1">Upload PDF or JPG records (up to 10MB each). Documents are securely reviewed by our Admissions Team.</p>
+        </div>
+
+        <!-- Document Upload Cards -->
+        <div class="space-y-3">
+          <div class="p-4 rounded-2xl bg-surfaceLow border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-cerulean/20 text-cerulean flex items-center justify-center">
+                <span class="material-symbols-outlined text-lg">badge</span>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-charcoal">Child Birth Certificate / Passport *</p>
+                <p class="text-[11px] text-muted">Legal proof of age and Canadian citizenship / residency</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-mono text-[#2E6B1D] bg-mint/20 px-2.5 py-1 rounded-full font-bold">maya_birth_cert.pdf</span>
+              <button type="button" class="text-xs font-semibold text-terracotta hover:underline">Replace</button>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-surfaceLow border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-mint/20 text-mint flex items-center justify-center">
+                <span class="material-symbols-outlined text-lg">vaccines</span>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-charcoal">Immunization Yellow Card / Exemption *</p>
+                <p class="text-[11px] text-muted">Ontario Public Health vaccine schedule record</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-mono text-[#2E6B1D] bg-mint/20 px-2.5 py-1 rounded-full font-bold">immunization_record.pdf</span>
+              <button type="button" class="text-xs font-semibold text-terracotta hover:underline">Replace</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fee Schedule Summary Box -->
+        <div class="bg-surfaceLow border border-border rounded-2xl p-5 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-muted">Standard Junior Kindergarten Tuition:</span>
+            <span class="font-bold text-charcoal">$12,400.00 / year</span>
+          </div>
+          <div class="flex items-center justify-between text-xs text-[#2E6B1D]">
+            <span>Sibling Enrollment Discount (-15%):</span>
+            <span class="font-bold">-$1,860.00</span>
+          </div>
+          <div class="h-px bg-border/60 my-2"></div>
+          <div class="flex items-center justify-between text-sm font-bold text-charcoal">
+            <span>Estimated Annual Tuition (Post-Discount):</span>
+            <span class="text-terracotta">$10,540.00 / year</span>
+          </div>
+          <p class="text-[11px] text-muted pt-1">
+            * Formal invoice schedule and deposit payment will be issued upon admission offer acceptance.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="flex items-start gap-2 text-xs text-charcoal cursor-pointer">
+            <input type="checkbox" required checked class="mt-0.5 accent-terracotta">
+            <span>I certify that all information submitted is accurate and true to the best of my knowledge.</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bottom Step Navigation Buttons -->
+      <div class="pt-8 border-t border-border/60 flex items-center justify-between gap-4">
+        <button type="button" id="prevBtn" onclick="prevStep()" class="px-5 py-2.5 rounded-full bg-surface hover:bg-surfaceHigh border border-border text-xs font-bold text-charcoal flex items-center gap-1.5 transition-all opacity-0 pointer-events-none">
+          <span class="material-symbols-outlined text-sm">arrow_back</span> Previous
+        </button>
+
+        <div class="flex items-center gap-3">
+          <button type="button" onclick="saveDraft()" class="px-4 py-2.5 rounded-full bg-surface hover:bg-surfaceHigh border border-border text-xs font-bold text-muted hover:text-charcoal transition-all">
+            Save as Draft
+          </button>
+          <button type="button" id="nextBtn" onclick="nextStep()" class="px-6 py-2.5 rounded-full bg-terracotta hover:bg-[#c96247] text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95">
+            Next: Student Profile <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </button>
+          <button type="submit" id="submitBtn" class="px-7 py-2.5 rounded-full bg-[#2E6B1D] hover:bg-[#255717] text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 hidden">
+            <span class="material-symbols-outlined text-sm">check_circle</span> Submit Application
+          </button>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <!-- Submission Success Modal -->
+  <div id="successModal" class="fixed inset-0 z-50 bg-charcoal/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-surface rounded-3xl p-8 max-w-lg w-full border border-border shadow-2xl text-center">
+      <div class="w-16 h-16 rounded-full bg-mint/20 text-[#2E6B1D] flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-3xl">celebration</span>
+      </div>
+      <h3 class="serif-title text-2xl font-bold text-charcoal mb-2">Application Submitted!</h3>
+      <p class="text-xs text-muted mb-4">
+        Your application for <strong class="text-charcoal">Maya Lin-Vance</strong> has been received by Maple Leaf Academy.
+      </p>
+      
+      <div class="bg-surfaceLow border border-border rounded-2xl p-4 text-left space-y-1.5 mb-6 text-xs">
+        <div class="flex justify-between">
+          <span class="text-muted">Application Ref ID:</span>
+          <span class="font-mono font-bold text-charcoal">APP-2026-0881</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-muted">Assigned Student Number:</span>
+          <span class="font-mono font-bold text-terracotta">STU-2026-0042</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-muted">Parent Username:</span>
+          <span class="font-mono font-bold text-charcoal">elena.lin@example.com</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-muted">Initial Status:</span>
+          <span class="badge bg-cerulean/20 text-[#1E88E5] font-bold">Under Review</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a href="Parent_Applicant_Dashboard.html" class="flex-1 py-3 rounded-full bg-terracotta hover:bg-[#c96247] text-white text-xs font-bold transition-all shadow-sm">
+          Open Parent Admissions Hub &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="border-t border-border bg-surface py-6 px-6 text-center text-xs text-muted">
+    Maple Leaf Academy Admissions • Powered by LuminaEd School CRM • Encrypted &amp; PIPEDA Compliant
+  </footer>
+
+  <script>
+    let currentStep = 1;
+    const totalSteps = 4;
+
+    const stepTitles = [
+      "Next: Student Profile",
+      "Next: Health & Emergency",
+      "Next: Docs & Submit",
+      "Submit Application"
+    ];
+
+    function updateStepperUI() {
+      // Toggle sections
+      for (let i = 1; i <= totalSteps; i++) {
+        const sec = document.getElementById(`stepSection-${i}`);
+        const tab = document.getElementById(`stepTab-${i}`);
+        const num = document.getElementById(`stepNum-${i}`);
+
+        if (i === currentStep) {
+          sec.classList.remove('hidden');
+          tab.classList.remove('opacity-60', 'bg-surface', 'border-border');
+          tab.classList.add('border-2', 'border-terracotta', 'bg-terracotta/5');
+          num.className = "w-8 h-8 rounded-full bg-terracotta text-white font-bold text-xs flex items-center justify-center";
+        } else if (i < currentStep) {
+          sec.classList.add('hidden');
+          tab.classList.remove('opacity-60', 'bg-terracotta/5', 'border-terracotta');
+          tab.classList.add('bg-surface', 'border-mint/50');
+          num.className = "w-8 h-8 rounded-full bg-mint text-white font-bold text-xs flex items-center justify-center";
+          num.innerHTML = `<span class="material-symbols-outlined text-sm font-bold">check</span>`;
+        } else {
+          sec.classList.add('hidden');
+          tab.classList.add('opacity-60', 'bg-surface', 'border-border');
+          tab.classList.remove('border-2', 'border-terracotta', 'bg-terracotta/5', 'border-mint/50');
+          num.className = "w-8 h-8 rounded-full bg-surfaceHigh text-muted font-bold text-xs flex items-center justify-center";
+          num.innerText = i;
+        }
+      }
+
+      // Buttons
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const submitBtn = document.getElementById('submitBtn');
+
+      if (currentStep === 1) {
+        prevBtn.classList.add('opacity-0', 'pointer-events-none');
+      } else {
+        prevBtn.classList.remove('opacity-0', 'pointer-events-none');
+      }
+
+      if (currentStep === totalSteps) {
+        nextBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+      } else {
+        nextBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+        nextBtn.innerHTML = `${stepTitles[currentStep - 1]} <span class="material-symbols-outlined text-sm">arrow_forward</span>`;
+      }
+
+      document.getElementById('stepCounterBadge').innerText = `Step ${currentStep} of ${totalSteps}`;
+    }
+
+    function nextStep() {
+      if (currentStep < totalSteps) {
+        currentStep++;
+        updateStepperUI();
+        window.scrollTo({ top: 180, behavior: 'smooth' });
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 1) {
+        currentStep--;
+        updateStepperUI();
+        window.scrollTo({ top: 180, behavior: 'smooth' });
+      }
+    }
+
+    function saveDraft() {
+      alert("Draft saved successfully! You can resume your application anytime using your parent login.");
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      document.getElementById('successModal').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marks Entry Grid Widget — School CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FFF8F2',
+            surface: '#FFFFFF',
+            border: '#EAD8C7',
+            charcoal: '#121417',
+            muted: '#687787',
+            terracotta: '#E07A5F',
+            mint: '#90BE6D',
+            marigold: '#FDBA3B',
+            cerulean: '#64B5F6',
+            lilac: '#B39DDB',
+            cream: '#FAF0E6',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['Fraunces', 'serif'],
+          },
+          boxShadow: {
+            warm: '0 4px 20px -2px rgba(18, 20, 23, 0.05), 0 2px 6px -1px rgba(18, 20, 23, 0.03)',
+            'warm-lg': '0 20px 40px -6px rgba(18, 20, 23, 0.12), 0 8px 16px -4px rgba(18, 20, 23, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      display: inline-flex;
+      vertical-align: middle;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    input:focus {
+      outline: none;
+      border-color: #E07A5F;
+      background-color: #FFFFFF;
+      box-shadow: 0 0 0 2px rgba(224, 122, 95, 0.2);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FFF8F2;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #EAD8C7;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen antialiased flex flex-col">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-border px-6 py-3.5 shadow-sm">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="../Admin/Admin_Operational_Console.html" class="flex items-center gap-2 group text-muted hover:text-charcoal transition-colors">
+          <div class="w-8 h-8 rounded-full bg-cream border border-border flex items-center justify-center group-hover:border-terracotta transition-colors">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+          </div>
+          <span class="text-xs font-semibold tracking-wide uppercase">Academics</span>
+        </a>
+        <div class="h-4 w-px bg-border"></div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-terracotta text-2xl">table_chart</span>
+          <h1 class="text-lg font-bold text-charcoal tracking-tight font-serif">Batch Marks &amp; Assessment Grid</h1>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-cream text-charcoal font-bold border border-border">Grade 5 Earth Science</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="Marks_Moderation_Modal.html" class="px-3.5 py-2 text-xs font-bold text-charcoal bg-white border border-border rounded-xl hover:bg-cream transition-all flex items-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-base text-muted">tune</span>
+          Open Moderation &amp; Curving
+        </a>
+        <a href="Report_Card_Generator_Drawer.html" class="px-4 py-2 text-xs font-bold text-white bg-terracotta rounded-xl hover:bg-terracotta/90 transition-all flex items-center gap-1.5 shadow-warm">
+          <span class="material-symbols-outlined text-base">print</span>
+          Generate Report Cards
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid View -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- Assessment Selector & Live Stats Bar -->
+    <div class="bg-white border border-border rounded-2xl p-4 shadow-warm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-muted mb-1">Assessment Task</label>
+          <select class="px-3 py-1.5 text-xs bg-canvas border border-border rounded-xl font-bold text-charcoal">
+            <option selected>Unit 2 Mid-Term: Atmospheric Barometer Report (Max 50 pts &bull; 15%)</option>
+            <option>Unit 1 Test: Plate Tectonics (Max 100 pts &bull; 20%)</option>
+            <option>Term 1 Cumulative Exam (Max 100 pts &bull; 40%)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-muted mb-1">Class Section</label>
+          <select class="px-3 py-1.5 text-xs bg-canvas border border-border rounded-xl font-bold text-charcoal">
+            <option selected>Grade 5B — Homeroom 204 (25 Enrolled)</option>
+            <option>Grade 5A — Homeroom 202 (24 Enrolled)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Real-Time Gradebook Cohort Statistics -->
+      <div class="grid grid-cols-4 gap-2 sm:gap-4 bg-canvas p-2.5 rounded-xl border border-border text-center text-xs">
+        <div class="px-2">
+          <span class="text-[10px] text-muted uppercase font-bold block">Class Average</span>
+          <span id="statAverage" class="text-base font-extrabold font-serif text-charcoal">86.4%</span>
+        </div>
+        <div class="px-2 border-l border-border/80">
+          <span class="text-[10px] text-muted uppercase font-bold block">Median</span>
+          <span id="statMedian" class="text-base font-extrabold font-serif text-charcoal">88.0%</span>
+        </div>
+        <div class="px-2 border-l border-border/80">
+          <span class="text-[10px] text-muted uppercase font-bold block">High Score</span>
+          <span id="statHigh" class="text-base font-extrabold font-serif text-mint">49 / 50</span>
+        </div>
+        <div class="px-2 border-l border-border/80">
+          <span class="text-[10px] text-muted uppercase font-bold block">Recorded</span>
+          <span id="statCount" class="text-base font-extrabold font-serif text-charcoal">5 / 5 (100%)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spreadsheet Data Grid Table Card -->
+    <div class="bg-white border border-border rounded-2xl shadow-warm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-canvas/80 border-b border-border text-[11px] font-bold uppercase tracking-wider text-muted">
+            <tr>
+              <th class="py-3.5 px-4 w-12">#</th>
+              <th class="py-3.5 px-3 min-w-[200px]">Student Name &amp; ID</th>
+              <th class="py-3.5 px-3 w-32">Raw Score (/ 50)</th>
+              <th class="py-3.5 px-3 w-28 text-center">Calculated %</th>
+              <th class="py-3.5 px-3 w-24 text-center">Grade Pill</th>
+              <th class="py-3.5 px-3 w-40">Status Toggle</th>
+              <th class="py-3.5 px-4 min-w-[300px]">Teacher Observational Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="marksGridBody" class="divide-y divide-border">
+            <!-- Row 1: Sophia Chen -->
+            <tr class="hover:bg-canvas/30 transition-colors">
+              <td class="py-3 px-4 font-mono text-muted">1</td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-terracotta text-white flex items-center justify-center font-serif text-xs font-bold shrink-0">SC</div>
+                  <div>
+                    <span class="font-bold text-charcoal block">Sophia Claire Chen</span>
+                    <span class="text-[10px] text-muted font-mono">#STU-2026-0891</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-3">
+                <input type="number" min="0" max="50" step="0.5" value="48" oninput="recalcRow(this)" class="w-20 px-2.5 py-1.5 text-xs font-bold text-charcoal bg-canvas border border-border rounded-lg text-center">
+              </td>
+              <td class="py-3 px-3 text-center font-bold text-charcoal row-pct">96.0%</td>
+              <td class="py-3 px-3 text-center">
+                <span class="px-2.5 py-1 rounded-full bg-mint/20 text-charcoal text-[11px] font-extrabold border border-mint/40 row-grade">A+</span>
+              </td>
+              <td class="py-3 px-3">
+                <select class="px-2 py-1 text-xs bg-canvas border border-border rounded-lg font-semibold text-charcoal">
+                  <option selected>Submitted</option>
+                  <option>Late Submission</option>
+                  <option>Exempt / Excused</option>
+                  <option>Absent</option>
+                </select>
+              </td>
+              <td class="py-3 px-4">
+                <input type="text" value="Flawless calibration analysis; excellent graph precision." class="w-full px-2.5 py-1.5 text-xs bg-canvas border border-border rounded-lg text-charcoal">
+              </td>
+            </tr>
+
+            <!-- Row 2: Lucas Chen -->
+            <tr class="hover:bg-canvas/30 transition-colors">
+              <td class="py-3 px-4 font-mono text-muted">2</td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-cerulean/20 text-charcoal flex items-center justify-center font-serif text-xs font-bold shrink-0">LC</div>
+                  <div>
+                    <span class="font-bold text-charcoal block">Lucas Chen</span>
+                    <span class="text-[10px] text-muted font-mono">#STU-2024-0034</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-3">
+                <input type="number" min="0" max="50" step="0.5" value="46" oninput="recalcRow(this)" class="w-20 px-2.5 py-1.5 text-xs font-bold text-charcoal bg-canvas border border-border rounded-lg text-center">
+              </td>
+              <td class="py-3 px-3 text-center font-bold text-charcoal row-pct">92.0%</td>
+              <td class="py-3 px-3 text-center">
+                <span class="px-2.5 py-1 rounded-full bg-mint/20 text-charcoal text-[11px] font-extrabold border border-mint/40 row-grade">A</span>
+              </td>
+              <td class="py-3 px-3">
+                <select class="px-2 py-1 text-xs bg-canvas border border-border rounded-lg font-semibold text-charcoal">
+                  <option selected>Submitted</option>
+                  <option>Late</option>
+                  <option>Exempt</option>
+                  <option>Absent</option>
+                </select>
+              </td>
+              <td class="py-3 px-4">
+                <input type="text" value="Good isobar mapping; slight error on millibar conversion." class="w-full px-2.5 py-1.5 text-xs bg-canvas border border-border rounded-lg text-charcoal">
+              </td>
+            </tr>
+
+            <!-- Row 3: Noah Kim -->
+            <tr class="hover:bg-canvas/30 transition-colors">
+              <td class="py-3 px-4 font-mono text-muted">3</td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-marigold/20 text-charcoal flex items-center justify-center font-serif text-xs font-bold shrink-0">NK</div>
+                  <div>
+                    <span class="font-bold text-charcoal block">Noah Kim</span>
+                    <span class="text-[10px] text-muted font-mono">#STU-2026-0504</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-3">
+                <input type="number" min="0" max="50" step="0.5" value="40" oninput="recalcRow(this)" class="w-20 px-2.5 py-1.5 text-xs font-bold text-charcoal bg-canvas border border-border rounded-lg text-center">
+              </td>
+              <td class="py-3 px-3 text-center font-bold text-charcoal row-pct">80.0%</td>
+              <td class="py-3 px-3 text-center">
+                <span class="px-2.5 py-1 rounded-full bg-cerulean/20 text-charcoal text-[11px] font-extrabold border border-cerulean/40 row-grade">B-</span>
+              </td>
+              <td class="py-3 px-3">
+                <select class="px-2 py-1 text-xs bg-canvas border border-border rounded-lg font-semibold text-charcoal">
+                  <option selected>Submitted</option>
+                  <option>Late</option>
+                  <option>Exempt</option>
+                  <option>Absent</option>
+                </select>
+              </td>
+              <td class="py-3 px-4">
+                <input type="text" value="Completed with lab partner support; needs revision on altitude effect." class="w-full px-2.5 py-1.5 text-xs bg-canvas border border-border rounded-lg text-charcoal">
+              </td>
+            </tr>
+
+            <!-- Row 4: Chloe Dubois -->
+            <tr class="hover:bg-canvas/30 transition-colors">
+              <td class="py-3 px-4 font-mono text-muted">4</td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-lilac/30 text-charcoal flex items-center justify-center font-serif text-xs font-bold shrink-0">CD</div>
+                  <div>
+                    <span class="font-bold text-charcoal block">Chloe Dubois</span>
+                    <span class="text-[10px] text-muted font-mono">#STU-2026-0650</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-3">
+                <input type="number" min="0" max="50" step="0.5" value="49" oninput="recalcRow(this)" class="w-20 px-2.5 py-1.5 text-xs font-bold text-charcoal bg-canvas border border-border rounded-lg text-center">
+              </td>
+              <td class="py-3 px-3 text-center font-bold text-charcoal row-pct">98.0%</td>
+              <td class="py-3 px-3 text-center">
+                <span class="px-2.5 py-1 rounded-full bg-mint/20 text-charcoal text-[11px] font-extrabold border border-mint/40 row-grade">A+</span>
+              </td>
+              <td class="py-3 px-3">
+                <select class="px-2 py-1 text-xs bg-canvas border border-border rounded-lg font-semibold text-charcoal">
+                  <option selected>Submitted</option>
+                  <option>Late</option>
+                  <option>Exempt</option>
+                  <option>Absent</option>
+                </select>
+              </td>
+              <td class="py-3 px-4">
+                <input type="text" value="Exemplary synthesis and thorough error analysis." class="w-full px-2.5 py-1.5 text-xs bg-canvas border border-border rounded-lg text-charcoal">
+              </td>
+            </tr>
+
+            <!-- Row 5: Julian Thorne -->
+            <tr class="hover:bg-canvas/30 transition-colors">
+              <td class="py-3 px-4 font-mono text-muted">5</td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-canvas text-charcoal border border-border flex items-center justify-center font-serif text-xs font-bold shrink-0">JT</div>
+                  <div>
+                    <span class="font-bold text-charcoal block">Julian Thorne</span>
+                    <span class="text-[10px] text-muted font-mono">#STU-2026-0103</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-3">
+                <input type="number" min="0" max="50" step="0.5" value="33" oninput="recalcRow(this)" class="w-20 px-2.5 py-1.5 text-xs font-bold text-charcoal bg-canvas border border-border rounded-lg text-center">
+              </td>
+              <td class="py-3 px-3 text-center font-bold text-charcoal row-pct">66.0%</td>
+              <td class="py-3 px-3 text-center">
+                <span class="px-2.5 py-1 rounded-full bg-marigold/20 text-charcoal text-[11px] font-extrabold border border-marigold/40 row-grade">C</span>
+              </td>
+              <td class="py-3 px-3">
+                <select class="px-2 py-1 text-xs bg-canvas border border-border rounded-lg font-semibold text-charcoal">
+                  <option selected>Submitted</option>
+                  <option>Late</option>
+                  <option>Exempt</option>
+                  <option>Absent</option>
+                </select>
+              </td>
+              <td class="py-3 px-4">
+                <input type="text" value="Missed Day 3 data log. Recommended after-school revision clinic." class="w-full px-2.5 py-1.5 text-xs bg-canvas border border-border rounded-lg text-charcoal">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Action Footer Strip -->
+      <div class="p-4 border-t border-border bg-canvas/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 text-mint font-semibold">
+          <span class="material-symbols-outlined text-sm fill">cloud_done</span>
+          <span>Autosave active &bull; Last saved 12 seconds ago</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="saveDraftMarks()" class="px-4 py-2 rounded-xl bg-white border border-border text-charcoal font-bold hover:bg-cream transition-all shadow-sm">
+            Save Draft
+          </button>
+          <button type="button" onclick="publishOfficialMarks()" class="px-6 py-2 rounded-xl bg-terracotta text-white font-extrabold hover:bg-terracotta/90 transition-all flex items-center gap-1.5 shadow-warm">
+            <span class="material-symbols-outlined text-sm">lock</span>
+            Commit &amp; Publish Term Marks
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function recalcRow(input) {
+      const val = parseFloat(input.value) || 0;
+      const pct = (val / 50) * 100;
+      const tr = input.closest('tr');
+      const pctCell = tr.querySelector('.row-pct');
+      const gradePill = tr.querySelector('.row-grade');
+
+      pctCell.textContent = `${pct.toFixed(1)}%`;
+
+      if (pct >= 95) {
+        gradePill.textContent = 'A+';
+        gradePill.className = "px-2.5 py-1 rounded-full bg-mint/20 text-charcoal text-[11px] font-extrabold border border-mint/40 row-grade";
+      } else if (pct >= 85) {
+        gradePill.textContent = 'A';
+        gradePill.className = "px-2.5 py-1 rounded-full bg-mint/20 text-charcoal text-[11px] font-extrabold border border-mint/40 row-grade";
+      } else if (pct >= 75) {
+        gradePill.textContent = 'B';
+        gradePill.className = "px-2.5 py-1 rounded-full bg-cerulean/20 text-charcoal text-[11px] font-extrabold border border-cerulean/40 row-grade";
+      } else if (pct >= 60) {
+        gradePill.textContent = 'C';
+        gradePill.className = "px-2.5 py-1 rounded-full bg-marigold/20 text-charcoal text-[11px] font-extrabold border border-marigold/40 row-grade";
+      } else {
+        gradePill.textContent = 'D';
+        gradePill.className = "px-2.5 py-1 rounded-full bg-terracotta/20 text-terracotta text-[11px] font-extrabold border border-terracotta/40 row-grade";
+      }
+    }
+
+    function saveDraftMarks() {
+      alert('Marks grid saved to local draft session.');
+    }
+
+    function publishOfficialMarks() {
+      alert('Marks officially committed to Grade 5 Earth Science registry!\nSynched with Principal Academic Moderation queue.');
+    }
+  </script>
+</body>
+</html>

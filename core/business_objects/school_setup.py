@@ -1,3 +1,5 @@
+"""Domain business logic and CSV template parsing for transactional bulk data import and school setup."""
+
 import json
 import logging
 from datetime import date

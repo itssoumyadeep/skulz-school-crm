@@ -1,3 +1,5 @@
+"""Object-level authorization guards and query-scoping helpers for students, applications, and vendors."""
+
 import uuid
 from uuid import UUID
 from django.db import models
@@ -180,3 +182,23 @@ def verify_vendor_access(request, vendor: Vendor) -> bool:
             return True
 
     return False
+
+
+def verify_enrolled_student_access(request, student: Student) -> bool:
+    """
+    Strict Student Lifecycle Gate for VA/Pen-test compliance:
+    1. IDOR/BOLA Protection: Verifies parent/role relationship to student.
+    2. BFLA / Lifecycle Protection: If requester is a Parent, student MUST be in 'Active' status.
+       Unadmitted applicants (Pending, Under_Review, Offered, Waitlisted) cannot access
+       operational student records (Attendance, Gradebook, Report Cards, Medical Logs).
+    """
+    if not verify_student_access(request, student):
+        return False
+
+    role = getattr(request, 'user_role', 'Parent')
+    if role == 'Parent':
+        if getattr(student, 'status', None) != 'Active':
+            return False
+
+    return True
+

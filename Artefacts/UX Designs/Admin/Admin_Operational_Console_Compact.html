@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Operational Console (Compact List) — School CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#fff8f2',
+            surface: '#ffffff',
+            border: '#ead8c7',
+            charcoal: '#121417',
+            terracotta: '#e07a5f',
+            mint: '#90be6d',
+            marigold: '#fdba3b',
+            cerulean: '#64b5f6',
+            lilac: '#b39ddb',
+            cream: '#faf0e6'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 bg-surface/90 backdrop-blur-md border-b border-border z-30 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-terracotta text-white flex items-center justify-center font-bold">
+          <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+        </div>
+        <div>
+          <span class="font-serif font-bold text-base text-charcoal leading-none block">Oakwood Academy</span>
+          <span class="text-[11px] text-charcoal/60 leading-none">Admin Operational Console</span>
+        </div>
+      </div>
+      <div class="h-6 w-px bg-border hidden sm:block"></div>
+      <div class="hidden sm:flex items-center gap-2 text-xs">
+        <span class="px-2.5 py-0.5 rounded-full bg-mint/20 text-green-800 font-semibold border border-mint/30">Term 2 Active</span>
+        <span class="text-charcoal/60">BR-01 to BR-05 Compliant</span>
+      </div>
+    </div>
+
+    <!-- Right Controls: View Switcher & Persona Actions -->
+    <div class="flex items-center gap-3">
+      <!-- DUAL VIEW SWITCHER -->
+      <div class="flex items-center bg-cream/70 p-1 rounded-xl border border-border shadow-inner text-xs">
+        <a href="Admin_Operational_Console.html" class="flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium text-charcoal/70 hover:text-charcoal hover:bg-surface/50 transition">
+          <span class="material-symbols-outlined text-[16px]">grid_view</span>
+          <span class="hidden sm:inline">Cards</span>
+        </a>
+        <a href="#" class="flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold bg-surface text-terracotta shadow-sm transition border border-border/40">
+          <span class="material-symbols-outlined text-[16px]">view_list</span>
+          <span>Compact List</span>
+        </a>
+      </div>
+
+      <div class="h-6 w-px bg-border"></div>
+      <a href="../Admissions/Enrollment_Intake_Wizard.html" class="px-3 py-1.5 rounded-lg bg-terracotta text-white text-xs font-semibold hover:bg-terracotta/90 flex items-center gap-1 shadow-sm">
+        <span class="material-symbols-outlined text-sm">person_add</span>
+        <span class="hidden md:inline">Intake Wizard</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- Compact KPI Ribbon (High Density Horizontal Strip) -->
+    <div class="bg-surface border border-border rounded-xl p-3 shadow-sm grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
+      <div class="px-4 py-1.5 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold tracking-wider block">Admissions Pipeline</span>
+          <span class="font-serif text-lg font-bold text-charcoal">42 Active <span class="text-xs font-sans font-normal text-charcoal/60">(18 In Review)</span></span>
+        </div>
+        <span class="w-8 h-8 rounded-lg bg-cerulean/20 text-blue-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-lg">assignment_ind</span>
+        </span>
+      </div>
+
+      <div class="px-4 py-1.5 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold tracking-wider block">Attendance Rate</span>
+          <span class="font-serif text-lg font-bold text-mint">94.8% <span class="text-xs font-sans font-normal text-amber-700">(3 chronic)</span></span>
+        </div>
+        <span class="w-8 h-8 rounded-lg bg-mint/20 text-green-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-lg">fact_check</span>
+        </span>
+      </div>
+
+      <div class="px-4 py-1.5 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold tracking-wider block">Tuition Collections</span>
+          <span class="font-serif text-lg font-bold text-charcoal">$148,200 <span class="text-xs font-sans font-normal text-terracotta font-mono">($12.4k due)</span></span>
+        </div>
+        <span class="w-8 h-8 rounded-lg bg-marigold/20 text-amber-800 flex items-center justify-center">
+          <span class="material-symbols-outlined text-lg">payments</span>
+        </span>
+      </div>
+
+      <div class="px-4 py-1.5 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold tracking-wider block">3-Way Match & POs</span>
+          <span class="font-serif text-lg font-bold text-charcoal">98.4% Matched <span class="text-xs font-sans font-normal text-green-700">(1 flag)</span></span>
+        </div>
+        <span class="w-8 h-8 rounded-lg bg-lilac/20 text-purple-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-lg">compare_arrows</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Section 1: Compact Admissions Pipeline Row List -->
+    <div class="bg-surface border border-border rounded-xl shadow-sm overflow-hidden">
+      <div class="px-4 py-3 bg-canvas/60 border-b border-border flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-terracotta text-lg">assignment_ind</span>
+          <h2 class="font-serif font-bold text-sm text-charcoal">Admissions Intake Pipeline (Compact List)</h2>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cerulean/20 text-blue-800">18 Applications Requiring Action</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <input type="text" placeholder="Filter applicants..." class="px-2.5 py-1 text-xs bg-surface border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-terracotta">
+          <a href="../Admissions/Admissions_Pipeline_Kanban.html" class="text-terracotta font-semibold hover:underline flex items-center gap-1">
+            <span>Kanban Board</span>
+            <span class="material-symbols-outlined text-xs">view_kanban</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-cream/40 border-b border-border text-charcoal/60 text-[10px] uppercase font-semibold">
+            <tr>
+              <th class="py-2.5 px-3">Applicant & ID</th>
+              <th class="py-2.5 px-3">Grade Stream</th>
+              <th class="py-2.5 px-3">Submission Date</th>
+              <th class="py-2.5 px-3">Documents Check</th>
+              <th class="py-2.5 px-3">Assessment Slot</th>
+              <th class="py-2.5 px-3">Status Pipeline</th>
+              <th class="py-2.5 px-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <tr onclick="openAdmissionsDrawer('Liam Vance', 'Grade 5 Junior', '4/4 Verified', '../Admissions/Application_Detail_Modal.html')" class="hover:bg-terracotta/5 cursor-pointer transition group">
+              <td class="py-2.5 px-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-cerulean/20 text-cerulean font-bold flex items-center justify-center text-xs">LV</div>
+                  <div>
+                    <span class="font-bold text-charcoal block">Liam Vance</span>
+                    <span class="text-[10px] text-charcoal/50">#APP-2026-091 • Guardian: E. Vance</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-2.5 px-3 font-medium">Grade 5 Junior</td>
+              <td class="py-2.5 px-3 text-charcoal/60">Oct 28, 2026</td>
+              <td class="py-2.5 px-3">
+                <span class="inline-flex items-center gap-1 text-mint font-semibold text-[11px]">
+                  <span class="material-symbols-outlined text-xs">check_circle</span> 4/4 Verified
+                </span>
+              </td>
+              <td class="py-2.5 px-3">
+                <a href="../Admissions/Assessment_Schedule_Modal.html" class="text-blue-700 hover:underline">Nov 08, 10:00 AM</a>
+              </td>
+              <td class="py-2.5 px-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-cerulean/20 text-blue-800">Assessment Scheduled</span>
+              </td>
+              <td class="py-2.5 px-3 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <a href="../Admissions/Application_Detail_Modal.html" class="px-2.5 py-1 rounded bg-surface border border-border hover:bg-canvas text-charcoal font-semibold">Review</a>
+                  <a href="../Admissions/Decision_Offer_Letter_Modal.html" class="px-2.5 py-1 rounded bg-terracotta text-white hover:bg-terracotta/90 font-semibold">Offer</a>
+                </div>
+              </td>
+            </tr>
+
+            <tr onclick="openAdmissionsDrawer('Liam Vance', 'Grade 5 Junior', '4/4 Verified', '../Admissions/Application_Detail_Modal.html')" class="hover:bg-terracotta/5 cursor-pointer transition group">
+              <td class="py-2.5 px-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-terracotta/20 text-terracotta font-bold flex items-center justify-center text-xs">SM</div>
+                  <div>
+                    <span class="font-bold text-charcoal block">Sophia Morales</span>
+                    <span class="text-[10px] text-charcoal/50">#APP-2026-094 • Guardian: R. Morales</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-2.5 px-3 font-medium">Kindergarten (JK)</td>
+              <td class="py-2.5 px-3 text-charcoal/60">Oct 30, 2026</td>
+              <td class="py-2.5 px-3">
+                <span class="inline-flex items-center gap-1 text-amber-700 font-semibold text-[11px]">
+                  <span class="material-symbols-outlined text-xs">pending</span> 3/4 (Missing Immunization)
+                </span>
+              </td>
+              <td class="py-2.5 px-3 text-charcoal/40">Pending docs</td>
+              <td class="py-2.5 px-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-marigold/20 text-amber-900">Documents Incomplete</span>
+              </td>
+              <td class="py-2.5 px-3 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <a href="../Admissions/Application_Detail_Modal.html" class="px-2.5 py-1 rounded bg-surface border border-border hover:bg-canvas text-charcoal font-semibold">Review</a>
+                  <button class="px-2.5 py-1 rounded bg-cream border border-border text-charcoal font-semibold hover:bg-canvas">Remind</button>
+                </div>
+              </td>
+            </tr>
+
+            <tr onclick="openAdmissionsDrawer('Liam Vance', 'Grade 5 Junior', '4/4 Verified', '../Admissions/Application_Detail_Modal.html')" class="hover:bg-terracotta/5 cursor-pointer transition group">
+              <td class="py-2.5 px-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-mint/20 text-green-800 font-bold flex items-center justify-center text-xs">ZC</div>
+                  <div>
+                    <span class="font-bold text-charcoal block">Zachary Chen</span>
+                    <span class="text-[10px] text-charcoal/50">#APP-2026-088 • Guardian: D. Chen</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-2.5 px-3 font-medium">Grade 9 Secondary</td>
+              <td class="py-2.5 px-3 text-charcoal/60">Oct 24, 2026</td>
+              <td class="py-2.5 px-3">
+                <span class="inline-flex items-center gap-1 text-mint font-semibold text-[11px]">
+                  <span class="material-symbols-outlined text-xs">check_circle</span> 4/4 Verified
+                </span>
+              </td>
+              <td class="py-2.5 px-3">
+                <span class="text-green-800 font-semibold">Completed (Score: 92%)</span>
+              </td>
+              <td class="py-2.5 px-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-mint/20 text-green-800">Offer Ready</span>
+              </td>
+              <td class="py-2.5 px-3 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <a href="../Admissions/Decision_Offer_Letter_Modal.html" class="px-2.5 py-1 rounded bg-terracotta text-white hover:bg-terracotta/90 font-semibold">Send Offer</a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 2: Split Grid — 3-Way Match Requisition Queue & Billing Waivers -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Left: Procurement 3-Way Match Compact Rows -->
+      <div class="bg-surface border border-border rounded-xl shadow-sm overflow-hidden">
+        <div class="px-4 py-3 bg-canvas/60 border-b border-border flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-mint text-lg">compare_arrows</span>
+            <h3 class="font-serif font-bold text-sm text-charcoal">Procurement 3-Way Match Verification</h3>
+          </div>
+          <a href="../Procurement/Three_Way_Match_Widget.html" class="text-xs text-terracotta font-semibold hover:underline">Full View</a>
+        </div>
+
+        <div class="divide-y divide-border text-xs">
+          <!-- Row 1 -->
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-charcoal">PO #PO-2026-0089</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-mint/20 text-green-800">100% Match</span>
+              </div>
+              <p class="text-[11px] text-charcoal/60">Spectrum Educational • 4 Microscopes & Slides • Total: $4,205.52</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="font-mono font-bold text-green-700">$0.00 Diff</span>
+              <a href="../Procurement/Three_Way_Match_Widget.html" class="px-2.5 py-1 rounded bg-mint text-white font-semibold hover:bg-mint/90">Authorize</a>
+            </div>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-charcoal">PO #PO-2026-0092</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-marigold/20 text-amber-900">Variance Flagged</span>
+              </div>
+              <p class="text-[11px] text-charcoal/60">Staples Business • Class paper reams (20 pk) • Total: $1,420.00</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="font-mono font-bold text-terracotta">+$42.50 Tax Divergence</span>
+              <a href="../Procurement/Vendor_Invoice_Modal.html" class="px-2.5 py-1 rounded bg-surface border border-border text-charcoal font-semibold hover:bg-canvas">Review</a>
+            </div>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-charcoal">PO #PO-2026-0095</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-cerulean/20 text-blue-800">Awaiting GRN</span>
+              </div>
+              <p class="text-[11px] text-charcoal/60">Boreal Science • Chemistry lab glassware • Delivery Target: Nov 05</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <a href="../Procurement/Delivery_Receipt_Modal.html" class="px-2.5 py-1 rounded bg-surface border border-border text-charcoal font-semibold hover:bg-canvas">Log GRN</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Fee Ledger & Discount Waivers Compact Rows -->
+      <div class="bg-surface border border-border rounded-xl shadow-sm overflow-hidden">
+        <div class="px-4 py-3 bg-canvas/60 border-b border-border flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-marigold text-lg">receipt_long</span>
+            <h3 class="font-serif font-bold text-sm text-charcoal">Tuition Waivers & Fee Exceptions</h3>
+          </div>
+          <a href="../Billing/Invoice_Ledger_Widget.html" class="text-xs text-terracotta font-semibold hover:underline">Ledger</a>
+        </div>
+
+        <div class="divide-y divide-border text-xs">
+          <!-- Row 1 -->
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-charcoal">Liam Vance (Grade 5)</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-cerulean/20 text-blue-800">Sibling Discount 15%</span>
+              </div>
+              <p class="text-[11px] text-charcoal/60">2nd child rebate applied to Term 2 tuition • Net: $3,450</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <a href="../Billing/Discount_Waiver_Modal.html" class="px-2.5 py-1 rounded bg-surface border border-border text-charcoal font-semibold hover:bg-canvas">Details</a>
+            </div>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-charcoal">Maya Patel (Grade 3)</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-terracotta/20 text-terracotta">Hardship Waiver Request</span>
+              </div>
+              <p class="text-[11px] text-charcoal/60">50% bursary reduction ($2,100) • Requires Principal Co-Sign</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <a href="../Billing/Discount_Waiver_Modal.html" class="px-2.5 py-1 rounded bg-terracotta text-white font-semibold hover:bg-terracotta/90">Sign Off</a>
+            </div>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-charcoal">Stripe Recon Batch #9021</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-mint/20 text-green-800">Settled Clean</span>
+              </div>
+              <p class="text-[11px] text-charcoal/60">$28,450 bank transfer payout • 0 reconciliation errors</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <a href="../Billing/Financial_Reconciliation_Widget.html" class="px-2.5 py-1 rounded bg-surface border border-border text-charcoal font-semibold hover:bg-canvas">Recon</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- Responsive Slide-Over Drawer -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-50 transition-opacity duration-300 opacity-0 pointer-events-none" onclick="closeDrawer()"></div>
+  <div id="slide-drawer" class="fixed top-0 right-0 h-full w-full max-w-lg bg-surface shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-border md:rounded-l-3xl overflow-hidden max-md:top-auto max-md:inset-x-0 max-md:bottom-0 max-md:max-h-[88vh] max-md:rounded-t-3xl max-md:translate-x-0 max-md:translate-y-full max-md:border-t">
+    <!-- Drawer Header -->
+    <div class="px-6 py-4 bg-canvas/70 border-b border-border flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div id="drawer-icon-container" class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center font-bold">
+          <span id="drawer-icon" class="material-symbols-outlined text-xl">info</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="drawer-title" class="font-serif font-bold text-base text-charcoal leading-snug">Drawer Title</h3>
+            <span id="drawer-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/20 text-green-800">Status</span>
+          </div>
+          <p id="drawer-subtitle" class="text-xs text-charcoal/60 mt-0.5">Subtitle</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="drawer-fullscreen-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-semibold text-charcoal hover:bg-canvas flex items-center gap-1 shadow-xs" title="Open full workspace">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+          <span class="hidden sm:inline">Workspace</span>
+        </a>
+        <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Drawer Body -->
+    <div id="drawer-content" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+
+    <!-- Drawer Footer -->
+    <div id="drawer-footer" class="px-6 py-4 bg-cream/40 border-t border-border flex items-center justify-between shrink-0">
+      <span id="drawer-footer-note" class="text-xs text-charcoal/50">Auto-saved to cloud ledger</span>
+      <div id="drawer-actions" class="flex items-center gap-2">
+        <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-charcoal hover:bg-canvas">Cancel</button>
+        <button id="drawer-primary-btn" onclick="executeDrawerAction()" class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-bold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">check</span>
+          <span id="drawer-btn-text">Confirm Action</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-notify" class="fixed bottom-6 right-6 z-50 bg-charcoal text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="w-7 h-7 rounded-full bg-mint/30 text-mint flex items-center justify-center">
+      <span class="material-symbols-outlined text-base font-bold">check_circle</span>
+    </div>
+    <div>
+      <span id="toast-title" class="text-xs font-bold block">Action Completed</span>
+      <span id="toast-msg" class="text-[11px] text-white/70 block">Record updated and state synced.</span>
+    </div>
+  </div>
+
+  <script>
+  let currentDrawerAction = null;
+
+  function openDrawer(config) {
+    document.getElementById('drawer-title').textContent = config.title || 'Details';
+    document.getElementById('drawer-subtitle').textContent = config.subtitle || '';
+    
+    const badgeEl = document.getElementById('drawer-badge');
+    badgeEl.textContent = config.badge || 'Active';
+    badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (config.badgeClass || 'bg-mint/20 text-green-800');
+    
+    document.getElementById('drawer-icon').textContent = config.icon || 'info';
+    document.getElementById('drawer-fullscreen-link').href = config.fullscreenUrl || '#';
+    document.getElementById('drawer-btn-text').textContent = config.actionText || 'Confirm';
+    document.getElementById('drawer-content').innerHTML = config.contentHtml || '';
+    
+    if (config.footerNote) {
+      document.getElementById('drawer-footer-note').textContent = config.footerNote;
+    }
+    
+    currentDrawerAction = config.onAction || null;
+
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    backdrop.classList.add('opacity-100');
+
+    if (window.innerWidth >= 768) {
+      drawer.classList.remove('translate-x-full');
+    } else {
+      drawer.classList.remove('max-md:translate-y-full');
+    }
+  }
+
+  function closeDrawer() {
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.add('opacity-0', 'pointer-events-none');
+    backdrop.classList.remove('opacity-100');
+
+    drawer.classList.add('translate-x-full');
+    drawer.classList.add('max-md:translate-y-full');
+  }
+
+  function executeDrawerAction() {
+    if (currentDrawerAction) {
+      currentDrawerAction();
+    }
+    closeDrawer();
+  }
+
+  function showToast(title, msg) {
+    const toast = document.getElementById('toast-notify');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3500);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+  
+  function openAdmissionsDrawer(applicantName, grade, docStatus, url) {
+    openDrawer({
+      title: applicantName + " — Intake Verification",
+      subtitle: grade + " • Application #APP-2026-091",
+      badge: "Pending Offer",
+      badgeClass: "bg-mint/20 text-green-800",
+      icon: "assignment_ind",
+      fullscreenUrl: url || "../Admissions/Application_Detail_Modal.html",
+      actionText: "Issue Official Offer",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-charcoal text-sm">${applicantName}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint text-white">4/4 Documents Passed</span>
+            </div>
+            <p class="text-charcoal/70 text-[11px]">Ontario Birth Certificate, Immunization Record (MOH), Guardian Proof of Address, and Early Years Diagnostic Rubric all approved.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border space-y-1">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Assigned Stream & Capacity</span>
+            <p class="font-semibold text-charcoal">${grade} (Enrolment Cap: 22/24 seats filled)</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border flex items-center justify-between">
+            <span class="text-charcoal font-medium">Automatic Welcome Email & Invoice</span>
+            <span class="text-mint font-bold text-[11px]">Enqueued</span>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Offer Letter Dispatched", "Official admission letter & tuition deposit invoice sent to " + applicantName + " guardian.");
+      }
+    });
+  }
+
+  function openThreeWayMatchDrawer(poNumber, vendor, amount, url) {
+    openDrawer({
+      title: "3-Way Match: " + poNumber,
+      subtitle: vendor + " • Invoice Variance Inspection",
+      badge: "Discrepancy: $0.00",
+      badgeClass: "bg-mint/20 text-green-800",
+      icon: "fact_check",
+      fullscreenUrl: url || "../Procurement/Three_Way_Match_Widget.html",
+      actionText: "Authorize & Release Payment",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-3 bg-canvas/60 rounded-xl border border-border space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal">Vendor Requisition</span>
+              <span class="font-bold text-charcoal font-mono">${amount}</span>
+            </div>
+            <p class="text-charcoal/60 text-[11px]">PO matched against physical warehouse delivery slip #DS-44102 and invoice #INV-9921.</p>
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between p-2.5 bg-surface rounded-lg border border-border">
+              <span class="text-charcoal/70">1. Purchase Order (${poNumber})</span>
+              <span class="text-mint font-bold">100% Match</span>
+            </div>
+            <div class="flex justify-between p-2.5 bg-surface rounded-lg border border-border">
+              <span class="text-charcoal/70">2. Packing Slip (Loading Bay B)</span>
+              <span class="text-mint font-bold">Goods Received</span>
+            </div>
+            <div class="flex justify-between p-2.5 bg-surface rounded-lg border border-border">
+              <span class="text-charcoal/70">3. Vendor Tax Invoice</span>
+              <span class="text-mint font-bold">Taxes Verified (HST 13%)</span>
+            </div>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Payment Authorized", poNumber + " released to accounts payable for EFT settlement.");
+      }
+    });
+  }
+
+  function openWaiverDrawer(beneficiary, waiverType, amount, url) {
+    openDrawer({
+      title: "Tuition Waiver Request",
+      subtitle: beneficiary + " • " + waiverType,
+      badge: amount,
+      badgeClass: "bg-cerulean/20 text-blue-800",
+      icon: "request_quote",
+      fullscreenUrl: url || "../Billing/Discount_Waiver_Modal.html",
+      actionText: "Approve Ledger Waiver",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal">${waiverType}</span>
+              <span class="font-bold text-terracotta text-sm">${amount}</span>
+            </div>
+            <p class="text-charcoal/70 text-[11px]">Family enrollment of multiple siblings satisfies standard 15% second-child bursary criteria (Policy BR-02-03).</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border">
+            <span class="text-charcoal/50 text-[10px] uppercase font-bold block">Approval Chain</span>
+            <p class="font-semibold text-charcoal">Principal Endorsed • Awaiting Operations Sign-off</p>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Waiver Granted", amount + " credited to " + beneficiary + " billing account.");
+      }
+    });
+  }
+  </script>
+
+</body>
+</html>

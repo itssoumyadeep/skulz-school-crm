@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Profile Drawer (360 Dossier) — School CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FFF8F2',
+            surface: '#FFFFFF',
+            border: '#EAD8C7',
+            charcoal: '#121417',
+            muted: '#687787',
+            terracotta: '#E07A5F',
+            mint: '#90BE6D',
+            marigold: '#FDBA3B',
+            cerulean: '#64B5F6',
+            lilac: '#B39DDB',
+            cream: '#FAF0E6',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['Fraunces', 'serif'],
+          },
+          boxShadow: {
+            warm: '0 4px 20px -2px rgba(18, 20, 23, 0.05), 0 2px 6px -1px rgba(18, 20, 23, 0.03)',
+            'warm-lg': '0 20px 40px -6px rgba(18, 20, 23, 0.12), 0 8px 16px -4px rgba(18, 20, 23, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      display: inline-flex;
+      vertical-align: middle;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FFF8F2;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #EAD8C7;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen antialiased flex flex-col justify-end">
+
+  <!-- Background Student Directory Ambience -->
+  <div class="fixed inset-0 pointer-events-none opacity-20 filter blur-[2px]">
+    <div class="p-8 max-w-7xl mx-auto space-y-6">
+      <div class="h-16 bg-white border border-border rounded-2xl"></div>
+      <div class="h-96 bg-white border border-border rounded-2xl"></div>
+    </div>
+  </div>
+
+  <!-- Backdrop -->
+  <a href="Student_Directory_Widget.html" class="fixed inset-0 bg-charcoal/50 backdrop-blur-sm z-40 transition-opacity"></a>
+
+  <!-- 360 Slide-Over Profile Drawer -->
+  <aside role="dialog" aria-modal="true" class="fixed top-0 right-0 h-full w-full max-w-2xl bg-white border-l border-border z-50 flex flex-col shadow-warm-lg overflow-hidden animate-in slide-in-from-right duration-300">
+    
+    <!-- Drawer Top Banner -->
+    <div class="bg-canvas/90 border-b border-border p-6 relative">
+      <div class="flex items-start justify-between gap-4">
+        <!-- Avatar & Core Info -->
+        <div class="flex items-center gap-4">
+          <div class="relative w-16 h-16 rounded-2xl bg-terracotta text-white flex items-center justify-center font-serif text-2xl font-bold shadow-md shrink-0">
+            SC
+            <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-mint text-charcoal flex items-center justify-center ring-2 ring-white">
+              <span class="material-symbols-outlined text-xs fill">check</span>
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-xl font-extrabold font-serif text-charcoal">Sophia Claire Chen</h2>
+              <span class="px-2.5 py-0.5 rounded-full bg-mint/20 text-charcoal text-[11px] font-extrabold border border-mint/40">Active Student</span>
+              <span class="text-xs px-2 py-0.5 rounded-md bg-cream text-charcoal font-semibold border border-border">Grade 2B</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-muted mt-1 font-mono">
+              <span>ID: #STU-2026-0891</span>
+              <span>&bull;</span>
+              <span>OEN: 892-104-551</span>
+              <span>&bull;</span>
+              <span class="font-sans text-charcoal font-medium">Homeroom: Judith Hawthorne (Room 2B)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Close Drawer Button -->
+        <a href="Student_Directory_Widget.html" class="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-muted hover:text-charcoal transition-colors hover:bg-cream" title="Close Drawer">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </a>
+      </div>
+
+      <!-- Quick KPI Triad Strip -->
+      <div class="grid grid-cols-3 gap-3 mt-5">
+        <div class="p-3 rounded-xl bg-white border border-border shadow-sm text-center">
+          <span class="text-[10px] uppercase font-bold text-muted block">Attendance</span>
+          <span class="text-lg font-extrabold text-charcoal font-serif">98.4%</span>
+          <span class="text-[9px] text-mint font-semibold block">1 Excused</span>
+        </div>
+        <div class="p-3 rounded-xl bg-white border border-border shadow-sm text-center">
+          <span class="text-[10px] uppercase font-bold text-muted block">Academic Marks</span>
+          <span class="text-lg font-extrabold text-charcoal font-serif">4.0 / 4.0</span>
+          <span class="text-[9px] text-cerulean font-semibold block">Exemplary Tier</span>
+        </div>
+        <div class="p-3 rounded-xl bg-white border border-border shadow-sm text-center">
+          <span class="text-[10px] uppercase font-bold text-muted block">Account Balance</span>
+          <span class="text-lg font-extrabold text-mint font-serif">$0.00</span>
+          <span class="text-[9px] text-muted font-semibold block">Paid in Full</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Sub-Tabs -->
+    <div class="flex items-center px-6 border-b border-border bg-white text-xs font-bold gap-6 overflow-x-auto">
+      <button type="button" onclick="switchDrawerTab('demographics')" id="dtab-demographics" class="d-tab py-3 border-b-2 border-terracotta text-terracotta whitespace-nowrap">
+        Family &amp; Demographics
+      </button>
+      <button type="button" onclick="switchDrawerTab('medical')" id="dtab-medical" class="d-tab py-3 border-b-2 border-transparent text-muted hover:text-charcoal whitespace-nowrap">
+        Medical &amp; Safeguarding
+      </button>
+      <button type="button" onclick="switchDrawerTab('academics')" id="dtab-academics" class="d-tab py-3 border-b-2 border-transparent text-muted hover:text-charcoal whitespace-nowrap">
+        Academics &amp; Schedule
+      </button>
+      <button type="button" onclick="switchDrawerTab('billing')" id="dtab-billing" class="d-tab py-3 border-b-2 border-transparent text-muted hover:text-charcoal whitespace-nowrap">
+        Tuition Ledger
+      </button>
+    </div>
+
+    <!-- Drawer Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-canvas/30 text-xs">
+
+      <!-- ======================================== -->
+      <!-- TAB 1: DEMOGRAPHICS & FAMILY -->
+      <!-- ======================================== -->
+      <div id="dcontent-demographics" class="space-y-5">
+        <!-- Demographics Box -->
+        <div class="p-4 bg-white border border-border rounded-2xl shadow-warm space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal">Personal Identification</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <span class="text-[10px] text-muted block">Legal Name:</span>
+              <strong class="text-charcoal">Sophia Claire Chen</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted block">Preferred Name:</span>
+              <strong class="text-charcoal">Sophie</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted block">Date of Birth:</span>
+              <strong class="text-charcoal">April 12, 2019 (Age 7y 0m)</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted block">Gender &amp; Pronouns:</span>
+              <strong class="text-charcoal">Female (She/Her)</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted block">Home Languages:</span>
+              <strong class="text-charcoal">English &amp; Mandarin</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted block">Residential Address:</span>
+              <strong class="text-charcoal">482 Bloor St W, Toronto, ON</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guardian Contacts -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal">Parents &amp; Legal Guardians</h3>
+            <a href="Emergency_Contact_Modal.html" class="text-terracotta font-bold text-[11px] hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">edit</span> Manage Guardians
+            </a>
+          </div>
+
+          <!-- Guardian 1 -->
+          <div class="p-4 bg-white border border-border rounded-2xl shadow-warm space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-terracotta text-white font-bold text-[10px] flex items-center justify-center">1</span>
+                <span class="font-bold text-charcoal text-sm">Dr. Elena Vance-Chen</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-cream text-charcoal border border-border">Mother &bull; Primary</span>
+              </div>
+              <span class="text-[10px] font-bold text-mint bg-mint/20 px-2 py-0.5 rounded-md border border-mint/30 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[11px] fill">how_to_reg</span> Pickup Authorized
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-muted pt-1">
+              <div>Phone: <strong class="text-charcoal">+1 (416) 555-0198</strong></div>
+              <div>Email: <strong class="text-charcoal">elena.vance@vancetech.ca</strong></div>
+              <div class="col-span-2">Employer: Director of Bio-Engineering, St. Michael’s Hospital</div>
+            </div>
+          </div>
+
+          <!-- Guardian 2 -->
+          <div class="p-4 bg-white border border-border rounded-2xl shadow-warm space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-muted/20 text-charcoal font-bold text-[10px] flex items-center justify-center">2</span>
+                <span class="font-bold text-charcoal text-sm">David Chen</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-cream text-charcoal border border-border">Father</span>
+              </div>
+              <span class="text-[10px] font-bold text-mint bg-mint/20 px-2 py-0.5 rounded-md border border-mint/30 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[11px] fill">how_to_reg</span> Pickup Authorized
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-muted pt-1">
+              <div>Phone: <strong class="text-charcoal">+1 (416) 555-0842</strong></div>
+              <div>Email: <strong class="text-charcoal">david.chen@chenarch.com</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================== -->
+      <!-- TAB 2: MEDICAL & SAFEGUARDING -->
+      <!-- ======================================== -->
+      <div id="dcontent-medical" class="space-y-4 hidden">
+        <div class="p-4 bg-terracotta/10 border border-terracotta/30 rounded-2xl space-y-2">
+          <div class="flex items-center gap-2 text-terracotta font-extrabold text-sm">
+            <span class="material-symbols-outlined text-lg fill">warning</span>
+            Severe Peanut Allergy &bull; Anaphylaxis Protocol Active
+          </div>
+          <p class="text-charcoal text-[11px] leading-relaxed">
+            Student carries two epinephrine auto-injectors (EpiPen 0.15mg). One located in personal classroom backpack; second stored in Health Office Lockbox #14. Immediate 911 dispatch and administration upon exposure.
+          </p>
+        </div>
+
+        <div class="p-4 bg-white border border-border rounded-2xl shadow-warm space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-charcoal">Dietary &amp; Health Profile</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <span class="text-muted block text-[10px]">Dietary Plan:</span>
+              <strong class="text-charcoal">Vegetarian (No meat/fish)</strong>
+            </div>
+            <div>
+              <span class="text-muted block text-[10px]">ISPA Immunizations:</span>
+              <span class="font-bold text-mint">100% Complete &bull; Verified</span>
+            </div>
+            <div>
+              <span class="text-muted block text-[10px]">Primary Physician:</span>
+              <strong class="text-charcoal">Dr. Alistair Ross, MD &bull; (416) 555-2244</strong>
+            </div>
+            <div>
+              <span class="text-muted block text-[10px]">Special Education Plan:</span>
+              <strong class="text-charcoal">None (Standard PYP)</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================== -->
+      <!-- TAB 3: ACADEMICS & SCHEDULE -->
+      <!-- ======================================== -->
+      <div id="dcontent-academics" class="space-y-4 hidden">
+        <div class="p-4 bg-white border border-border rounded-2xl shadow-warm space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-charcoal">Current Enrolled Courses (Grade 2B)</h4>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas border border-border">
+              <div>
+                <span class="font-bold text-charcoal block">Inquiry &amp; Social Studies (PYP Unit 2)</span>
+                <span class="text-[10px] text-muted">Teacher: Judith Hawthorne &bull; Period 1</span>
+              </div>
+              <span class="font-serif font-extrabold text-mint">Exceeding (4.0)</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas border border-border">
+              <div>
+                <span class="font-bold text-charcoal block">Elementary Mathematics &amp; Logic</span>
+                <span class="text-[10px] text-muted">Teacher: David Evans &bull; Period 3</span>
+              </div>
+              <span class="font-serif font-extrabold text-mint">Exceeding (4.0)</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas border border-border">
+              <div>
+                <span class="font-bold text-charcoal block">Mandarin Language &amp; Culture</span>
+                <span class="text-[10px] text-muted">Teacher: Lin Zhao &bull; Period 5</span>
+              </div>
+              <span class="font-serif font-extrabold text-mint">Exceeding (4.0)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================== -->
+      <!-- TAB 4: BILLING & TUITION -->
+      <!-- ======================================== -->
+      <div id="dcontent-billing" class="space-y-4 hidden">
+        <div class="p-4 bg-white border border-border rounded-2xl shadow-warm space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-muted">Academic Year 2026–2027 Base Tuition:</span>
+            <span class="font-bold text-charcoal">$14,800.00</span>
+          </div>
+          <div class="flex justify-between items-center text-mint font-semibold">
+            <span>Multi-Child Sibling Discount (10%):</span>
+            <span>-$1,480.00</span>
+          </div>
+          <div class="flex justify-between items-center text-mint font-semibold">
+            <span>Bilingual Excellence Merit Award:</span>
+            <span>-$2,000.00</span>
+          </div>
+          <div class="pt-2 border-t border-border flex justify-between items-baseline font-bold text-sm">
+            <span>Net Tuition Realized:</span>
+            <span class="font-serif text-charcoal text-base">$11,320.00</span>
+          </div>
+          <div class="p-2 rounded-lg bg-mint/20 text-charcoal text-[11px] font-bold text-center border border-mint/30 mt-2">
+            Status: Fully Paid via Annual Lump Sum on Nov 2, 2026
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer Action Footer -->
+    <div class="p-4 border-t border-border bg-canvas/40 flex items-center justify-between gap-3">
+      <a href="Student_Edit_Modal.html" class="px-4 py-2.5 rounded-xl bg-white border border-border text-charcoal font-bold text-xs hover:bg-cream transition-colors flex items-center gap-1.5 shadow-sm">
+        <span class="material-symbols-outlined text-sm">edit</span>
+        Edit Student
+      </a>
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="printDossier()" class="px-4 py-2.5 rounded-xl bg-white border border-border text-charcoal font-bold text-xs hover:bg-cream transition-colors flex items-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-sm">print</span>
+          Print 360 Dossier
+        </button>
+        <a href="Student_Directory_Widget.html" class="px-5 py-2.5 rounded-xl bg-terracotta text-white font-bold text-xs hover:bg-terracotta/90 transition-all shadow-warm">
+          Done
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    function switchDrawerTab(tab) {
+      const tabs = ['demographics', 'medical', 'academics', 'billing'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`dtab-${t}`);
+        const content = document.getElementById(`dcontent-${t}`);
+        if (t === tab) {
+          btn.className = "d-tab py-3 border-b-2 border-terracotta text-terracotta whitespace-nowrap font-bold";
+          content.classList.remove('hidden');
+        } else {
+          btn.className = "d-tab py-3 border-b-2 border-transparent text-muted hover:text-charcoal whitespace-nowrap font-bold";
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    function printDossier() {
+      window.print();
+    }
+  </script>
+</body>
+</html>

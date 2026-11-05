@@ -1,3 +1,5 @@
+"""Pydantic schemas for login, signup, credentials, JWT payloads, and role authorization claims."""
+
 from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator

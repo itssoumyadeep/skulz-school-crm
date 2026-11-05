@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchase Order Modal — School CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#fff8f2',
+            surface: '#ffffff',
+            border: '#ead8c7',
+            charcoal: '#121417',
+            terracotta: '#e07a5f',
+            mint: '#90be6d',
+            marigold: '#fdba3b',
+            cerulean: '#64b5f6',
+            lilac: '#b39ddb',
+            cream: '#faf0e6'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen p-4 md:p-8 flex items-center justify-center">
+
+  <div class="relative w-full max-w-4xl bg-surface border border-border rounded-2xl shadow-xl overflow-hidden">
+    
+    <!-- Modal Header -->
+    <div class="px-6 py-5 border-b border-border bg-canvas/60 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">shopping_cart_checkout</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="font-serif text-xl font-bold text-charcoal">Purchase Order #PO-2026-0089</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-marigold/20 text-amber-900 border border-marigold/40">Status: Pending Approval</span>
+          </div>
+          <p class="text-xs text-charcoal/60 mt-0.5">Approved Vendor Requisition & Departmental Budget Commitment</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <!-- PO Form Content -->
+    <div class="p-6 space-y-5 max-h-[62vh] overflow-y-auto">
+
+      <!-- Top Metadata Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Vendor Selection -->
+        <div>
+          <label class="block text-xs font-bold text-charcoal mb-1">Approved Vendor</label>
+          <select class="w-full px-3 py-2 text-xs bg-canvas/40 border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-terracotta font-medium">
+            <option selected>Spectrum Educational Supplies Ltd. (Vendor #V-104)</option>
+            <option>Staples Canada Business Advantage</option>
+            <option>Boreal Science & Ward's Natural Science</option>
+            <option>Scholastic Canada Book Distribution</option>
+          </select>
+          <span class="text-[10px] text-green-700 font-semibold mt-1 block">Master Contract #ON-EDU-4921 Active</span>
+        </div>
+
+        <!-- Budget Code & Department -->
+        <div>
+          <label class="block text-xs font-bold text-charcoal mb-1">Cost Center / Budget Line</label>
+          <select class="w-full px-3 py-2 text-xs bg-canvas/40 border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-terracotta font-medium">
+            <option selected>STEM-SCI-2026 (Science Lab Equipment)</option>
+            <option>ATH-PE-2026 (Physical Education & Athletics)</option>
+            <option>LIB-RES-2026 (Library & Media Learning)</option>
+            <option>FAC-MAINT-2026 (Facilities & Building Ops)</option>
+          </select>
+          <span class="text-[10px] text-charcoal/60 mt-1 block">Remaining Budget: $14,250.00 CAD</span>
+        </div>
+
+        <!-- Delivery Date & Terms -->
+        <div>
+          <label class="block text-xs font-bold text-charcoal mb-1">Target Delivery Date</label>
+          <input type="date" value="2026-11-18" class="w-full px-3 py-2 text-xs bg-canvas/40 border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-terracotta font-medium">
+          <span class="text-[10px] text-charcoal/60 mt-1 block">Terms: Net 30 Days upon GRN</span>
+        </div>
+      </div>
+
+      <!-- Itemized Order Table -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold text-charcoal uppercase tracking-wider">Itemized Requisition Rows</label>
+          <button class="text-xs text-terracotta font-semibold hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">add_circle</span> Add Line Item
+          </button>
+        </div>
+
+        <div class="border border-border rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-canvas/80 border-b border-border text-charcoal/60 uppercase font-semibold text-[10px]">
+              <tr>
+                <th class="py-2.5 px-3">Item Description & Catalog Code</th>
+                <th class="py-2.5 px-3 text-center">Qty</th>
+                <th class="py-2.5 px-3 text-right">Unit Price</th>
+                <th class="py-2.5 px-3 text-center">Tax (HST)</th>
+                <th class="py-2.5 px-3 text-right">Line Total</th>
+                <th class="py-2.5 px-3 text-center w-8"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              <tr>
+                <td class="py-2.5 px-3">
+                  <span class="font-bold text-charcoal block">Olympus CX23 Compound Binocular Microscope</span>
+                  <span class="text-[10px] text-charcoal/50">Cat #SPEC-BIO-441 • LED illumination, 4x/10x/40x/100x</span>
+                </td>
+                <td class="py-2.5 px-3 text-center font-bold">4</td>
+                <td class="py-2.5 px-3 text-right font-mono">$840.00</td>
+                <td class="py-2.5 px-3 text-center text-charcoal/70">13%</td>
+                <td class="py-2.5 px-3 text-right font-bold text-charcoal font-mono">$3,360.00</td>
+                <td class="py-2.5 px-3 text-center text-charcoal/40 hover:text-terracotta cursor-pointer">
+                  <span class="material-symbols-outlined text-base">delete</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3">
+                  <span class="font-bold text-charcoal block">Prepared Glass Slide Anatomy Specimens (Set of 100)</span>
+                  <span class="text-[10px] text-charcoal/50">Cat #SPEC-SLD-12 • Histology, Botany & Zoology</span>
+                </td>
+                <td class="py-2.5 px-3 text-center font-bold">6</td>
+                <td class="py-2.5 px-3 text-right font-mono">$65.00</td>
+                <td class="py-2.5 px-3 text-center text-charcoal/70">13%</td>
+                <td class="py-2.5 px-3 text-right font-bold text-charcoal font-mono">$390.00</td>
+                <td class="py-2.5 px-3 text-center text-charcoal/40 hover:text-terracotta cursor-pointer">
+                  <span class="material-symbols-outlined text-base">delete</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3">
+                  <span class="font-bold text-charcoal block">Borosilicate Glass Beaker Set (250ml, 500ml, 1000ml)</span>
+                  <span class="text-[10px] text-charcoal/50">Cat #SPEC-BKR-90 • Pack of 12</span>
+                </td>
+                <td class="py-2.5 px-3 text-center font-bold">3</td>
+                <td class="py-2.5 px-3 text-right font-mono">$48.00</td>
+                <td class="py-2.5 px-3 text-center text-charcoal/70">13%</td>
+                <td class="py-2.5 px-3 text-right font-bold text-charcoal font-mono">$144.00</td>
+                <td class="py-2.5 px-3 text-center text-charcoal/40 hover:text-terracotta cursor-pointer">
+                  <span class="material-symbols-outlined text-base">delete</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Delivery Instructions & Shipping Address -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-charcoal mb-1">Receiving Delivery Address & Dock</label>
+          <div class="p-3 bg-canvas/30 rounded-lg border border-border text-xs text-charcoal/80 space-y-0.5">
+            <p class="font-bold text-charcoal">Oakwood Academy — Loading Bay 2 (Science Wing)</p>
+            <p>1450 Meadowvale Boulevard, Dock B</p>
+            <p>Mississauga, ON L5N 7W6 • Contact: J. Thorne (905-555-0192)</p>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-charcoal mb-1">Delivery Notes & Handling Instructions</label>
+          <textarea rows="3" class="w-full px-3 py-2 text-xs bg-canvas/40 border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-terracotta" placeholder="E.g., Fragile optics, deliver between 8:30 AM and 2:30 PM only..."></textarea>
+        </div>
+      </div>
+
+      <!-- Financial Calculation Summary -->
+      <div class="p-4 bg-cream/40 rounded-xl border border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="text-xs text-charcoal/70 space-y-1">
+          <div>PO Initiator: <strong class="text-charcoal">Margaret Kowalski (Head of Science)</strong></div>
+          <div>Approval Tier: <strong class="text-charcoal">Level 2 (Purchases &gt; $2,500 require Bursar sign-off)</strong></div>
+        </div>
+        <div class="space-y-1 text-right text-xs">
+          <div class="flex justify-between md:justify-end gap-6 text-charcoal/70">
+            <span>Subtotal:</span>
+            <span class="font-mono text-charcoal font-medium">$3,894.00</span>
+          </div>
+          <div class="flex justify-between md:justify-end gap-6 text-charcoal/70">
+            <span>Ontario HST (13%):</span>
+            <span class="font-mono text-charcoal font-medium">$506.22</span>
+          </div>
+          <div class="flex justify-between md:justify-end gap-6 text-charcoal/70">
+            <span>Educational Discount (-5%):</span>
+            <span class="font-mono text-mint font-semibold">-$194.70</span>
+          </div>
+          <div class="flex justify-between md:justify-end gap-6 text-base font-bold text-charcoal pt-1 border-t border-border">
+            <span>Total Purchase Amount:</span>
+            <span class="font-mono text-terracotta">$4,205.52 CAD</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div class="px-6 py-4 bg-cream/30 border-t border-border flex items-center justify-between">
+      <button class="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-canvas text-charcoal flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-sm">print</span> Print Requisition Draft
+      </button>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-canvas text-charcoal">
+          Save as Draft
+        </button>
+        <button class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-semibold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">send</span> Submit for Bursar Approval
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

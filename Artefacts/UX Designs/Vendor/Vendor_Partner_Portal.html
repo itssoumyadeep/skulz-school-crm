@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"background":"#fef8f1","on-error-container":"#93000a","charcoal-slate":"#2B2D42","surface-container-low":"#f9f3ec","tertiary":"#406922","tertiary-fixed-dim":"#a5d480","tertiary-container":"#76a355","surface":"#fef8f1","on-primary-container":"#5b1604","on-secondary-fixed":"#251a00","on-secondary-fixed-variant":"#5b4300","surface-variant":"#e7e2db","inverse-surface":"#32302c","error":"#ba1a1a","on-tertiary":"#ffffff","butter-yellow":"#F9C74F","on-tertiary-fixed":"#0b2000","on-secondary":"#ffffff","on-surface-variant":"#55423e","secondary-container":"#fdcb52","surface-bright":"#fef8f1","surface-dim":"#dfd9d2","inverse-on-surface":"#f6f0e9","secondary-fixed":"#ffdf9c","on-primary-fixed-variant":"#7c2e19","surface-container":"#f3ede6","primary-fixed":"#ffdbd2","on-surface":"#1d1b17","secondary":"#785a00","outline":"#88726d","primary-fixed-dim":"#ffb4a1","surface-container-lowest":"#ffffff","on-tertiary-fixed-variant":"#29500b","on-tertiary-container":"#173600","primary":"#9a442d","error-container":"#ffdad6","peach-apricot":"#F4A261","tertiary-fixed":"#c0f19a","on-background":"#1d1b17","terracotta-crayon":"#E07A5F","primary-container":"#e07a5f","outline-variant":"#dbc1ba","surface-tint":"#9a442d","lavender-lilac":"#B39DDB","surface-container-highest":"#e7e2db","mint-sage":"#90BE6D","on-secondary-container":"#725500","on-error":"#ffffff","cerulean-sky":"#64B5F6","on-primary-fixed":"#3c0800","secondary-fixed-dim":"#f1c048","on-primary":"#ffffff","inverse-primary":"#ffb4a1","surface-container-high":"#ede7e0"},borderRadius:{"DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px"},spacing:{"space-xl":"2.5rem","space-lg":"1.5rem","gutter":"1.5rem","gutter-mobile":"1rem","space-md":"1rem","margin":"2.5rem","margin-mobile":"1rem","space-sm":"0.5rem","space-xs":"0.25rem"},fontFamily:{"label-md":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"]},fontSize:{"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"600"}],"display-lg":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["26px",{"lineHeight":"34px","letterSpacing":"-0.01em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"22px","fontWeight":"400"}],"title-md":["18px",{"lineHeight":"24px","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"display-lg-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.015em","fontWeight":"700"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.03em","fontWeight":"700"}]}}}};</script><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head><body class="bg-surface font-body-md text-body-md text-on-surface"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-space-lg lg:px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[24px]">menu</span></button><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-DEFAULT bg-primary-container flex items-center justify-center text-on-primary font-headline-sm font-bold shadow-[0_2px_8px_rgba(224,122,95,0.2)]"><span class="material-symbols-outlined text-[20px] text-on-primary">child_care</span></div><div class="flex flex-col"><span class="font-title-md text-title-md text-on-surface tracking-tight leading-none">The Purple Cubby Inc.</span><span class="font-label-sm text-label-sm text-on-surface-variant tracking-wider uppercase">School CRM</span></div></div><div class="h-6 w-px bg-surface-variant mx-space-xs hidden sm:block"></div><div class="relative hidden sm:flex items-center"><div class="flex items-center gap-space-xs bg-surface-container-low hover:bg-surface-container-high px-space-sm py-1.5 rounded-full cursor-pointer transition-colors"><span class="material-symbols-outlined text-primary text-[18px]">domain</span><span class="font-label-md text-label-md text-on-surface">North Valley Main Campus</span><span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span></div></div></div><nav class="hidden xl:flex items-center gap-space-xs bg-surface-container-low p-1 rounded-full" data-active-classes="bg-primary-container text-on-primary font-label-lg rounded-full shadow-[0_2px_6px_rgba(224,122,95,0.18)]"><a class="px-space-md py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors font-label-lg text-label-lg" data-path="overview" href="#">Overview</a><a class="px-space-md py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors font-label-lg text-label-lg" data-path="school-owner-portal" href="#">Owner Portal</a><a class="px-space-md py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors font-label-lg text-label-lg" data-path="board-trustee-portal" href="#">Board Trustee</a><a aria-current="page" class="px-space-md py-1.5 transition-colors bg-primary-container text-on-primary font-label-lg rounded-full shadow-[0_2px_6px_rgba(224,122,95,0.18)]" data-path="vendor-partner-portal" href="#">Vendor Partner</a><a class="px-space-md py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors font-label-lg text-label-lg" data-path="staff-self-service" href="#">Staff Self-Service</a></nav><div class="flex items-center gap-space-sm"><button aria-label="Quick Notifications" class="relative w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary ring-2 ring-surface"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[0_2px_6px_rgba(154,68,45,0.25)]"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-surface"><div class="flex flex-col w-full">
+<div class="w-full px-space-lg lg:px-margin py-space-lg flex flex-col gap-space-lg">
+<!-- Workspace Hero Banner -->
+<div class="w-full bg-surface-container-lowest rounded-lg p-space-lg shadow-[0px_8px_24px_rgba(224,122,95,0.06),0px_2px_6px_rgba(43,45,66,0.02)] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold px-2.5 py-0.5 rounded-full bg-primary-fixed/60">Supplier Partner Workspace</span>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-mint-sage/20 text-tertiary flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+            Verified Educational Supplier #VND-8841
+          </span>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-butter-yellow/25 text-secondary font-semibold">Net 30 Standing</span>
+</div>
+<div class="flex items-center gap-space-sm mt-1">
+<div class="w-12 h-12 rounded-DEFAULT bg-peach-apricot/20 text-primary flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[28px]">handyman</span>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">LittleTimber Craft Co. • Representative David K.</h1>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary">lock</span>
+              Strictly Scoped Supplier View • The Purple Cubby Inc. Procurement &amp; Logistics Gateway
+            </p>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm w-full lg:w-auto">
+<!-- DUAL VIEW SWITCHER -->
+<div class="flex items-center bg-surface-container-low p-1 rounded-full border border-outline-variant/30 text-label-sm font-label-sm shadow-inner">
+  <span class="flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-lowest text-primary font-bold shadow-sm">
+    <span class="material-symbols-outlined text-[16px]">grid_view</span>
+    <span>Cards</span>
+  </span>
+  <a href="Vendor_Partner_Portal_Compact.html" class="flex items-center gap-1 px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition">
+    <span class="material-symbols-outlined text-[16px]">view_list</span>
+    <span>Compact List</span>
+  </a>
+</div>
+<button class="flex-1 lg:flex-initial h-12 px-space-md rounded-full bg-surface-container-low hover:bg-surface-container text-charcoal-slate font-label-lg text-label-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0px_2px_6px_rgba(43,45,66,0.04)]" onclick="triggerDispatchDownload()" type="button">
+<span class="material-symbols-outlined text-[18px]">download_done</span>
+<span>Download PO Dispatch Notes</span>
+</button>
+<button class="flex-1 lg:flex-initial h-12 px-space-lg rounded-full bg-terracotta-crayon hover:brightness-105 text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0px_8px_20px_rgba(224,122,95,0.22)]" onclick="scrollToInvoiceSection()" type="button">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span>Submit New Invoice</span>
+</button>
+</div>
+</div>
+<!-- 4 High-Impact Metric Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-[0px_8px_24px_rgba(224,122,95,0.06)] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-0.5 transition-transform">
+<div class="w-full h-1.5 bg-cerulean-sky absolute top-0 left-0"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">Active Purchase Orders</span>
+<span class="w-9 h-9 rounded-full bg-cerulean-sky/15 text-charcoal-slate flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-display-lg text-[36px] leading-[44px] font-bold text-on-surface">4 Open POs</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">$24,850 authorized procurement value</div>
+</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-tertiary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>All 4 authorized &amp; funded</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-[0px_8px_24px_rgba(224,122,95,0.06)] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-0.5 transition-transform">
+<div class="w-full h-1.5 bg-butter-yellow absolute top-0 left-0"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">Pending Deliveries</span>
+<span class="w-9 h-9 rounded-full bg-butter-yellow/25 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-display-lg text-[36px] leading-[44px] font-bold text-on-surface">2 Shipments</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">1 scheduled today for Central Campus early years</div>
+</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-peach-apricot font-semibold">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>Access slot: 15:30 – 17:00</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-[0px_8px_24px_rgba(224,122,95,0.06)] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-0.5 transition-transform">
+<div class="w-full h-1.5 bg-mint-sage absolute top-0 left-0"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">3-Way Match Clearance</span>
+<span class="w-9 h-9 rounded-full bg-mint-sage/20 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">rule</span>
+</span>
+</div>
+<div class="my-2 flex items-baseline justify-between">
+<div class="font-display-lg text-[36px] leading-[44px] font-bold text-on-surface">96.2%</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-mint-sage/15 text-tertiary font-bold">BR-08-01 Pass</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">
+          Requisitions matched with delivery notes &amp; vendor invoices
+        </div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-[0px_8px_24px_rgba(224,122,95,0.06)] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-0.5 transition-transform">
+<div class="w-full h-1.5 bg-terracotta-crayon absolute top-0 left-0"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">Outstanding Receivables</span>
+<span class="w-9 h-9 rounded-full bg-primary-fixed/50 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-display-lg text-[36px] leading-[44px] font-bold text-on-surface">$8,450.00</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Net 30 terms • 0 overdue payments</div>
+</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Next scheduled ACH: Nov 28 ($1,840.00)</span>
+</div>
+</div>
+</div>
+<!-- Main Content Dual-Column Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- LEFT COLUMN: POs, Deliveries & Invoicing Queue (7 cols) -->
+<div class="lg:col-span-7 flex flex-col gap-space-lg">
+<!-- Purchase Orders & Delivery Status -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0px_8px_24px_rgba(224,122,95,0.06)] flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Purchase Orders &amp; Delivery Status</h2>
+<span class="font-label-sm text-label-sm px-2 py-0.5 bg-surface-container text-on-surface-variant rounded-full">US-P1-09 • BR-08-01</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Track ordered items, proof-of-delivery receipts, and 3-way procurement milestones.</p>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded-full text-charcoal-slate font-label-sm text-label-sm self-start sm:self-auto">
+<span class="w-2 h-2 rounded-full bg-mint-sage"></span>
+              Live Synced
+            </div>
+</div>
+<!-- PO Row 1 -->
+<div class="bg-surface-container-low rounded-DEFAULT p-space-md flex flex-col gap-space-sm hover:bg-surface-container transition-colors">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-on-surface font-bold">PO-2025-0881</span>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-mint-sage/20 text-tertiary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+                  Goods Delivered, Awaiting 3-Way Match
+                </span>
+</div>
+<span class="font-title-md text-title-md text-primary font-bold">$1,840.00</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-terracotta-crayon">toys</span> Montessori Wooden Block Sets (x12 kits)</span>
+<span>•</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-tertiary">task_alt</span> GRN-4421 verified by Receiving Dock</span>
+</div>
+<!-- 3-Way Progress Micro Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden flex mt-1">
+<div class="bg-mint-sage h-full w-1/3" title="PO Issued"></div>
+<div class="bg-mint-sage h-full w-1/3" title="Goods Received (GRN-4421)"></div>
+<div class="bg-butter-yellow h-full w-1/3 animate-pulse" title="Invoice Matching Pending"></div>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-space-xs pt-2">
+<div class="text-charcoal-slate font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">schedule</span>
+                Delivered Today 07:42 AM • Dock Central Early Years
+              </div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-highest font-label-md text-label-md transition-colors" onclick="showModal('PO-2025-0881', 'Montessori Wooden Block Sets')" type="button">
+                  View PO Details
+                </button>
+<button class="px-3.5 py-1.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:brightness-105 transition-all shadow-[0px_2px_6px_rgba(224,122,95,0.2)]" onclick="quickMatchInvoice('PO-2025-0881')" type="button">
+                  Attach Invoice
+                </button>
+</div>
+</div>
+</div>
+<!-- PO Row 2 -->
+<div class="bg-surface-container-low rounded-DEFAULT p-space-md flex flex-col gap-space-sm hover:bg-surface-container transition-colors">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-on-surface font-bold">PO-2025-0899</span>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-cerulean-sky/25 text-charcoal-slate font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">local_shipping</span>
+                  In Transit • Delivery Due Tomorrow
+                </span>
+</div>
+<span class="font-title-md text-title-md text-primary font-bold">$642.50</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-lavender-lilac">palette</span> Pastel Finger Paint &amp; Art Easels (x8)</span>
+<span>•</span>
+<span>Carrier: LittleTimber Direct Van #03 (Driver: Marc R.)</span>
+</div>
+<!-- 3-Way Progress Micro Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden flex mt-1">
+<div class="bg-mint-sage h-full w-1/3"></div>
+<div class="bg-butter-yellow h-full w-1/3"></div>
+<div class="bg-surface-dim h-full w-1/3"></div>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-space-xs pt-2">
+<div class="text-charcoal-slate font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">calendar_today</span>
+                Est. Delivery Window: Tomorrow 07:15 – 08:00 AM
+              </div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-highest font-label-md text-label-md transition-colors" onclick="showModal('PO-2025-0899', 'Pastel Finger Paint &amp; Art Easels')" type="button">
+                  View PO Details
+                </button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-highest hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1" onclick="triggerGRNUpload('PO-2025-0899')" type="button">
+<span class="material-symbols-outlined text-[16px]">upload_file</span>
+                  Upload Delivery Note (GRN)
+                </button>
+</div>
+</div>
+</div>
+<!-- PO Row 3 -->
+<div class="bg-surface-container-low rounded-DEFAULT p-space-md flex flex-col gap-space-sm hover:bg-surface-container transition-colors">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-on-surface font-bold">PO-2025-0912</span>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-butter-yellow/30 text-secondary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">pending</span>
+                  PO Approved • Awaiting Dispatch Note
+                </span>
+</div>
+<span class="font-title-md text-title-md text-primary font-bold">$4,200.00</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-peach-apricot">chair</span> Ergonomic Beechwood Toddler Chairs (x30 units)</span>
+<span>•</span>
+<span>Target Staging: East Wing Nursery 2B</span>
+</div>
+<!-- 3-Way Progress Micro Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden flex mt-1">
+<div class="bg-mint-sage h-full w-1/3"></div>
+<div class="bg-surface-dim h-full w-2/3"></div>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-space-xs pt-2">
+<div class="text-charcoal-slate font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">info</span>
+                Production Assembly Complete • Ready for Logistics Booking
+              </div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-highest font-label-md text-label-md transition-colors" onclick="showModal('PO-2025-0912', 'Ergonomic Beechwood Toddler Chairs')" type="button">
+                  View PO Details
+                </button>
+<button class="px-3.5 py-1.5 rounded-full bg-secondary-container text-on-secondary-container hover:brightness-105 font-label-md text-label-md transition-colors flex items-center gap-1" onclick="triggerGRNUpload('PO-2025-0912')" type="button">
+<span class="material-symbols-outlined text-[16px]">file_upload</span>
+                  Upload Delivery Note (GRN)
+                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Vendor Invoice Submission & Automated 3-Way Match Queue -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0px_8px_24px_rgba(224,122,95,0.06)] flex flex-col gap-space-md" id="invoice-submission-queue">
+<div class="flex items-start justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Vendor Invoice Submission &amp; Payment Matching Queue</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Submit PDF invoices for instant optical parse and automated 3-way match validation against approved POs and receiving notes.</p>
+</div>
+<span class="w-10 h-10 rounded-full bg-peach-apricot/20 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">account_balance_wallet</span>
+</span>
+</div>
+<!-- Drag and Drop Dropzone -->
+<div class="rounded-lg p-space-lg flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-surface-container-low hover:bg-surface-container-high/60" id="dropzone" ondragleave="this.classList.remove('bg-peach-apricot/10')" ondragover="event.preventDefault(); this.classList.add('bg-peach-apricot/10')" ondrop="handleDrop(event)">
+<input accept=".pdf,.xml,.csv" class="hidden" id="invoiceFileInput" onchange="simulateInvoiceProcess(this.files[0])" type="file"/>
+<div class="w-16 h-16 rounded-full bg-primary-fixed/50 text-primary flex items-center justify-center mb-space-sm shadow-[0_2px_8px_rgba(224,122,95,0.15)]">
+<span class="material-symbols-outlined text-[32px]">cloud_upload</span>
+</div>
+<p class="font-title-md text-title-md text-on-surface font-semibold">Drop PDF/XML Invoice Here or Click to Browse</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-md">Must include Vendor Tax ID, PO reference number, and matching itemized line totals. Max file size: 25MB.</p>
+<button class="mt-space-md px- space-md py-2 rounded-full bg-terracotta-crayon text-on-primary font-label-md text-label-md px-6 hover:brightness-105 active:scale-95 transition-all shadow-[0px_4px_12px_rgba(224,122,95,0.2)]" onclick="document.getElementById('invoiceFileInput').click()" type="button">
+              Select Invoice File
+            </button>
+</div>
+<!-- Live 3-Way Match Verification Preview Box -->
+<div class="bg-surface-container-low rounded-DEFAULT p-space-md flex flex-col gap-space-sm" id="match-status-card">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-charcoal-slate font-bold uppercase tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-tertiary">fact_check</span>
+                Automated 3-Way Match Pre-Check
+              </span>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-mint-sage/20 text-tertiary font-bold" id="match-badge">Ready for Validation</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm pt-1">
+<div class="bg-surface-container-lowest p-space-sm rounded-DEFAULT flex items-center gap-2">
+<span class="material-symbols-outlined text-mint-sage text-[20px]">task</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">1. Purchase Order</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">PO-2025-0881 Valid</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-DEFAULT flex items-center gap-2">
+<span class="material-symbols-outlined text-mint-sage text-[20px]">receipt</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">2. Receiving Note</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">GRN-4421 Signed</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-DEFAULT flex items-center gap-2">
+<span class="material-symbols-outlined text-peach-apricot text-[20px]">calculate</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">3. Line Total Match</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">$1,840.00 Exact</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between text-body-sm text-body-sm text-on-surface-variant pt-1">
+<span>Rule BR-08-01: Discrepancy threshold is set to 0.00% for early-years curriculum physical assets.</span>
+<span class="text-tertiary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+                Zero Overdue Invoices
+              </span>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Compliance, Campus Safeguarding & Logistics (5 cols) -->
+<div class="lg:col-span-5 flex flex-col gap-space-lg">
+<!-- Compliance & Supplier Safeguarding Documents -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0px_8px_24px_rgba(224,122,95,0.06)] flex flex-col gap-space-md">
+<div class="flex items-start justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Compliance &amp; Safeguarding</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mandatory early education supplier credentials and delivery vetting.</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-mint-sage/20 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">shield_with_heart</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- Cert 1 -->
+<div class="p-space-sm rounded-DEFAULT bg-surface-container-low flex items-start justify-between gap-space-sm">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-mint-sage/20 text-tertiary flex items-center justify-center mt-0.5">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface text-[15px]">Educational Toy Safety Certification</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">EN71 / ASTM F963 Non-Toxic Finish</span>
+<span class="font-label-sm text-label-sm text-tertiary font-semibold mt-0.5">Valid through Dec 2026 • Verified</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+</div>
+<!-- Cert 2 -->
+<div class="p-space-sm rounded-DEFAULT bg-surface-container-low flex items-start justify-between gap-space-sm">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-butter-yellow/30 text-secondary flex items-center justify-center mt-0.5">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface text-[15px]">Commercial Liability Insurance</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Policy #LIA-99201 ($2,000,000 umbrella)</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold mt-0.5">Expires in 28 Days (Dec 15, 2025)</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm hover:brightness-105 transition-all" onclick="triggerRenewUpload()" type="button">
+                Upload Renewal
+              </button>
+</div>
+<!-- Cert 3 -->
+<div class="p-space-sm rounded-DEFAULT bg-surface-container-low flex items-start justify-between gap-space-sm">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-mint-sage/20 text-tertiary flex items-center justify-center mt-0.5">
+<span class="material-symbols-outlined text-[18px]">security</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface text-[15px]">Delivery Personnel Background Check</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Campus safeguarding protocol (3 Drivers cleared)</span>
+<span class="font-label-sm text-label-sm text-tertiary font-semibold mt-0.5">Marc R., Elena S., David K. • Active</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high font-label-sm text-label-sm transition-colors" onclick="manageDriversModal()" type="button">
+                Manage
+              </button>
+</div>
+</div>
+<div class="bg-primary-fixed/30 p-space-sm rounded-DEFAULT text-on-primary-fixed-variant text-body-sm text-body-sm flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary mt-0.5">policy</span>
+<span>
+<strong>Zero-Student Access Protocol:</strong> Delivery personnel are permitted solely at external loading docks. Vendor portal maintains zero access to pupil records or employee payroll per US-P2-06.
+            </span>
+</div>
+</div>
+<!-- Campus Delivery Logistics & Access Times -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0px_8px_24px_rgba(224,122,95,0.06)] flex flex-col gap-space-md">
+<div class="flex items-start justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Campus Delivery Logistics</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Strict student-free time windows &amp; vehicle clearance gates.</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-cerulean-sky/20 text-charcoal-slate flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">departure_board</span>
+</div>
+</div>
+<div class="space-y-space-sm">
+<div class="bg-surface-container-low p-space-sm rounded-DEFAULT flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md text-on-surface text-[15px] font-bold">Central Campus • Bay #1 Loading Dock</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 bg-mint-sage/20 text-tertiary rounded-full font-bold">Gate Open</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Dedicated cargo entrance on Elmwood Lane. Maximum clearance 3.8m.</p>
+<div class="grid grid-cols-2 gap-space-xs mt-2">
+<div class="p-2 rounded bg-surface-container-lowest text-center">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Morning Window</span>
+<span class="font-label-lg text-label-lg text-primary font-bold">07:00 – 08:30</span>
+<span class="text-[10px] block text-on-surface-variant mt-0.5">Pre-arrival period</span>
+</div>
+<div class="p-2 rounded bg-surface-container-lowest text-center">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Afternoon Window</span>
+<span class="font-label-lg text-primary font-bold">15:30 – 17:00</span>
+<span class="text-[10px] block text-on-surface-variant mt-0.5">Post-dismissal period</span>
+</div>
+</div>
+</div>
+<div class="p-space-sm rounded-DEFAULT bg-amber-50 text-amber-900 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">no_crash</span>
+<p class="font-body-sm text-body-sm">
+<strong>Strict Rule:</strong> No delivery vans allowed between <strong>08:30 – 15:30</strong> due to outdoor toddler exploration hours.
+              </p>
+</div>
+</div>
+<!-- Quick Campus Contact -->
+<div class="flex items-center justify-between pt-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-peach-apricot/30 text-charcoal-slate flex items-center justify-center font-bold text-xs">
+                MB
+              </div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Facilities Manager: Marcus Bell</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Gate Phone: (555) 019-4821</span>
+</div>
+</div>
+<button class="h-9 w-9 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors" onclick="alert('Calling Facilities Bay #1 Dispatch: (555) 019-4821')" type="button">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Detail Modal (Hidden by default) -->
+<div class="fixed inset-0 z-50 bg-charcoal-slate/40 backdrop-blur-sm hidden items-center justify-center p-4" id="po-detail-modal">
+<div class="bg-surface-container-lowest max-w-lg w-full rounded-lg p-space-lg shadow-[0px_16px_40px_rgba(0,0,0,0.15)] flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-fixed/50 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">description</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface" id="modal-po-title">PO Details</h3>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center" onclick="closeModal()" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="space-y-space-sm font-body-md text-body-md text-on-surface-variant" id="modal-po-body">
+<!-- Dynamically injected -->
+</div>
+<div class="flex items-center justify-end gap-space-xs pt-2">
+<button class="px-space-md py-2 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors" onclick="closeModal()" type="button">
+          Close
+        </button>
+<button class="px-space-md py-2 rounded-full bg-terracotta-crayon hover:brightness-105 text-on-primary font-label-md text-label-md transition-all shadow-[0_2px_8px_rgba(224,122,95,0.2)]" onclick="alert('PO manifest downloaded as PDF'); closeModal();" type="button">
+          Download PDF Order Slip
+        </button>
+</div>
+</div>
+</div>
+<!-- Bottom-Right Floating ThePuffy AI Agent Launcher (Vendor Scoped) -->
+<div class="fixed bottom-space-lg right-space-lg z-50 flex flex-col items-end">
+<div class="hidden mb-2 bg-charcoal-slate text-white p-3 rounded-DEFAULT shadow-xl max-w-xs text-xs animate-fade-in" id="copilot-bubble">
+<div class="font-bold flex items-center gap-1 text-amber-200">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+        Vendor Match Copilot
+      </div>
+<p class="mt-1 text-slate-200">Hi David! PO-2025-0881 is verified at loading bay. You can upload invoice #INV-8841-A to process payment today.</p>
+</div>
+<button aria-label="ThePuffy Vendor AI Agent" class="group flex items-center gap-3 bg-charcoal-slate hover:bg-slate-800 text-white pl-4 pr-5 py-2.5 rounded-full shadow-[0_14px_32px_rgba(43,45,66,0.25),0_4px_10px_rgba(0,0,0,0.12)] hover:scale-105 active:scale-95 transition-all" onclick="toggleCopilot()" type="button">
+<div class="relative w-9 h-9 rounded-full bg-amber-400 text-charcoal-slate flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-[20px] font-bold">smart_toy</span>
+<span class="absolute -top-1 -right-1 w-3 h-3 bg-mint-sage rounded-full ring-2 ring-charcoal-slate"></span>
+</div>
+<div class="flex flex-col text-left">
+<div class="flex items-center gap-1 leading-none">
+<span class="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">ThePuffy</span>
+<span class="text-[9px] px-1 py-0.5 rounded bg-white/10 text-white font-medium">Vendor Scoped</span>
+</div>
+<span class="text-sm font-bold text-white tracking-tight mt-0.5 leading-none">Order &amp; Invoice Copilot</span>
+</div>
+</button>
+</div>
+<script>
+    function triggerDispatchDownload() {
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-20 right-6 bg-charcoal-slate text-white px-4 py-3 rounded-xl shadow-lg z-50 text-sm flex items-center gap-2 transition-all';
+      notification.innerHTML = '<span class="material-symbols-outlined text-mint-sage text-[20px]">file_download</span> Downloading PO Dispatch Notes package for 4 active orders...';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3200);
+    }
+
+    function scrollToInvoiceSection() {
+      const el = document.getElementById('invoice-submission-queue');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-4', 'ring-peach-apricot/40');
+        setTimeout(() => el.classList.remove('ring-4', 'ring-peach-apricot/40'), 2000);
+      }
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('bg-peach-apricot/10');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        simulateInvoiceProcess(e.dataTransfer.files[0]);
+      }
+    }
+
+    function simulateInvoiceProcess(file) {
+      const fileName = file ? file.name : 'INV-8841-09.pdf';
+      const badge = document.getElementById('match-badge');
+      badge.className = 'font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-butter-yellow/30 text-secondary font-bold flex items-center gap-1';
+      badge.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-spin">refresh</span> Matching against PO & GRN...';
+
+      setTimeout(() => {
+        badge.className = 'font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-mint-sage/20 text-tertiary font-bold flex items-center gap-1';
+        badge.innerHTML = '<span class="material-symbols-outlined text-[14px]">check</span> 100% 3-Way Match Verified (' + fileName + ')';
+        alert('Invoice successfully parsed! Line items match PO-2025-0881 ($1,840.00). Queued for payment run on Nov 28, 2025.');
+      }, 1400);
+    }
+
+    function quickMatchInvoice(poId) {
+      scrollToInvoiceSection();
+      const badge = document.getElementById('match-badge');
+      badge.innerText = 'Pre-Selected: ' + poId + ' ($1,840.00)';
+    }
+
+    function triggerGRNUpload(poId) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.jpg,.png';
+      input.onchange = (e) => {
+        if (e.target.files.length > 0) {
+          alert('Delivery receipt (GRN) uploaded for ' + poId + '. Facilities loading dock notified for barcode sign-off.');
+        }
+      };
+      input.click();
+    }
+
+    function triggerRenewUpload() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = () => {
+        alert('Commercial Liability Renewal uploaded. The Purple Cubby Inc. Compliance team will audit within 24 business hours.');
+      };
+      input.click();
+    }
+
+    function manageDriversModal() {
+      alert('Vetted Delivery Team (Safeguarding Compliance):\n1. Marc R. (Cleared: Oct 2024)\n2. Elena S. (Cleared: Jan 2025)\n3. David K. (Cleared: Aug 2024)\n\nAll drivers have active background badges.');
+    }
+
+    function showModal(poNum, title) {
+      document.getElementById('modal-po-title').innerText = poNum + ' Details';
+      document.getElementById('modal-po-body').innerHTML = `
+        <div class="p-3 bg-surface-container-low rounded-lg space-y-1">
+          <p><strong>Item:</strong> ${title}</p>
+          <p><strong>Supplier:</strong> LittleTimber Craft &amp; Learning Co. (#VND-8841)</p>
+          <p><strong>Campus Destination:</strong> Central Campus &bull; North Valley Early Education</p>
+          <p><strong>Payment Terms:</strong> Net 30 days upon 3-way match validation</p>
+          <p><strong>Safety Protocol:</strong> Non-toxic child-safe certified (EN71 passed)</p>
+        </div>
+        <p class="text-xs text-on-surface-variant">Zero student records or internal staff data are shared with external suppliers in adherence with FERPA and US-P2-06 regulations.</p>
+      `;
+      const modal = document.getElementById('po-detail-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('po-detail-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function toggleCopilot() {
+      const bubble = document.getElementById('copilot-bubble');
+      bubble.classList.toggle('hidden');
+    }
+  </script>
+</div></main><aside class="fixed bottom-space-lg right-space-lg z-50"><button aria-label="ThePuffy AI Agent Assistant" class="group relative flex items-center gap-space-sm bg-primary-container text-on-primary px-space-md py-3 rounded-full shadow-[0_14px_32px_rgba(224,122,95,0.25),0_4px_10px_rgba(43,45,66,0.06)] hover:brightness-105 active:scale-95 transition-all" type="button"><span class="w-8 h-8 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]"><span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span></span><div class="flex flex-col text-left"><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-fixed-variant leading-none">Agent AI</span><span class="font-title-md text-title-md font-bold leading-tight">ThePuffy</span></div><span class="material-symbols-outlined text-[18px] text-on-primary">smart_toy</span></button></aside><footer class="w-full bg-surface-container-low py-space-xl"><div class="w-full px-space-lg lg:px-margin flex flex-col md:flex-row items-center justify-between gap-space-md"><div class="flex items-center gap-space-sm"><div class="w-7 h-7 rounded-DEFAULT bg-primary-container flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[16px]">child_care</span></div><span class="font-title-md text-title-md text-on-surface">The Purple Cubby Inc.</span></div><div class="flex flex-wrap items-center justify-center gap-space-lg text-on-surface-variant font-label-md text-label-md"><a class="hover:text-on-surface transition-colors" href="#">Security &amp; Trust</a><a class="hover:text-on-surface transition-colors" href="#">Privacy Policy</a><a class="hover:text-on-surface transition-colors" href="#">Campus Directory</a><a class="hover:text-on-surface transition-colors" href="#">Help Center</a></div><div class="text-on-surface-variant font-body-sm text-body-sm text-center md:text-right">© 2025 The Purple Cubby Inc.. All rights reserved.</div></div></footer>
+  <!-- Responsive Slide-Over Drawer -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-50 transition-opacity duration-300 opacity-0 pointer-events-none" onclick="closeDrawer()"></div>
+  <div id="slide-drawer" class="fixed top-0 right-0 h-full w-full max-w-lg bg-surface shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-border md:rounded-l-3xl overflow-hidden max-md:top-auto max-md:inset-x-0 max-md:bottom-0 max-md:max-h-[88vh] max-md:rounded-t-3xl max-md:translate-x-0 max-md:translate-y-full max-md:border-t">
+    <!-- Drawer Header -->
+    <div class="px-6 py-4 bg-canvas/70 border-b border-border flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div id="drawer-icon-container" class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center font-bold">
+          <span id="drawer-icon" class="material-symbols-outlined text-xl">info</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="drawer-title" class="font-serif font-bold text-base text-charcoal leading-snug">Drawer Title</h3>
+            <span id="drawer-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/20 text-green-800">Status</span>
+          </div>
+          <p id="drawer-subtitle" class="text-xs text-charcoal/60 mt-0.5">Subtitle</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="drawer-fullscreen-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-semibold text-charcoal hover:bg-canvas flex items-center gap-1 shadow-xs" title="Open full workspace">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+          <span class="hidden sm:inline">Workspace</span>
+        </a>
+        <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Drawer Body -->
+    <div id="drawer-content" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+
+    <!-- Drawer Footer -->
+    <div id="drawer-footer" class="px-6 py-4 bg-cream/40 border-t border-border flex items-center justify-between shrink-0">
+      <span id="drawer-footer-note" class="text-xs text-charcoal/50">Auto-saved to cloud ledger</span>
+      <div id="drawer-actions" class="flex items-center gap-2">
+        <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-charcoal hover:bg-canvas">Cancel</button>
+        <button id="drawer-primary-btn" onclick="executeDrawerAction()" class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-bold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">check</span>
+          <span id="drawer-btn-text">Confirm Action</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-notify" class="fixed bottom-6 right-6 z-50 bg-charcoal text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="w-7 h-7 rounded-full bg-mint/30 text-mint flex items-center justify-center">
+      <span class="material-symbols-outlined text-base font-bold">check_circle</span>
+    </div>
+    <div>
+      <span id="toast-title" class="text-xs font-bold block">Action Completed</span>
+      <span id="toast-msg" class="text-[11px] text-white/70 block">Record updated and state synced.</span>
+    </div>
+  </div>
+
+  <script>
+  let currentDrawerAction = null;
+
+  function openDrawer(config) {
+    document.getElementById('drawer-title').textContent = config.title || 'Details';
+    document.getElementById('drawer-subtitle').textContent = config.subtitle || '';
+    
+    const badgeEl = document.getElementById('drawer-badge');
+    badgeEl.textContent = config.badge || 'Active';
+    badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (config.badgeClass || 'bg-mint/20 text-green-800');
+    
+    document.getElementById('drawer-icon').textContent = config.icon || 'info';
+    document.getElementById('drawer-fullscreen-link').href = config.fullscreenUrl || '#';
+    document.getElementById('drawer-btn-text').textContent = config.actionText || 'Confirm';
+    document.getElementById('drawer-content').innerHTML = config.contentHtml || '';
+    
+    if (config.footerNote) {
+      document.getElementById('drawer-footer-note').textContent = config.footerNote;
+    }
+    
+    currentDrawerAction = config.onAction || null;
+
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    backdrop.classList.add('opacity-100');
+
+    if (window.innerWidth >= 768) {
+      drawer.classList.remove('translate-x-full');
+    } else {
+      drawer.classList.remove('max-md:translate-y-full');
+    }
+  }
+
+  function closeDrawer() {
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.add('opacity-0', 'pointer-events-none');
+    backdrop.classList.remove('opacity-100');
+
+    drawer.classList.add('translate-x-full');
+    drawer.classList.add('max-md:translate-y-full');
+  }
+
+  function executeDrawerAction() {
+    if (currentDrawerAction) {
+      currentDrawerAction();
+    }
+    closeDrawer();
+  }
+
+  function showToast(title, msg) {
+    const toast = document.getElementById('toast-notify');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3500);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+  
+  function openPOFulfillmentDrawer(poNum, vendor, amount, status, url) {
+    openDrawer({
+      title: "Purchase Order " + poNum,
+      subtitle: vendor + " • " + amount,
+      badge: status,
+      badgeClass: "bg-mint/20 text-green-800",
+      icon: "local_shipping",
+      fullscreenUrl: url || "../Procurement/Purchase_Order_Modal.html",
+      actionText: "Confirm Delivery Dispatch",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal text-sm">${poNum}</span>
+              <span class="font-mono font-bold text-charcoal">${amount}</span>
+            </div>
+            <p class="text-charcoal/70 text-[11px]">Science lab consumables and glassware kits. Pre-approved for Loading Bay 2 delivery.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border space-y-1">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Delivery Window</span>
+            <p class="font-semibold text-charcoal">Friday, Nov 07 • 09:00 AM – 11:30 AM</p>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Dispatch Confirmed", poNum + " delivery manifest recorded with school facilities team.");
+      }
+    });
+  }
+
+  function openVendorInvoiceDrawer(invNum, poNum, amount, status, url) {
+    openDrawer({
+      title: "Invoice Submission: " + invNum,
+      subtitle: "Against PO " + poNum + " • " + amount,
+      badge: status,
+      badgeClass: "bg-cerulean/20 text-blue-800",
+      icon: "receipt_long",
+      fullscreenUrl: url || "../Procurement/Vendor_Invoice_Modal.html",
+      actionText: "Submit for 3-Way Reconciliation",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal">${invNum}</span>
+              <span class="font-bold text-terracotta text-sm">${amount}</span>
+            </div>
+            <p class="text-charcoal/70 text-[11px]">Tax verified (13% HST included). Matching packing slip on file with receiver.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Disbursement Mode</span>
+            <p class="font-semibold text-charcoal">Direct EFT Settlement (Net 30)</p>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Invoice Queued", invNum + " submitted to financial controller for payment release.");
+      }
+    });
+  }
+  </script>
+
+</body></html>

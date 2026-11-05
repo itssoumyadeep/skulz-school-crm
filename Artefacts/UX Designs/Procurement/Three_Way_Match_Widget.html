@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Three-Way Match Verification Widget — School CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#fff8f2',
+            surface: '#ffffff',
+            border: '#ead8c7',
+            charcoal: '#121417',
+            terracotta: '#e07a5f',
+            mint: '#90be6d',
+            marigold: '#fdba3b',
+            cerulean: '#64b5f6',
+            lilac: '#b39ddb',
+            cream: '#faf0e6'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen p-4 md:p-8">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Top Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-mint/20 text-green-800 flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">compare_arrows</span>
+        </div>
+        <div>
+          <h1 class="font-serif text-2xl font-bold text-charcoal">Three-Way Match Procurement Verification</h1>
+          <p class="text-xs text-charcoal/60 mt-0.5">Automated Triangulation: Purchase Order ⇄ Goods Receipt Note ⇄ Vendor Invoice</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 bg-surface border border-border rounded-xl text-xs font-semibold hover:bg-canvas text-charcoal flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">history</span> Audit History
+        </button>
+        <button class="px-5 py-2.5 bg-mint text-white rounded-xl text-xs font-bold hover:bg-mint/90 flex items-center gap-2 shadow-sm transition">
+          <span class="material-symbols-outlined text-sm">verified</span> Authorize Payment ($4,205.52)
+        </button>
+      </div>
+    </div>
+
+    <!-- Match Status Banner -->
+    <div class="p-4 bg-surface border border-border rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-mint/20 text-green-700 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-2xl">check_circle</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold text-charcoal">Reconciliation Packet #RCP-2026-089</h2>
+            <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-mint/20 text-green-800">100% Quantitative Match</span>
+          </div>
+          <p class="text-xs text-charcoal/60 mt-0.5">Spectrum Educational Supplies Ltd. • PO #PO-2026-0089 • GRN #GRN-2026-0042 • Invoice #SPEC-INV-9821-CA</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-6 text-xs">
+        <div class="text-right">
+          <span class="text-charcoal/50 block">Tolerance Variance:</span>
+          <span class="font-bold text-mint font-mono">$0.00 CAD (Zero Diff)</span>
+        </div>
+        <div class="text-right">
+          <span class="text-charcoal/50 block">Payment Due:</span>
+          <span class="font-bold text-charcoal">Dec 01, 2026 (Net 30)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-Way Triangulation Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Column 1: Purchase Order -->
+      <div class="bg-surface border border-border rounded-2xl p-5 space-y-4 shadow-sm relative">
+        <div class="flex items-center justify-between pb-3 border-b border-border">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-terracotta text-lg">shopping_cart</span>
+            <span class="font-bold text-xs uppercase tracking-wider text-charcoal">1. Purchase Order</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-800">Approved</span>
+        </div>
+        
+        <div class="space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Doc Number:</span>
+            <span class="font-mono font-bold text-charcoal">PO-2026-0089</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Authorized By:</span>
+            <span class="font-medium text-charcoal">M. Kowalski / Bursar</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Commitment Date:</span>
+            <span class="text-charcoal">Oct 28, 2026</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Budget Line:</span>
+            <span class="text-charcoal">STEM-SCI-2026</span>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-border">
+          <span class="text-[11px] font-bold text-charcoal/60 uppercase tracking-wider block mb-2">Committed Line Items</span>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">4x Compound Microscope</span>
+              <span class="font-mono text-charcoal">$3,360.00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">6x Slide Anatomy Sets</span>
+              <span class="font-mono text-charcoal">$390.00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">3x Beaker Sets (12pk)</span>
+              <span class="font-mono text-charcoal">$144.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-canvas/60 rounded-xl border border-border flex justify-between items-center text-xs">
+          <span class="font-bold text-charcoal">PO Total:</span>
+          <span class="font-mono font-bold text-charcoal text-sm">$4,205.52 CAD</span>
+        </div>
+      </div>
+
+      <!-- Column 2: Goods Received Note -->
+      <div class="bg-surface border border-border rounded-2xl p-5 space-y-4 shadow-sm relative">
+        <div class="flex items-center justify-between pb-3 border-b border-border">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-cerulean text-lg">local_shipping</span>
+            <span class="font-bold text-xs uppercase tracking-wider text-charcoal">2. Delivery Receipt</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-800">Verified</span>
+        </div>
+        
+        <div class="space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">GRN Reference:</span>
+            <span class="font-mono font-bold text-charcoal">GRN-2026-0042</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Received By:</span>
+            <span class="font-medium text-charcoal">J. Thorne (Facilities)</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Arrival Date:</span>
+            <span class="text-charcoal">Nov 02, 2026 • 10:45 AM</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Waybill:</span>
+            <span class="font-mono text-charcoal">FX-91823</span>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-border">
+          <span class="text-[11px] font-bold text-charcoal/60 uppercase tracking-wider block mb-2">Physically Received</span>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">4 of 4 Microscopes</span>
+              <span class="text-mint font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-xs">check</span> Matched</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">6 of 6 Slide Sets</span>
+              <span class="text-mint font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-xs">check</span> Matched</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">3 of 3 Beaker Sets</span>
+              <span class="text-mint font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-xs">check</span> Matched</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-canvas/60 rounded-xl border border-border flex justify-between items-center text-xs">
+          <span class="font-bold text-charcoal">Dock Physical Check:</span>
+          <span class="font-bold text-mint text-xs">100% Items Received</span>
+        </div>
+      </div>
+
+      <!-- Column 3: Vendor Invoice -->
+      <div class="bg-surface border border-border rounded-2xl p-5 space-y-4 shadow-sm relative">
+        <div class="flex items-center justify-between pb-3 border-b border-border">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-lilac text-lg">receipt_long</span>
+            <span class="font-bold text-xs uppercase tracking-wider text-charcoal">3. Vendor Invoice</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-800">Approved</span>
+        </div>
+        
+        <div class="space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Invoice #:</span>
+            <span class="font-mono font-bold text-charcoal">SPEC-INV-9821-CA</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Tax ID / HST:</span>
+            <span class="font-medium text-charcoal">#104928172 RT0001</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Invoice Date:</span>
+            <span class="text-charcoal">Nov 01, 2026</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-charcoal/50">Payment Method:</span>
+            <span class="text-charcoal">EFT Direct Deposit</span>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-border">
+          <span class="text-[11px] font-bold text-charcoal/60 uppercase tracking-wider block mb-2">Billed Line Amounts</span>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">Microscopes (4 @ $840)</span>
+              <span class="font-mono text-charcoal">$3,360.00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">Slide Sets (6 @ $65)</span>
+              <span class="font-mono text-charcoal">$390.00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-charcoal/80">Beakers (3 @ $48)</span>
+              <span class="font-mono text-charcoal">$144.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-mint/10 border border-mint/30 rounded-xl flex justify-between items-center text-xs">
+          <span class="font-bold text-green-900">Total Billed:</span>
+          <span class="font-mono font-bold text-green-900 text-sm">$4,205.52 CAD</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Automated Discrepancy & Verification Matrix -->
+    <div class="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-serif text-base font-bold text-charcoal flex items-center gap-2">
+          <span class="material-symbols-outlined text-mint text-xl">fact_check</span>
+          Automated Discrepancy Rules Verification
+        </h3>
+        <span class="text-xs text-charcoal/60">Automated Audit Run at 10:52 AM EST</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <div class="p-4 rounded-xl border border-border bg-canvas/30 flex items-start gap-3">
+          <span class="material-symbols-outlined text-mint text-xl shrink-0">check_circle</span>
+          <div>
+            <span class="font-bold text-charcoal block">Quantity Match Check</span>
+            <p class="text-charcoal/60 text-[11px] mt-0.5">PO units (13 total items) match GRN verified count exactly. 0 missing items.</p>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl border border-border bg-canvas/30 flex items-start gap-3">
+          <span class="material-symbols-outlined text-mint text-xl shrink-0">check_circle</span>
+          <div>
+            <span class="font-bold text-charcoal block">Unit Price & Discount Variance</span>
+            <p class="text-charcoal/60 text-[11px] mt-0.5">All unit prices adhere to Ontario master school contract rates. 5% discount applied.</p>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl border border-border bg-canvas/30 flex items-start gap-3">
+          <span class="material-symbols-outlined text-mint text-xl shrink-0">check_circle</span>
+          <div>
+            <span class="font-bold text-charcoal block">Tax & Total Divergence Check</span>
+            <p class="text-charcoal/60 text-[11px] mt-0.5">13% HST calculated correctly ($506.22). Zero variance ($0.00 delta) against PO cap.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-4 border-t border-border flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="authRecon" checked class="w-4 h-4 rounded text-mint focus:ring-mint border-border">
+          <label for="authRecon" class="text-xs text-charcoal/80 cursor-pointer">
+            Dual electronic approval signed by Senior Procurement Officer & Finance Controller
+          </label>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="px-4 py-2 border border-border rounded-xl text-xs font-semibold hover:bg-canvas text-charcoal">
+            Flag Discrepancy / Dispute
+          </button>
+          <button class="px-5 py-2.5 bg-mint text-white rounded-xl text-xs font-bold hover:bg-mint/90 flex items-center gap-2 shadow-sm transition">
+            <span class="material-symbols-outlined text-sm">payments</span> Release Payment for Dec 01 EFT Run
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

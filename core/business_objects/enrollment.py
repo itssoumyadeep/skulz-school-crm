@@ -1,3 +1,5 @@
+"""Domain business logic for admissions applications, document verification, student number generation, and enrollment lifecycle."""
+
 import uuid
 from datetime import timedelta
 from decimal import Decimal

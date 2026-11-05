@@ -1,3 +1,5 @@
+"""API v1 endpoints for fee structures, invoices, payments, refunds, discounts, and Stripe checkout sessions/webhooks."""
+
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal

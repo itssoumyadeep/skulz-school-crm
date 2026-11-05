@@ -1,3 +1,5 @@
+"""Pydantic schemas for HR appraisals, staff contracts, CPD records, payroll leave deductions, vendor procurement, events, and communications."""
+
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Literal

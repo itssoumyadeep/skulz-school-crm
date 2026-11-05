@@ -1,3 +1,5 @@
+"""Pydantic schemas for academic calendars, terms, curriculums, lesson plans, exams, marks entry, and report cards."""
+
 from datetime import date
 from typing import Optional, List, Dict, Any
 from uuid import UUID

@@ -1,3 +1,5 @@
+"""JWT bearer token authentication handler and validator for Django Ninja API endpoints."""
+
 import base64
 import json
 import uuid

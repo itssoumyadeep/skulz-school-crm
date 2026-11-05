@@ -1,3 +1,5 @@
+"""Pydantic schemas for school setup configuration, dataset schemas, template metadata, and CSV import payloads."""
+
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field

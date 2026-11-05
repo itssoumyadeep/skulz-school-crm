@@ -1,3 +1,5 @@
+"""API v1 endpoints for operational analytics, custom report execution, report scheduling, and signed outbound webhooks."""
+
 from uuid import UUID
 
 from django.http import JsonResponse

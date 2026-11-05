@@ -1,0 +1,748 @@
+<!DOCTYPE html><html lang="en" style="width: 1378px; height: 1287px; overflow: hidden; position: relative;"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        paper: "#FCF9F2",
+        "paper-card": "#FFFDF9",
+        "paper-tint": "#F5EFE6",
+        "crayon-charcoal": "#2D2A26",
+        "crayon-espresso": "#4A443D",
+        "crayon-muted": "#756D63",
+        "pastel-sun": "#FED766",
+        "pastel-butter": "#FFE68C",
+        "pastel-mint": "#BCE6CD",
+        "pastel-mint-deep": "#3E7B58",
+        "pastel-sky": "#BDE0FE",
+        "pastel-sky-deep": "#2563EB",
+        "pastel-peach": "#FFC6B3",
+        "pastel-peach-deep": "#C2410C",
+        "pastel-apricot": "#FFB4A2",
+        "pastel-lilac": "#E2D4F0",
+        "pastel-lilac-deep": "#6B46C1",
+        "pastel-coral": "#FF8A65",
+        "crayon-red": "#D9381E"
+      },
+      borderRadius: {
+        DEFAULT: "1rem",
+        "2xl": "1.5rem",
+        "3xl": "2rem",
+        "full": "9999px"
+      },
+      fontFamily: {
+        sans: ["Plus Jakarta Sans", "sans-serif"],
+        "body-md": ["Plus Jakarta Sans", "sans-serif"]
+      },
+      boxShadow: {
+        "pastel": "0 8px 24px -4px rgba(74, 68, 61, 0.06), 0 2px 6px -1px rgba(74, 68, 61, 0.04)",
+        "pastel-hover": "0 14px 30px -4px rgba(74, 68, 61, 0.10), 0 4px 10px -2px rgba(74, 68, 61, 0.06)",
+        "pastel-warm": "0 10px 25px -3px rgba(254, 215, 102, 0.35)",
+        "pastel-glow": "0 0 0 3px rgba(254, 215, 102, 0.25)"
+      }
+    }
+  }
+};
+</script></head><body class="bg-paper font-sans text-crayon-charcoal antialiased min-h-screen selection:bg-pastel-butter selection:text-crayon-charcoal"><header class="fixed top-0 left-0 right-0 z-50 px-4 md:px-10 pt-2"><div class="h-20 max-w-7xl mx-auto bg-paper-card/95 backdrop-blur-xl border-2 border-pastel-butter/60 shadow-pastel rounded-full px-6 flex items-center justify-between transition-all"><div class="flex items-center gap-3.5 shrink-0"><div class="relative group/menu"><button aria-label="Open Navigation Menu" class="w-10 h-10 rounded-2xl bg-paper-tint hover:bg-pastel-butter/60 active:scale-95 border-2 border-pastel-butter/80 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer shadow-xs text-crayon-charcoal group-hover/menu:border-pastel-sun group-hover/menu:bg-pastel-butter" type="button"><span class="w-4 h-0.5 rounded-full bg-crayon-charcoal transition-all"></span><span class="w-4 h-0.5 rounded-full bg-crayon-charcoal transition-all"></span><span class="w-4 h-0.5 rounded-full bg-crayon-charcoal transition-all"></span></button><div class="absolute left-0 top-12 hidden group-hover/menu:flex hover:flex flex-col w-72 bg-paper-card/95 backdrop-blur-xl border-2 border-pastel-butter shadow-pastel-warm rounded-3xl p-4 z-50 transition-all"><div class="flex items-center justify-between pb-3 border-b border-pastel-butter/80 mb-2"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-pastel-sun"></span><span class="text-xs font-black text-crayon-charcoal uppercase tracking-wider">School CRM Navigator</span></div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pastel-mint text-pastel-mint-deep">Staff Hub</span></div><div class="space-y-1"><a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-crayon-charcoal bg-pastel-butter/50 hover:bg-pastel-butter transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">dashboard</span>Teacher Dashboard</a><a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-crayon-espresso hover:text-crayon-charcoal hover:bg-pastel-mint/30 transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">co_present</span>Classes &amp; Attendance</a><a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-crayon-espresso hover:text-crayon-charcoal hover:bg-pastel-peach/30 transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">menu_book</span>Lesson Plans</a><a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-crayon-espresso hover:text-crayon-charcoal hover:bg-pastel-lilac/40 transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">assignment</span>Assessments &amp; Moderation</a><a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-crayon-espresso hover:text-crayon-charcoal hover:bg-pastel-sky/40 transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">chat_bubble</span>Messages &amp; Parent Notes</a></div><div class="pt-2.5 mt-2 border-t border-pastel-butter/80"><p class="text-[10px] font-extrabold text-crayon-muted uppercase tracking-wider px-2 mb-1.5">Portal &amp; Tools</p><div class="grid grid-cols-2 gap-1.5"><a class="flex items-center gap-1.5 p-2 rounded-xl bg-paper-tint hover:bg-pastel-butter/40 text-[11px] font-bold text-crayon-espresso transition-colors" href="#"><span class="material-symbols-outlined text-[15px]">calendar_month</span>Calendar</a><a class="flex items-center gap-1.5 p-2 rounded-xl bg-paper-tint hover:bg-pastel-peach/40 text-[11px] font-bold text-crayon-espresso transition-colors" href="#"><span class="material-symbols-outlined text-[15px]">shield</span>Safeguard</a><a class="flex items-center gap-1.5 p-2 rounded-xl bg-paper-tint hover:bg-pastel-lilac/40 text-[11px] font-bold text-crayon-espresso transition-colors" href="#"><span class="material-symbols-outlined text-[15px]">swap_horiz</span>Switch Role</a><a class="flex items-center gap-1.5 p-2 rounded-xl bg-paper-tint hover:bg-pastel-mint/40 text-[11px] font-bold text-crayon-espresso transition-colors" href="#"><span class="material-symbols-outlined text-[15px]">settings</span>Settings</a></div></div></div></div><div class="w-10 h-10 rounded-2xl bg-pastel-butter flex items-center justify-center border-2 border-pastel-sun/80 shadow-xs"><span class="material-symbols-outlined text-[24px] text-crayon-charcoal">draw</span></div><div class="flex flex-col"><span class="text-xl font-extrabold text-crayon-charcoal tracking-tight leading-none">ThePurpleCubby</span><span class="text-xs font-semibold text-crayon-muted leading-none mt-1 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-pastel-mint-deep"></span>Staff Portal</span></div></div><nav class="hidden xl:flex items-center bg-paper-tint/80 border border-pastel-butter/50 p-1.5 rounded-full gap-1"><a aria-current="page" class="px-5 py-2 rounded-full transition-all duration-200 bg-crayon-charcoal text-paper font-bold shadow-xs text-sm" data-path="dashboard" href="#">Dashboard</a><a class="text-sm font-semibold text-crayon-espresso hover:text-crayon-charcoal hover:bg-pastel-butter/40 px-4 py-2 rounded-full transition-all duration-200" data-path="classes-and-attendance" href="#">Classes &amp; Attendance</a><a class="text-sm font-semibold text-crayon-espresso hover:text-crayon-charcoal hover:bg-pastel-mint/40 px-4 py-2 rounded-full transition-all duration-200" data-path="lesson-plans" href="#">Lesson Plans</a><a class="text-sm font-semibold text-crayon-espresso hover:text-crayon-charcoal hover:bg-pastel-lilac/40 px-4 py-2 rounded-full transition-all duration-200" data-path="assessments-and-moderation" href="#">Assessments &amp; Moderation</a><a class="text-sm font-semibold text-crayon-espresso hover:text-crayon-charcoal hover:bg-pastel-sky/40 px-4 py-2 rounded-full transition-all duration-200" data-path="messages" href="#">Messages</a></nav><div class="flex items-center gap-2.5 shrink-0"><button class="w-10 h-10 rounded-full bg-paper-tint hover:bg-pastel-butter/50 border border-pastel-butter/80 transition-colors flex items-center justify-center relative text-crayon-charcoal" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="w-2.5 h-2.5 rounded-full bg-pastel-peach-deep absolute top-2 right-2 ring-2 ring-paper-card"></span></button><div class="flex items-center pl-1"><img alt="Profile" class="w-9 h-9 rounded-full object-cover ring-2 ring-pastel-sun shadow-xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoB11slqsZ3YAptbyduwkyBWDGx_oNyemXAFG9GUneToqiUSSiugztinuDUmagxMRHSlW4uuK0ngTc1qzzCBrDjLhSqfWO8xX-YrkNlCTTJ87t6y7gFqRuYV9DEthU9fCArpcxo6_UOUe6VQA24HTlLy_VQKh7tms6_lGA-ONUsWh1a5abKgiM2sR7W0e7GBmmb7Tf_OF4nIZGPQDtqVYCKWKdS3Y6_V7Uc6IP"></div></div></div></header><main class="w-full pt-20 bg-paper"><div class="max-w-7xl mx-auto px-4 md:px-10 pt-6 pb-12"><div class="flex flex-col w-full">
+<!-- Tactile pastel ambient backdrop blobs -->
+<div class="relative w-full">
+<div class="absolute -top-10 left-1/4 w-96 h-96 bg-pastel-butter/35 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute top-44 right-10 w-80 h-80 bg-pastel-mint/30 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute bottom-20 left-10 w-72 h-72 bg-pastel-peach/25 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<!-- Top Greeting & Header Bar -->
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
+<div class="flex items-center gap-4">
+<div class="relative shrink-0">
+<img class="w-14 h-14 rounded-2xl object-cover shadow-pastel border-2 border-pastel-sun" data-alt="Warm and professional friendly portrait of an elementary school female educator smiling gently wearing a neutral earth-toned knit cardigan in warm bright daylight school setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBviMBGnRX_-QFVKmGRlya5rWDKk6QQv_TbvgNZ92C673Q7cDwqpbnjaSTmWGpRHINNS4zUPrujAyb8arqfcXH_TCTPnkJ_fhwIvpQAI6-yYeFyl36LfssJVVE3eL4fgI5x4MQhS7Q91EGTJf7uFh5ytt3NWnXkgthd5n7w3DMwdw8nAO84lNKfn-ynREqC_AeUCHXACtMiN_ahvNGvKe3L_pFMxuu8feGZkEZ9">
+<span class="absolute -bottom-1 -right-1 w-5 h-5 bg-pastel-mint rounded-full border-2 border-paper-card flex items-center justify-center text-pastel-mint-deep"><span class="material-symbols-outlined text-[12px] font-bold">check</span></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2.5 flex-wrap">
+<h1 class="text-2xl font-extrabold text-crayon-charcoal tracking-tight">Good morning, Ms. Sarah Jenkins!</h1>
+<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-pastel-lilac/70 text-pastel-lilac-deep border border-pastel-lilac">Homeroom 4B &amp; Gr 5 Science</span>
+</div>
+<span class="text-sm font-medium text-crayon-espresso mt-0.5">Thursday, Term 2 • Week 6 • Bell Schedule Standard</span>
+</div>
+</div>
+<!-- Quick Class Switcher Pill & Date Badge -->
+<div class="flex items-center gap-2.5 self-stretch sm:self-auto">
+<button class="group flex items-center justify-between gap-3 bg-paper-card px-4 py-2.5 rounded-full border-2 border-pastel-butter shadow-pastel hover:border-pastel-sun hover:shadow-pastel-hover transition-all text-left w-full sm:w-auto" type="button">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-pastel-butter flex items-center justify-center text-crayon-charcoal border border-pastel-sun/60">
+<span class="material-symbols-outlined text-[20px]">school</span>
+</div>
+<div>
+<p class="text-sm font-bold text-crayon-charcoal leading-tight">Grade 4 • Room 12B</p>
+<p class="text-xs font-medium text-crayon-muted leading-none mt-0.5">Primary Homeroom (28 Students)</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-crayon-muted group-hover:text-crayon-charcoal transition-colors text-[20px]">expand_more</span>
+</button>
+<div class="hidden sm:flex items-center gap-2 bg-paper-card px-4 py-2.5 rounded-full border-2 border-pastel-mint shadow-pastel">
+<span class="w-2.5 h-2.5 rounded-full bg-pastel-mint-deep animate-pulse"></span>
+<span class="text-xs font-bold text-pastel-mint-deep tracking-wide">Term 2 Active</span>
+</div>
+<!-- DUAL VIEW SWITCHER -->
+<div class="flex items-center bg-paper-tint p-1 rounded-full border border-pastel-butter/80 text-xs shadow-inner">
+<span class="flex items-center gap-1 px-3 py-1 rounded-full bg-paper-card text-crayon-charcoal font-bold shadow-xs">
+<span class="material-symbols-outlined text-[16px]">grid_view</span>
+<span>Cards</span>
+</span>
+<a href="Teacher_Dashboard_Overview_Compact.html" class="flex items-center gap-1 px-3 py-1 rounded-full text-crayon-muted hover:text-crayon-charcoal hover:bg-paper-card/70 transition">
+<span class="material-symbols-outlined text-[16px]">view_list</span>
+<span>Compact List</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Main 12-Column Balanced Executive Stage -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- LEFT COLUMN: Key Metrics, Stat Block, Attendance Pulse -->
+<div class="lg:col-span-3 flex flex-col gap-6">
+<!-- Big Stat Card: Today's Attendance -->
+<div class="bg-paper-card rounded-3xl p-6 border-2 border-pastel-mint/80 shadow-pastel flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-pastel-hover hover:-translate-y-1 cursor-pointer active:scale-[0.99]" onclick="openAttendanceDrawer()" id="card-attendance-kpi">
+<div class="flex items-start justify-between">
+<span class="text-xs uppercase tracking-wider text-crayon-espresso font-bold">Today's Attendance</span>
+<div class="flex items-center gap-1.5">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-pastel-mint text-pastel-mint-deep border border-pastel-mint-deep/20" id="badge-attendance">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>+2.4%
+</span>
+<a href="../Attendance/Attendance_Roster_Widget.html" target="_blank" onclick="event.stopPropagation()" class="p-1 rounded-lg hover:bg-paper-tint text-crayon-espresso/70 hover:text-crayon-charcoal transition" title="Open full attendance roster workspace">
+<span class="material-symbols-outlined text-[16px]">open_in_new</span>
+</a>
+</div>
+</div>
+<div class="my-4">
+<div class="text-5xl font-black text-crayon-charcoal tracking-tight leading-none">
+96%
+</div>
+<p class="text-sm font-semibold text-crayon-espresso mt-2">
+27 of 28 Enrolled Present
+</p>
+</div>
+<!-- Micro attendance tracker pill -->
+<div class="bg-paper-tint p-3 rounded-2xl flex items-center justify-between text-crayon-charcoal border border-pastel-butter/80">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-pastel-peach-deep"></span>
+<span class="text-xs font-semibold text-crayon-espresso">1 Excused (Leo M.)</span>
+</div>
+<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-pastel-mint/70 text-pastel-mint-deep">Verified</span>
+</div>
+</div>
+<!-- Sunny Yellow Summary Widget (Buttercup Oil Pastel Tone) -->
+<div class="bg-gradient-to-br from-pastel-butter via-pastel-sun to-[#FDCB52] rounded-3xl p-6 text-crayon-charcoal border-2 border-pastel-sun shadow-pastel-warm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-crayon-charcoal font-bold">calendar_month</span>
+<span class="text-base font-extrabold text-crayon-charcoal">Class Schedule</span>
+</div>
+<span class="px-3 py-1 rounded-full text-xs font-bold bg-paper-card/90 text-crayon-charcoal border border-paper shadow-xs">
+Today
+</span>
+</div>
+<div class="grid grid-cols-3 gap-2 py-1 text-center">
+<div class="bg-paper-card/75 backdrop-blur-xs rounded-2xl p-2.5 border border-paper/60 shadow-xs">
+<div class="text-2xl font-black text-crayon-charcoal leading-tight">4</div>
+<div class="text-xs text-crayon-espresso font-bold mt-0.5">Classes</div>
+</div>
+<div class="bg-paper-card/75 backdrop-blur-xs rounded-2xl p-2.5 border border-paper/60 shadow-xs">
+<div class="text-2xl font-black text-crayon-charcoal leading-tight">28</div>
+<div class="text-xs text-crayon-espresso font-bold mt-0.5">Roster</div>
+</div>
+<div class="bg-paper-card/75 backdrop-blur-xs rounded-2xl p-2.5 border border-paper/60 shadow-xs">
+<div class="text-2xl font-black text-crayon-charcoal leading-tight">2</div>
+<div class="text-xs text-crayon-espresso font-bold mt-0.5">Assessments</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between border-t border-crayon-charcoal/10">
+<span class="text-xs font-bold text-crayon-espresso">Standard Timetable B</span>
+<button class="w-8 h-8 rounded-full bg-crayon-charcoal text-paper flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-xs" title="Edit Weekly Schedule" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+</div>
+<!-- Rapid Roll Call Roster Mini Widget -->
+<div class="bg-paper-card rounded-3xl p-5 border-2 border-pastel-lilac/80 shadow-pastel flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-xl bg-pastel-lilac flex items-center justify-center text-pastel-lilac-deep">
+<span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+</div>
+<h2 class="text-base font-extrabold text-crayon-charcoal">Homeroom 4B Roll</h2>
+</div>
+<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pastel-lilac/60 text-pastel-lilac-deep">24h lock active</span>
+</div>
+<p class="text-xs font-medium text-crayon-espresso leading-snug">
+Roll call submitted at 08:35 AM. You have <strong class="text-crayon-charcoal font-bold">22 hrs</strong> remaining to adjust marks before lock.
+</p>
+<div class="space-y-2 mt-1">
+<!-- Student 1 item -->
+<div class="flex items-center justify-between p-2.5 rounded-2xl bg-paper-tint hover:bg-pastel-peach/30 border border-pastel-peach/50 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-[0.99]" onclick="openMedicalAlertDrawer('Leo Miller', 'Severe Peanut Anaphylaxis - EpiPen Room 204', 'Doctor Note #412', 'LM')">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-7 h-7 rounded-full bg-pastel-peach flex items-center justify-center text-xs text-pastel-peach-deep font-black">LM</div>
+<div class="truncate">
+<p class="text-xs font-bold text-crayon-charcoal truncate leading-tight">Leo Miller</p>
+<p class="text-[11px] font-semibold text-pastel-peach-deep truncate">Doctor Note #412 • Medical Alert</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="flex items-center bg-paper-card p-0.5 rounded-full border border-pastel-butter shrink-0" onclick="event.stopPropagation()">
+<span class="px-2 py-0.5 rounded-full text-xs font-semibold text-crayon-muted cursor-pointer hover:text-crayon-charcoal">P</span>
+<span class="px-2 py-0.5 rounded-full text-xs font-semibold text-crayon-muted cursor-pointer hover:text-crayon-charcoal">L</span>
+<span class="px-2 py-0.5 rounded-full text-xs bg-pastel-sun text-crayon-charcoal font-black shadow-xs">E</span>
+</div>
+<a href="../Health/Health_Profile_Widget.html" target="_blank" onclick="event.stopPropagation()" class="p-1 rounded-lg hover:bg-paper-card text-crayon-espresso/70 hover:text-crayon-charcoal transition" title="View Full Health Profile">
+<span class="material-symbols-outlined text-[16px]">open_in_new</span>
+</a>
+</div>
+</div>
+<!-- Student 2 item -->
+<div class="flex items-center justify-between p-2.5 rounded-2xl bg-paper-tint hover:bg-pastel-mint/20 border border-pastel-mint/50 transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-7 h-7 rounded-full bg-pastel-mint flex items-center justify-center text-xs text-pastel-mint-deep font-black">AK</div>
+<div class="truncate">
+<p class="text-xs font-bold text-crayon-charcoal truncate leading-tight">Amara Khan</p>
+<p class="text-[11px] font-semibold text-crayon-muted truncate">Arrived 08:42 AM</p>
+</div>
+</div>
+<div class="flex items-center bg-paper-card p-0.5 rounded-full border border-pastel-butter shrink-0">
+<span class="px-2 py-0.5 rounded-full text-xs font-semibold text-crayon-muted cursor-pointer hover:text-crayon-charcoal">P</span>
+<span class="px-2 py-0.5 rounded-full text-xs bg-pastel-mint text-pastel-mint-deep font-black shadow-xs">L</span>
+<span class="px-2 py-0.5 rounded-full text-xs font-semibold text-crayon-muted cursor-pointer hover:text-crayon-charcoal">E</span>
+</div>
+</div>
+</div>
+<a class="inline-flex items-center justify-center w-full py-2.5 bg-paper-tint hover:bg-pastel-butter text-crayon-charcoal border border-pastel-butter rounded-full transition-colors mt-1 text-xs font-bold" href="#">
+View Full 28 Student Roster
+</a>
+</div>
+</div>
+<!-- CENTER COLUMN: Today's Tasks & Timetable Cards -->
+<div class="lg:col-span-5 flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-pastel-sun border border-pastel-sun/80"></span>
+<h2 class="text-xl font-extrabold text-crayon-charcoal">Today's Schedule &amp; Lessons</h2>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-crayon-muted font-bold">Co-teachers:</span>
+<div class="flex -space-x-2 overflow-hidden items-center">
+<img class="inline-block h-6 w-6 rounded-full ring-2 ring-paper-card object-cover" data-alt="Teacher avatar portrait smiling male science educator in classroom light beige background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkMW5uDDCZuwKev1mLQ6st9chLxp5wtok89cyJcnMlydSSzQvO7w_lRU95EwfWvekxPN0z7wHFP3qmenteYK1AFD29QvfJDiq5Di-PMIi0dUjwAC2QKoadR8LBwFnkJRckGSsbFMhOyWNnQaRQFgiRo60xHFZcpFQ5QQCtPxILO17RH0vQGKk5QrRjCj-7LPiJwOO8N8GTXCUd7hCF6po3nOwMIJxNY6ZYvNtZ">
+<img class="inline-block h-6 w-6 rounded-full ring-2 ring-paper-card object-cover" data-alt="Teacher avatar portrait smiling female pastoral lead with glasses in gentle natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsyvHDwCgtKrg1gw-ZMvDsXWb3ZUKGNS4Sr-Zea8EIAIBE-unzuOPdn-QyTHWX2Q6Dn-wkfuN_Z275TO2ugBDtUKdf5ksiYW0WDORU-_h04MTEdS_rHpZftPNJsJfpJV1N2s1jWsFmGao-Q0kzHQLlNVkcnBZoRAEWwxVo0NOh1I-Tn30OGFQbiNBjImLLrs8uliRXjr5Cc8NHd7_2b4HDEhXbP0LNHNJgjVrP">
+<span class="h-6 w-6 rounded-full bg-pastel-butter text-crayon-charcoal text-[10px] flex items-center justify-center font-black ring-2 ring-paper-card">+4</span>
+</div>
+</div>
+</div>
+<!-- Center Card 1: In Progress Period (Mint Swab Accent) -->
+<div class="bg-paper-card rounded-3xl p-6 border-2 border-pastel-mint shadow-pastel transition-all hover:shadow-pastel-hover hover:-translate-y-1 cursor-pointer active:scale-[0.99] flex flex-col gap-4 relative overflow-hidden" onclick="openLessonDrawer('Period 2: Grade 5 Earth Science', 'Unit 4: Tectonic Plates & Crustal Faults', '09:45 – 10:45 AM', 'Science Lab A')" id="card-period-2">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-2xl bg-pastel-mint text-pastel-mint-deep flex items-center justify-center border border-pastel-mint-deep/30">
+<span class="material-symbols-outlined text-[20px]">science</span>
+</div>
+<div>
+<h3 class="text-lg font-extrabold text-crayon-charcoal leading-snug">Period 2: Grade 5 Earth Science</h3>
+<p class="text-xs font-semibold text-crayon-espresso">Unit 4: Tectonic Plates &amp; Crustal Faults</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-pastel-mint text-pastel-mint-deep border border-pastel-mint-deep/20 shadow-xs" id="badge-period-2">
+<span class="w-2 h-2 rounded-full bg-pastel-mint-deep animate-ping"></span>
+In Progress
+</span>
+<a href="../Academics/Lesson_Plan_Modal.html" target="_blank" onclick="event.stopPropagation()" class="p-1 rounded-lg hover:bg-paper-tint text-crayon-espresso/70 hover:text-crayon-charcoal transition" title="Open Lesson Plan Editor">
+<span class="material-symbols-outlined text-[16px]">open_in_new</span>
+</a>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-3 bg-paper-tint p-4 rounded-2xl border border-pastel-mint/40">
+<div>
+<p class="text-xs font-bold text-crayon-muted">Time:</p>
+<p class="text-sm font-extrabold text-crayon-charcoal mt-0.5">10:00 - 10:50 AM</p>
+</div>
+<div>
+<p class="text-xs font-bold text-crayon-muted">Location:</p>
+<p class="text-sm font-extrabold text-crayon-charcoal mt-0.5">Lab Room 204</p>
+</div>
+<div>
+<p class="text-xs font-bold text-crayon-muted">Roster:</p>
+<p class="text-sm font-extrabold text-crayon-charcoal mt-0.5">24 Enrolled</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<div class="flex -space-x-1.5">
+<div class="w-7 h-7 rounded-full bg-paper-tint border border-pastel-butter flex items-center justify-center text-[10px] font-bold text-crayon-charcoal">E5</div>
+<div class="w-7 h-7 rounded-full bg-pastel-butter border border-pastel-sun flex items-center justify-center text-[10px] font-black text-crayon-charcoal">Lab</div>
+</div>
+<span class="text-xs font-semibold text-crayon-espresso">Interactive 3D Globe Ready</span>
+</div>
+<button class="px-5 py-2.5 bg-crayon-charcoal hover:bg-crayon-espresso text-paper text-xs font-extrabold rounded-full active:scale-95 transition-all shadow-pastel flex items-center gap-2" type="button">
+<span class="">Open Lesson &amp; Roster</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Center Card 2: Upcoming Period (Peach & Sunflower Accents) -->
+<div class="bg-paper-card rounded-3xl p-6 border-2 border-pastel-peach/80 shadow-pastel transition-all hover:shadow-pastel-hover flex flex-col gap-4 relative overflow-hidden">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-2xl bg-pastel-peach text-pastel-peach-deep flex items-center justify-center border border-pastel-peach-deep/30">
+<span class="material-symbols-outlined text-[20px]">calculate</span>
+</div>
+<div>
+<h3 class="text-lg font-extrabold text-crayon-charcoal leading-snug">Period 3: Grade 4 Mathematics</h3>
+<p class="text-xs font-semibold text-crayon-espresso">Decimal Fractions: Tenths &amp; Hundredths</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-pastel-peach text-pastel-peach-deep border border-pastel-peach-deep/30">
+<span class="material-symbols-outlined text-[14px]">local_fire_department</span>
+High Priority
+</span>
+<span class="px-3 py-1 rounded-full text-xs font-bold bg-pastel-butter text-crayon-charcoal border border-pastel-sun/60">
+11:10 AM
+</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-3 bg-paper-tint p-4 rounded-2xl border border-pastel-peach/40">
+<div>
+<p class="text-xs font-bold text-crayon-muted">Class:</p>
+<p class="text-sm font-extrabold text-crayon-charcoal mt-0.5">Homeroom 4B</p>
+</div>
+<div>
+<p class="text-xs font-bold text-crayon-muted">Status:</p>
+<p class="text-sm font-extrabold text-crayon-charcoal mt-0.5">Plan Approved</p>
+</div>
+<div>
+<p class="text-xs font-bold text-crayon-muted">Homework:</p>
+<p class="text-sm font-black text-pastel-peach-deep mt-0.5">14 Unsubmitted</p>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-pastel-peach-deep">assignment_turned_in</span>
+<span class="text-xs font-semibold text-crayon-espresso">Standards Matrix US-P1-02 mapped</span>
+</div>
+<!-- Crayon Action Launch Button -->
+<button class="group px-5 py-2.5 bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal text-xs font-extrabold rounded-full active:scale-95 transition-all border border-pastel-sun shadow-pastel flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-crayon-charcoal text-[18px] group-hover:rotate-12 transition-transform">auto_awesome</span>
+<span class="">Launch Presentation</span>
+</button>
+</div>
+</div>
+<!-- Center Card 3: Afternoon Moderation Meeting (Soft Lilac Accent) -->
+<div class="bg-paper-card rounded-3xl p-6 border-2 border-pastel-lilac/70 shadow-pastel transition-all hover:shadow-pastel-hover flex flex-col gap-4">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-2xl bg-pastel-lilac text-pastel-lilac-deep flex items-center justify-center border border-pastel-lilac-deep/30">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+</div>
+<div>
+<h3 class="text-base font-extrabold text-crayon-charcoal">Department Science Moderation</h3>
+<p class="text-xs font-semibold text-crayon-espresso">Term 2 Exam Cross-Grading Calibration</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full text-xs font-bold bg-pastel-lilac/50 text-pastel-lilac-deep border border-pastel-lilac">
+3:30 PM • Library Annex
+</span>
+</div>
+<div class="flex items-center justify-between bg-paper-tint px-4 py-3 rounded-2xl border border-pastel-lilac/30">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-crayon-muted">timer</span>
+<span class="text-xs font-medium text-crayon-charcoal">45 min duration • Lead: Dr. Robert Vance</span>
+</div>
+<button class="text-xs text-pastel-lilac-deep font-bold hover:underline" type="button">
+View Moderation Agenda →
+</button>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Quick Requests, Safeguarding Alerts, Audio Prompt -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- Quick Requests Section (Sunflower Yellow & Mint Touch) -->
+<div class="bg-paper-card rounded-3xl p-6 border-2 border-pastel-butter shadow-pastel flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-xl bg-pastel-butter flex items-center justify-center text-crayon-charcoal border border-pastel-sun/60">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</div>
+<h2 class="text-base font-extrabold text-crayon-charcoal">Quick Requests</h2>
+</div>
+<button class="inline-flex items-center gap-1 text-xs text-crayon-espresso hover:text-crayon-charcoal font-bold px-2.5 py-1 rounded-full bg-pastel-butter/40 border border-pastel-butter" type="button">
+<span class="">+ New Request</span>
+</button>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Item 1 -->
+<a class="group flex items-center justify-between p-3.5 rounded-2xl bg-paper-tint hover:bg-pastel-butter/30 border border-pastel-butter/60 transition-all" href="#">
+<div class="pr-2 min-w-0">
+<p class="text-xs font-bold text-crayon-charcoal leading-tight group-hover:text-crayon-espresso transition-colors">
+Generate 5-min exit quiz from Period 2 plan
+</p>
+<p class="text-[11px] font-semibold text-crayon-muted mt-0.5">Bloom's Taxonomy Level 3 • AI Assisted</p>
+</div>
+<div class="w-7 h-7 rounded-full bg-paper-card group-hover:bg-pastel-butter text-crayon-charcoal border border-pastel-butter flex items-center justify-center shrink-0 shadow-xs transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+</div>
+</a>
+<!-- Item 2 (US-P1-04 Substitute Request) -->
+<a class="group flex items-center justify-between p-3.5 rounded-2xl bg-paper-tint hover:bg-pastel-peach/30 border border-pastel-peach/60 transition-all" href="#">
+<div class="pr-2 min-w-0">
+<p class="text-xs font-bold text-crayon-charcoal leading-tight group-hover:text-crayon-espresso transition-colors">
+Submit Leave / Substitute Cover Request
+</p>
+<p class="text-[11px] font-semibold text-crayon-muted mt-0.5">Policy US-P1-04 • Next Day Slot</p>
+</div>
+<div class="w-7 h-7 rounded-full bg-paper-card group-hover:bg-pastel-peach text-crayon-charcoal border border-pastel-peach flex items-center justify-center shrink-0 shadow-xs transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+</div>
+</a>
+<!-- Item 3 -->
+<a class="group flex items-center justify-between p-3.5 rounded-2xl bg-paper-tint hover:bg-pastel-sky/30 border border-pastel-sky/60 transition-all" href="#">
+<div class="pr-2 min-w-0">
+<p class="text-xs font-bold text-crayon-charcoal leading-tight group-hover:text-crayon-espresso transition-colors">
+Export Grade 4B Mid-Term Report CSV
+</p>
+<p class="text-[11px] font-semibold text-crayon-muted mt-0.5">Includes Attendance &amp; Formative marks</p>
+</div>
+<div class="w-7 h-7 rounded-full bg-paper-card group-hover:bg-pastel-sky text-crayon-charcoal border border-pastel-sky flex items-center justify-center shrink-0 shadow-xs transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+</div>
+</a>
+</div>
+</div>
+<!-- Safeguarding & Caregiver Notification (Tactile Peach & Soft Sky Swab) -->
+<div class="bg-paper-card rounded-3xl p-5 border-2 border-pastel-peach shadow-pastel border-l-8 border-l-pastel-peach-deep flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-pastel-peach text-pastel-peach-deep border border-pastel-peach-deep/30">
+<span class="material-symbols-outlined text-[15px]">medical_services</span>
+Caregiver Notice Verified
+</span>
+<span class="text-xs font-bold text-crayon-muted">08:15 AM</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="text-sm font-extrabold text-crayon-charcoal">Leo Miller • Asthma Care Protocol</h4>
+<p class="text-xs font-medium text-crayon-espresso leading-relaxed">
+Caregiver verified inhaler in nurse's station. Physical education modified for Period 5.
+</p>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="text-xs text-pastel-sky-deep font-extrabold flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pastel-sky/60 border border-pastel-sky">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Nurse Cleared
+</span>
+<button class="text-xs text-crayon-charcoal hover:text-pastel-peach-deep underline font-bold" type="button">
+Safeguarding Log
+</button>
+</div>
+</div>
+<!-- Voice / AI Teaching Copilot Card (Powder Sky & Pastel Sound Wave) -->
+<div class="bg-paper-card rounded-3xl p-6 border-2 border-pastel-sky shadow-pastel flex flex-col gap-4 relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="px-3 py-1 rounded-full text-xs font-bold bg-pastel-sky text-crayon-charcoal border border-pastel-sky-deep/20 inline-flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-pastel-sky-deep font-bold">mic</span>
+Voice Teaching Copilot
+</span>
+<span class="text-xs font-bold text-crayon-muted">Purple Cubby AI v2.4</span>
+</div>
+<div class="flex items-center justify-between gap-3 pt-2">
+<div class="flex flex-col">
+<p class="text-xs font-semibold text-crayon-muted">Try saying:</p>
+<h4 class="text-sm font-extrabold text-crayon-charcoal leading-snug mt-0.5">
+"Draft feedback comments for Grade 5 Science quiz"
+</h4>
+</div>
+<!-- Pastel Crayon Sound Wave Illustration -->
+<div class="shrink-0 flex items-center gap-1 h-12 px-3 bg-paper-tint rounded-2xl border border-pastel-sky/50">
+<span class="w-1.5 h-3 bg-pastel-sun rounded-full"></span>
+<span class="w-1.5 h-6 bg-pastel-sky-deep rounded-full"></span>
+<span class="w-1.5 h-8 bg-pastel-mint-deep rounded-full animate-pulse"></span>
+<span class="w-1.5 h-10 bg-pastel-peach-deep rounded-full"></span>
+<span class="w-1.5 h-7 bg-pastel-lilac-deep rounded-full"></span>
+<span class="w-1.5 h-4 bg-pastel-sun rounded-full"></span>
+<span class="w-1.5 h-8 bg-pastel-sky-deep rounded-full"></span>
+<span class="w-1.5 h-3 bg-pastel-mint-deep rounded-full"></span>
+</div>
+</div>
+<!-- Bottom Voice Trigger Pill -->
+<div class="flex items-center justify-between pt-2">
+<p class="text-xs font-semibold text-crayon-muted">Tap to dictate or summarize session</p>
+<button class="w-11 h-11 rounded-full bg-pastel-sun hover:bg-pastel-butter text-crayon-charcoal border-2 border-pastel-sun flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-pastel" type="button">
+<span class="material-symbols-outlined text-[20px] font-bold">mic</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Contextual Drawer: Quick Class Announcements & System Compliance Bar -->
+<div class="mt-6 bg-paper-card/90 backdrop-blur-md rounded-2xl p-4 border-2 border-pastel-butter shadow-pastel flex flex-col md:flex-row items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<span class="w-3 h-3 rounded-full bg-pastel-sun border border-pastel-sun/80"></span>
+<span class="text-xs font-extrabold text-crayon-charcoal">Staff Briefing Notice:</span>
+<span class="text-xs font-medium text-crayon-espresso">Fire Drill scheduled for Tomorrow at 10:15 AM • Standard Assembly Zone 3</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs text-crayon-muted font-medium">Sync: <strong class="text-crayon-charcoal font-bold">Cloud Active (10:04 AM)</strong></span>
+<a class="text-xs text-pastel-peach-deep font-extrabold hover:underline" href="#">Download Day Schedule PDF</a>
+</div>
+</div>
+</div>
+</div></div></main>
+<footer class="w-full bg-paper-tint border-t-2 border-pastel-butter py-6 mt-10"><div class="max-w-7xl mx-auto px-4 md:px-10 flex flex-col md:flex-row items-center justify-between gap-4"><div class="flex items-center gap-2"><span class="text-base font-extrabold text-crayon-charcoal">ThePurpleCubby Inc.</span><span class="text-xs font-semibold text-crayon-muted">© 2025 The Purple Cubby Inc.. All rights reserved.</span></div><div class="flex items-center gap-6"><a class="text-xs font-bold text-crayon-espresso hover:text-crayon-charcoal transition-colors" href="#">Safeguarding Protocol</a><a class="text-xs font-bold text-crayon-espresso hover:text-crayon-charcoal transition-colors" href="#">Academic Calendar</a><a class="text-xs font-bold text-crayon-espresso hover:text-crayon-charcoal transition-colors" href="#">Helpdesk</a></div></div></footer>
+<!-- Bottom Floating AI Copilot Widget -->
+<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none"><div class="pointer-events-auto bg-paper-card/95 backdrop-blur-xl border-2 border-pastel-butter shadow-pastel-warm rounded-3xl p-4 w-80 sm:w-96 flex flex-col gap-3 transition-all duration-200"><div class="flex items-center justify-between pb-2.5 border-b border-pastel-butter/80"><div class="flex items-center gap-2.5"><div class="w-8 h-8 rounded-xl bg-pastel-butter border border-pastel-sun flex items-center justify-center text-crayon-charcoal shadow-xs"><span class="material-symbols-outlined text-[18px]">auto_awesome</span></div><div class="flex flex-col"><div class="flex items-center gap-1.5"><span class="text-xs font-black text-crayon-charcoal leading-tight">ThePuffy AI Agent</span><span class="w-1.5 h-1.5 rounded-full bg-pastel-mint-deep animate-pulse"></span></div><span class="text-[10px] font-bold text-crayon-muted leading-none mt-0.5">Online • Scoped: Ms. Sarah Jenkins</span></div></div><div class="flex items-center gap-1"><button type="button" class="w-6 h-6 rounded-full bg-paper-tint hover:bg-pastel-butter/50 border border-pastel-butter text-crayon-charcoal flex items-center justify-center transition-colors" title="Minimize"><span class="material-symbols-outlined text-[13px]">remove</span></button><button type="button" class="w-6 h-6 rounded-full bg-paper-tint hover:bg-pastel-peach/50 border border-pastel-butter text-crayon-charcoal flex items-center justify-center transition-colors" title="Close"><span class="material-symbols-outlined text-[13px]">close</span></button></div></div><div class="flex flex-col gap-2.5"><div class="flex items-start gap-2.5 p-3 rounded-2xl bg-paper-tint/90 border border-pastel-butter/80"><div class="w-7 h-7 rounded-full bg-pastel-sun border border-pastel-sun/80 flex items-center justify-center text-crayon-charcoal shrink-0"><span class="material-symbols-outlined text-[15px]">smart_toy</span></div><div class="flex flex-col min-w-0"><p class="text-xs text-crayon-espresso leading-relaxed font-medium"><strong class="font-bold text-crayon-charcoal">Hi Sarah!</strong> I'm actively monitoring your classroom schedule and Grade 4/5 student updates. How can I assist your teaching today?</p><span class="text-[10px] font-semibold text-crayon-muted mt-1.5">ThePuffy • Just now</span></div></div></div><div class="flex flex-col gap-1.5"><p class="text-[10px] uppercase tracking-wider text-crayon-muted font-extrabold px-1">Suggested Actions</p><div class="flex flex-col gap-1.5"><button type="button" class="w-full flex items-center justify-between p-2 rounded-xl bg-paper-tint hover:bg-pastel-butter/40 border border-pastel-butter/50 text-left transition-colors group cursor-pointer"><span class="text-xs font-semibold text-crayon-charcoal group-hover:text-crayon-espresso truncate">Draft 5-min exit quiz for Period 2 plan</span><span class="material-symbols-outlined text-[14px] text-crayon-muted group-hover:text-crayon-charcoal shrink-0">arrow_forward</span></button><button type="button" class="w-full flex items-center justify-between p-2 rounded-xl bg-paper-tint hover:bg-pastel-mint/40 border border-pastel-mint/50 text-left transition-colors group cursor-pointer"><span class="text-xs font-semibold text-crayon-charcoal group-hover:text-crayon-espresso truncate">Record Attendance Override</span><span class="material-symbols-outlined text-[14px] text-crayon-muted group-hover:text-crayon-charcoal shrink-0">arrow_forward</span></button><button type="button" class="w-full flex items-center justify-between p-2 rounded-xl bg-paper-tint hover:bg-pastel-peach/40 border border-pastel-peach/50 text-left transition-colors group cursor-pointer"><span class="text-xs font-semibold text-crayon-charcoal group-hover:text-crayon-espresso truncate">Log Safeguarding Concern</span><span class="material-symbols-outlined text-[14px] text-crayon-muted group-hover:text-crayon-charcoal shrink-0">arrow_forward</span></button><button type="button" class="w-full flex items-center justify-between p-2 rounded-xl bg-paper-tint hover:bg-pastel-lilac/40 border border-pastel-lilac/50 text-left transition-colors group cursor-pointer"><span class="text-xs font-semibold text-crayon-charcoal group-hover:text-crayon-espresso truncate">Summarize IEP Notes</span><span class="material-symbols-outlined text-[14px] text-crayon-muted group-hover:text-crayon-charcoal shrink-0">arrow_forward</span></button></div></div><div class="flex flex-col gap-2 pt-1"><div class="flex items-center gap-2 bg-paper-tint p-1.5 rounded-2xl border border-pastel-butter/80"><input type="text" placeholder="Ask ThePuffy anything..." class="w-full bg-transparent px-2.5 py-1 text-xs text-crayon-charcoal placeholder:text-crayon-muted outline-none border-none"><button type="button" class="w-8 h-8 rounded-xl bg-pastel-peach-deep hover:bg-crayon-charcoal text-paper flex items-center justify-center shrink-0 transition-colors shadow-xs" title="Send"><span class="material-symbols-outlined text-[16px]">arrow_upward</span></button></div><div class="flex items-center justify-between px-1 text-[10px] text-crayon-muted font-medium"><span class="">Admin Scoped • Respects FERPA / RLS Policies</span><button type="button" class="font-bold hover:text-crayon-charcoal transition-colors">Clear</button></div></div></div><button type="button" class="pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-crayon-charcoal hover:bg-crayon-espresso border-2 border-crayon-charcoal text-paper shadow-pastel-warm hover:scale-105 active:scale-95 transition-all cursor-pointer group"><div class="w-8 h-8 rounded-full bg-pastel-butter text-crayon-charcoal flex items-center justify-center shadow-xs"><span class="material-symbols-outlined text-[18px] group-hover:rotate-12 transition-transform">auto_awesome</span></div><div class="flex flex-col text-left"><span class="text-[11px] font-bold text-pastel-butter leading-tight">ThePuffy</span><span class="text-xs font-black text-paper leading-none">AI Agent</span></div></button></div>
+
+
+
+
+
+
+
+
+<div id="snapdom-sandbox" data-snapdom-sandbox="true" aria-hidden="true" style="position: absolute; left: -9999px; top: -9999px; width: 0px; height: 0px; overflow: hidden;"></div>
+
+
+
+<!-- Interactive Slide-Over Drawer Shell -->
+<div id="drawer-backdrop" class="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-50 transition-opacity duration-300 opacity-0 pointer-events-none" onclick="closeDrawer()"></div>
+<div id="slide-drawer" class="fixed top-0 right-0 h-full w-full max-w-lg bg-surface shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-border md:rounded-l-3xl overflow-hidden max-md:top-auto max-md:inset-x-0 max-md:bottom-0 max-md:max-h-[88vh] max-md:rounded-t-3xl max-md:translate-x-0 max-md:translate-y-full max-md:border-t">
+  <!-- Drawer Header -->
+  <div class="px-6 py-4 bg-canvas/70 border-b border-border flex items-center justify-between shrink-0">
+    <div class="flex items-center gap-3">
+      <div id="drawer-icon-container" class="w-10 h-10 rounded-xl bg-pastel-mint text-pastel-mint-deep flex items-center justify-center font-bold">
+        <span id="drawer-icon" class="material-symbols-outlined text-xl">science</span>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h3 id="drawer-title" class="font-serif font-bold text-base text-charcoal leading-snug">Drawer Title</h3>
+          <span id="drawer-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/20 text-green-800">Status</span>
+        </div>
+        <p id="drawer-subtitle" class="text-xs text-charcoal/60 mt-0.5">Context subtitle</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a id="drawer-fullscreen-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-semibold text-charcoal hover:bg-canvas flex items-center gap-1 shadow-xs" title="Open in full workspace">
+        <span class="material-symbols-outlined text-sm">open_in_new</span>
+        <span class="hidden sm:inline">Workspace</span>
+      </a>
+      <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Drawer Body -->
+  <div id="drawer-content" class="flex-1 overflow-y-auto p-6 space-y-4">
+    <!-- Dynamic content injected here -->
+  </div>
+
+  <!-- Drawer Footer Actions -->
+  <div id="drawer-footer" class="px-6 py-4 bg-cream/40 border-t border-border flex items-center justify-between shrink-0">
+    <span id="drawer-footer-note" class="text-xs text-charcoal/50">Auto-saved to cloud ledger</span>
+    <div id="drawer-actions" class="flex items-center gap-2">
+      <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-charcoal hover:bg-canvas">Cancel</button>
+      <button id="drawer-primary-btn" onclick="executeDrawerAction()" class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-bold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-sm">check</span>
+        <span id="drawer-btn-text">Confirm Action</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Reactive Success Toast Notification -->
+<div id="toast-notify" class="fixed bottom-6 right-6 z-50 bg-charcoal text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+  <div class="w-7 h-7 rounded-full bg-mint/30 text-mint flex items-center justify-center">
+    <span class="material-symbols-outlined text-base font-bold">check_circle</span>
+  </div>
+  <div>
+    <span id="toast-title" class="text-xs font-bold block">Action Completed</span>
+    <span id="toast-msg" class="text-[11px] text-white/70 block">Record updated and state synced.</span>
+  </div>
+</div>
+
+<script>
+let currentDrawerTarget = null;
+let currentActionCallback = null;
+
+function openDrawer(config) {
+  const backdrop = document.getElementById('drawer-backdrop');
+  const drawer = document.getElementById('slide-drawer');
+  if (!backdrop || !drawer) return;
+
+  document.getElementById('drawer-title').innerText = config.title || 'Details';
+  document.getElementById('drawer-subtitle').innerText = config.subtitle || '';
+  document.getElementById('drawer-badge').innerText = config.badge || 'Active';
+  if (config.badgeClass) {
+    document.getElementById('drawer-badge').className = `px-2 py-0.5 rounded-full text-[10px] font-bold ${config.badgeClass}`;
+  }
+  document.getElementById('drawer-icon').innerText = config.icon || 'info';
+  if (config.fullscreenUrl) {
+    document.getElementById('drawer-fullscreen-link').href = config.fullscreenUrl;
+    document.getElementById('drawer-fullscreen-link').classList.remove('hidden');
+  } else {
+    document.getElementById('drawer-fullscreen-link').classList.add('hidden');
+  }
+  document.getElementById('drawer-content').innerHTML = config.contentHtml || '';
+  document.getElementById('drawer-btn-text').innerText = config.actionText || 'Save Changes';
+  
+  currentActionCallback = config.onAction || null;
+  currentDrawerTarget = config.targetCardId || null;
+
+  backdrop.classList.remove('pointer-events-none', 'opacity-0');
+  backdrop.classList.add('opacity-100');
+
+  drawer.classList.remove('translate-x-full', 'max-md:translate-y-full');
+  drawer.classList.add('translate-x-0', 'max-md:translate-y-0');
+}
+
+function closeDrawer() {
+  const backdrop = document.getElementById('drawer-backdrop');
+  const drawer = document.getElementById('slide-drawer');
+  if (!backdrop || !drawer) return;
+
+  backdrop.classList.remove('opacity-100');
+  backdrop.classList.add('opacity-0', 'pointer-events-none');
+
+  drawer.classList.remove('translate-x-0', 'max-md:translate-y-0');
+  drawer.classList.add('translate-x-full', 'max-md:translate-y-full');
+}
+
+function showToast(title, msg) {
+  const toast = document.getElementById('toast-notify');
+  if (!toast) return;
+  document.getElementById('toast-title').innerText = title;
+  document.getElementById('toast-msg').innerText = msg;
+  toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+  toast.classList.add('translate-y-0', 'opacity-100');
+  setTimeout(() => {
+    toast.classList.remove('translate-y-0', 'opacity-100');
+    toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+  }, 3500);
+}
+
+function executeDrawerAction() {
+  if (currentActionCallback) {
+    currentActionCallback();
+  }
+  closeDrawer();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeDrawer();
+});
+
+function openAttendanceDrawer() {
+  openDrawer({
+    title: "Homeroom 4B Attendance Roster",
+    subtitle: "Daily Roll Call • Submitted at 08:35 AM",
+    badge: "96.4% Present",
+    badgeClass: "bg-mint/20 text-green-800",
+    icon: "fact_check",
+    fullscreenUrl: "../Attendance/Attendance_Roster_Widget.html",
+    actionText: "Sync Live Attendance",
+    contentHtml: `
+      <div class="space-y-4 text-xs">
+        <div class="p-4 bg-canvas/60 rounded-2xl border border-border flex items-center justify-between">
+          <div>
+            <span class="font-bold text-charcoal block">Session Status: Term 2 Week 6</span>
+            <span class="text-charcoal/60 text-[11px]">27 present • 1 excused • 0 unexcused</span>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-mint text-white">Verified</span>
+        </div>
+        <div class="space-y-2">
+          <span class="font-bold text-charcoal block uppercase tracking-wider text-[11px]">Quick Student Verification</span>
+          <div class="p-3 bg-surface rounded-xl border border-border flex items-center justify-between">
+            <span class="font-semibold text-charcoal">Leo Miller (Excused Flu)</span>
+            <span class="text-terracotta font-semibold">Doctor Note #412 Attached</span>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border flex items-center justify-between">
+            <span class="font-semibold text-charcoal">Amara Khan</span>
+            <span class="text-mint font-semibold">Arrived 08:42 AM (Late - Verified)</span>
+          </div>
+        </div>
+      </div>
+    `,
+    onAction: () => {
+      showToast("Attendance Synced", "All 28 student attendance records confirmed with central registry.");
+    }
+  });
+}
+
+function openMedicalAlertDrawer(studentName, alertDetail, noteRef, initials) {
+  openDrawer({
+    title: studentName + " — Medical & Safeguarding",
+    subtitle: "Student Medical ID #STU-2026-042 • Room 204",
+    badge: "Sabrina's Law Alert",
+    badgeClass: "bg-terracotta/20 text-terracotta",
+    icon: "medical_services",
+    fullscreenUrl: "../Health/Health_Profile_Widget.html",
+    actionText: "Acknowledge Medical Alert",
+    contentHtml: `
+      <div class="space-y-4 text-xs">
+        <div class="p-4 bg-terracotta/10 border border-terracotta/40 rounded-2xl space-y-2">
+          <div class="flex items-center gap-2 text-terracotta font-bold text-sm">
+            <span class="material-symbols-outlined text-lg">emergency</span>
+            <span>Severe Anaphylaxis Protocol (EpiPen)</span>
+          </div>
+          <p class="text-charcoal/80 leading-relaxed text-[11px]">
+            ${studentName} has a severe diagnosed peanut allergy. Dual auto-injectors are stored in classroom emergency pouch Room 204 & Central Nurse Station.
+          </p>
+        </div>
+        <div class="p-3 bg-surface rounded-xl border border-border space-y-1.5">
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold block">Guardian Contacts</span>
+          <p class="font-semibold text-charcoal">Dr. Eleanor Vance (Mother) — 416-555-0192</p>
+          <p class="text-charcoal/60 text-[11px]">Alternate Contact: Arthur Vance — 416-555-0198</p>
+        </div>
+        <div class="p-3 bg-surface rounded-xl border border-border space-y-1">
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold block">Statutory Compliance</span>
+          <p class="text-charcoal/80 text-[11px]">Ontario Sabrina's Law Plan signed Sep 2026 • Valid through Aug 2027</p>
+        </div>
+      </div>
+    `,
+    onAction: () => {
+      showToast("Medical Protocol Acknowledged", "Supervisor logged confirmation of " + studentName + " emergency protocols.");
+    }
+  });
+}
+
+function openLessonDrawer(periodTitle, unitTitle, timeSlot, room) {
+  openDrawer({
+    title: periodTitle,
+    subtitle: unitTitle + " • " + timeSlot + " (" + room + ")",
+    badge: "In Progress",
+    badgeClass: "bg-mint/20 text-green-800",
+    icon: "science",
+    fullscreenUrl: "../Academics/Lesson_Plan_Modal.html",
+    actionText: "Mark Lesson Completed",
+    contentHtml: `
+      <div class="space-y-4 text-xs">
+        <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-2">
+          <span class="font-bold text-charcoal block text-sm">Instructional Stages (Ontario Science Curriculum)</span>
+          <div class="space-y-1.5 text-charcoal/80 text-[11px]">
+            <p><strong>1. Hook (10m):</strong> Fault block physical tectonic model demonstration.</p>
+            <p><strong>2. Direct Instruction (15m):</strong> Continental plate collision & seismic waves.</p>
+            <p><strong>3. Guided Practice (20m):</strong> Small group density mapping with seismograph data.</p>
+            <p><strong>4. Exit Ticket (5m):</strong> 3-question formative Google Form check.</p>
+          </div>
+        </div>
+        <div class="p-3 bg-surface rounded-xl border border-border flex items-center justify-between">
+          <div>
+            <span class="font-bold text-charcoal block">Student Materials</span>
+            <span class="text-charcoal/60 text-[11px]">Lab Kit #STEM-SCI-2026 & Digital Slips</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cerulean/20 text-blue-800">Ready</span>
+        </div>
+      </div>
+    `,
+    onAction: () => {
+      showToast("Lesson Completed", periodTitle + " marked complete and student exit tickets recorded.");
+      const badge = document.getElementById('badge-period-2');
+      if (badge) {
+        badge.className = "shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-mint/20 text-green-800 border border-mint/40 shadow-xs";
+        badge.innerHTML = '<span class="material-symbols-outlined text-xs">check_circle</span> Completed';
+      }
+    }
+  });
+}
+</script>
+</body></html>

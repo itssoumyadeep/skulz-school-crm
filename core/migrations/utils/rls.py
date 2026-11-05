@@ -1,3 +1,5 @@
+"""SQL helper utilities for generating PostgreSQL Row Level Security (RLS) tenant isolation policies in migrations."""
+
 def apply_rls_to_table(table_name: str) -> str:
     """Returns SQL to enable and force RLS on a table for the tenant_isolation_policy."""
     return f"""

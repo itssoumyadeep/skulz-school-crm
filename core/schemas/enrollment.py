@@ -1,3 +1,5 @@
+"""Pydantic schemas for student admissions, intake applications, document uploads, assessor assignments, and enrollment decisions."""
+
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional, Literal
@@ -174,4 +176,63 @@ class ParentUpdateInput(BaseModel):
     email: Optional[EmailStr] = None
     notification_prefs: Optional[dict] = None
     media_consent: Optional[bool] = None
+
+
+class ParentPublicApplySchema(BaseModel):
+    """Schema for public parent account registration + initial student application intake."""
+    school_code: str = Field(min_length=1, max_length=100)
+    parent_name: str = Field(min_length=1, max_length=255)
+    parent_email: EmailStr
+    parent_phone: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=8, max_length=128)
+    parent_relationship: str = "Mother"
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    dob: Optional[date] = None
+    grade: str = Field(min_length=1, max_length=50)
+    desired_start_date: Optional[date] = None
+    comments: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    emergency_contact_relationship: str = "Father"
+    medical_consent: bool = True
+    sibling_discount_requested: bool = False
+
+    @field_validator('dob')
+    @classmethod
+    def dob_not_future(cls, v: Optional[date]) -> Optional[date]:
+        if v is not None and v >= date.today():
+            raise ValueError('Date of birth cannot be today or in the future')
+        return v
+
+    @property
+    def student_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
+
+class SiblingEnrollmentCreateSchema(BaseModel):
+    """Schema for authenticated parents enrolling an additional sibling with discount detection."""
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    dob: Optional[date] = None
+    grade: str = Field(min_length=1, max_length=50)
+    desired_start_date: Optional[date] = None
+    comments: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    emergency_contact_relationship: Optional[str] = None
+    medical_consent: bool = True
+    sibling_discount_requested: bool = True
+
+    @field_validator('dob')
+    @classmethod
+    def dob_not_future(cls, v: Optional[date]) -> Optional[date]:
+        if v is not None and v >= date.today():
+            raise ValueError('Date of birth cannot be today or in the future')
+        return v
+
+    @property
+    def student_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
 

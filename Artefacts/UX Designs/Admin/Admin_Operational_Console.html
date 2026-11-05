@@ -1,0 +1,889 @@
+<!DOCTYPE html><html lang="en" style="width: 1280px; height: 1780px; overflow: hidden; position: relative;"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"secondary-fixed":"#ffdf9c","primary-fixed-dim":"#ffb4a1","on-primary":"#ffffff","on-tertiary":"#ffffff","on-surface":"#1d1b17","terracotta-crayon":"#E07A5F","on-secondary-fixed":"#251a00","surface":"#fef8f1","inverse-surface":"#32302c","on-surface-variant":"#55423e","on-tertiary-fixed-variant":"#29500b","background":"#fef8f1","outline-variant":"#dbc1ba","secondary-container":"#fdcb52","primary":"#9a442d","on-secondary-container":"#725500","surface-container-high":"#ede7e0","cerulean-sky":"#64B5F6","peach-apricot":"#F4A261","outline":"#88726d","on-primary-container":"#5b1604","charcoal-slate":"#2B2D42","lavender-lilac":"#B39DDB","surface-tint":"#9a442d","surface-container-highest":"#e7e2db","error":"#ba1a1a","on-error":"#ffffff","inverse-on-surface":"#f6f0e9","tertiary-fixed-dim":"#a5d480","surface-bright":"#fef8f1","primary-container":"#e07a5f","surface-container-low":"#f9f3ec","surface-variant":"#e7e2db","tertiary-container":"#76a355","primary-fixed":"#ffdbd2","mint-sage":"#90BE6D","on-secondary":"#ffffff","surface-container-lowest":"#ffffff","on-error-container":"#93000a","on-tertiary-fixed":"#0b2000","on-secondary-fixed-variant":"#5b4300","butter-yellow":"#F9C74F","secondary":"#785a00","tertiary-fixed":"#c0f19a","secondary-fixed-dim":"#f1c048","tertiary":"#406922","on-tertiary-container":"#173600","on-primary-fixed-variant":"#7c2e19","surface-container":"#f3ede6","inverse-primary":"#ffb4a1","error-container":"#ffdad6","on-background":"#1d1b17","on-primary-fixed":"#3c0800","surface-dim":"#dfd9d2"},"borderRadius":{"DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px"},"spacing":{"space-xs":"0.25rem","gutter":"1.5rem","margin":"2.5rem","space-lg":"1.5rem","space-sm":"0.5rem","gutter-mobile":"1rem","space-md":"1rem","space-xl":"2.5rem","margin-mobile":"1rem"},"fontFamily":{"body-md":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"]},"fontSize":{"body-md":["14px",{"lineHeight":"22px","fontWeight":"400"}],"display-lg-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"700"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.015em","fontWeight":"700"}],"headline-lg-mobile":["26px",{"lineHeight":"34px","letterSpacing":"-0.01em","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"600"}],"display-lg":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"700"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.03em","fontWeight":"700"}],"title-md":["18px",{"lineHeight":"24px","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface"><div class=""><header class="fixed top-0 right-0 h-16 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-margin left-0"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm mr-space-md"><button aria-label="Open navigation menu" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center text-charcoal-slate transition-all active:scale-95"><span class="material-symbols-outlined text-[24px]">menu</span></button><div class="flex items-center gap-space-xs"><div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">toys</span></div><div class="flex flex-col hidden sm:flex"><span class="font-headline-sm text-headline-sm text-primary tracking-tight">ThePurpleCubby</span><span class="font-label-sm text-label-sm text-on-surface-variant">The Purple Cubby Inc. CRM</span></div></div></div><div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-full"></div></div><div class="flex items-center gap-space-md"><button aria-label="Search school database" class="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all"><span class="material-symbols-outlined text-[20px]">search</span></button><div class="relative"><button aria-label="School Alerts" class="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all"><span class="material-symbols-outlined text-[20px]">notifications</span></button><span class="absolute top-1 right-1 w-2.5 h-2.5 bg-terracotta-crayon rounded-full ring-2 ring-surface"></span></div><div class="relative"><button aria-label="Parent &amp; Teacher Discussions" class="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all"><span class="material-symbols-outlined text-[20px]">chat_bubble</span></button><span class="absolute top-1 right-1 w-2.5 h-2.5 bg-cerulean-sky rounded-full ring-2 ring-surface"></span></div><div class="h-8 w-[1px] bg-surface-container-highest mx-space-xs"></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 px-margin pb-margin bg-background min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Operational Banner & Greetings -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-space-md mb-space-lg bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+  <div class="flex flex-col md:flex-row md:items-center gap-space-md min-w-0">
+    <div class="relative flex-shrink-0">
+      <div class="w-16 h-16 rounded-full bg-peach-apricot/30 ring-2 ring-primary/20 flex items-center justify-center overflow-hidden shadow-inner">
+        <span class="material-symbols-outlined text-[36px] text-primary">account_circle</span>
+      </div>
+      <span class="absolute bottom-0 right-0 w-5 h-5 bg-mint-sage text-on-tertiary rounded-full ring-2 ring-surface flex items-center justify-center shadow-sm" title="Verified Administrator">
+        <span class="material-symbols-outlined text-[13px] font-bold">check</span>
+      </span>
+    </div>
+    <div class="flex flex-col min-w-0">
+      <div class="flex items-center gap-space-sm flex-wrap">
+        <h1 class="font-bold text-headline-md text-charcoal-slate tracking-tight">Good morning, Administrator Marcus!</h1>
+        
+      </div>
+      
+    </div>
+  </div>
+  <div class="flex items-center gap-space-md flex-wrap self-start lg:self-auto">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm">
+      <div class="flex items-center gap-space-sm bg-surface-container-low hover:bg-surface-container transition-all px-space-md py-space-xs rounded-full cursor-pointer shadow-sm border border-outline-variant/30">
+        <div class="w-8 h-8 rounded-full bg-lavender-lilac/30 flex items-center justify-center text-primary flex-shrink-0">
+          <span class="material-symbols-outlined text-[18px]">domain</span>
+        </div>
+        <div class="flex flex-col text-left">
+          <span class="font-label-md text-label-md text-charcoal-slate font-bold leading-tight">Maple Leaf Academy</span>
+          <span class="font-label-sm text-label-sm text-on-surface-variant leading-tight">Central Campus &amp; Multi-Tenant Registry</span>
+        </div>
+        <span class="material-symbols-outlined text-[18px] text-on-surface-variant ml-1">expand_more</span>
+      </div>
+      <div class="px-space-md py-space-xs rounded-full bg-mint-sage/20 text-charcoal-slate font-label-md text-label-md flex items-center gap-1.5 shadow-sm self-center sm:self-auto">
+        <span class="w-2.5 h-2.5 rounded-full bg-mint-sage animate-pulse"></span>
+        <span class="font-bold text-tertiary">Academic Year 2025–2026 • Term 2 Active</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-space-sm flex-wrap">
+      <!-- DUAL VIEW SWITCHER -->
+      <div class="flex items-center bg-surface-container-low p-1 rounded-full border border-outline-variant/30 text-label-sm font-label-sm shadow-inner">
+        <span class="flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-lowest text-primary font-bold shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">grid_view</span>
+          <span>Cards</span>
+        </span>
+        <a href="Admin_Operational_Console_Compact.html" class="flex items-center gap-1 px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition">
+          <span class="material-symbols-outlined text-[16px]">view_list</span>
+          <span>Compact List</span>
+        </a>
+      </div>
+      <button class="px-space-lg py-space-sm rounded-full bg-terracotta-crayon hover:bg-primary text-on-primary font-label-lg text-label-lg flex items-center gap-space-xs transition-all shadow-md active:scale-95" onclick="openStudentModal()">
+        <span class="material-symbols-outlined text-[18px]">badge</span>
+        <span class="">Generate Student ID</span>
+      </button>
+    </div>
+  </div>
+</div>
+<!-- Key KPI Metrics Row (Tactile Pastel Cards) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-lg mb-space-xl">
+<!-- Card 1: Admissions Pipeline -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="h-1.5 w-full bg-cerulean-sky absolute top-0 left-0"></div>
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Admissions Pipeline</span>
+<span class="w-8 h-8 rounded-full bg-cerulean-sky/20 flex items-center justify-center text-charcoal-slate">
+<span class="material-symbols-outlined text-[18px] text-cerulean-sky">assignment_ind</span>
+</span>
+</div>
+<div class="font-bold text-[36px] leading-tight text-charcoal-slate mb-space-xs tracking-tight">42 Active</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-peach-apricot font-bold">18 Under Review</span>
+<span class="">• BR-01-01 Compliant</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm bg-surface-container-low p-space-sm rounded-md">
+<div class="flex justify-between items-center text-label-sm font-label-sm mb-1 text-on-surface-variant">
+<span class="">Docs Verification</span>
+<span class="text-tertiary font-bold">86%</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-2">
+<div class="bg-cerulean-sky h-2 rounded-full" style="width: 86%"></div>
+</div>
+</div>
+</div>
+<!-- Card 2: Attendance Oversight -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="h-1.5 w-full bg-mint-sage absolute top-0 left-0"></div>
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Attendance Oversight</span>
+<span class="w-8 h-8 rounded-full bg-mint-sage/20 flex items-center justify-center text-charcoal-slate">
+<span class="material-symbols-outlined text-[18px] text-tertiary">mood</span>
+</span>
+</div>
+<div class="font-bold text-[36px] leading-tight text-charcoal-slate mb-space-xs tracking-tight">94.8%</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="">Campus Attendance Today</span>
+</div>
+</div>
+<div class="mt-space-md p-space-sm rounded-md bg-butter-yellow/20 flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[18px]">warning</span>
+<span class="font-label-sm text-label-sm text-on-surface">Chronic Absences (BR-03-05)</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-bold">3 Cases</span>
+</div>
+</div>
+<!-- Card 3: Billing & Tuition -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="h-1.5 w-full bg-peach-apricot absolute top-0 left-0"></div>
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Tuition Collection</span>
+<span class="w-8 h-8 rounded-full bg-peach-apricot/20 flex items-center justify-center text-charcoal-slate">
+<span class="material-symbols-outlined text-[18px] text-terracotta-crayon">payments</span>
+</span>
+</div>
+<div class="font-bold text-[36px] leading-tight text-charcoal-slate mb-space-xs tracking-tight">$148,200</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="text-terracotta-crayon font-bold">$12,450 outstanding</span>
+<span class="">• Term 2</span>
+</div>
+</div>
+<div class="mt-space-md p-space-sm rounded-md bg-surface-container-low flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Grace Period BR-02-02</span>
+<span class="px-2 py-0.5 rounded-full bg-butter-yellow/40 text-on-surface font-label-sm text-label-sm font-bold">14 Invoices</span>
+</div>
+</div>
+<!-- Card 4: Staff DBS Compliance -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="h-1.5 w-full bg-lavender-lilac absolute top-0 left-0"></div>
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Staff DBS Compliance</span>
+<span class="w-8 h-8 rounded-full bg-lavender-lilac/30 flex items-center justify-center text-charcoal-slate">
+<span class="material-symbols-outlined text-[18px] text-primary">verified_user</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-bold text-[36px] leading-tight text-charcoal-slate mb-space-xs tracking-tight">100%</span>
+<span class="font-label-md text-label-md text-tertiary font-bold">Verified</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">
+          52/52 Faculty &amp; Pastoral Cleared (BR-05-01)
+        </div>
+</div>
+<div class="mt-space-md p-space-sm rounded-md bg-mint-sage/20 flex items-center justify-between text-tertiary">
+<span class="font-label-sm text-label-sm">Next Audit Cycle</span>
+<span class="font-label-sm text-label-sm font-bold">38 Days</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Main Operations Workspace -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- Left 7 Columns: Admissions Intake & Enrollment Stage -->
+<div class="lg:col-span-7 flex flex-col gap-space-lg">
+<div class="bg-surface-container-lowest p-space-lg rounded-lg shadow-sm flex flex-col">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm mb-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-cerulean-sky/20 flex items-center justify-center text-cerulean-sky">
+<span class="material-symbols-outlined text-[20px]">how_to_reg</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-charcoal-slate">Admissions Intake Pipeline</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">BR-01-01 Document Gatekeeping • BR-01-05 Sequential Enrolment</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-low px-3 py-1 rounded-full">Showing 4 of 60</span>
+</div>
+</div>
+<!-- Student Intake Records List -->
+<div class="flex flex-col gap-space-sm">
+<!-- Applicant 1 -->
+<div onclick="openAdmissionsDrawer('Aria Lin', 'Pre-K Cubby', 'Docs Verified (4/4)', '../Admissions/Application_Detail_Modal.html')" class="p-space-md rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all flex flex-col md:flex-row md:items-center justify-between gap-space-sm hover:-translate-y-0.5 hover:shadow-md cursor-pointer duration-200 active:scale-[0.99] group">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-full bg-peach-apricot flex-shrink-0 flex items-center justify-center text-on-surface font-label-md text-label-md shadow-sm">
+                AL
+              </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-2"><span class="font-title-md text-title-md text-charcoal-slate truncate font-bold group-hover:text-terracotta transition">Aria Lin</span><a href="../Admissions/Application_Detail_Modal.html" onclick="event.stopPropagation()" title="Open applicant workspace" class="opacity-0 group-hover:opacity-100 text-charcoal-slate/60 hover:text-terracotta transition"><span class="material-symbols-outlined text-[16px]">open_in_new</span></a></div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">Pre-K Cubby</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">ID: STU-2025-0142 • Immunization &amp; Proof of Residency Verified</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm justify-between md:justify-end">
+<span class="px-space-md py-space-xs rounded-full bg-mint-sage/20 text-tertiary font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                Active
+              </span>
+<button class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-surface-container flex items-center justify-center text-charcoal-slate transition-transform active:scale-90" onclick="inspectApplicant('Aria Lin', 'STU-2025-0142', 'Active')">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Applicant 2 -->
+<div class="p-space-md rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-full bg-cerulean-sky flex-shrink-0 flex items-center justify-center text-on-primary font-label-md text-label-md shadow-sm">
+                OJ
+              </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-charcoal-slate truncate font-bold">Oliver Jenkins</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">Kindergarten</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Pending Tuition Deposit Agreement • Parent: Dr. E. Jenkins</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm justify-between md:justify-end">
+<span class="px-space-md py-space-xs rounded-full bg-butter-yellow/30 text-secondary font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                Offered
+              </span>
+<button class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-surface-container flex items-center justify-center text-charcoal-slate transition-transform active:scale-90" onclick="inspectApplicant('Oliver Jenkins', 'PENDING-044', 'Offered')">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Applicant 3 -->
+<div class="p-space-md rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-full bg-lavender-lilac flex-shrink-0 flex items-center justify-center text-on-surface font-label-md text-label-md shadow-sm">
+                MN
+              </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-charcoal-slate truncate font-bold">Maya Ndiaye</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">Early Years 1</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Special Dietary Form pending pastoral review • Doc Check 75%</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm justify-between md:justify-end">
+<span class="px-space-md py-space-xs rounded-full bg-cerulean-sky/20 text-cerulean-sky font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-cerulean-sky"></span>
+                Under Review
+              </span>
+<button class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-surface-container flex items-center justify-center text-charcoal-slate transition-transform active:scale-90" onclick="inspectApplicant('Maya Ndiaye', 'PENDING-051', 'Under Review')">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Applicant 4 -->
+<div class="p-space-md rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-full bg-butter-yellow flex-shrink-0 flex items-center justify-center text-on-surface font-label-md text-label-md shadow-sm">
+                LE
+              </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-charcoal-slate truncate font-bold">Lucas Esposito</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">Pre-K Cubby</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Application received 2h ago • Birth certificate uploaded</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm justify-between md:justify-end">
+<span class="px-space-md py-space-xs rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                Applied
+              </span>
+<button class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-surface-container flex items-center justify-center text-charcoal-slate transition-transform active:scale-90" onclick="inspectApplicant('Lucas Esposito', 'NEW-089', 'Applied')">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Student ID Generation Bar (BR-01-05 action) -->
+<div class="mt-space-md p-space-md rounded-DEFAULT bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-terracotta-crayon">qr_code_2</span>
+<div>
+<span class="font-label-md text-label-md text-charcoal-slate font-bold block">Next Sequential Identifier Pool</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Pattern: STU-2025-0143 through STU-2025-0199</span>
+</div>
+</div>
+<button class="px-space-md py-space-xs rounded-full bg-charcoal-slate text-surface font-label-md text-label-md flex items-center gap-1 hover:bg-on-surface transition-all active:scale-95 shadow-sm" onclick="generateNextId()">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+            Assign STU-2025-0143
+          </button>
+</div>
+</div>
+<!-- Procurement 3-Way Match Queue (US-P1-09 & BR-08-01) -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg shadow-sm flex flex-col">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-mint-sage/20 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">fact_check</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-charcoal-slate">Procurement 3-Way Match Queue</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">US-P1-09 • BR-08-01 Tolerance Check (PO vs Delivery Slip vs Invoice)</span>
+</div>
+</div>
+<span class="px-space-md py-space-xs rounded-full bg-mint-sage/20 text-tertiary font-label-sm text-label-sm font-bold">2 Pending Actions</span>
+</div>
+<!-- 3-Way Match Table / Cards -->
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="text-label-sm font-label-sm text-on-surface-variant bg-surface-container-low rounded-t-DEFAULT">
+<th class="py-space-sm px-space-md rounded-l-DEFAULT">Requisition &amp; Vendor</th>
+<th class="py-space-sm px-space-sm">PO Number</th>
+<th class="py-space-sm px-space-sm">Delivery Slip</th>
+<th class="py-space-sm px-space-sm">Variance</th>
+<th class="py-space-sm px-space-md rounded-r-DEFAULT text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-body-sm font-body-sm">
+<!-- Item 1 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-md px-space-md">
+<div class="font-label-md text-label-md text-charcoal-slate font-bold">Montessori Wooden Block Sets (x12)</div>
+<div class="text-on-surface-variant">LittleTimber Craft Co. • $1,840.00</div>
+</td>
+<td class="py-space-md px-space-sm font-mono text-[13px] text-charcoal-slate">PO-2025-0881</td>
+<td class="py-space-md px-space-sm">
+<span class="inline-flex items-center gap-1 text-tertiary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+                    GRN-4421 (12/12)
+                  </span>
+</td>
+<td class="py-space-md px-space-sm">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-mint-sage/20 text-tertiary font-bold">$0.00 (Exact)</span>
+</td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-md py-space-xs rounded-full bg-tertiary hover:bg-on-tertiary-container text-on-tertiary font-label-sm text-label-sm transition-all active:scale-95 shadow-sm" onclick="approveProcurement('PO-2025-0881')">
+                    Release Match
+                  </button>
+</td>
+</tr>
+<!-- Item 2 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-md px-space-md">
+<div class="font-label-md text-label-md text-charcoal-slate font-bold">Pastel Finger Paint &amp; Art Easels</div>
+<div class="text-on-surface-variant">CreativityKits Ltd • $642.50</div>
+</td>
+<td class="py-space-md px-space-sm font-mono text-[13px] text-charcoal-slate">PO-2025-0899</td>
+<td class="py-space-md px-space-sm">
+<span class="inline-flex items-center gap-1 text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">pending</span>
+                    GRN-4439 (Partial)
+                  </span>
+</td>
+<td class="py-space-md px-space-sm">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-butter-yellow/30 text-secondary font-bold">+1.2% Frt. Adj</span>
+</td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-md py-space-xs rounded-full bg-surface-container-high hover:bg-surface-container text-charcoal-slate font-label-sm text-label-sm transition-all active:scale-95" onclick="reviewProcurementVariance('PO-2025-0899')">
+                    Flag Audit
+                  </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right 5 Columns: CSV Setup Widget & Financial Approvals -->
+<div class="lg:col-span-5 flex flex-col gap-space-lg">
+<!-- Transactional CSV School Setup Widget (US-P0-04) -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg shadow-sm flex flex-col">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-butter-yellow/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-charcoal-slate">School Setup Bulk Ingestion</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">US-P0-04 • Atomic Rollback Validated</span>
+</div>
+</div>
+<span class="px-space-sm py-0.5 rounded-full bg-mint-sage/20 text-tertiary font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+            Atomic Lock
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">
+          Upload structured spreadsheets for Student Rosters, Faculty Directory, or Fee Schedule Structures. If any row fails schema validation, the batch is rolled back completely.
+        </p>
+<!-- Dropzone Tactile Wash -->
+<div class="cursor-pointer p-space-lg rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex flex-col items-center justify-center text-center group" id="dropzoneBox" onclick="simulateFileUpload()">
+<div class="w-12 h-12 rounded-full bg-surface flex items-center justify-center text-terracotta-crayon mb-space-sm group-hover:scale-110 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-[24px]">cloud_upload</span>
+</div>
+<div class="font-label-md text-label-md text-charcoal-slate font-bold mb-1">
+            Drop CSV or Click to Browse Roster File
+          </div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">
+            Supported headers: <code class="bg-surface px-1 py-0.5 rounded text-charcoal-slate">guardian_email, dob, cubby_tier, fee_code</code>
+</div>
+</div>
+<!-- Download Standard Templates & Ingestion Status -->
+<div class="mt-space-md flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<button class="px-space-md py-space-xs rounded-full bg-surface-container hover:bg-surface-container-high text-charcoal-slate font-label-sm text-label-sm flex items-center gap-1 transition-all" onclick="downloadTemplate('students')">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+              Student Schema (.csv)
+            </button>
+<button class="px-space-md py-space-xs rounded-full bg-surface-container hover:bg-surface-container-high text-charcoal-slate font-label-sm text-label-sm flex items-center gap-1 transition-all" onclick="downloadTemplate('fees')">
+<span class="material-symbols-outlined text-[16px]">download</span>
+              Fee Schedule (.csv)
+            </button>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary flex items-center gap-1 font-bold">
+<span class="material-symbols-outlined text-[16px]">check</span> Schema v2.4 Active
+          </span>
+</div>
+</div>
+<!-- Financial Ledger & Tiered Approvals (BR-02-03) -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg shadow-sm flex flex-col">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-lavender-lilac/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-charcoal-slate">Tiered Ledger &amp; Waivers</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">BR-02-03 Multi-tier Authorization Thresholds</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-charcoal-slate">more_horiz</span>
+</div>
+<div class="flex flex-col gap-space-md">
+<!-- Tiered Waiver 1: Principal Level ($150) -->
+<div onclick="openWaiverDrawer('Theo & Clara Miller', 'Sibling Tuition Discount', '$150.00', '../Billing/Discount_Waiver_Modal.html')" class="p-space-md rounded-DEFAULT bg-surface-container-low flex flex-col gap-space-xs hover:-translate-y-0.5 hover:shadow-md cursor-pointer transition duration-200 active:scale-[0.99] group">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-charcoal-slate font-bold">Sibling Tuition Discount Waiver</span>
+<span class="px-space-md py-0.5 rounded-full bg-mint-sage/25 text-tertiary font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">done_all</span>
+                Principal Approved
+              </span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span class="">Beneficiary: Theo &amp; Clara Miller (KG/EY2)</span>
+<span class="font-headline-sm text-headline-sm text-charcoal-slate font-bold">$150.00</span>
+</div>
+<div class="text-label-sm font-label-sm text-tertiary">
+              Authorized by Dr. Harrison (Campus Principal) • Threshold ≤ $200 Tier
+            </div>
+</div>
+<!-- Tiered Waiver 2: Owner Level ($350 - PENDING) -->
+<div class="p-space-md rounded-DEFAULT bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-charcoal-slate font-bold">Hardship Pastoral Bursary Offset</span>
+<span class="px-space-md py-0.5 rounded-full bg-peach-apricot/30 text-terracotta-crayon font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">hourglass_top</span>
+                Pending Owner Auth
+              </span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span class="">Beneficiary: Zachary Scott (Term 2 Extended Care)</span>
+<span class="font-headline-sm text-headline-sm text-terracotta-crayon font-bold">$350.00</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Exceeds $200 limit • Escalated to Trustee Board</span>
+<div class="flex gap-1">
+<button class="px-space-md py-0.5 rounded-full bg-terracotta-crayon text-on-primary font-label-sm text-label-sm hover:bg-primary transition-all active:scale-95 shadow-sm" onclick="notifyOwnerBoard()">
+                  Ping Owner
+                </button>
+</div>
+</div>
+</div>
+<!-- Webhook Sync Telemetry Feed -->
+<div class="p-space-sm rounded-DEFAULT bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-mint-sage"></span>
+<span class="font-label-sm text-label-sm text-charcoal-slate">Stripe Events: <span class="font-normal text-on-surface-variant">evt_3Qx9... invoice.payment_succeeded (14s ago)</span></span>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary font-bold">Sync OK</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Visual Documentation Cards (Campus Atmosphere & Facilities) -->
+<div class="mt-space-xl bg-surface-container-lowest p-space-lg rounded-lg shadow-sm">
+<div class="flex items-center justify-between mb-space-md">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-charcoal-slate">Early Years Learning Spaces &amp; Visual Verification</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Facilities readiness checks and safety audits mapped to academic enrollment capacities</p>
+</div>
+<button class="px-space-md py-space-xs rounded-full bg-surface-container hover:bg-surface-container-high text-charcoal-slate font-label-md text-label-md flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-[18px]">photo_library</span>
+        View Audit Reel
+      </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
+<!-- Photo 1 -->
+<div class="flex flex-col gap-space-xs rounded-DEFAULT overflow-hidden bg-surface-container-low p-space-sm group">
+<div class="w-full h-44 rounded-DEFAULT overflow-hidden relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Sunlit preschool atelier classroom with pastel colored wooden tables, soft mint green shelving, terracotta cushions on light oak wood floor, colorful children's art displayed on walls, gentle golden morning sunlight through large arched windows, clean modern scandinavian educational aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl25zfAweirOmAw6s2XAIsON9-cb8kSpSpuJRtT6V734ebg8V1SJM-BvEVkLd0rW9ZVrH1sLqGqj2CmE5lX50_up7yIXfjExmU_U77VA8eVSGvLAVUm5-5p3LkCPNvNR3qHYDxj9dPM0LLKbQ8xJ55BJRZTvGwZ9TyC-yNZIqz1V2LZcwJsqZ8-0yCBxOkLnVYnYdIHw_jKrtmUcx7FuN0u_7ocT12yoJkBm6f">
+<span class="absolute bottom-2 left-2 px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-charcoal-slate font-label-sm text-label-sm font-bold shadow-sm">
+            Cubby Bay #1 • Approved
+          </span>
+</div>
+<div class="flex items-center justify-between px-space-xs pt-1">
+<span class="font-label-md text-label-md text-charcoal-slate font-bold">Pastel Learning Atelier</span>
+<span class="font-label-sm text-label-sm text-tertiary font-bold">Cap: 16/18</span>
+</div>
+<span class="text-body-sm font-body-sm text-on-surface-variant px-space-xs">Daily sanitization verified by facilities team at 06:45 AM.</span>
+</div>
+<!-- Photo 2 -->
+<div class="flex flex-col gap-space-xs rounded-DEFAULT overflow-hidden bg-surface-container-low p-space-sm group">
+<div class="w-full h-44 rounded-DEFAULT overflow-hidden relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Montessori sensory activity station in early childhood kindergarten, tactile wooden bins with dried beans, soft butter yellow and sky blue measuring cups, natural wood toy balance beam, warmly lit nursery environment with organic textures." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1ze1tjdygsPkvknFpDni-BX9qK7ggP_rjSkjJ8b2ytERofveXzzSwZB7Zg9o7cOMHYheBxkJY5iuKoVDMjCNvSu2JB0dddy0y4lp1IK06J44PtFfbfzmI0OUWAWhsIVYQdv8IvCuR1c8U3ZC_WH9QQLjjoRF6XZt8Wcd0YKv4WM4nfWe1SQeTKWWF_US-ILRhKZ2-cHOO5vZNyxBs83VZN7XATDuaT2-uREvR">
+<span class="absolute bottom-2 left-2 px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-charcoal-slate font-label-sm text-label-sm font-bold shadow-sm">
+            Sensory Station • Cleared
+          </span>
+</div>
+<div class="flex items-center justify-between px-space-xs pt-1">
+<span class="font-label-md text-label-md text-charcoal-slate font-bold">Sensory &amp; Gross Motor Deck</span>
+<span class="font-label-sm text-label-sm text-tertiary font-bold">Cap: 12/12</span>
+</div>
+<span class="text-body-sm font-body-sm text-on-surface-variant px-space-xs">All play timber inspected per EN71 early learning standards.</span>
+</div>
+<!-- Photo 3 -->
+<div class="flex flex-col gap-space-xs rounded-DEFAULT overflow-hidden bg-surface-container-low p-space-sm group">
+<div class="w-full h-44 rounded-DEFAULT overflow-hidden relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Cozy reading nook in early childhood school with lilac and peach oversized beanbags, curated low bookshelf featuring illustrated storybooks, warm cream canvas teepee tent, gentle warm daylight, friendly soft focus background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXCf7DyADZSlp9u4zwaha6CV_JDBak6PNtJj5PtKFk7yZ5T6Ci5AXhdvNadVYHqW5a6UQUtGwXMQgsRwk-XTpCXmKKp9v-neUnOsXmbsyh4k9vGSnge8R2inCYp32iKSVJtcdmGZorUEThB-g8o7koBCclIkQHQSuCCAGzb9T7rd5Hd9mDlZiGQbC4vg70Ayk_rZ_xiQfWVO-r2Zfmtm0YeA3tJ51nqefnbrZT">
+<span class="absolute bottom-2 left-2 px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-charcoal-slate font-label-sm text-label-sm font-bold shadow-sm">
+            Literacy Corner • Cleared
+          </span>
+</div>
+<div class="flex items-center justify-between px-space-xs pt-1">
+<span class="font-label-md text-label-md text-charcoal-slate font-bold">Storybook Meadow</span>
+<span class="font-label-sm text-label-sm text-tertiary font-bold">Cap: 14/15</span>
+</div>
+<span class="text-body-sm font-body-sm text-on-surface-variant px-space-xs">New literacy sets catalogued for Term 2 early phonics quest.</span>
+</div>
+</div>
+</div>
+<!-- Student Generation Modal (Hidden / Interactive Micro-action) -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-slate/40 backdrop-blur-sm" id="studentIdModal">
+<div class="bg-surface-container-lowest rounded-xl p-space-xl max-w-md w-full shadow-2xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-10 h-10 rounded-full bg-terracotta-crayon/20 flex items-center justify-center text-terracotta-crayon">
+<span class="material-symbols-outlined">badge</span>
+</span>
+<div>
+<h4 class="font-bold text-title-md text-charcoal-slate">Issue New Student Number</h4>
+<span class="font-label-sm text-label-sm text-on-surface-variant">BR-01-05 Sequential Numbering</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-charcoal-slate" onclick="closeStudentModal()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="p-space-md rounded-DEFAULT bg-surface-container-low flex flex-col gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Assigned Identifier:</span>
+<div class="font-headline-md text-headline-md text-charcoal-slate font-mono tracking-widest text-center py-2 bg-surface rounded-DEFAULT shadow-inner">
+          STU-2025-0143
+        </div>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-center">
+          Cryptographically seeded from Maple Leaf Academy Tenant Roster pool.
+        </span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">Link to Unassigned Intake Record:</label>
+<select class="px-space-md py-space-sm rounded-full bg-surface-container text-charcoal-slate font-label-md text-label-md focus:outline-none">
+<option>Oliver Jenkins (Kindergarten • PENDING-044)</option>
+<option>Lucas Esposito (Pre-K Cubby • NEW-089)</option>
+<option>Maya Ndiaye (Early Years 1 • PENDING-051)</option>
+</select>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-space-xs">
+<button class="px-space-md py-space-sm rounded-full bg-surface-container hover:bg-surface-container-high text-charcoal-slate font-label-md text-label-md" onclick="closeStudentModal()">
+          Cancel
+        </button>
+<button class="px-space-lg py-space-sm rounded-full bg-terracotta-crayon hover:bg-primary text-on-primary font-label-md text-label-md shadow-sm" onclick="confirmStudentIdAssignment()">
+          Commit STU-2025-0143
+        </button>
+</div>
+</div>
+</div>
+<!-- Toast Notification Indicator -->
+<div class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-charcoal-slate text-on-primary px-space-lg py-space-sm rounded-full shadow-xl transition-all duration-300 z-50 flex items-center gap-space-sm opacity-0 pointer-events-none" id="toastNotification">
+<span class="material-symbols-outlined text-mint-sage text-[20px]">check_circle</span>
+<span class="font-label-md text-label-md" id="toastMessage">Query submitted to ThePuffy AI assistant.</span>
+</div>
+<!-- Purple Cubby AI Admin Copilot Quick Helper Pill (Floating Bottom-Right) -->
+<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2"><div class="w-96 bg-surface-container-lowest rounded-xl shadow-2xl border border-outline-variant/30 overflow-hidden flex flex-col" id="thePuffyChatWidget"><div class="bg-surface-container-low px-4 py-3 border-b border-outline-variant/30 flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-peach-apricot/30 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[18px]">smart_toy</span></div><div><div class="flex items-center gap-1.5"><span class="font-label-md text-label-md text-charcoal-slate font-bold">ThePuffy</span><span class="font-label-sm text-label-sm text-primary font-bold">AI Agent</span></div><div class="flex items-center gap-1 text-[11px] text-tertiary font-bold"><span class="w-1.5 h-1.5 rounded-full bg-mint-sage"></span><span class="">Online • Scoped: Marcus</span></div></div></div><div class="flex items-center gap-1 text-on-surface-variant"><button aria-label="Minimize chat" class="w-7 h-7 rounded-full hover:bg-surface-container flex items-center justify-center"><span class="material-symbols-outlined text-[16px]">remove</span></button><button aria-label="Close chat" class="w-7 h-7 rounded-full hover:bg-surface-container flex items-center justify-center" onclick="toggleThePuffy()"><span class="material-symbols-outlined text-[16px]">close</span></button></div></div><div class="p-4 flex flex-col gap-3 max-h-[380px] overflow-y-auto"><div class="flex items-start gap-2.5"><div class="w-7 h-7 rounded-full bg-peach-apricot/30 flex-shrink-0 flex items-center justify-center text-primary mt-0.5"><span class="material-symbols-outlined text-[15px]">smart_toy</span></div><div class="flex flex-col gap-1"><div class="bg-surface-container-low p-3 rounded-lg text-body-sm text-charcoal-slate leading-relaxed shadow-sm">Hi Marcus! I'm actively monitoring Maple Leaf Academy operations. 1 waiver requires owner authorization, and 3 kids triggered chronic absence warnings this week. How can I assist you right now?</div><span class="text-[11px] text-on-surface-variant px-1">ThePuffy • Just now</span></div></div><div class="flex flex-col gap-1.5 pt-1"><span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider px-1">Suggested Actions</span><button class="text-left px-3 py-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container text-charcoal-slate font-label-sm text-label-sm flex items-center justify-between transition-all"><span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px] text-terracotta-crayon">rate_review</span>Draft absence notices for Grade 1A &amp; 2B</span><span class="material-symbols-outlined text-[14px] text-on-surface-variant">arrow_forward</span></button><button class="text-left px-3 py-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container text-charcoal-slate font-label-sm text-label-sm flex items-center justify-between transition-all"><span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px] text-mint-sage">verified</span>Prepare waiver briefing for Board / Owner</span><span class="material-symbols-outlined text-[14px] text-on-surface-variant">arrow_forward</span></button><button class="text-left px-3 py-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container text-charcoal-slate font-label-sm text-label-sm flex items-center justify-between transition-all"><span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px] text-cerulean-sky">sync_alt</span>Run 3-way procurement audit check</span><span class="material-symbols-outlined text-[14px] text-on-surface-variant">arrow_forward</span></button></div><div class="flex justify-end"><div class="bg-primary text-on-primary p-2.5 rounded-lg text-body-sm max-w-[85%] shadow-sm">Summarize today's attendance anomalies and identify affected classrooms.</div></div></div><div class="p-3 bg-surface-container-low border-t border-outline-variant/30 flex flex-col gap-2"><div class="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full border border-outline-variant/30 shadow-inner"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">mic</span><input class="bg-transparent text-body-sm text-charcoal-slate placeholder:text-on-surface-variant focus:outline-none w-full" placeholder="Ask ThePuffy anything about school ops, rosters..." type="text"><button class="w-7 h-7 rounded-full bg-terracotta-crayon text-on-primary flex items-center justify-center flex-shrink-0 shadow-sm"><span class="material-symbols-outlined text-[16px]">arrow_upward</span></button></div><div class="flex items-center justify-between px-1 text-[11px] text-on-surface-variant"><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">security</span>Admin Scoped • Respects FERPA / RLS Policies</span><button class="hover:text-primary transition-colors" onclick="document.querySelector('#thePuffyChatWidget input').value=''">Clear</button></div></div></div><button class="px-space-md py-space-xs rounded-full bg-charcoal-slate text-surface hover:bg-inverse-surface shadow-2xl flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 border border-outline-variant/30" onclick="toggleThePuffy()"><div class="w-6 h-6 rounded-full bg-terracotta-crayon flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[14px]">smart_toy</span></div><div class="flex flex-col text-left"><span class="font-label-md text-label-md font-bold leading-none">ThePuffy</span><span class="font-label-sm text-label-sm text-peach-apricot leading-none">AI Agent</span></div></button></div>
+</div>
+<script>
+  function showToast(msg) {
+    const toast = document.getElementById('toastNotification');
+    const toastMsg = document.getElementById('toastMessage');
+    toastMsg.textContent = msg;
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+    setTimeout(() => {
+      toast.classList.remove('opacity-100');
+      toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 3200);
+  }
+
+  function triggerSyncNotification() {
+    showToast('Stripe Webhooks re-synchronized: 200 OK • 100% Transactions Reconciled');
+  }
+
+  function openStudentModal() {
+    document.getElementById('studentIdModal').classList.remove('hidden');
+  }
+
+  function closeStudentModal() {
+    document.getElementById('studentIdModal').classList.add('hidden');
+  }
+
+  function confirmStudentIdAssignment() {
+    closeStudentModal();
+    showToast('Sequential ID STU-2025-0143 committed & issued per BR-01-05.');
+  }
+
+  function generateNextId() {
+    openStudentModal();
+  }
+
+  function inspectApplicant(name, id, status) {
+    showToast('Inspecting Applicant: ' + name + ' (' + id + ') • Status: ' + status);
+  }
+
+  function approveProcurement(poNum) {
+    showToast('3-Way Match Released for ' + poNum + ' (Tolerance: $0.00 exact match).');
+  }
+
+  function reviewProcurementVariance(poNum) {
+    showToast('Audit Ticket opened for ' + poNum + ' variance (+1.2% Freight). Sent to Comptroller.');
+  }
+
+  function simulateFileUpload() {
+    showToast('Ingesting Roster CSV: Atomic schema validated. 0 errors detected.');
+  }
+
+  function downloadTemplate(type) {
+    showToast('Downloading ' + type + ' ingestion CSV schema blueprint (v2.4)...');
+  }
+
+  function notifyOwnerBoard() {
+    showToast('High-priority waiver request ($350) dispatched to Maple Leaf Trustee Board.');
+  }
+
+  function toggleCopilot() {
+    const flyout = document.getElementById('copilotFlyout');
+    flyout.classList.toggle('hidden');
+  }
+</script></main></div>
+
+
+
+
+
+
+
+
+  <!-- Responsive Slide-Over Drawer -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-50 transition-opacity duration-300 opacity-0 pointer-events-none" onclick="closeDrawer()"></div>
+  <div id="slide-drawer" class="fixed top-0 right-0 h-full w-full max-w-lg bg-surface shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-border md:rounded-l-3xl overflow-hidden max-md:top-auto max-md:inset-x-0 max-md:bottom-0 max-md:max-h-[88vh] max-md:rounded-t-3xl max-md:translate-x-0 max-md:translate-y-full max-md:border-t">
+    <!-- Drawer Header -->
+    <div class="px-6 py-4 bg-canvas/70 border-b border-border flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div id="drawer-icon-container" class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center font-bold">
+          <span id="drawer-icon" class="material-symbols-outlined text-xl">info</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="drawer-title" class="font-serif font-bold text-base text-charcoal leading-snug">Drawer Title</h3>
+            <span id="drawer-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/20 text-green-800">Status</span>
+          </div>
+          <p id="drawer-subtitle" class="text-xs text-charcoal/60 mt-0.5">Subtitle</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="drawer-fullscreen-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-semibold text-charcoal hover:bg-canvas flex items-center gap-1 shadow-xs" title="Open full workspace">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+          <span class="hidden sm:inline">Workspace</span>
+        </a>
+        <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Drawer Body -->
+    <div id="drawer-content" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+
+    <!-- Drawer Footer -->
+    <div id="drawer-footer" class="px-6 py-4 bg-cream/40 border-t border-border flex items-center justify-between shrink-0">
+      <span id="drawer-footer-note" class="text-xs text-charcoal/50">Auto-saved to cloud ledger</span>
+      <div id="drawer-actions" class="flex items-center gap-2">
+        <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-charcoal hover:bg-canvas">Cancel</button>
+        <button id="drawer-primary-btn" onclick="executeDrawerAction()" class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-bold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">check</span>
+          <span id="drawer-btn-text">Confirm Action</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-notify" class="fixed bottom-6 right-6 z-50 bg-charcoal text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="w-7 h-7 rounded-full bg-mint/30 text-mint flex items-center justify-center">
+      <span class="material-symbols-outlined text-base font-bold">check_circle</span>
+    </div>
+    <div>
+      <span id="toast-title" class="text-xs font-bold block">Action Completed</span>
+      <span id="toast-msg" class="text-[11px] text-white/70 block">Record updated and state synced.</span>
+    </div>
+  </div>
+
+  <script>
+  let currentDrawerAction = null;
+
+  function openDrawer(config) {
+    document.getElementById('drawer-title').textContent = config.title || 'Details';
+    document.getElementById('drawer-subtitle').textContent = config.subtitle || '';
+    
+    const badgeEl = document.getElementById('drawer-badge');
+    badgeEl.textContent = config.badge || 'Active';
+    badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (config.badgeClass || 'bg-mint/20 text-green-800');
+    
+    document.getElementById('drawer-icon').textContent = config.icon || 'info';
+    document.getElementById('drawer-fullscreen-link').href = config.fullscreenUrl || '#';
+    document.getElementById('drawer-btn-text').textContent = config.actionText || 'Confirm';
+    document.getElementById('drawer-content').innerHTML = config.contentHtml || '';
+    
+    if (config.footerNote) {
+      document.getElementById('drawer-footer-note').textContent = config.footerNote;
+    }
+    
+    currentDrawerAction = config.onAction || null;
+
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    backdrop.classList.add('opacity-100');
+
+    if (window.innerWidth >= 768) {
+      drawer.classList.remove('translate-x-full');
+    } else {
+      drawer.classList.remove('max-md:translate-y-full');
+    }
+  }
+
+  function closeDrawer() {
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.add('opacity-0', 'pointer-events-none');
+    backdrop.classList.remove('opacity-100');
+
+    drawer.classList.add('translate-x-full');
+    drawer.classList.add('max-md:translate-y-full');
+  }
+
+  function executeDrawerAction() {
+    if (currentDrawerAction) {
+      currentDrawerAction();
+    }
+    closeDrawer();
+  }
+
+  function showToast(title, msg) {
+    const toast = document.getElementById('toast-notify');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3500);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+  
+  function openAdmissionsDrawer(applicantName, grade, docStatus, url) {
+    openDrawer({
+      title: applicantName + " — Intake Verification",
+      subtitle: grade + " • Application #APP-2026-091",
+      badge: "Pending Offer",
+      badgeClass: "bg-mint/20 text-green-800",
+      icon: "assignment_ind",
+      fullscreenUrl: url || "../Admissions/Application_Detail_Modal.html",
+      actionText: "Issue Official Offer",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-charcoal text-sm">${applicantName}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint text-white">4/4 Documents Passed</span>
+            </div>
+            <p class="text-charcoal/70 text-[11px]">Ontario Birth Certificate, Immunization Record (MOH), Guardian Proof of Address, and Early Years Diagnostic Rubric all approved.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border space-y-1">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Assigned Stream & Capacity</span>
+            <p class="font-semibold text-charcoal">${grade} (Enrolment Cap: 22/24 seats filled)</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border flex items-center justify-between">
+            <span class="text-charcoal font-medium">Automatic Welcome Email & Invoice</span>
+            <span class="text-mint font-bold text-[11px]">Enqueued</span>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Offer Letter Dispatched", "Official admission letter & tuition deposit invoice sent to " + applicantName + " guardian.");
+      }
+    });
+  }
+
+  function openThreeWayMatchDrawer(poNumber, vendor, amount, url) {
+    openDrawer({
+      title: "3-Way Match: " + poNumber,
+      subtitle: vendor + " • Invoice Variance Inspection",
+      badge: "Discrepancy: $0.00",
+      badgeClass: "bg-mint/20 text-green-800",
+      icon: "fact_check",
+      fullscreenUrl: url || "../Procurement/Three_Way_Match_Widget.html",
+      actionText: "Authorize & Release Payment",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-3 bg-canvas/60 rounded-xl border border-border space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal">Vendor Requisition</span>
+              <span class="font-bold text-charcoal font-mono">${amount}</span>
+            </div>
+            <p class="text-charcoal/60 text-[11px]">PO matched against physical warehouse delivery slip #DS-44102 and invoice #INV-9921.</p>
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between p-2.5 bg-surface rounded-lg border border-border">
+              <span class="text-charcoal/70">1. Purchase Order (${poNumber})</span>
+              <span class="text-mint font-bold">100% Match</span>
+            </div>
+            <div class="flex justify-between p-2.5 bg-surface rounded-lg border border-border">
+              <span class="text-charcoal/70">2. Packing Slip (Loading Bay B)</span>
+              <span class="text-mint font-bold">Goods Received</span>
+            </div>
+            <div class="flex justify-between p-2.5 bg-surface rounded-lg border border-border">
+              <span class="text-charcoal/70">3. Vendor Tax Invoice</span>
+              <span class="text-mint font-bold">Taxes Verified (HST 13%)</span>
+            </div>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Payment Authorized", poNumber + " released to accounts payable for EFT settlement.");
+      }
+    });
+  }
+
+  function openWaiverDrawer(beneficiary, waiverType, amount, url) {
+    openDrawer({
+      title: "Tuition Waiver Request",
+      subtitle: beneficiary + " • " + waiverType,
+      badge: amount,
+      badgeClass: "bg-cerulean/20 text-blue-800",
+      icon: "request_quote",
+      fullscreenUrl: url || "../Billing/Discount_Waiver_Modal.html",
+      actionText: "Approve Ledger Waiver",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal">${waiverType}</span>
+              <span class="font-bold text-terracotta text-sm">${amount}</span>
+            </div>
+            <p class="text-charcoal/70 text-[11px]">Family enrollment of multiple siblings satisfies standard 15% second-child bursary criteria (Policy BR-02-03).</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border">
+            <span class="text-charcoal/50 text-[10px] uppercase font-bold block">Approval Chain</span>
+            <p class="font-semibold text-charcoal">Principal Endorsed • Awaiting Operations Sign-off</p>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Waiver Granted", amount + " credited to " + beneficiary + " billing account.");
+      }
+    });
+  }
+  </script>
+
+</body></html>

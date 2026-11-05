@@ -1,3 +1,5 @@
+"""Pydantic schemas for analytics metric snapshots, custom reports, query definitions, schedules, and outbound webhooks."""
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator

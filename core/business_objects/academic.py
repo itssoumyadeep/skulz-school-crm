@@ -1,3 +1,5 @@
+"""Domain business logic and validation rules for academic calendars, curriculum, lesson plans, exams, marks, and report cards."""
+
 import uuid
 from datetime import date, datetime
 from decimal import Decimal

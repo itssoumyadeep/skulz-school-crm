@@ -13,7 +13,7 @@ Read **only** the files required for your current task:
 | **API Route / Schema Change** | Target `core/api/v1/<domain>.py` + `core/schemas/<domain>.py` |
 | **Database / Model / Env Change** | `core/models.py` + [`docs/4_DATA_AND_ENV.md`](docs/4_DATA_AND_ENV.md) |
 | **Auth / RBAC / Tenant RLS** | `core/auth/` (`bearer.py`, `decorators.py`, `scoping.py`) + [`docs/1_SECURITY.md`](docs/1_SECURITY.md) |
-| **Frontend / Portal UI Change** | Target route in `frontend/app/`, `frontend/styles/tokens.css`, `frontend/components/ui`, `frontend/components/pc` + [`docs/5_DESIGN.md`](docs/5_DESIGN.md) |
+| **Frontend / Portal UI Change** | Target route in `frontend/app/`, `frontend/styles/tokens.css`, `frontend/components/ui`, `frontend/components/pc`, `frontend/components/widgets` + [`docs/5_DESIGN.md`](docs/5_DESIGN.md) |
 | **Architecture / Sprint Status** | [`docs/3_ARCHITECTURE.md`](docs/3_ARCHITECTURE.md), [`docs/6_PLAN.md`](docs/6_PLAN.md) |
 
 *Ignore `docs/reference/` unless explicitly requested.*
@@ -41,9 +41,10 @@ Read **only** the files required for your current task:
 
 ## 4. Mandatory Frontend UI Rules (`frontend/`)
 
-1. **Reuse Design System:** Import primitives from `frontend/components/ui` and shared product components (`data-table`, etc.) from `frontend/components/pc`. Do not build duplicate controls or raw HTML tables/inputs.
-2. **No Hardcoded Colors:** Use semantic Tailwind utilities backed by `frontend/styles/tokens.css`. Never use hex/RGB/HSL literals or arbitrary color classes.
-3. **App Router Only:** Product workflows belong in `frontend/app/`. Static HTML mockups belong only in `Artefacts/UX Designs/` when explicitly requested.
+1. **4-Tier Component Hierarchy:** Compose from Tier 1 (`frontend/components/ui`) $\rightarrow$ Tier 2 (`frontend/components/pc`) $\rightarrow$ Tier 3 portable functional widgets (`frontend/components/widgets/<domain>/`) $\rightarrow$ Tier 4 thin portal route containers (`frontend/app/`). Do not build duplicate controls or raw HTML tables/inputs.
+2. **Portable Widget Contract:** Widgets in `frontend/components/widgets/` must be 100% API-agnostic (pure props + callbacks, zero `@/app/lib/api` or router imports) and adapt via boolean `capabilities` flags (`WidgetBaseProps`) rather than hardcoded role names.
+3. **No Hardcoded Colors:** Use semantic Tailwind utilities backed by `frontend/styles/tokens.css`. Never use hex/RGB/HSL literals or arbitrary color classes.
+4. **3-Stage UI Workflow:** Static HTML mockups in `Artefacts/UX Designs/` $\rightarrow$ portable widgets in `frontend/components/widgets/<domain>/` (`.types.ts` + `.tsx`) $\rightarrow$ thin route assembly in `frontend/app/`.
 
 ---
 

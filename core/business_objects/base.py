@@ -1,3 +1,5 @@
+"""Base business object classes, rule violation definitions, and domain exception hierarchies."""
+
 import logging
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any

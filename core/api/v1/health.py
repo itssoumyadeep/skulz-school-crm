@@ -1,3 +1,5 @@
+"""API v1 endpoints for student medical records, medication consent/administration logs, incident escalation, and safety drills."""
+
 import uuid
 from uuid import UUID
 from datetime import date

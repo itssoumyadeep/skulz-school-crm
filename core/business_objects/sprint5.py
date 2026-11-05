@@ -1,3 +1,5 @@
+"""Domain business logic for staff compliance, appraisals, payroll deductions, vendor procurement 3-way matching, and emergency communications."""
+
 from __future__ import annotations
 
 from datetime import timedelta

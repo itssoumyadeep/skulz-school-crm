@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Board Governance & Minutes Widget — School CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#fff8f2',
+            surface: '#ffffff',
+            border: '#ead8c7',
+            charcoal: '#121417',
+            terracotta: '#e07a5f',
+            mint: '#90be6d',
+            marigold: '#fdba3b',
+            cerulean: '#64b5f6',
+            lilac: '#b39ddb',
+            cream: '#faf0e6'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen p-4 md:p-8">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Top Executive Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-lilac/20 text-purple-700 flex items-center justify-center font-bold">
+          <span class="material-symbols-outlined text-2xl">account_balance</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-serif text-2xl font-bold text-charcoal">Board of Trustees Governance Hub</h1>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-terracotta/20 text-terracotta border border-terracotta/40">Fiduciary Confidential</span>
+          </div>
+          <p class="text-xs text-charcoal/60 mt-0.5">Oakwood Academy Governance Board • Resolutions, Meeting Minutes & Risk Heatmap</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 bg-surface border border-border rounded-xl text-xs font-semibold hover:bg-canvas text-charcoal flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">lock</span> Fiduciary Key Access
+        </button>
+        <button class="px-5 py-2.5 bg-terracotta text-white rounded-xl text-xs font-bold hover:bg-terracotta/90 flex items-center gap-2 shadow-sm transition">
+          <span class="material-symbols-outlined text-sm">how_to_vote</span> Vote on Open Resolutions (2)
+        </button>
+      </div>
+    </div>
+
+    <!-- Governance Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="p-4 bg-surface border border-border rounded-xl shadow-sm">
+        <span class="text-xs text-charcoal/60 block">Next Scheduled Board Session</span>
+        <span class="text-lg font-bold text-charcoal font-serif mt-1 block">November 19, 2026</span>
+        <span class="text-[11px] text-terracotta font-semibold mt-1 inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">schedule</span> 6:30 PM • Boardroom & Zoom
+        </span>
+      </div>
+      <div class="p-4 bg-surface border border-border rounded-xl shadow-sm">
+        <span class="text-xs text-charcoal/60 block">Annual Budget Variance (Q3)</span>
+        <span class="text-lg font-bold text-mint font-serif mt-1 block">+3.2% Favorable</span>
+        <span class="text-[11px] text-charcoal/60 mt-1 block">$132k under operational cost baseline</span>
+      </div>
+      <div class="p-4 bg-surface border border-border rounded-xl shadow-sm">
+        <span class="text-xs text-charcoal/60 block">Strategic Risk Index</span>
+        <span class="text-lg font-bold text-amber-800 font-serif mt-1 block">Low–Moderate</span>
+        <span class="text-[11px] text-amber-900 font-semibold mt-1 block">1 items in Watchlist (Facilities Expansion)</span>
+      </div>
+      <div class="p-4 bg-surface border border-border rounded-xl shadow-sm">
+        <span class="text-xs text-charcoal/60 block">Statutory Audit Status</span>
+        <span class="text-lg font-bold text-green-700 font-serif mt-1 block">Clean Opinion</span>
+        <span class="text-[11px] text-charcoal/60 mt-1 block">KPMG Fiscal 2025 Audit Certified</span>
+      </div>
+    </div>
+
+    <!-- Main Grid: Resolutions & Minutes vs Risk Matrix -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left Column: Resolutions & Signed Minutes (2 cols) -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- Active Board Resolutions Voting Card -->
+        <div class="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="font-serif text-lg font-bold text-charcoal">Active Fiduciary Resolutions & Ballots</h2>
+              <p class="text-xs text-charcoal/60">Formal motions requiring Trustee quorum confirmation</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-marigold/20 text-amber-900 border border-marigold/40">
+              Quorum Met (7 of 9 Voted)
+            </span>
+          </div>
+
+          <!-- Resolution Item 1 -->
+          <div class="p-4 rounded-xl border border-border bg-canvas/30 space-y-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-terracotta/20 text-terracotta">Motion #BOD-2026-14</span>
+                <h3 class="text-sm font-bold text-charcoal mt-1">Approval of Phase II Athletics Pavilion & Turf Field Capital Grant ($850k CAD)</h3>
+              </div>
+              <span class="text-xs font-bold text-mint">7 Affirmative / 0 Negative</span>
+            </div>
+            <p class="text-xs text-charcoal/70 leading-relaxed">
+              Moved by Trustee S. Jenkins, seconded by Dr. Vance. Authorizes the expenditure of $850,000 from the capital reserve for contractor procurement commencing Spring 2027.
+            </p>
+            <div class="flex items-center justify-between pt-2 border-t border-border text-xs">
+              <span class="text-charcoal/60">Voting Closes: Nov 10, 2026</span>
+              <div class="flex items-center gap-2">
+                <button class="px-3 py-1.5 rounded-lg bg-mint text-white font-bold text-xs hover:bg-mint/90">Vote Aye</button>
+                <button class="px-3 py-1.5 rounded-lg bg-terracotta text-white font-bold text-xs hover:bg-terracotta/90">Vote Nay</button>
+                <button class="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs text-charcoal font-semibold">Abstain</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resolution Item 2 -->
+          <div class="p-4 rounded-xl border border-border bg-canvas/30 space-y-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-mint/20 text-green-800">Motion #BOD-2026-15</span>
+                <h3 class="text-sm font-bold text-charcoal mt-1">Adoption of 2027–2028 Tuition Rate Schedule (+3.8% Adjustment)</h3>
+              </div>
+              <span class="text-xs font-bold text-charcoal/60">Draft for Review</span>
+            </div>
+            <p class="text-xs text-charcoal/70 leading-relaxed">
+              Adjusts primary and senior school tuition tiers to maintain faculty salary parity and absorb inflationary facilities energy tariffs.
+            </p>
+            <div class="flex items-center justify-between pt-2 border-t border-border text-xs">
+              <span class="text-charcoal/60">Scheduled for vote at Nov 19 Session</span>
+              <button class="text-terracotta font-semibold hover:underline">Read Supporting Brief</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signed Minutes Archive -->
+        <div class="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="font-serif text-lg font-bold text-charcoal">Official Signed Board Minutes Repository</h2>
+            <button class="text-xs text-terracotta font-semibold hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">archive</span> View All Archives
+            </button>
+          </div>
+
+          <div class="divide-y divide-border text-xs">
+            <div class="py-3 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-terracotta text-xl">picture_as_pdf</span>
+                <div>
+                  <span class="font-bold text-charcoal block">BOD_Minutes_October_2026_Approved.pdf</span>
+                  <span class="text-[10px] text-charcoal/50">Signed by Chair & Secretary • Oct 15, 2026 (340 KB)</span>
+                </div>
+              </div>
+              <button class="px-3 py-1.5 rounded-lg border border-border font-semibold hover:bg-canvas text-charcoal">Download</button>
+            </div>
+
+            <div class="py-3 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-terracotta text-xl">picture_as_pdf</span>
+                <div>
+                  <span class="font-bold text-charcoal block">BOD_Minutes_September_2026_AGM.pdf</span>
+                  <span class="text-[10px] text-charcoal/50">Annual General Meeting & Trustee Elections • Sep 22, 2026 (1.1 MB)</span>
+                </div>
+              </div>
+              <button class="px-3 py-1.5 rounded-lg border border-border font-semibold hover:bg-canvas text-charcoal">Download</button>
+            </div>
+
+            <div class="py-3 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-terracotta text-xl">picture_as_pdf</span>
+                <div>
+                  <span class="font-bold text-charcoal block">Annual_Audited_Financial_Statements_2025.pdf</span>
+                  <span class="text-[10px] text-charcoal/50">KPMG Independent Auditor Report & Fiduciary Notes (2.4 MB)</span>
+                </div>
+              </div>
+              <button class="px-3 py-1.5 rounded-lg border border-border font-semibold hover:bg-canvas text-charcoal">Download</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Strategic Risk Matrix Heatmap (1 col) -->
+      <div class="space-y-6">
+
+        <div class="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-4">
+          <div>
+            <h2 class="font-serif text-lg font-bold text-charcoal">Institutional Risk Matrix</h2>
+            <p class="text-xs text-charcoal/60">Impact vs Likelihood Governance Heatmap</p>
+          </div>
+
+          <!-- Heatmap Visual Grid -->
+          <div class="space-y-3 pt-2">
+            <div class="p-3 bg-terracotta/10 border border-terracotta/40 rounded-xl space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-terracotta">Municipal Zoning Permitting</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-terracotta text-white">High Impact</span>
+              </div>
+              <p class="text-[11px] text-charcoal/70">Delays in City of Mississauga Site Plan Approval for the North Campus expansion.</p>
+            </div>
+
+            <div class="p-3 bg-marigold/10 border border-marigold/40 rounded-xl space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-amber-900">Cybersecurity & Student Data Privacy</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-marigold/40 text-amber-900">Moderate</span>
+              </div>
+              <p class="text-[11px] text-charcoal/70">MFIPPA / PIPEDA annual compliance penetration audit scheduled for Q1 2027.</p>
+            </div>
+
+            <div class="p-3 bg-mint/10 border border-mint/40 rounded-xl space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-green-900">Enrollment & Demographic Volatility</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-mint text-white">Low</span>
+              </div>
+              <p class="text-[11px] text-charcoal/70">Strong waiting pool in JK-G5 ensures high retention resilience.</p>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-border text-center">
+            <span class="text-xs text-charcoal/50">Reviewed quarterly by Audit & Risk Committee</span>
+          </div>
+        </div>
+
+        <!-- Trustee Roster Summary -->
+        <div class="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-3">
+          <h3 class="font-serif text-base font-bold text-charcoal">Trustee Board Committee Leads</h3>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between p-2 rounded-lg bg-canvas/40">
+              <span class="font-bold text-charcoal">Sarah Jenkins (Chair)</span>
+              <span class="text-charcoal/60">Executive Comm.</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-lg bg-canvas/40">
+              <span class="font-bold text-charcoal">David Chen, CPA (Treasurer)</span>
+              <span class="text-charcoal/60">Finance & Audit</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-lg bg-canvas/40">
+              <span class="font-bold text-charcoal">Dr. Eleanor Vance (Ex-Officio)</span>
+              <span class="text-charcoal/60">Head of School</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-lg bg-canvas/40">
+              <span class="font-bold text-charcoal">Priya Patel, LL.B.</span>
+              <span class="text-charcoal/60">Governance & Legal</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

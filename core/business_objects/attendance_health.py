@@ -1,3 +1,5 @@
+"""Domain business logic for student/staff attendance, lock windows, leave approvals, medical records, and incident escalations."""
+
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal

@@ -1,3 +1,5 @@
+"""API v1 endpoints for school onboarding configuration, CSV dataset template downloads, and transactional bulk imports."""
+
 from uuid import UUID
 
 from django.http import JsonResponse

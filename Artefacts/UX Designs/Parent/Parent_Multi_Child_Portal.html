@@ -1,0 +1,849 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"secondary-fixed":"#ffdf9c","primary-fixed-dim":"#ffb4a1","on-primary":"#ffffff","on-tertiary":"#ffffff","on-surface":"#1d1b17","terracotta-crayon":"#E07A5F","on-secondary-fixed":"#251a00","surface":"#fef8f1","inverse-surface":"#32302c","on-surface-variant":"#55423e","on-tertiary-fixed-variant":"#29500b","background":"#fef8f1","outline-variant":"#dbc1ba","secondary-container":"#fdcb52","primary":"#9a442d","on-secondary-container":"#725500","surface-container-high":"#ede7e0","cerulean-sky":"#64B5F6","peach-apricot":"#F4A261","outline":"#88726d","on-primary-container":"#5b1604","charcoal-slate":"#2B2D42","lavender-lilac":"#B39DDB","surface-tint":"#9a442d","surface-container-highest":"#e7e2db","error":"#ba1a1a","on-error":"#ffffff","inverse-on-surface":"#f6f0e9","tertiary-fixed-dim":"#a5d480","surface-bright":"#fef8f1","primary-container":"#e07a5f","surface-container-low":"#f9f3ec","surface-variant":"#e7e2db","tertiary-container":"#76a355","primary-fixed":"#ffdbd2","mint-sage":"#90BE6D","on-secondary":"#ffffff","surface-container-lowest":"#ffffff","on-error-container":"#93000a","on-tertiary-fixed":"#0b2000","on-secondary-fixed-variant":"#5b4300","butter-yellow":"#F9C74F","secondary":"#785a00","tertiary-fixed":"#c0f19a","secondary-fixed-dim":"#f1c048","tertiary":"#406922","on-tertiary-container":"#173600","on-primary-fixed-variant":"#7c2e19","surface-container":"#f3ede6","inverse-primary":"#ffb4a1","error-container":"#ffdad6","on-background":"#1d1b17","on-primary-fixed":"#3c0800","surface-dim":"#dfd9d2"},"borderRadius":{"DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px"},"spacing":{"space-xs":"0.25rem","gutter":"1.5rem","margin":"2.5rem","space-lg":"1.5rem","space-sm":"0.5rem","gutter-mobile":"1rem","space-md":"1rem","space-xl":"2.5rem","margin-mobile":"1rem"},"fontFamily":{"body-md":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"]},"fontSize":{"body-md":["14px",{"lineHeight":"22px","fontWeight":"400"}],"display-lg-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"700"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.015em","fontWeight":"700"}],"headline-lg-mobile":["26px",{"lineHeight":"34px","letterSpacing":"-0.01em","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"600"}],"display-lg":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"700"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.03em","fontWeight":"700"}],"title-md":["18px",{"lineHeight":"24px","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface"><div class="w-full"><header class="fixed top-0 right-0 h-16 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-margin left-0"><div class="flex items-center gap-space-md"><button aria-label="Open navigation menu" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface transition-all"><span class="material-symbols-outlined text-[24px]">menu</span></button><div class="flex items-center gap-space-xs"><div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">toys</span></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-primary tracking-tight">ThePurpleCubby</span><span class="font-label-sm text-label-sm text-terracotta-crayon bg-peach-apricot/20 px-space-xs rounded-full hidden sm:inline-block">Family Portal</span></div><span class="font-label-sm text-label-sm text-on-surface-variant hidden sm:inline-block">The Purple Cubby Inc. CRM</span></div></div><div class="hidden md:flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-full ml-space-sm"><span class="material-symbols-outlined text-[18px] text-terracotta-crayon">local_florist</span><span class="font-label-md text-label-md text-on-surface">Little Sprout Campus • Early Years</span></div><div class="hidden xl:flex items-center gap-space-xs bg-butter-yellow/20 px-space-md py-space-xs rounded-full"><span class="material-symbols-outlined text-[18px] text-secondary">event_upcoming</span><span class="font-label-md text-label-md text-secondary">Spring Play Quest in 3 Days</span></div></div><div class="flex items-center gap-space-md"><div class="hidden lg:flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded-full shadow-sm"><span class="material-symbols-outlined text-tertiary text-[18px]">verified_user</span><span class="font-label-md text-label-md text-on-surface">Parent ID: #ROS-9921</span></div><button aria-label="Search school database" class="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all"><span class="material-symbols-outlined text-[20px]">search</span></button><div class="relative"><button aria-label="School Alerts" class="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all"><span class="material-symbols-outlined text-[20px]">notifications</span></button><span class="absolute top-1 right-1 w-2.5 h-2.5 bg-terracotta-crayon rounded-full ring-2 ring-surface"></span></div><div class="relative"><button aria-label="Parent &amp; Teacher Discussions" class="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all"><span class="material-symbols-outlined text-[20px]">chat_bubble</span></button><span class="absolute top-1 right-1 w-2.5 h-2.5 bg-cerulean-sky rounded-full ring-2 ring-surface"></span></div><div class="h-8 w-[1px] bg-surface-container-highest mx-space-xs"></div><div class="flex items-center gap-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[18px]">person</span></div><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface">Elena Rostova</span><span class="font-label-sm text-label-sm text-tertiary font-bold">Verified Parent</span></div></div></div></header><main class="w-full pt-16 px-margin pb-margin bg-background min-h-screen"><div class="flex flex-col w-full mx-auto">
+<!-- Subtle decorative ambient blobs -->
+<div class="relative w-full">
+<div class="absolute -top-10 -right-6 w-72 h-72 rounded-full bg-peach-apricot/15 blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute top-48 -left-10 w-80 h-80 rounded-full bg-butter-yellow/20 blur-3xl pointer-events-none -z-10"></div>
+<!-- Parent Welcome Banner & Context Ribbon -->
+<section class="bg-surface-container-lowest rounded-2xl p-space-md shadow-[0_8px_24px_rgba(224,122,95,0.06)] border border-transparent mb-space-lg"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="relative flex-shrink-0"><div class="w-16 h-16 rounded-full overflow-hidden bg-peach-apricot/20 ring-4 ring-peach-apricot/30 shadow-inner flex items-center justify-center"><img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBf4xlMT8FStQ11QG4fkQLyTSuEvprL9irUBWb0DR0Wni5mdb5brfI8OU9Gh_p9hDnAz7XGdxf5QY-O9xafjvM0dSfxWG37-u3kuCoFHXexK4QSJiDUBRxVO9j0tI6DBGewC5fwaBQI45IaAgcJCBBTYVFCkVS-H8mGlhrd9fxKiJZLn890vPbICZDH0ZBNflxqGVb1P5x-glh-bQxhj4CHgAC-0EJp9qpnbXQ4" alt="Elena Lin portrait"></div><span class="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-mint-sage ring-2 ring-white flex items-center justify-center text-white"><span class="material-symbols-outlined text-[10px] font-bold">check</span></span></div><div><div class="flex items-center gap-space-xs flex-wrap"><h1 class="text-headline-md font-bold tracking-tight text-on-surface">Good morning, Elena Lin!</h1><span class="bg-peach-apricot/20 text-terracotta-crayon font-label-sm text-label-sm px-space-xs py-0.5 rounded-full font-semibold">Primary Guardian • 2 Linked Children</span><div class="flex items-center gap-1 bg-mint-sage/20 text-tertiary px-space-xs py-0.5 rounded-full font-label-sm text-label-sm"><span class="w-2 h-2 rounded-full bg-mint-sage animate-ping"></span><span class="font-semibold">Family Portal Active</span></div></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Thursday, Term 2 • Week 6 • Family &amp; Billing Portal • Little Sprout Campus</p></div></div><div class="flex items-center gap-space-sm flex-wrap"><div class="flex items-center gap-space-sm bg-surface-container-low hover:bg-surface-container px-space-md py-space-xs rounded-2xl cursor-pointer transition-all border border-transparent"><div class="w-9 h-9 rounded-full bg-butter-yellow/30 text-secondary flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">family_restroom</span></div><div class="text-left"><div class="flex items-center gap-1"><span class="font-label-md text-label-md text-on-surface font-semibold">Lin-Vance Household</span><span class="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span></div><span class="font-body-sm text-body-sm text-on-surface-variant block">Maya (Pre-K) &amp; Leo (Grade 4)</span></div></div><div class="hidden md:flex items-center gap-space-xs"><button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-space-md py-space-xs rounded-full font-label-md text-label-md flex items-center gap-space-xs transition-all"><span class="material-symbols-outlined text-[18px] text-terracotta-crayon">credit_card</span><span class="">Quick Pay</span></button><button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-space-md py-space-xs rounded-full font-label-md text-label-md flex items-center gap-space-xs transition-all"><span class="material-symbols-outlined text-[18px] text-cerulean-sky">verified</span><span class="">Slips Status</span></button></div></div></div></section>
+<!-- 1. Child Switcher Header (US-P2-04 Tabs & Add Sibling) -->
+<section class="mb-space-xl">
+<div class="bg-surface-container-lowest p-space-sm rounded-lg shadow-[0_8px_24px_rgba(224,122,95,0.06)] flex flex-wrap items-center gap-space-sm">
+<!-- Active Child: Leo -->
+<button class="flex items-center gap-space-md px-space-lg py-space-sm rounded-full bg-primary-container text-on-primary transition-all shadow-[0_4px_14px_rgba(224,122,95,0.22)] scale-[1.01]" id="child-tab-leo" onclick="switchChild('leo')">
+<div class="w-9 h-9 rounded-full bg-on-primary/20 flex items-center justify-center font-label-lg text-label-lg">
+            👦
+          </div>
+<div class="text-left">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-lg text-label-lg">Leo Rostova</span>
+<span class="px-space-xs py-0.5 rounded-full bg-mint-sage text-on-surface text-label-sm font-semibold">Active</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-primary/90">Grade 4B • Cubby #18</p>
+</div>
+</button>
+<!-- Sibling: Maya -->
+<button class="flex items-center gap-space-md px-space-lg py-space-sm rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface transition-all" id="child-tab-maya" onclick="switchChild('maya')">
+<div class="w-9 h-9 rounded-full bg-peach-apricot/30 flex items-center justify-center font-label-lg text-label-lg">
+            👧
+          </div>
+<div class="text-left">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-lg text-label-lg text-on-surface">Maya Rostova</span>
+<span class="px-space-xs py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm">Kindergarten</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Sunflowers • Cubby #04</p>
+</div>
+</button>
+<!-- DUAL VIEW SWITCHER -->
+<div class="ml-auto flex items-center bg-surface-container-low p-1 rounded-full border border-outline-variant/30 text-label-sm font-label-sm shadow-inner">
+  <span class="flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-lowest text-primary font-bold shadow-sm">
+    <span class="material-symbols-outlined text-[16px]">grid_view</span>
+    <span>Cards</span>
+  </span>
+  <a href="Parent_Multi_Child_Portal_Compact.html" class="flex items-center gap-1 px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition">
+    <span class="material-symbols-outlined text-[16px]">view_list</span>
+    <span>Compact List</span>
+  </a>
+</div>
+<!-- Action: Register Sibling -->
+<button class="ml-auto flex items-center gap-space-xs px-space-md py-space-sm rounded-full bg-surface-container hover:bg-surface-container-high text-primary transition-all">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span class="font-label-md text-label-md">+ Register Sibling / New Application</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-highest px-space-xs rounded-full">US-P0-03</span>
+</button>
+</div>
+</section>
+<!-- Main Dynamic Content Grid for Leo Rostova -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter items-start" id="leo-dashboard-view">
+<!-- LEFT 8-COLUMN COLUMN: Academic Progress, Health & Medical, Events & Slips, Teacher Chat -->
+<div class="xl:col-span-8 flex flex-col gap-gutter">
+<!-- Banner Profile Bar for Active Child -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06)]">
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-terracotta-crayon via-peach-apricot to-butter-yellow"></div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="relative w-16 h-16 rounded-full overflow-hidden shadow-inner bg-peach-apricot/20 flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A warm, charming portrait of a cheerful 9 year old schoolboy with friendly eyes, soft natural classroom light, wearing an ochre knit school sweater, artistic oil pastel tones in peach and terracotta." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAoNZN7RGTV3Y7uIP_xCYprjUwMPS_XtmifjHpv-yvlLngbom8rh6qPuug6a_ogzZT-9qPJwvEt54FS1z1_0tlFTyJk9eCzgSXq9u3268283rnEkkGMVKAnd9UUCggYKoTwb7QZIhCfqBjf_cvL2pYOwX3eah_n1hUgBkl2KdVaQAZGP9qQlEwGHsb2YP3Dsz59SC8Gy_giNu4fNeausQff2Grk2G0S7oI8wzg">
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-on-surface">Leo Rostova</span>
+<span class="bg-cerulean-sky/20 text-cerulean-sky font-label-sm text-label-sm px-space-xs py-0.5 rounded-full">Term 2 Active</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Classroom 4-B • Lead Educator: Ms. Sarah Jenkins</p>
+<div class="flex items-center gap-space-md mt-space-xs flex-wrap">
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-tertiary">
+<span class="material-symbols-outlined text-[16px]">how_to_reg</span> Attendance: 96.4%
+                  </span>
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">menu_book</span> Reading Level: T (Advanced)
+                  </span>
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">sports_soccer</span> House: Willow Hawks
+                  </span>
+</div>
+</div>
+</div>
+<div class="flex md:flex-col items-end justify-between gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-space-md py-space-xs rounded-full font-label-md text-label-md flex items-center gap-space-xs transition-all">
+<span class="material-symbols-outlined text-[18px]">badge</span> Child Identity Card
+              </button>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Updated today at 08:30 AM</span>
+</div>
+</div>
+</div>
+<!-- 2. Academic Progress & Published Report Card (US-P1-02, BR-04-05) -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06)] relative">
+<div class="flex items-center justify-between mb-space-md flex-wrap gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-full bg-butter-yellow/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">workspace_premium</span>
+</div>
+<h2 class="text-headline-sm font-bold text-on-surface">Academic Progress &amp; Term Reports</h2>
+</div>
+<span class="font-label-sm text-label-sm bg-butter-yellow/30 text-secondary px-space-sm py-1 rounded-full">BR-04-05 Validated</span>
+</div>
+<!-- Term 1 Report Card Download Card -->
+<div class="bg-surface-container-low rounded-lg p-space-md mb-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center text-terracotta-crayon shadow-sm">
+<span class="material-symbols-outlined text-[28px]">article</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-title-md text-title-md text-on-surface">Published Term 1 Official Report Card</span>
+<span class="bg-mint-sage/20 text-tertiary font-label-sm text-label-sm px-space-xs rounded">Official Seal</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Authenticated on Jan 18, 2025 • Signed by Principal M. Vance</p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="bg-terracotta-crayon hover:opacity-90 text-on-primary px-space-lg py-space-xs rounded-full font-label-lg text-label-lg flex items-center gap-space-xs shadow-sm transition-transform active:scale-95" onclick="simulateDownload()">
+<span class="material-symbols-outlined text-[18px]">cloud_download</span>
+<span id="download-btn-text" class="">Download PDF</span>
+</button>
+</div>
+</div>
+<!-- Formative Progress Bars -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Subject 1: Mathematical Reasoning -->
+<div class="bg-surface-container p-space-md rounded-lg">
+<div class="flex justify-between items-center mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface">Math &amp; Spatial Logic</span>
+<span class="font-label-md text-label-md text-tertiary">Exceeding (92%)</span>
+</div>
+<div class="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden mb-space-xs">
+<div class="bg-mint-sage h-full rounded-full transition-all duration-500" style="width: 92%"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Multi-digit division &amp; fractions master badge earned</span>
+</div>
+<!-- Subject 2: Language Arts -->
+<div class="bg-surface-container p-space-md rounded-lg">
+<div class="flex justify-between items-center mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface">English &amp; Creative Prose</span>
+<span class="font-label-md text-label-md text-primary">Solid (88%)</span>
+</div>
+<div class="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden mb-space-xs">
+<div class="bg-peach-apricot h-full rounded-full transition-all duration-500" style="width: 88%"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Currently writing chapter 4 of personal fable</span>
+</div>
+<!-- Subject 3: General Science -->
+<div class="bg-surface-container p-space-md rounded-lg">
+<div class="flex justify-between items-center mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface">Earth &amp; Planetary Inquiry</span>
+<span class="font-label-md text-label-md text-cerulean-sky">Thriving (94%)</span>
+</div>
+<div class="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden mb-space-xs">
+<div class="bg-cerulean-sky h-full rounded-full transition-all duration-500" style="width: 94%"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Ecosystem biodome terrarium project submitted</span>
+</div>
+</div>
+</div>
+<!-- TWO COLUMN ROW: Health & Medical (US-P1-05) + 48h Field Trip Permission Slip (US-P1-10) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Health & Medical Consent Widget (US-P1-05, BR-07-01) -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-full bg-peach-apricot/30 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+</div>
+<h3 class="text-title-md font-bold text-on-surface">Health &amp; Medical Protocol</h3>
+</div>
+<span class="bg-mint-sage/20 text-tertiary font-label-sm text-label-sm px-space-xs py-0.5 rounded-full">BR-07-01</span>
+</div>
+<!-- Nurse Clearance Badge -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center gap-space-sm mb-space-md">
+<span class="material-symbols-outlined text-mint-sage text-[22px]">health_and_safety</span>
+<div>
+<span class="font-label-md text-label-md text-on-surface">Campus Clinic Clearance: Valid</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Reviewed by Nurse Henderson, RN on Feb 01</p>
+</div>
+</div>
+<!-- Condition details -->
+<div class="space-y-space-sm mb-space-md">
+<div class="flex items-center justify-between text-on-surface">
+<span class="font-label-md text-label-md">Diagnosis / Care Plan:</span>
+<span class="font-body-md text-body-md text-primary font-semibold">Mild Exercise-Induced Asthma</span>
+</div>
+<div class="flex items-center justify-between text-on-surface">
+<span class="font-label-md text-label-md">Rescue Inhaler:</span>
+<span class="font-body-md text-body-md">Ventolin 100mcg (In Cubby Locker)</span>
+</div>
+<div class="flex items-center justify-between text-on-surface">
+<span class="font-label-md text-label-md">Action Trigger:</span>
+<span class="font-body-md text-body-md">Cold air / Heavy sprint</span>
+</div>
+</div>
+</div>
+<!-- Medical Consent Interactive Toggle -->
+<div class="pt-space-sm bg-surface-container p-space-md rounded-lg flex items-center justify-between">
+<div>
+<span class="font-label-md text-label-md text-on-surface block">Emergency Admin Consent</span>
+<span class="font-body-sm text-body-sm text-tertiary font-semibold" id="consent-status-text">Signed Consent: Active (Toggled ON)</span>
+</div>
+<button aria-label="Toggle Consent" class="relative inline-flex h-7 w-13 flex-shrink-0 cursor-pointer rounded-full bg-tertiary transition-colors duration-200 ease-in-out p-1" id="consent-toggle" onclick="toggleConsent()">
+<span class="translate-x-6 pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition duration-200 ease-in-out" id="consent-indicator"></span>
+</button>
+</div>
+</div>
+<!-- Upcoming School Events & 48h Permission Slip (US-P1-10, BR-09-01) -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-full bg-cerulean-sky/30 text-charcoal-slate flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">explore</span>
+</div>
+<h3 class="text-title-md font-bold text-on-surface">Event Permissions &amp; Safeguarding</h3>
+</div>
+<span class="bg-cerulean-sky/20 text-charcoal-slate font-label-sm text-label-sm px-space-xs py-0.5 rounded-full">BR-09-01 Met</span>
+</div>
+<!-- Event Details -->
+<div class="bg-surface-container-low p-space-md rounded-lg mb-space-sm">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-lg text-label-lg text-on-surface">Science Discovery Field Trip</span>
+<span class="bg-butter-yellow text-on-surface font-label-sm text-label-sm px-space-xs py-0.5 rounded-full">Grade 4 Cohort</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-xs">Pacific Science Center &amp; Planetarium Dome exploration with transport provided by school bus.</p>
+<div class="flex items-center gap-space-xs text-error font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="">Deadline: Nov 4, 3:00 PM • 48h Notice Standard Met</span>
+</div>
+</div>
+<!-- Slip inclusions summary -->
+<div class="p-space-sm rounded-lg bg-surface-container mb-space-md">
+<ul class="text-body-sm text-body-sm text-on-surface-variant space-y-1">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-mint-sage text-[16px]">check_circle</span>
+                    Packed lunch box provided by family
+                  </li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-mint-sage text-[16px]">check_circle</span>
+                    First aid pack accompanied by school nurse
+                  </li>
+</ul>
+</div>
+</div>
+<!-- Sign Action Container -->
+<div class="pt-space-xs" id="slip-container">
+<button class="w-full bg-terracotta-crayon hover:opacity-90 text-on-primary py-space-sm rounded-full font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm transition-transform active:scale-98" id="sign-slip-btn" onclick="signPermissionSlip()">
+<span class="material-symbols-outlined text-[20px]">draw</span>
+<span class="">Sign Permission Slip (1-Click E-Sign)</span>
+</button>
+<div class="hidden w-full bg-mint-sage/20 text-tertiary py-space-sm rounded-full font-label-lg text-label-lg flex items-center justify-center gap-space-xs" id="slip-signed-banner">
+<span class="material-symbols-outlined text-[20px]">task_alt</span>
+<span class="">Consent Electronically Signed by Elena Rostova</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 4. Messages & Daily Noticeboard (Homeroom Chat: Ms. Sarah Jenkins) -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06)]">
+<div class="flex items-center justify-between mb-space-md flex-wrap gap-space-sm">
+<div class="flex items-center gap-space-md">
+<div class="relative">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-mint-sage/20 flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Warm and approachable female elementary school teacher in her 30s with soft auburn hair, gentle smile, in a sunlit warm classroom setting, oil pastel color palette with sage and soft terracotta." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBf4xlMT8FStQ11QG4fkQLyTSuEvprL9irUBWb0DR0Wni5mdb5brfI8OU9Gh_p9hDnAz7XGdxf5QY-O9xafjvM0dSfxWG37-u3kuCoFHXexK4QSJiDUBRxVO9j0tI6DBGewC5fwaBQI45IaAgcJCBBTYVFCkVS-H8mGlhrd9fxKiJZLn890vPbICZDH0ZBNflxqGVb1P5x-glh-bQxhj4CHgAC-0EJp9qpnbXQ4">
+</div>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-mint-sage ring-2 ring-white"></span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Ms. Sarah Jenkins</h3>
+<span class="font-label-sm text-label-sm text-tertiary bg-mint-sage/20 px-space-xs rounded">Grade 4B Lead Educator</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Classroom Channel • Typically replies within 45 mins</p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-md py-space-xs rounded-full font-label-md text-label-md text-on-surface flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-[16px]">call</span> Request Phone Sync
+              </button>
+</div>
+</div>
+<!-- Chat History Transcript -->
+<div class="space-y-space-md max-h-64 overflow-y-auto pr-space-xs mb-space-md" id="chat-stream">
+<!-- Message 1 (Teacher) -->
+<div class="flex gap-space-sm items-start max-w-xl">
+<div class="w-7 h-7 rounded-full bg-mint-sage/40 flex-shrink-0 flex items-center justify-center text-on-surface font-label-sm text-label-sm">SJ</div>
+<div class="bg-surface-container p-space-md rounded-2xl rounded-tl-none">
+<p class="font-body-md text-body-md text-on-surface">Hello Elena! Just wanted to let you know Leo was remarkable in our geology rock classification seminar today. He helped pair the basalt and quartz samples for his team!</p>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1 block">Yesterday at 3:15 PM</span>
+</div>
+</div>
+<!-- Message 2 (Parent) -->
+<div class="flex gap-space-sm items-start justify-end max-w-xl ml-auto">
+<div class="bg-primary-container text-on-primary p-space-md rounded-2xl rounded-tr-none">
+<p class="font-body-md text-body-md">Thank you so much, Sarah! He talked non-stop about igneous rocks at dinner. Also, I saw the field trip note—we are all signed up.</p>
+<span class="font-label-sm text-label-sm text-on-primary/80 mt-1 block text-right">Yesterday at 6:40 PM</span>
+</div>
+</div>
+<!-- Message 3 (Teacher) -->
+<div class="flex gap-space-sm items-start max-w-xl">
+<div class="w-7 h-7 rounded-full bg-mint-sage/40 flex-shrink-0 flex items-center justify-center text-on-surface font-label-sm text-label-sm">SJ</div>
+<div class="bg-surface-container p-space-md rounded-2xl rounded-tl-none">
+<p class="font-body-md text-body-md text-on-surface">Wonderful! Don't forget that students may bring their own magnifying loupes on Wednesday if they wish.</p>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1 block">Today at 8:12 AM</span>
+</div>
+</div>
+</div>
+<!-- Quick reply composer input -->
+<div class="flex items-center gap-space-xs bg-surface-container-low p-space-xs rounded-full">
+<input class="flex-1 bg-transparent px-space-md py-space-xs outline-none text-body-md text-on-surface placeholder:text-on-surface-variant" id="chat-input" onkeydown="handleChatEnter(event)" placeholder="Type a message to Ms. Jenkins..." type="text">
+<button class="w-10 h-10 rounded-full bg-terracotta-crayon text-on-primary flex items-center justify-center hover:opacity-90 transition-transform active:scale-95 shadow-sm" onclick="sendChatMessage()">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+</div>
+</div>
+</div>
+<!-- RIGHT 4-COLUMN COLUMN: Tuition & Billing, Sibling Overview, Activity Stream -->
+<div class="xl:col-span-4 flex flex-col gap-gutter">
+<!-- 3. Tuition & Billing Widget (US-P2-05, US-P1-07) -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06)] relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+</div>
+<h3 class="text-title-md font-bold text-on-surface">Active Invoices &amp; Payment</h3>
+</div>
+<span class="font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed px-space-xs py-0.5 rounded-full">US-P2-05</span>
+</div>
+<!-- Invoice Details Card -->
+<div class="bg-surface-container-low p-space-md rounded-lg mb-space-md">
+<div class="flex items-center justify-between text-body-sm text-body-sm text-on-surface-variant mb-space-xs">
+<span class="">Invoice #INV-2025-084</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">Due Feb 20, 2025</span>
+</div>
+<p class="font-label-lg text-label-lg text-on-surface mb-space-xs">Term 2 Tuition • Leo Rostova</p>
+<div class="flex items-baseline gap-space-xs mt-space-sm">
+<span class="text-[36px] font-bold leading-tight text-on-surface tracking-tight">$1,250.00</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Outstanding balance</span>
+</div>
+</div>
+<!-- Payment customization form -->
+<div class="space-y-space-md mb-space-lg">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-space-xs">Payment Allocation Amount</label>
+<div class="relative flex items-center">
+<span class="absolute left-space-md text-on-surface font-title-md text-title-md">$</span>
+<input class="w-full bg-surface-container-low rounded-full pl-8 pr-space-md py-space-sm font-title-md text-title-md text-on-surface outline-none focus:ring-2 focus:ring-terracotta-crayon/30" id="payment-amount" type="number" value="1250.00">
+<button class="absolute right-2 px-space-sm py-1 bg-surface-container text-on-surface font-label-sm text-label-sm rounded-full hover:bg-surface-container-high" onclick="setFullAmount()">Full Pay</button>
+</div>
+</div>
+<!-- Stripe Checkout CTA -->
+<button class="w-full bg-terracotta-crayon hover:opacity-90 text-on-primary py-space-md rounded-full font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-[0_8px_20px_rgba(224,122,95,0.25)] transition-transform active:scale-97" id="stripe-checkout-btn" onclick="handleStripePayment()">
+<span class="material-symbols-outlined text-[20px]">credit_card</span>
+<span id="pay-button-label" class="">Pay $1,250.00 with Stripe Checkout</span>
+</button>
+<!-- Stripe & Security Badge -->
+<div class="flex items-center justify-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary">lock</span>
+<span class="">256-bit encrypted • Powered by Stripe Certified PCI-DSS</span>
+</div>
+</div>
+<!-- Previous Term Instant Receipt Download -->
+<div class="border-t border-transparent pt-space-md bg-surface-container p-space-md rounded-lg">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-md text-label-md text-on-surface block">Term 1 Receipt (#REC-2024-881)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Paid $1,250.00 on Sep 02, 2024</span>
+</div>
+<button class="w-9 h-9 rounded-full bg-surface-container-lowest text-on-surface hover:text-primary flex items-center justify-center shadow-sm" onclick="simulateReceiptDownload()" title="Download Receipt">
+<span class="material-symbols-outlined text-[18px]">receipt</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Maya Quick Glance Card (Sibling Peek) -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06)]">
+<div class="flex items-center justify-between mb-space-md">
+<h3 class="font-title-md text-title-md text-on-surface">Maya’s Quick Glance</h3>
+<span class="font-label-sm text-label-sm text-peach-apricot bg-peach-apricot/20 px-space-xs rounded">Kindergarten</span>
+</div>
+<div class="flex items-center gap-space-md mb-space-md">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-butter-yellow/30 flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Charming portrait of a smiling 5 year old preschool girl with curly brown hair, holding an oil pastel crayon, warm kindergarten playroom background with soft cream and pastel yellow hues." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoiDI2OvZwxuy8w8P3BfYTRCFQI8CIQw9lTvNGRfeZ7bVW2DLU53ACimSGk6NF2FQIeS_6LzXETNAmyalYDcpFyt11x9iR35tNY5d9sVXG5kBIYQtaylTgIhHCyXj-OsR_4GRDmm_pQ7k0JiL-R-Ab1Yo6gqV-DrljsE3k-ap9M_4QqLcDyUVhSrh4cpsVfTXNYWuMI5kNX_ID-M8fxnlMNR7-RaChiR1nTTYO">
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface">Maya Rostova</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Sunflowers Room • Educator: Mr. Caleb Vance</p>
+</div>
+</div>
+<!-- Mini status pills -->
+<div class="space-y-space-xs mb-space-md">
+<div class="flex items-center justify-between bg-surface-container-low p-space-xs px-space-sm rounded-full">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Morning Mood Check:</span>
+<span class="font-label-sm text-label-sm text-tertiary">☀️ Joyful &amp; Creative</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low p-space-xs px-space-sm rounded-full">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Afternoon Nap:</span>
+<span class="font-label-sm text-label-sm text-cerulean-sky">Completed (45 min)</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low p-space-xs px-space-sm rounded-full">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Outstanding Slips:</span>
+<span class="font-label-sm text-label-sm text-mint-sage">0 Pending (All Clear)</span>
+</div>
+</div>
+<button class="w-full bg-surface-container hover:bg-surface-container-high text-on-surface py-space-xs rounded-full font-label-md text-label-md transition-all" onclick="switchChild('maya')">
+            Switch to Maya’s Full Workspace →
+          </button>
+</div>
+<!-- Campus Safety & Pastoral Support Contacts -->
+<div class="bg-surface-container-low rounded-lg p-space-md">
+<div class="flex items-center gap-space-xs mb-space-xs">
+<span class="material-symbols-outlined text-[18px] text-terracotta-crayon">support_agent</span>
+<span class="font-label-md text-label-md text-on-surface">Family Pastoral Care Line</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-sm">Our community coordinator is on-campus Mon–Fri, 8 AM–4:30 PM.</p>
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-terracotta-crayon font-semibold">+1 (555) 438-2900</span>
+<span class="text-on-surface-variant">pastoral@thepurplecubby.edu</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Maya's Alternate View State (Simulated Tab Switch) -->
+<div class="hidden flex-col gap-gutter" id="maya-dashboard-view">
+<div class="bg-surface-container-lowest rounded-lg p-space-xl shadow-[0_8px_24px_rgba(224,122,95,0.06)] text-center max-w-2xl mx-auto">
+<div class="w-20 h-20 rounded-full bg-peach-apricot/30 mx-auto flex items-center justify-center text-[36px] mb-space-md">
+          🌻
+        </div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-space-xs">Maya Rostova • Kindergarten Sunflowers</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-space-lg">All active forms, snack preferences, and developmental milestones for Maya are up to date for Term 2.</p>
+<div class="grid grid-cols-2 gap-space-md text-left mb-space-lg">
+<div class="bg-surface-container p-space-md rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Early Literacy Milestone</span>
+<p class="font-label-lg text-label-lg text-on-surface mt-1">Phonics Group Yellow (Mastering Consonant Blends)</p>
+</div>
+<div class="bg-surface-container p-space-md rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Next Kindergarten Event</span>
+<p class="font-label-lg text-label-lg text-on-surface mt-1">Teddy Bear Tea Party • Friday 10:00 AM</p>
+</div>
+</div>
+<button class="bg-primary-container text-on-primary px-space-xl py-space-sm rounded-full font-label-lg text-label-lg shadow-sm" onclick="switchChild('leo')">
+          Return to Leo's Portal Overview
+        </button>
+</div>
+</div>
+</div>
+<!-- 5. Floating Parent Assistant Button & Drawer Trigger -->
+
+<!-- Parent Assistant Modal Drawer -->
+<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-space-sm" id="assistant-drawer-container"><div class="w-96 max-w-[90vw] bg-surface-container-lowest rounded-2xl shadow-[0_18px_48px_rgba(43,45,66,0.22)] p-space-md border border-surface-container flex flex-col gap-space-sm transition-all duration-300" id="assistant-drawer"><div class="flex items-center justify-between pb-space-xs border-b border-surface-container"><div class="flex items-center gap-space-xs"><div class="w-9 h-9 rounded-full bg-butter-yellow/30 text-secondary flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">auto_awesome</span></div><div><div class="flex items-center gap-1"><span class="font-label-lg text-label-lg text-on-surface font-bold">ThePuffy AI Agent</span><span class="font-label-sm text-label-sm text-secondary bg-butter-yellow/30 px-space-xs rounded-full font-bold">AI</span></div><div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-mint-sage"></span><span class="font-label-sm text-label-sm text-tertiary font-semibold">Online • Scoped: Elena Lin</span></div></div></div><div class="flex items-center gap-1"><button class="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors" onclick="toggleAssistant()" aria-label="Minimize ThePuffy AI Agent"><span class="material-symbols-outlined text-[18px]">remove</span></button><button class="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors" onclick="toggleAssistant()" aria-label="Close ThePuffy AI Agent"><span class="material-symbols-outlined text-[18px]">close</span></button></div></div><div class="space-y-space-sm max-h-72 overflow-y-auto pr-space-xs py-space-xs"><div class="flex gap-space-xs items-start"><div class="w-7 h-7 rounded-full bg-butter-yellow/30 text-secondary flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-[16px]">auto_awesome</span></div><div class="bg-surface-container p-space-sm rounded-2xl rounded-tl-none text-on-surface"><p class="text-body-sm font-body-sm leading-relaxed">Hi Elena! I can instantly check cafeteria menus, summarize bus routes, verify vaccination records, or clarify invoice charges for both Leo and Maya.</p><span class="font-label-sm text-label-sm text-on-surface-variant mt-1 block">ThePuffy • Just now</span></div></div><div class="pl-8 flex flex-col gap-1.5"><span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Suggested Actions:</span><button class="bg-surface-container-low hover:bg-surface-container text-on-surface px-space-sm py-1 rounded-full text-label-sm font-label-sm text-left transition-all border border-surface-container/50" onclick="document.getElementById('puffy-input') &amp;&amp; (document.getElementById('puffy-input').value='Check Leo\'s Grade 4 Science report card')">Check Leo's Grade 4 Science report card</button><button class="bg-surface-container-low hover:bg-surface-container text-on-surface px-space-sm py-1 rounded-full text-label-sm font-label-sm text-left transition-all border border-surface-container/50" onclick="document.getElementById('puffy-input') &amp;&amp; (document.getElementById('puffy-input').value='Review Term 2 Tuition invoice ($1,250)')">Review Term 2 Tuition invoice ($1,250)</button><button class="bg-surface-container-low hover:bg-surface-container text-on-surface px-space-sm py-1 rounded-full text-label-sm font-label-sm text-left transition-all border border-surface-container/50" onclick="document.getElementById('puffy-input') &amp;&amp; (document.getElementById('puffy-input').value='Sign Science Discovery Field Trip permission slip')">Sign Science Discovery Field Trip permission slip</button></div></div><div class="flex items-center gap-space-xs bg-surface-container-low p-space-xs rounded-full border border-surface-container"><input class="flex-1 bg-transparent px-space-md py-1 outline-none text-body-sm text-on-surface placeholder:text-on-surface-variant" id="puffy-input" placeholder="Ask about homework, fees, buses..." type="text"><button class="w-8 h-8 rounded-full bg-terracotta-crayon text-on-primary flex items-center justify-center hover:opacity-90 shadow-sm transition-transform active:scale-95"><span class="material-symbols-outlined text-[16px]">send</span></button></div><div class="flex items-center justify-between px-space-xs text-[11px] text-on-surface-variant font-label-sm"><div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-tertiary">verified_user</span><span class="">Parent Scoped • Respects FERPA / RLS Policies</span></div><button class="hover:text-primary transition-colors" onclick="if(document.getElementById('puffy-input')) document.getElementById('puffy-input').value=''">Clear</button></div></div><button class="flex items-center gap-space-xs bg-charcoal-slate hover:opacity-95 text-white px-space-md py-space-sm rounded-full shadow-[0_8px_24px_rgba(43,45,66,0.3)] transition-all active:scale-95 cursor-pointer" onclick="toggleAssistant()" aria-label="Toggle ThePuffy AI Agent"><div class="w-7 h-7 rounded-full bg-butter-yellow text-on-surface flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-[16px]">auto_awesome</span></div><div class="text-left"><span class="text-[10px] font-normal text-white/80 block leading-tight">ThePuffy</span><span class="font-label-md text-label-md font-bold text-white">AI Agent</span></div><span class="w-2 h-2 rounded-full bg-mint-sage ring-2 ring-charcoal-slate ml-space-xs"></span></button></div>
+<!-- Notification Toast Container -->
+<div class="fixed top-20 right-8 z-50 bg-charcoal-slate text-on-primary px-space-lg py-space-sm rounded-full shadow-2xl flex items-center gap-space-xs opacity-0 pointer-events-none transition-all duration-300" id="action-toast">
+<span class="material-symbols-outlined text-mint-sage text-[20px]" id="toast-icon">check_circle</span>
+<span class="font-label-md text-label-md" id="toast-message">Action successful</span>
+</div>
+</div>
+<script>
+  let consentActive = true;
+
+  function showToast(message, icon = 'check_circle') {
+    const toast = document.getElementById('action-toast');
+    const toastMsg = document.getElementById('toast-message');
+    const toastIcon = document.getElementById('toast-icon');
+    
+    toastMsg.textContent = message;
+    toastIcon.textContent = icon;
+    
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+    
+    setTimeout(() => {
+      toast.classList.remove('opacity-100');
+      toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 3200);
+  }
+
+  function switchChild(childKey) {
+    const leoTab = document.getElementById('child-tab-leo');
+    const mayaTab = document.getElementById('child-tab-maya');
+    const leoView = document.getElementById('leo-dashboard-view');
+    const mayaView = document.getElementById('maya-dashboard-view');
+
+    if (childKey === 'maya') {
+      mayaTab.className = 'flex items-center gap-space-md px-space-lg py-space-sm rounded-full bg-primary-container text-on-primary transition-all shadow-[0_4px_14px_rgba(224,122,95,0.22)] scale-[1.01]';
+      leoTab.className = 'flex items-center gap-space-md px-space-lg py-space-sm rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface transition-all';
+      leoView.classList.add('hidden');
+      mayaView.classList.remove('hidden');
+      mayaView.classList.add('flex');
+      showToast('Switched portal view to Maya Rostova (Kindergarten)', 'account_circle');
+    } else {
+      leoTab.className = 'flex items-center gap-space-md px-space-lg py-space-sm rounded-full bg-primary-container text-on-primary transition-all shadow-[0_4px_14px_rgba(224,122,95,0.22)] scale-[1.01]';
+      mayaTab.className = 'flex items-center gap-space-md px-space-lg py-space-sm rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface transition-all';
+      mayaView.classList.add('hidden');
+      mayaView.classList.remove('flex');
+      leoView.classList.remove('hidden');
+      showToast('Switched portal view to Leo Rostova (Grade 4B)', 'account_circle');
+    }
+  }
+
+  function toggleConsent() {
+    consentActive = !consentActive;
+    const toggleBtn = document.getElementById('consent-toggle');
+    const toggleIndicator = document.getElementById('consent-indicator');
+    const statusText = document.getElementById('consent-status-text');
+
+    if (consentActive) {
+      toggleBtn.classList.remove('bg-surface-variant');
+      toggleBtn.classList.add('bg-tertiary');
+      toggleIndicator.classList.remove('translate-x-0');
+      toggleIndicator.classList.add('translate-x-6');
+      statusText.textContent = 'Signed Consent: Active (Toggled ON)';
+      statusText.classList.remove('text-on-surface-variant');
+      statusText.classList.add('text-tertiary');
+      showToast('Asthma Medical Consent verified and active', 'health_and_safety');
+    } else {
+      toggleBtn.classList.remove('bg-tertiary');
+      toggleBtn.classList.add('bg-surface-variant');
+      toggleIndicator.classList.remove('translate-x-6');
+      toggleIndicator.classList.add('translate-x-0');
+      statusText.textContent = 'Signed Consent: Suspended (Toggled OFF)';
+      statusText.classList.remove('text-tertiary');
+      statusText.classList.add('text-on-surface-variant');
+      showToast('Medical Consent toggled off (Nurse notified)', 'warning');
+    }
+  }
+
+  function signPermissionSlip() {
+    const btn = document.getElementById('sign-slip-btn');
+    const banner = document.getElementById('slip-signed-banner');
+
+    btn.classList.add('hidden');
+    banner.classList.remove('hidden');
+    banner.classList.add('flex');
+
+    showToast('Permission slip signed! Confirmation sent to Ms. Jenkins.', 'draw');
+  }
+
+  function simulateDownload() {
+    const btnText = document.getElementById('download-btn-text');
+    btnText.textContent = 'Downloading...';
+    setTimeout(() => {
+      btnText.textContent = 'Downloaded!';
+      showToast('Leo_Rostova_Term1_ReportCard.pdf saved', 'download_done');
+      setTimeout(() => {
+        btnText.textContent = 'Download PDF';
+      }, 2000);
+    }, 800);
+  }
+
+  function simulateReceiptDownload() {
+    showToast('Receipt #REC-2024-881 downloaded to device', 'receipt_long');
+  }
+
+  function setFullAmount() {
+    const input = document.getElementById('payment-amount');
+    input.value = '1250.00';
+    updatePayButtonLabel('1250.00');
+  }
+
+  function updatePayButtonLabel(amount) {
+    const label = document.getElementById('pay-button-label');
+    label.textContent = 'Pay $' + parseFloat(amount).toFixed(2) + ' with Stripe Checkout';
+  }
+
+  document.getElementById('payment-amount').addEventListener('input', function(e) {
+    const val = parseFloat(e.target.value) || 0;
+    updatePayButtonLabel(val);
+  });
+
+  function handleStripePayment() {
+    const amount = document.getElementById('payment-amount').value || '1250.00';
+    showToast('Redirecting to secure Stripe Checkout for $' + amount + '...', 'lock');
+  }
+
+  function handleChatEnter(e) {
+    if (e.key === 'Enter') {
+      sendChatMessage();
+    }
+  }
+
+  function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const stream = document.getElementById('chat-stream');
+    const newMsg = document.createElement('div');
+    newMsg.className = 'flex gap-space-sm items-start justify-end max-w-xl ml-auto animate-fade-in';
+    newMsg.innerHTML = `
+      <div class="bg-primary-container text-on-primary p-space-md rounded-2xl rounded-tr-none">
+        <p class="font-body-md text-body-md">${text}</p>
+        <span class="font-label-sm text-label-sm text-on-primary/80 mt-1 block text-right">Just now</span>
+      </div>
+    `;
+    stream.appendChild(newMsg);
+    input.value = '';
+    stream.scrollTop = stream.scrollHeight;
+    showToast('Message sent to Ms. Sarah Jenkins', 'send');
+  }
+
+  function toggleAssistant() {
+    const drawer = document.getElementById('assistant-drawer');
+    if (drawer.classList.contains('hidden')) {
+      drawer.classList.remove('hidden');
+    } else {
+      drawer.classList.add('hidden');
+    }
+  }
+</script></main></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- Responsive Slide-Over Drawer -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-50 transition-opacity duration-300 opacity-0 pointer-events-none" onclick="closeDrawer()"></div>
+  <div id="slide-drawer" class="fixed top-0 right-0 h-full w-full max-w-lg bg-surface shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-border md:rounded-l-3xl overflow-hidden max-md:top-auto max-md:inset-x-0 max-md:bottom-0 max-md:max-h-[88vh] max-md:rounded-t-3xl max-md:translate-x-0 max-md:translate-y-full max-md:border-t">
+    <!-- Drawer Header -->
+    <div class="px-6 py-4 bg-canvas/70 border-b border-border flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div id="drawer-icon-container" class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center font-bold">
+          <span id="drawer-icon" class="material-symbols-outlined text-xl">info</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="drawer-title" class="font-serif font-bold text-base text-charcoal leading-snug">Drawer Title</h3>
+            <span id="drawer-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/20 text-green-800">Status</span>
+          </div>
+          <p id="drawer-subtitle" class="text-xs text-charcoal/60 mt-0.5">Subtitle</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="drawer-fullscreen-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-semibold text-charcoal hover:bg-canvas flex items-center gap-1 shadow-xs" title="Open full workspace">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+          <span class="hidden sm:inline">Workspace</span>
+        </a>
+        <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Drawer Body -->
+    <div id="drawer-content" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+
+    <!-- Drawer Footer -->
+    <div id="drawer-footer" class="px-6 py-4 bg-cream/40 border-t border-border flex items-center justify-between shrink-0">
+      <span id="drawer-footer-note" class="text-xs text-charcoal/50">Auto-saved to cloud ledger</span>
+      <div id="drawer-actions" class="flex items-center gap-2">
+        <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-charcoal hover:bg-canvas">Cancel</button>
+        <button id="drawer-primary-btn" onclick="executeDrawerAction()" class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-bold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">check</span>
+          <span id="drawer-btn-text">Confirm Action</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-notify" class="fixed bottom-6 right-6 z-50 bg-charcoal text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="w-7 h-7 rounded-full bg-mint/30 text-mint flex items-center justify-center">
+      <span class="material-symbols-outlined text-base font-bold">check_circle</span>
+    </div>
+    <div>
+      <span id="toast-title" class="text-xs font-bold block">Action Completed</span>
+      <span id="toast-msg" class="text-[11px] text-white/70 block">Record updated and state synced.</span>
+    </div>
+  </div>
+
+  <script>
+  let currentDrawerAction = null;
+
+  function openDrawer(config) {
+    document.getElementById('drawer-title').textContent = config.title || 'Details';
+    document.getElementById('drawer-subtitle').textContent = config.subtitle || '';
+    
+    const badgeEl = document.getElementById('drawer-badge');
+    badgeEl.textContent = config.badge || 'Active';
+    badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (config.badgeClass || 'bg-mint/20 text-green-800');
+    
+    document.getElementById('drawer-icon').textContent = config.icon || 'info';
+    document.getElementById('drawer-fullscreen-link').href = config.fullscreenUrl || '#';
+    document.getElementById('drawer-btn-text').textContent = config.actionText || 'Confirm';
+    document.getElementById('drawer-content').innerHTML = config.contentHtml || '';
+    
+    if (config.footerNote) {
+      document.getElementById('drawer-footer-note').textContent = config.footerNote;
+    }
+    
+    currentDrawerAction = config.onAction || null;
+
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    backdrop.classList.add('opacity-100');
+
+    if (window.innerWidth >= 768) {
+      drawer.classList.remove('translate-x-full');
+    } else {
+      drawer.classList.remove('max-md:translate-y-full');
+    }
+  }
+
+  function closeDrawer() {
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.add('opacity-0', 'pointer-events-none');
+    backdrop.classList.remove('opacity-100');
+
+    drawer.classList.add('translate-x-full');
+    drawer.classList.add('max-md:translate-y-full');
+  }
+
+  function executeDrawerAction() {
+    if (currentDrawerAction) {
+      currentDrawerAction();
+    }
+    closeDrawer();
+  }
+
+  function showToast(title, msg) {
+    const toast = document.getElementById('toast-notify');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3500);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+  
+  function openStudentDrawer(childName, grade, attendance, reportAvg, url) {
+    openDrawer({
+      title: childName + " — Student 360",
+      subtitle: grade + " • Homeroom 5A",
+      badge: reportAvg,
+      badgeClass: "bg-mint/20 text-green-800",
+      icon: "school",
+      fullscreenUrl: url || "../Students/Student_Profile_Drawer.html",
+      actionText: "Download Full Term Report",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal text-sm">${childName}</span>
+              <span class="text-mint font-bold">${attendance} Attendance</span>
+            </div>
+            <p class="text-charcoal/70 text-[11px]">Exemplary performance across STEM and Language modules. All Ontario curriculum milestones mastered for Term 2.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border space-y-1">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Homeroom Teacher</span>
+            <p class="font-semibold text-charcoal">Ms. Clara Davis (OCT #48192) • Room 204</p>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Report Downloaded", childName + " official PDF report card generated.");
+      }
+    });
+  }
+
+  function openCheckoutDrawer(invoiceId, title, amount, dueDate, url) {
+    openDrawer({
+      title: "Tuition Invoice: " + invoiceId,
+      subtitle: title + " • Due " + dueDate,
+      badge: amount,
+      badgeClass: "bg-terracotta/20 text-terracotta font-bold",
+      icon: "credit_card",
+      fullscreenUrl: url || "../Billing/Parent_Checkout_Modal.html",
+      actionText: "Pay Now via 1-Click Stripe",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal">${title}</span>
+              <span class="font-bold text-terracotta text-sm">${amount}</span>
+            </div>
+            <p class="text-charcoal/60 text-[11px]">Includes Term 2 tuition, science lab equipment fee, and educational technology levy.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-base text-charcoal/70">lock</span>
+              <span class="font-medium text-charcoal">Saved Card •••• 4242</span>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-mint/20 text-green-800">Pre-authorized</span>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Payment Successful", amount + " paid via Stripe. Receipt #REC-8841 dispatched to parent email.");
+      }
+    });
+  }
+
+  function openPermissionSlipDrawer(eventName, child, cost, deadline, url) {
+    openDrawer({
+      title: "Field Trip: " + eventName,
+      subtitle: child + " • Due " + deadline,
+      badge: cost,
+      badgeClass: "bg-cerulean/20 text-blue-800",
+      icon: "description",
+      fullscreenUrl: url || "../Events/Event_Permission_Slip_Modal.html",
+      actionText: "Sign & Submit Consent",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-2">
+            <span class="font-bold text-charcoal block">${eventName}</span>
+            <p class="text-charcoal/70 text-[11px]">Charter bus departure from Oakwood Academy at 09:00 AM. Includes admission, live planetarium workshop, and supervised bag lunch.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border space-y-1">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Medical Protocol</span>
+            <p class="font-semibold text-charcoal">EpiPen & Emergency Inhaler Kit carried by homeroom lead.</p>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Permission Signed", "Electronic waiver submitted and student registered for " + eventName + ".");
+      }
+    });
+  }
+  </script>
+
+</body></html>

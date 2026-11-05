@@ -1,3 +1,5 @@
+"""API v1 endpoints for academic calendars, curriculum, lesson plans, exams, marks moderation, and report cards."""
+
 import uuid
 from uuid import UUID
 from typing import List, Dict, Any

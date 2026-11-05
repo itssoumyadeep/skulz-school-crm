@@ -1,3 +1,5 @@
+"""API v1 endpoints for system metadata, portal role capabilities, and dataset classification catalog."""
+
 from django.http import JsonResponse
 from ninja import Router
 

@@ -1,3 +1,5 @@
+"""API v1 endpoints for student and staff attendance marking, bulk marking, rosters, and leave approvals."""
+
 import uuid
 from uuid import UUID
 from datetime import date

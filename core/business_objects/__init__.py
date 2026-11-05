@@ -1,3 +1,5 @@
+"""Business objects package exposing domain logic handlers and rule enforcement classes."""
+
 from .base import BaseBusinessObject, RuleViolation, BusinessRuleError
 from .enrollment import StudentProfileBO, EnrollmentCaseBO
 from .academic import AcademicCalendarBO, ClassroomPlanBO, ExamPackageBO, AcademicRecordBO

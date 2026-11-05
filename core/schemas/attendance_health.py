@@ -1,3 +1,5 @@
+"""Pydantic schemas for attendance marking, rosters, leave requests, medical records, medication logs, and incidents."""
+
 from datetime import date
 from typing import Optional, List, Dict, Any
 from uuid import UUID

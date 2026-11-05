@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Board Trustee Portal (Compact List) — School CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#fff8f2',
+            surface: '#ffffff',
+            border: '#ead8c7',
+            charcoal: '#121417',
+            terracotta: '#e07a5f',
+            mint: '#90be6d',
+            marigold: '#fdba3b',
+            cerulean: '#64b5f6',
+            lilac: '#b39ddb',
+            cream: '#faf0e6'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen">
+
+  <!-- Header with View Switcher -->
+  <header class="sticky top-0 bg-surface/90 backdrop-blur-md border-b border-border z-30 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-lilac/20 text-purple-700 flex items-center justify-center font-bold">
+          <span class="material-symbols-outlined text-xl">account_balance</span>
+        </div>
+        <div>
+          <span class="font-serif font-bold text-base text-charcoal leading-none block">Oakwood Board of Trustees</span>
+          <span class="text-[11px] text-charcoal/60 leading-none">Fiduciary Portal • Sarah Jenkins (Board Chair)</span>
+        </div>
+      </div>
+      <div class="h-6 w-px bg-border hidden sm:block"></div>
+      <div class="hidden sm:flex items-center gap-2 text-xs">
+        <span class="px-2.5 py-0.5 rounded-full bg-cerulean/20 text-blue-800 font-semibold border border-cerulean/30">Next Session: Nov 19</span>
+        <span class="text-charcoal/60">Quorum: 7 / 9 Trustees Active</span>
+      </div>
+    </div>
+
+    <!-- DUAL VIEW SWITCHER -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center bg-cream/70 p-1 rounded-xl border border-border shadow-inner text-xs">
+        <a href="Board_Trustee_Portal.html" class="flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium text-charcoal/70 hover:text-charcoal hover:bg-surface/50 transition">
+          <span class="material-symbols-outlined text-[16px]">grid_view</span>
+          <span class="hidden sm:inline">Cards</span>
+        </a>
+        <a href="#" class="flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold bg-surface text-terracotta shadow-sm transition border border-border/40">
+          <span class="material-symbols-outlined text-[16px]">view_list</span>
+          <span>Compact List</span>
+        </a>
+      </div>
+
+      <div class="h-6 w-px bg-border"></div>
+      <a href="../Board/Board_Governance_Widget.html" class="px-3 py-1.5 rounded-lg bg-terracotta text-white text-xs font-semibold hover:bg-terracotta/90 flex items-center gap-1 shadow-sm">
+        <span class="material-symbols-outlined text-sm">how_to_vote</span>
+        <span class="hidden md:inline">Open Ballots</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- KPI Metric Strip -->
+    <div class="bg-surface border border-border rounded-xl p-3 shadow-sm grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
+      <div class="px-4 py-1.5 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold tracking-wider block">Upcoming Meeting</span>
+          <span class="font-serif text-lg font-bold text-charcoal">Nov 19, 2026 <span class="text-xs font-sans font-normal text-charcoal/60">(6:30 PM)</span></span>
+        </div>
+        <span class="w-8 h-8 rounded-lg bg-cerulean/20 text-blue-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-lg">event</span>
+        </span>
+      </div>
+
+      <div class="px-4 py-1.5 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold tracking-wider block">Operating Budget (Q3)</span>
+          <span class="font-serif text-lg font-bold text-mint">+3.2% Favorable</span>
+        </div>
+        <span class="w-8 h-8 rounded-lg bg-mint/20 text-green-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-lg">trending_up</span>
+        </span>
+      </div>
+
+      <div class="px-4 py-1.5 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold tracking-wider block">Active Resolutions</span>
+          <span class="font-serif text-lg font-bold text-terracotta">2 Motions <span class="text-xs font-sans font-normal text-charcoal/60">(Quorum Met)</span></span>
+        </div>
+        <span class="w-8 h-8 rounded-lg bg-marigold/20 text-amber-800 flex items-center justify-center">
+          <span class="material-symbols-outlined text-lg">how_to_vote</span>
+        </span>
+      </div>
+
+      <div class="px-4 py-1.5 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-charcoal/50 uppercase font-bold tracking-wider block">Institutional Risk</span>
+          <span class="font-serif text-lg font-bold text-amber-800">Low–Moderate</span>
+        </div>
+        <span class="w-8 h-8 rounded-lg bg-lilac/20 text-purple-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-lg">shield</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Section 1: Active Board Motions & Fiduciary Ballots (Compact Rows) -->
+    <div class="bg-surface border border-border rounded-xl shadow-sm overflow-hidden">
+      <div class="px-4 py-3 bg-canvas/60 border-b border-border flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-terracotta text-lg">how_to_vote</span>
+          <h2 class="font-serif font-bold text-sm text-charcoal">Fiduciary Motions & Trustee Voting Agenda (Compact)</h2>
+        </div>
+        <span class="text-xs font-bold text-mint">Quorum Valid (7 / 9 Votes Recorded)</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-cream/40 border-b border-border text-charcoal/60 text-[10px] uppercase font-semibold">
+            <tr>
+              <th class="py-2.5 px-3">Motion # & Title</th>
+              <th class="py-2.5 px-3">Sponsor / Seconded</th>
+              <th class="py-2.5 px-3">Fiscal Commitment</th>
+              <th class="py-2.5 px-3">Current Tally</th>
+              <th class="py-2.5 px-3">Deadline</th>
+              <th class="py-2.5 px-3 text-right">Cast Ballot</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            
+            <!-- Motion 1 -->
+            <tr onclick="openQuorumVoteDrawer('BOD-2026-M14', 'STEM Innovation Wing Expansion', 'Trustee Harrison', '75%', '../Board/Board_Governance_Widget.html')" class="hover:bg-terracotta/5 cursor-pointer transition group">
+              <td class="py-3 px-3">
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-terracotta/20 text-terracotta">#BOD-2026-14</span>
+                <span class="font-bold text-charcoal block mt-0.5">Phase II Athletics Pavilion & Turf Capital Grant</span>
+                <span class="text-[10px] text-charcoal/50">Contractor tender starting Spring 2027</span>
+              </td>
+              <td class="py-3 px-3 font-medium">S. Jenkins / Dr. E. Vance</td>
+              <td class="py-3 px-3 font-mono font-bold text-charcoal">$850,000 CAD</td>
+              <td class="py-3 px-3">
+                <span class="font-bold text-mint">7 Aye</span> • 
+                <span class="font-bold text-terracotta">0 Nay</span> • 
+                <span class="text-charcoal/50">2 Pending</span>
+              </td>
+              <td class="py-3 px-3 text-terracotta font-semibold">Nov 10, 2026</td>
+              <td class="py-3 px-3 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button class="px-2.5 py-1 rounded bg-mint text-white font-semibold hover:bg-mint/90">Vote Aye</button>
+                  <button class="px-2.5 py-1 rounded bg-terracotta text-white font-semibold hover:bg-terracotta/90">Vote Nay</button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Motion 2 -->
+            <tr onclick="openQuorumVoteDrawer('BOD-2026-M14', 'STEM Innovation Wing Expansion', 'Trustee Harrison', '75%', '../Board/Board_Governance_Widget.html')" class="hover:bg-terracotta/5 cursor-pointer transition group">
+              <td class="py-3 px-3">
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-mint/20 text-green-800">#BOD-2026-15</span>
+                <span class="font-bold text-charcoal block mt-0.5">2027–2028 Tuition Rate Schedule (+3.8% Adjustment)</span>
+                <span class="text-[10px] text-charcoal/50">Inflationary facility indexation & faculty salary parity</span>
+              </td>
+              <td class="py-3 px-3 font-medium">D. Chen (Treasurer)</td>
+              <td class="py-3 px-3 font-mono text-charcoal">Operating Policy</td>
+              <td class="py-3 px-3 text-charcoal/60">Scheduled for Floor Debate</td>
+              <td class="py-3 px-3 text-charcoal/70">Nov 19, 2026</td>
+              <td class="py-3 px-3 text-right">
+                <a href="../Board/Board_Governance_Widget.html" class="px-2.5 py-1 rounded bg-surface border border-border text-charcoal font-semibold hover:bg-canvas">Briefing PDF</a>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 2: Split Grid — Signed Minutes Repository & Risk Heatmap Radar -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Official Signed Minutes Archive -->
+      <div class="bg-surface border border-border rounded-xl shadow-sm overflow-hidden">
+        <div class="px-4 py-3 bg-canvas/60 border-b border-border flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-cerulean text-lg">history_edu</span>
+            <h3 class="font-serif font-bold text-sm text-charcoal">Official Signed Board Minutes</h3>
+          </div>
+          <span class="text-xs text-charcoal/60">Fiduciary Archive</span>
+        </div>
+
+        <div class="divide-y divide-border text-xs">
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <span class="font-bold text-charcoal">BOD_Minutes_October_2026_Approved.pdf</span>
+              <p class="text-[11px] text-charcoal/60">Signed by Chair & Secretary • Oct 15, 2026 (340 KB)</p>
+            </div>
+            <button class="px-2.5 py-1 rounded bg-surface border border-border text-charcoal font-semibold hover:bg-canvas flex items-center gap-1 shrink-0">
+              <span class="material-symbols-outlined text-xs">download</span> Download
+            </button>
+          </div>
+
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <span class="font-bold text-charcoal">Annual_Audited_Financial_Statements_2025.pdf</span>
+              <p class="text-[11px] text-charcoal/60">KPMG Independent Auditor Report • Clean Opinion (2.4 MB)</p>
+            </div>
+            <button class="px-2.5 py-1 rounded bg-surface border border-border text-charcoal font-semibold hover:bg-canvas flex items-center gap-1 shrink-0">
+              <span class="material-symbols-outlined text-xs">download</span> Download
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Institutional Risk Radar Items -->
+      <div class="bg-surface border border-border rounded-xl shadow-sm overflow-hidden">
+        <div class="px-4 py-3 bg-canvas/60 border-b border-border flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-700 text-lg">radar</span>
+            <h3 class="font-serif font-bold text-sm text-charcoal">Institutional Risk Radar</h3>
+          </div>
+          <span class="text-xs font-bold text-amber-900 bg-marigold/20 px-2 py-0.5 rounded-full">Reviewed Q3</span>
+        </div>
+
+        <div class="divide-y divide-border text-xs">
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-terracotta">Municipal Zoning Permitting</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-terracotta text-white">High Impact</span>
+              </div>
+              <p class="text-[11px] text-charcoal/60">City of Mississauga Site Plan Approval for North Wing</p>
+            </div>
+            <span class="text-charcoal/50 text-[11px]">Audit Committee</span>
+          </div>
+
+          <div class="p-3 hover:bg-canvas/30 transition flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-amber-900">Cybersecurity & Student Privacy</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-marigold/40 text-amber-900">Moderate</span>
+              </div>
+              <p class="text-[11px] text-charcoal/60">PIPEDA/MFIPPA annual penetration test scheduled Q1 2027</p>
+            </div>
+            <span class="text-charcoal/50 text-[11px]">Legal Committee</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- Responsive Slide-Over Drawer -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-50 transition-opacity duration-300 opacity-0 pointer-events-none" onclick="closeDrawer()"></div>
+  <div id="slide-drawer" class="fixed top-0 right-0 h-full w-full max-w-lg bg-surface shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-border md:rounded-l-3xl overflow-hidden max-md:top-auto max-md:inset-x-0 max-md:bottom-0 max-md:max-h-[88vh] max-md:rounded-t-3xl max-md:translate-x-0 max-md:translate-y-full max-md:border-t">
+    <!-- Drawer Header -->
+    <div class="px-6 py-4 bg-canvas/70 border-b border-border flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div id="drawer-icon-container" class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center font-bold">
+          <span id="drawer-icon" class="material-symbols-outlined text-xl">info</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="drawer-title" class="font-serif font-bold text-base text-charcoal leading-snug">Drawer Title</h3>
+            <span id="drawer-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/20 text-green-800">Status</span>
+          </div>
+          <p id="drawer-subtitle" class="text-xs text-charcoal/60 mt-0.5">Subtitle</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="drawer-fullscreen-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-semibold text-charcoal hover:bg-canvas flex items-center gap-1 shadow-xs" title="Open full workspace">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+          <span class="hidden sm:inline">Workspace</span>
+        </a>
+        <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Drawer Body -->
+    <div id="drawer-content" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+
+    <!-- Drawer Footer -->
+    <div id="drawer-footer" class="px-6 py-4 bg-cream/40 border-t border-border flex items-center justify-between shrink-0">
+      <span id="drawer-footer-note" class="text-xs text-charcoal/50">Auto-saved to cloud ledger</span>
+      <div id="drawer-actions" class="flex items-center gap-2">
+        <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-charcoal hover:bg-canvas">Cancel</button>
+        <button id="drawer-primary-btn" onclick="executeDrawerAction()" class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-bold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">check</span>
+          <span id="drawer-btn-text">Confirm Action</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-notify" class="fixed bottom-6 right-6 z-50 bg-charcoal text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="w-7 h-7 rounded-full bg-mint/30 text-mint flex items-center justify-center">
+      <span class="material-symbols-outlined text-base font-bold">check_circle</span>
+    </div>
+    <div>
+      <span id="toast-title" class="text-xs font-bold block">Action Completed</span>
+      <span id="toast-msg" class="text-[11px] text-white/70 block">Record updated and state synced.</span>
+    </div>
+  </div>
+
+  <script>
+  let currentDrawerAction = null;
+
+  function openDrawer(config) {
+    document.getElementById('drawer-title').textContent = config.title || 'Details';
+    document.getElementById('drawer-subtitle').textContent = config.subtitle || '';
+    
+    const badgeEl = document.getElementById('drawer-badge');
+    badgeEl.textContent = config.badge || 'Active';
+    badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (config.badgeClass || 'bg-mint/20 text-green-800');
+    
+    document.getElementById('drawer-icon').textContent = config.icon || 'info';
+    document.getElementById('drawer-fullscreen-link').href = config.fullscreenUrl || '#';
+    document.getElementById('drawer-btn-text').textContent = config.actionText || 'Confirm';
+    document.getElementById('drawer-content').innerHTML = config.contentHtml || '';
+    
+    if (config.footerNote) {
+      document.getElementById('drawer-footer-note').textContent = config.footerNote;
+    }
+    
+    currentDrawerAction = config.onAction || null;
+
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    backdrop.classList.add('opacity-100');
+
+    if (window.innerWidth >= 768) {
+      drawer.classList.remove('translate-x-full');
+    } else {
+      drawer.classList.remove('max-md:translate-y-full');
+    }
+  }
+
+  function closeDrawer() {
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.add('opacity-0', 'pointer-events-none');
+    backdrop.classList.remove('opacity-100');
+
+    drawer.classList.add('translate-x-full');
+    drawer.classList.add('max-md:translate-y-full');
+  }
+
+  function executeDrawerAction() {
+    if (currentDrawerAction) {
+      currentDrawerAction();
+    }
+    closeDrawer();
+  }
+
+  function showToast(title, msg) {
+    const toast = document.getElementById('toast-notify');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3500);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+  
+  function openQuorumVoteDrawer(motionId, title, mover, threshold, url) {
+    openDrawer({
+      title: "Board Motion: " + motionId,
+      subtitle: title + " • Mover: " + mover,
+      badge: "Quorum Required: " + threshold,
+      badgeClass: "bg-terracotta/20 text-terracotta font-bold",
+      icon: "how_to_vote",
+      fullscreenUrl: url || "../Board/Board_Governance_Widget.html",
+      actionText: "Cast Electronic Ballot (In Favor)",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-2">
+            <span class="font-bold text-charcoal text-sm">${title}</span>
+            <p class="text-charcoal/70 text-[11px] leading-relaxed">
+              Resolved that the Board of Trustees authorizes the capital expenditure of $450,000 for the STEM Wing expansion, funded via 60% endowment surplus and 40% provincial innovation grant.
+            </p>
+          </div>
+          <div class="space-y-2">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Current Quorum Tally</span>
+            <div class="flex items-center justify-between p-2.5 bg-surface rounded-xl border border-border">
+              <span class="text-charcoal font-semibold">Ballots Cast: 5 of 7 Trustees</span>
+              <span class="text-mint font-bold">Quorum Reached</span>
+            </div>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Ballot Cast", "Your affirmative vote on " + motionId + " recorded in official board minutes.");
+      }
+    });
+  }
+
+  function openRiskRadarDrawer(riskTitle, severity, score, auditRef, url) {
+    openDrawer({
+      title: "Risk Radar: " + riskTitle,
+      subtitle: auditRef + " • Severity Index " + score,
+      badge: severity,
+      badgeClass: "bg-marigold/20 text-amber-900 font-bold",
+      icon: "warning",
+      fullscreenUrl: url || "../Board/Risk_Audit_Modal.html",
+      actionText: "Acknowledge Risk Mitigation",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-1.5">
+            <span class="font-bold text-charcoal">${riskTitle}</span>
+            <p class="text-charcoal/70 text-[11px]">Audit oversight reveals complete fire safety compliance and HVAC air quality certification across all 3 academic wings.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Mitigation Lead</span>
+            <p class="font-semibold text-charcoal">Chief Safety Officer & Municipal Fire Marshal (Ontario)</p>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Risk Endorsed", riskTitle + " mitigation strategy approved by Board Audit Committee.");
+      }
+    });
+  }
+  </script>
+
+</body>
+</html>

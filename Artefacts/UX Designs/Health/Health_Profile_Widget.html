@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Health Profile Widget — School CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FFF8F2',
+            surface: '#FFFFFF',
+            border: '#EAD8C7',
+            charcoal: '#121417',
+            muted: '#687787',
+            terracotta: '#E07A5F',
+            mint: '#90BE6D',
+            marigold: '#FDBA3B',
+            cerulean: '#64B5F6',
+            lilac: '#B39DDB',
+            cream: '#FAF0E6',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['Fraunces', 'serif'],
+          },
+          boxShadow: {
+            warm: '0 4px 20px -2px rgba(18, 20, 23, 0.05), 0 2px 6px -1px rgba(18, 20, 23, 0.03)',
+            'warm-lg': '0 20px 40px -6px rgba(18, 20, 23, 0.12), 0 8px 16px -4px rgba(18, 20, 23, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      display: inline-flex;
+      vertical-align: middle;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen antialiased flex flex-col">
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-border px-6 py-3.5 shadow-sm">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="../Admin/Admin_Operational_Console.html" class="flex items-center gap-2 group text-muted hover:text-charcoal transition-colors">
+          <div class="w-8 h-8 rounded-full bg-cream border border-border flex items-center justify-center group-hover:border-terracotta transition-colors">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+          </div>
+          <span class="text-xs font-semibold tracking-wide uppercase">Console</span>
+        </a>
+        <div class="h-4 w-px bg-border"></div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-terracotta text-2xl">health_and_safety</span>
+          <h1 class="text-lg font-bold text-charcoal tracking-tight font-serif">Student Health &amp; Safeguarding Profile</h1>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-cream text-charcoal font-bold border border-border">Health Office Registry</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="Medication_Log_Modal.html" class="px-4 py-2 text-xs font-bold text-white bg-terracotta rounded-xl hover:bg-terracotta/90 transition-all flex items-center gap-1.5 shadow-warm">
+          <span class="material-symbols-outlined text-base">medication</span>
+          Log Medication Administration
+        </a>
+        <a href="Incident_Report_Modal.html" class="px-3.5 py-2 text-xs font-bold text-charcoal bg-white border border-border rounded-xl hover:bg-cream transition-all flex items-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-base text-muted">report</span>
+          Log Incident &amp; Injury
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- Critical Anaphylaxis Warning Banner -->
+    <div class="bg-terracotta/15 border-2 border-terracotta rounded-3xl p-5 shadow-warm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-terracotta text-white flex items-center justify-center font-bold text-2xl shrink-0 shadow-md">
+          <span class="material-symbols-outlined text-3xl">emergency</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-base font-extrabold text-charcoal font-serif">CRITICAL ALERT: Severe Anaphylactic Peanut Allergy</h2>
+            <span class="px-2.5 py-0.5 rounded-full bg-terracotta text-white font-extrabold text-[10px] tracking-wide uppercase">Sabrina's Law Compliant</span>
+          </div>
+          <p class="text-xs text-charcoal mt-1 leading-relaxed">
+            Sophia carries two Epinephrine Auto-Injectors (0.15mg). Primary EpiPen in student backpack; secondary EpiPen in Health Office Locker #14. Administer immediately upon signs of airway distress or accidental ingestion.
+          </p>
+        </div>
+      </div>
+      <button type="button" onclick="openActionPlan()" class="px-4 py-2 rounded-xl bg-white border border-border text-terracotta font-bold text-xs hover:bg-cream transition-all shrink-0 shadow-sm flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+        View Anaphylaxis Action Plan
+      </button>
+    </div>
+
+    <!-- Student Metadata Card -->
+    <div class="bg-white border border-border rounded-2xl p-6 shadow-warm">
+      <div class="flex items-start justify-between flex-wrap gap-4 pb-4 border-b border-border">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-terracotta text-white flex items-center justify-center font-serif text-2xl font-bold shadow-md">SC</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-xl font-bold font-serif text-charcoal">Sophia Claire Chen</h3>
+              <span class="px-2.5 py-0.5 rounded-full bg-cream text-charcoal text-xs font-bold border border-border">Grade 2B</span>
+            </div>
+            <div class="text-xs text-muted mt-1 font-mono">
+              ID: #STU-2026-0891 &bull; DOB: April 12, 2019 (Age 7y 0m) &bull; Blood Type: <strong class="text-charcoal font-bold font-sans">O Positive (O+)</strong>
+            </div>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] font-bold text-muted uppercase tracking-wider block">Assigned School Nurse</span>
+          <span class="text-xs font-bold text-charcoal">Nurse Campbell, RN (Pager #440)</span>
+        </div>
+      </div>
+
+      <!-- Health Parameters Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+
+        <!-- Dietary Profile -->
+        <div class="p-4 rounded-xl border border-border bg-canvas/30 space-y-2 text-xs">
+          <span class="font-bold text-charcoal uppercase tracking-wider text-[11px] block flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-mint">restaurant</span>
+            Dietary Plan &amp; Cafeteria Notes
+          </span>
+          <div class="p-2 rounded-lg bg-white border border-border">
+            <span class="font-bold text-charcoal block">Strict Vegetarian</span>
+            <span class="text-[11px] text-muted">No poultry, fish, gelatin or meat broth products.</span>
+          </div>
+          <div class="p-2 rounded-lg bg-white border border-border">
+            <span class="font-bold text-terracotta block">Nut-Free Table Assigned</span>
+            <span class="text-[11px] text-muted">Mandatory handwashing before cafeteria entry.</span>
+          </div>
+        </div>
+
+        <!-- Chronic Conditions & Daily Meds -->
+        <div class="p-4 rounded-xl border border-border bg-canvas/30 space-y-2 text-xs">
+          <span class="font-bold text-charcoal uppercase tracking-wider text-[11px] block flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-cerulean">medication</span>
+            Active Prescriptions On File
+          </span>
+          <div class="p-2 rounded-lg bg-white border border-border">
+            <span class="font-bold text-charcoal block">EpiPen Jr. 0.15mg Auto-Injector</span>
+            <span class="text-[11px] text-muted">Exp: 08/2027 &bull; As needed for anaphylaxis</span>
+          </div>
+          <div class="p-2 rounded-lg bg-white border border-border">
+            <span class="font-bold text-charcoal block">Ventolin (Salbutamol) Inhaler 100mcg</span>
+            <span class="text-[11px] text-muted">PRN 2 puffs before vigorous athletics</span>
+          </div>
+        </div>
+
+        <!-- Physician & Emergency Contacts -->
+        <div class="p-4 rounded-xl border border-border bg-canvas/30 space-y-2 text-xs">
+          <span class="font-bold text-charcoal uppercase tracking-wider text-[11px] block flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-marigold">contact_phone</span>
+            Primary Physician &amp; Hospital
+          </span>
+          <div class="p-2 rounded-lg bg-white border border-border">
+            <span class="font-bold text-charcoal block">Dr. Alistair Ross, MD (Pediatrics)</span>
+            <span class="text-[11px] text-muted">Clinic: Yorkville Pediatric Associates &bull; (416) 555-2244</span>
+          </div>
+          <div class="p-2 rounded-lg bg-white border border-border">
+            <span class="font-bold text-charcoal block">Preferred Emergency Hospital:</span>
+            <span class="text-[11px] text-muted">Hospital for Sick Children (SickKids), Toronto</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function openActionPlan() {
+      alert('Opening Anaphylaxis Emergency Response Action Protocol PDF with physician co-signature.');
+    }
+  </script>
+</body>
+</html>

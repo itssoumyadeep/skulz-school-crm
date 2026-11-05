@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assessment Schedule Modal — School CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FFF8F2',
+            surface: '#FFFFFF',
+            border: '#EAD8C7',
+            charcoal: '#121417',
+            muted: '#687787',
+            terracotta: '#E07A5F',
+            mint: '#90BE6D',
+            marigold: '#FDBA3B',
+            cerulean: '#64B5F6',
+            lilac: '#B39DDB',
+            cream: '#FAF0E6',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['Fraunces', 'serif'],
+          },
+          boxShadow: {
+            warm: '0 4px 20px -2px rgba(18, 20, 23, 0.05), 0 2px 6px -1px rgba(18, 20, 23, 0.03)',
+            'warm-lg': '0 20px 40px -6px rgba(18, 20, 23, 0.12), 0 8px 16px -4px rgba(18, 20, 23, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      display: inline-flex;
+      vertical-align: middle;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #E07A5F;
+      box-shadow: 0 0 0 3px rgba(224, 122, 95, 0.18);
+    }
+  </style>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen antialiased flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+
+  <!-- Background Ambience -->
+  <div class="fixed inset-0 pointer-events-none opacity-20 filter blur-[2px]">
+    <div class="p-8 max-w-7xl mx-auto space-y-6">
+      <div class="h-16 bg-white border border-border rounded-2xl"></div>
+      <div class="grid grid-cols-4 gap-6">
+        <div class="h-32 bg-white border border-border rounded-2xl"></div>
+        <div class="h-32 bg-white border border-border rounded-2xl"></div>
+        <div class="h-32 bg-white border border-border rounded-2xl"></div>
+        <div class="h-32 bg-white border border-border rounded-2xl"></div>
+      </div>
+      <div class="h-96 bg-white border border-border rounded-2xl"></div>
+    </div>
+  </div>
+
+  <!-- Modal Backdrop -->
+  <div class="fixed inset-0 bg-charcoal/50 backdrop-blur-sm z-40 transition-opacity"></div>
+
+  <!-- Assessment Schedule Dialog -->
+  <div role="dialog" aria-modal="true" class="relative z-50 w-full max-w-3xl bg-white border border-border rounded-3xl shadow-warm-lg overflow-hidden flex flex-col max-h-[92vh]">
+
+    <!-- Header & Student Context -->
+    <div class="bg-canvas/80 border-b border-border p-5 sm:p-6">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-lilac/30 text-charcoal flex items-center justify-center font-serif text-lg font-bold shrink-0 border border-lilac/40">
+            <span class="material-symbols-outlined text-2xl text-charcoal">event_upcoming</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-xl font-bold font-serif text-charcoal">Schedule Entrance Assessment</h2>
+              <span class="px-2 py-0.5 rounded-full bg-lilac/20 text-charcoal text-[10px] font-bold border border-lilac/30">Admissions Step 3</span>
+            </div>
+            <p class="text-xs text-muted mt-0.5">Assign evaluators, reserve room facilities, and issue calendar invitations to families.</p>
+          </div>
+        </div>
+        <a href="Admissions_Pipeline_Kanban.html" class="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-muted hover:text-charcoal transition-colors hover:bg-cream" title="Close">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </a>
+      </div>
+
+      <!-- Applicant Strip -->
+      <div class="mt-4 p-3 rounded-2xl bg-white border border-border flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-terracotta text-white flex items-center justify-center font-serif text-sm font-bold">SC</div>
+          <div>
+            <div class="text-xs font-bold text-charcoal">Sophia Claire Chen <span class="text-muted font-normal">#APP-2026-0891</span></div>
+            <div class="text-[11px] text-muted">Grade 2 Applying &bull; Fall 2026 &bull; Parent: Elena Vance-Chen (+1 416-555-0198)</div>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-mint/20 text-charcoal text-[11px] font-semibold border border-mint/40">Ready to Book</span>
+      </div>
+    </div>
+
+    <!-- Form Body -->
+    <form id="scheduleForm" onsubmit="event.preventDefault(); confirmBooking();" class="flex-1 overflow-y-auto p-6 space-y-6">
+      
+      <!-- Assessment Modules Selection -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-charcoal mb-2">Assessment Modules Required <span class="text-terracotta">*</span></label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-terracotta bg-cream/30 cursor-pointer">
+            <input type="checkbox" checked class="mt-0.5 rounded text-terracotta">
+            <div>
+              <span class="text-xs font-bold text-charcoal block">Literacy &amp; Reading Diagnostic</span>
+              <span class="text-[11px] text-muted block">Phonemic awareness, early comprehension &amp; vocabulary (30 min)</span>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3 rounded-xl border border-border bg-white hover:border-terracotta cursor-pointer">
+            <input type="checkbox" checked class="mt-0.5 rounded text-terracotta">
+            <div>
+              <span class="text-xs font-bold text-charcoal block">Quantitative &amp; Logic Benchmarks</span>
+              <span class="text-[11px] text-muted block">Numerical patterns, mental arithmetic, problem solving (25 min)</span>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3 rounded-xl border border-border bg-white hover:border-terracotta cursor-pointer">
+            <input type="checkbox" checked class="mt-0.5 rounded text-terracotta">
+            <div>
+              <span class="text-xs font-bold text-charcoal block">Social-Emotional Play Observation</span>
+              <span class="text-[11px] text-muted block">Peer group interaction, regulation, collaborative tasks (15 min)</span>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3 rounded-xl border border-border bg-white hover:border-terracotta cursor-pointer">
+            <input type="checkbox" class="mt-0.5 rounded text-terracotta">
+            <div>
+              <span class="text-xs font-bold text-charcoal block">Bilingual Proficiency / ESL Screener</span>
+              <span class="text-[11px] text-muted block">Oral language fluency evaluation for English/Mandarin track (20 min)</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Evaluator & Venue Slot -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-charcoal mb-1.5">Assigned Lead Evaluator <span class="text-terracotta">*</span></label>
+          <select class="w-full px-3.5 py-2.5 text-xs bg-canvas border border-border rounded-xl font-semibold text-charcoal">
+            <option selected>Judith Hawthorne (Lead Primary Academic Specialist)</option>
+            <option>David Evans (Head of Early Learning &amp; Diagnostics)</option>
+            <option>Dr. Miriam Vance (Child Psychologist / SEN Lead)</option>
+            <option>Marcus Reid (Admissions Director)</option>
+          </select>
+          <span class="text-[11px] text-muted mt-1 block">Assessor calendar verified &bull; No conflicts</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-charcoal mb-1.5">Assessment Room / Modality <span class="text-terracotta">*</span></label>
+          <select class="w-full px-3.5 py-2.5 text-xs bg-canvas border border-border rounded-xl font-semibold text-charcoal">
+            <option selected>Primary Assessment Studio 104 (In-Person)</option>
+            <option>Early Childhood Observation Lab 108</option>
+            <option>Learning Resource Centre (Room 210)</option>
+            <option>Secure Remote Zoom Session (Hybrid / Overseas)</option>
+          </select>
+          <div class="mt-1 flex items-center gap-1 text-[11px] text-mint font-semibold">
+            <span class="material-symbols-outlined text-xs fill">check_circle</span>
+            Room 104 reserved exclusively
+          </div>
+        </div>
+      </div>
+
+      <!-- Date, Time & Duration Picker -->
+      <div class="p-4 rounded-2xl bg-canvas border border-border grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-[11px] font-bold text-charcoal uppercase tracking-wider mb-1">Date of Assessment</label>
+          <input type="date" value="2026-11-06" class="w-full px-3 py-2 text-xs bg-white border border-border rounded-xl font-semibold text-charcoal">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-charcoal uppercase tracking-wider mb-1">Start Time Slot</label>
+          <select class="w-full px-3 py-2 text-xs bg-white border border-border rounded-xl font-semibold text-charcoal">
+            <option>09:00 AM – 10:00 AM</option>
+            <option>10:30 AM – 11:30 AM</option>
+            <option selected>01:30 PM – 02:30 PM</option>
+            <option>03:00 PM – 04:00 PM</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-charcoal uppercase tracking-wider mb-1">Expected Duration</label>
+          <select class="w-full px-3 py-2 text-xs bg-white border border-border rounded-xl font-semibold text-charcoal">
+            <option>45 Minutes</option>
+            <option selected>60 Minutes (Standard)</option>
+            <option>90 Minutes (Comprehensive)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Parent Notification & Calendar Settings -->
+      <div class="border border-border rounded-2xl p-4 bg-white space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-terracotta text-lg">mail_lock</span>
+            <span class="text-xs font-bold text-charcoal">Parent Communications &amp; Instructions</span>
+          </div>
+          <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+            <input type="checkbox" checked class="rounded text-terracotta">
+            <span>Send automated SMS &amp; Portal Notification</span>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-muted mb-1">Parent Briefing Note (Appended to confirmation email):</label>
+          <textarea rows="2" class="w-full px-3 py-2 text-xs bg-canvas border border-border rounded-xl text-charcoal">Please arrive 10 minutes prior to 1:30 PM at the Main Entrance Reception (Gate 2). Complimentary parking is available in Visitor Lot B. Sophia does not need to bring stationery; comfortable play clothes are recommended.</textarea>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-2 flex items-center justify-between border-t border-border">
+        <button type="button" onclick="window.history.back()" class="px-4 py-2.5 rounded-xl border border-border bg-white text-charcoal font-semibold text-xs hover:bg-cream transition-colors">
+          Cancel
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="saveDraft()" class="px-4 py-2.5 rounded-xl border border-border bg-white text-charcoal font-semibold text-xs hover:bg-cream transition-colors">
+            Save as Draft
+          </button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-terracotta text-white font-bold text-xs hover:bg-terracotta/90 transition-all flex items-center gap-1.5 shadow-warm">
+            <span class="material-symbols-outlined text-sm">send</span>
+            Confirm &amp; Send Invitation
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function confirmBooking() {
+      alert('Assessment successfully scheduled!\nInvitation dispatched to Elena Vance-Chen (elena.vance@vancetech.ca).\nAssessor calendar invite sent to Judith Hawthorne.');
+      window.location.href = 'Admissions_Pipeline_Kanban.html';
+    }
+    function saveDraft() {
+      alert('Assessment schedule draft saved.');
+    }
+  </script>
+</body>
+</html>

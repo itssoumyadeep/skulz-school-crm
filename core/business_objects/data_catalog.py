@@ -1,3 +1,5 @@
+"""Model introspection utility generating the data classification catalog across actors, processes, and metadata."""
+
 from django.apps import apps
 
 

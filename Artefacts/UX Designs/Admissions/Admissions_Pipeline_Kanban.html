@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admissions Pipeline Kanban — School CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FFF8F2',
+            surface: '#FFFFFF',
+            border: '#EAD8C7',
+            charcoal: '#121417',
+            muted: '#687787',
+            terracotta: '#E07A5F',
+            mint: '#90BE6D',
+            marigold: '#FDBA3B',
+            cerulean: '#64B5F6',
+            lilac: '#B39DDB',
+            cream: '#FAF0E6',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['Fraunces', 'serif'],
+          },
+          boxShadow: {
+            warm: '0 4px 20px -2px rgba(18, 20, 23, 0.05), 0 2px 6px -1px rgba(18, 20, 23, 0.03)',
+            'warm-lg': '0 12px 32px -4px rgba(18, 20, 23, 0.08), 0 4px 12px -2px rgba(18, 20, 23, 0.04)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      display: inline-flex;
+      vertical-align: middle;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    .kanban-col {
+      min-height: calc(100vh - 280px);
+    }
+    .dragging {
+      opacity: 0.4;
+      transform: scale(0.98);
+    }
+    .drag-over {
+      background-color: rgba(224, 122, 95, 0.06);
+      border-color: #E07A5F;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FFF8F2;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #EAD8C7;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen antialiased flex flex-col">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-border px-6 py-3.5 shadow-sm">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="../Admin/Admin_Operational_Console.html" class="flex items-center gap-2 group text-muted hover:text-charcoal transition-colors">
+          <div class="w-8 h-8 rounded-full bg-cream border border-border flex items-center justify-center group-hover:border-terracotta transition-colors">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+          </div>
+          <span class="text-xs font-semibold tracking-wide uppercase">Admin Console</span>
+        </a>
+        <div class="h-4 w-px bg-border"></div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-terracotta text-2xl">view_kanban</span>
+          <h1 class="text-lg font-bold text-charcoal tracking-tight font-serif">Admissions Pipeline</h1>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-cream text-charcoal font-bold border border-border">Fall 2026 Intake</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="Enrollment_Intake_Wizard.html" class="px-4 py-2 text-xs font-bold text-white bg-terracotta rounded-xl hover:bg-terracotta/90 transition-all flex items-center gap-1.5 shadow-warm">
+          <span class="material-symbols-outlined text-base">person_add</span>
+          New Student Intake
+        </a>
+        <a href="Application_Detail_Modal.html" class="px-3.5 py-2 text-xs font-bold text-charcoal bg-white border border-border rounded-xl hover:bg-cream transition-all flex items-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-base text-muted">preview</span>
+          Open Modal Demo
+        </a>
+        <div class="w-px h-6 bg-border"></div>
+        <div class="flex items-center gap-2 pl-2">
+          <div class="w-8 h-8 rounded-full bg-lilac/30 text-charcoal font-bold flex items-center justify-center text-xs">
+            MR
+          </div>
+          <div class="text-left hidden sm:block">
+            <div class="text-xs font-bold leading-tight">Marcus Reid</div>
+            <div class="text-[10px] text-muted leading-tight">Head of Admissions</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Pipeline View -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+
+    <!-- KPI Metric Summary Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
+      <div class="bg-white border border-border p-4 rounded-2xl shadow-warm flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-bold text-muted uppercase tracking-wider block">Inquiries</span>
+          <span id="kpiInquiry" class="text-2xl font-extrabold text-charcoal font-serif">5</span>
+          <span class="text-[10px] text-cerulean font-semibold block mt-0.5">+2 this week</span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-cerulean/20 text-cerulean flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">contact_mail</span>
+        </div>
+      </div>
+
+      <div class="bg-white border border-border p-4 rounded-2xl shadow-warm flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-bold text-muted uppercase tracking-wider block">Applied</span>
+          <span id="kpiApplied" class="text-2xl font-extrabold text-charcoal font-serif">8</span>
+          <span class="text-[10px] text-marigold font-semibold block mt-0.5">3 docs pending</span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-marigold/20 text-marigold flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">assignment</span>
+        </div>
+      </div>
+
+      <div class="bg-white border border-border p-4 rounded-2xl shadow-warm flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-bold text-muted uppercase tracking-wider block">Assessments</span>
+          <span id="kpiAssessment" class="text-2xl font-extrabold text-charcoal font-serif">4</span>
+          <span class="text-[10px] text-lilac font-semibold block mt-0.5">2 today at 2 PM</span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-lilac/20 text-lilac flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">quiz</span>
+        </div>
+      </div>
+
+      <div class="bg-white border border-border p-4 rounded-2xl shadow-warm flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-bold text-muted uppercase tracking-wider block">Offers Pending</span>
+          <span id="kpiOffers" class="text-2xl font-extrabold text-charcoal font-serif">3</span>
+          <span class="text-[10px] text-terracotta font-semibold block mt-0.5">Expires in 5 days</span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">mark_email_read</span>
+        </div>
+      </div>
+
+      <div class="bg-white border border-border p-4 rounded-2xl shadow-warm flex items-center justify-between col-span-2 sm:col-span-1">
+        <div>
+          <span class="text-[11px] font-bold text-muted uppercase tracking-wider block">Enrolled Confirmed</span>
+          <span id="kpiEnrolled" class="text-2xl font-extrabold text-charcoal font-serif">6</span>
+          <span class="text-[10px] text-mint font-semibold block mt-0.5">Target: 25 / class</span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-mint/20 text-mint flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">how_to_reg</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter & Search Control Header -->
+    <div class="bg-white border border-border rounded-2xl p-4 shadow-warm mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Search bar -->
+        <div class="relative min-w-[240px]">
+          <span class="material-symbols-outlined text-muted absolute left-3 top-2.5 text-lg">search</span>
+          <input type="text" id="searchInput" oninput="filterCards()" placeholder="Search applicant, ID, guardian..." class="w-full pl-9 pr-3 py-2 text-xs bg-canvas border border-border rounded-xl focus:outline-none focus:border-terracotta">
+        </div>
+
+        <!-- Grade Filter -->
+        <select id="filterGrade" onchange="filterCards()" class="px-3 py-2 text-xs bg-canvas border border-border rounded-xl font-semibold text-charcoal focus:outline-none focus:border-terracotta">
+          <option value="All">All Grades (K–12)</option>
+          <option value="Kindergarten">Kindergarten</option>
+          <option value="Grade 1">Grade 1</option>
+          <option value="Grade 2">Grade 2</option>
+          <option value="Grade 3">Grade 3</option>
+          <option value="Grade 4">Grade 4</option>
+          <option value="Grade 5">Grade 5</option>
+        </select>
+
+        <!-- Academic Term -->
+        <select class="px-3 py-2 text-xs bg-canvas border border-border rounded-xl font-semibold text-charcoal focus:outline-none focus:border-terracotta">
+          <option selected>Fall Term 2026</option>
+          <option>Winter Term 2027</option>
+        </select>
+
+        <!-- Tag Filters -->
+        <div class="hidden xl:flex items-center gap-1.5 pl-2 border-l border-border">
+          <button type="button" onclick="toggleTagFilter('IEP', this)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-border bg-canvas hover:border-lilac text-charcoal transition-colors">
+            IEP Support
+          </button>
+          <button type="button" onclick="toggleTagFilter('Sibling', this)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-border bg-canvas hover:border-mint text-charcoal transition-colors">
+            Sibling
+          </button>
+          <button type="button" onclick="toggleTagFilter('Aid', this)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-border bg-canvas hover:border-marigold text-charcoal transition-colors">
+            Aid Applicant
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 self-end md:self-auto">
+        <span class="text-xs text-muted">Drag cards to advance stage or click card to inspect</span>
+        <button type="button" onclick="resetKanban()" class="p-2 text-muted hover:text-charcoal rounded-lg hover:bg-cream transition-colors" title="Reset Board Demo">
+          <span class="material-symbols-outlined text-lg">restart_alt</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Kanban Columns Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4.5 flex-1 items-start">
+
+      <!-- COLUMN 1: INQUIRY -->
+      <div class="flex flex-col bg-cream/40 border border-border/80 rounded-2xl p-3 kanban-col shadow-sm" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event, 'inquiry')">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-cerulean"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal">1. Inquiry</h3>
+          </div>
+          <span id="badge-inquiry" class="px-2 py-0.5 rounded-full text-xs font-extrabold bg-cerulean/20 text-charcoal border border-cerulean/40">5</span>
+        </div>
+        <div id="col-inquiry" class="space-y-3 flex-1 flex flex-col">
+          <!-- Card 1 -->
+          <div draggable="true" ondragstart="dragStart(event, 'c1')" id="c1" data-grade="Grade 2" data-tags="Sibling" data-name="Leo Zhang" onclick="openDrawer('Leo Zhang', 'APP-2026-0101', 'Grade 2', 'Inquiry', 'David Zhang', 'Sibling Match', 'Inquiry submitted via web form. Family attending Open House.', 'cerulean')" class="kanban-card p-3.5 bg-white border border-border hover:border-cerulean rounded-xl shadow-warm hover:shadow-warm-lg transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-cerulean/20 text-charcoal font-serif font-bold text-xs flex items-center justify-center">LZ</div>
+                <div>
+                  <h4 class="text-xs font-bold text-charcoal leading-tight">Leo Zhang</h4>
+                  <span class="text-[10px] text-muted">Grade 2 &bull; Oct 28</span>
+                </div>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-mint/20 text-charcoal font-semibold border border-mint/30">Sibling</span>
+            </div>
+            <p class="text-[11px] text-muted line-clamp-2 mb-2.5">Interested in bilingual French immersion program. Sibling currently in Grade 5.</p>
+            <div class="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted">
+              <span>Parent: David Zhang</span>
+              <span class="font-semibold text-cerulean">Inquiry</span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div draggable="true" ondragstart="dragStart(event, 'c2')" id="c2" data-grade="Kindergarten" data-tags="Aid" data-name="Hannah Miller" onclick="openDrawer('Hannah Miller', 'APP-2026-0102', 'Kindergarten', 'Inquiry', 'Sarah Miller', 'Financial Aid Request', 'Requested brochure and financial assistance scholarship criteria.', 'cerulean')" class="kanban-card p-3.5 bg-white border border-border hover:border-cerulean rounded-xl shadow-warm hover:shadow-warm-lg transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-marigold/20 text-charcoal font-serif font-bold text-xs flex items-center justify-center">HM</div>
+                <div>
+                  <h4 class="text-xs font-bold text-charcoal leading-tight">Hannah Miller</h4>
+                  <span class="text-[10px] text-muted">Kindergarten &bull; Oct 29</span>
+                </div>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-marigold/20 text-charcoal font-semibold border border-marigold/30">Aid</span>
+            </div>
+            <p class="text-[11px] text-muted line-clamp-2 mb-2.5">Inquired regarding early developmental preschool transfer and financial aid grants.</p>
+            <div class="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted">
+              <span>Parent: Sarah Miller</span>
+              <span class="font-semibold text-cerulean">Inquiry</span>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div draggable="true" ondragstart="dragStart(event, 'c3')" id="c3" data-grade="Grade 4" data-tags="" data-name="Julian Thorne" onclick="openDrawer('Julian Thorne', 'APP-2026-0103', 'Grade 4', 'Inquiry', 'Arthur Thorne', 'Standard', 'Relocating from Montreal in July 2026. Needs bus transit.', 'cerulean')" class="kanban-card p-3.5 bg-white border border-border hover:border-cerulean rounded-xl shadow-warm hover:shadow-warm-lg transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-lilac/20 text-charcoal font-serif font-bold text-xs flex items-center justify-center">JT</div>
+                <div>
+                  <h4 class="text-xs font-bold text-charcoal leading-tight">Julian Thorne</h4>
+                  <span class="text-[10px] text-muted">Grade 4 &bull; Oct 31</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-[11px] text-muted line-clamp-2 mb-2.5">Relocating from Montreal. Looking for advanced STEM and chess club curriculum.</p>
+            <div class="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted">
+              <span>Parent: Arthur Thorne</span>
+              <span class="font-semibold text-cerulean">Inquiry</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 2: APPLIED -->
+      <div class="flex flex-col bg-cream/40 border border-border/80 rounded-2xl p-3 kanban-col shadow-sm" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event, 'applied')">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-marigold"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal">2. Applied</h3>
+          </div>
+          <span id="badge-applied" class="px-2 py-0.5 rounded-full text-xs font-extrabold bg-marigold/20 text-charcoal border border-marigold/40">8</span>
+        </div>
+        <div id="col-applied" class="space-y-3 flex-1 flex flex-col">
+          <!-- Card 4 -->
+          <div draggable="true" ondragstart="dragStart(event, 'c4')" id="c4" data-grade="Grade 2" data-tags="IEP, Sibling" data-name="Sophia Chen" onclick="openDrawer('Sophia Chen', 'APP-2026-0891', 'Grade 2', 'Applied', 'Elena Vance-Chen', 'IEP, Sibling Match', 'Full enrollment intake completed. Yellow card immunization verified.', 'marigold')" class="kanban-card p-3.5 bg-white border border-border hover:border-marigold rounded-xl shadow-warm hover:shadow-warm-lg transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-terracotta text-white font-serif font-bold text-xs flex items-center justify-center">SC</div>
+                <div>
+                  <h4 class="text-xs font-bold text-charcoal leading-tight">Sophia Chen</h4>
+                  <span class="text-[10px] text-muted">Grade 2 &bull; Nov 02</span>
+                </div>
+              </div>
+              <div class="flex gap-1">
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-lilac/30 text-charcoal font-bold">IEP</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-mint/20 text-charcoal font-bold">Sib</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-muted line-clamp-2 mb-2.5">Ontario ISPA immunization records on file. Peanut allergy action plan attached.</p>
+            <div class="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted">
+              <span>Parent: Elena Vance</span>
+              <span class="font-semibold text-marigold">Docs 3/4 Verified</span>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div draggable="true" ondragstart="dragStart(event, 'c5')" id="c5" data-grade="Grade 1" data-tags="" data-name="Liam O'Connor" onclick="openDrawer('Liam O\'Connor', 'APP-2026-0892', 'Grade 1', 'Applied', 'Patrick O\'Connor', 'Standard', 'Online application fee received. Awaiting report card from prior school.', 'marigold')" class="kanban-card p-3.5 bg-white border border-border hover:border-marigold rounded-xl shadow-warm hover:shadow-warm-lg transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-cerulean/20 text-charcoal font-serif font-bold text-xs flex items-center justify-center">LO</div>
+                <div>
+                  <h4 class="text-xs font-bold text-charcoal leading-tight">Liam O'Connor</h4>
+                  <span class="text-[10px] text-muted">Grade 1 &bull; Nov 01</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-[11px] text-muted line-clamp-2 mb-2.5">Application fee paid ($120). Waiting on prior Montessori progress report card.</p>
+            <div class="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted">
+              <span>Parent: Patrick O'Connor</span>
+              <span class="font-semibold text-terracotta">Report Missing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 3: ASSESSMENT SCHEDULED -->
+      <div class="flex flex-col bg-cream/40 border border-border/80 rounded-2xl p-3 kanban-col shadow-sm" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event, 'assessment')">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-lilac"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal">3. Assessment</h3>
+          </div>
+          <span id="badge-assessment" class="px-2 py-0.5 rounded-full text-xs font-extrabold bg-lilac/30 text-charcoal border border-lilac/50">4</span>
+        </div>
+        <div id="col-assessment" class="space-y-3 flex-1 flex flex-col">
+          <!-- Card 6 -->
+          <div draggable="true" ondragstart="dragStart(event, 'c6')" id="c6" data-grade="Grade 3" data-tags="" data-name="Amara Patel" onclick="openDrawer('Amara Patel', 'APP-2026-0771', 'Grade 3', 'Assessment', 'Sunita Patel', 'Assessment Scheduled', 'Diagnostic Math & Literacy assessment booked for Nov 5 at 1:30 PM with Ms. Hawthorne.', 'lilac')" class="kanban-card p-3.5 bg-white border border-border hover:border-lilac rounded-xl shadow-warm hover:shadow-warm-lg transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-lilac/40 text-charcoal font-serif font-bold text-xs flex items-center justify-center">AP</div>
+                <div>
+                  <h4 class="text-xs font-bold text-charcoal leading-tight">Amara Patel</h4>
+                  <span class="text-[10px] text-muted">Grade 3 &bull; Nov 05, 1:30 PM</span>
+                </div>
+              </div>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-lilac/20 text-charcoal font-bold">Room 104</span>
+            </div>
+            <p class="text-[11px] text-muted line-clamp-2 mb-2.5">Reading comprehension &amp; numerical reasoning diagnostic with Ms. Hawthorne.</p>
+            <div class="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted">
+              <span>Interviewer: J. Hawthorne</span>
+              <span class="font-semibold text-lilac">Scheduled</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 4: DECISION / OFFER -->
+      <div class="flex flex-col bg-cream/40 border border-border/80 rounded-2xl p-3 kanban-col shadow-sm" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event, 'offer')">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-terracotta"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal">4. Decision / Offer</h3>
+          </div>
+          <span id="badge-offer" class="px-2 py-0.5 rounded-full text-xs font-extrabold bg-terracotta/20 text-charcoal border border-terracotta/40">3</span>
+        </div>
+        <div id="col-offer" class="space-y-3 flex-1 flex flex-col">
+          <!-- Card 7 -->
+          <div draggable="true" ondragstart="dragStart(event, 'c7')" id="c7" data-grade="Grade 5" data-tags="Aid" data-name="Chloe Dubois" onclick="openDrawer('Chloe Dubois', 'APP-2026-0650', 'Grade 5', 'Offer', 'Jean-Luc Dubois', 'Offer Letter Sent', 'Formal offer letter dispatched on Oct 30. Acceptance deposit due Nov 15.', 'terracotta')" class="kanban-card p-3.5 bg-white border border-border hover:border-terracotta rounded-xl shadow-warm hover:shadow-warm-lg transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-terracotta/20 text-terracotta font-serif font-bold text-xs flex items-center justify-center">CD</div>
+                <div>
+                  <h4 class="text-xs font-bold text-charcoal leading-tight">Chloe Dubois</h4>
+                  <span class="text-[10px] text-muted">Grade 5 &bull; Offer Sent</span>
+                </div>
+              </div>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-terracotta/20 text-terracotta font-bold">5 Days Left</span>
+            </div>
+            <p class="text-[11px] text-muted line-clamp-2 mb-2.5">Admission offer with 15% academic scholarship grant. Contract pending parent e-sign.</p>
+            <div class="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted">
+              <span>Deposit: $1,500</span>
+              <span class="font-semibold text-terracotta">Awaiting Signature</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 5: ENROLLED -->
+      <div class="flex flex-col bg-cream/40 border border-border/80 rounded-2xl p-3 kanban-col shadow-sm" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event, 'enrolled')">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-mint"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal">5. Enrolled</h3>
+          </div>
+          <span id="badge-enrolled" class="px-2 py-0.5 rounded-full text-xs font-extrabold bg-mint/20 text-charcoal border border-mint/40">6</span>
+        </div>
+        <div id="col-enrolled" class="space-y-3 flex-1 flex flex-col">
+          <!-- Card 8 -->
+          <div draggable="true" ondragstart="dragStart(event, 'c8')" id="c8" data-grade="Grade 2" data-tags="Sibling" data-name="Noah Kim" onclick="openDrawer('Noah Kim', 'APP-2026-0504', 'Grade 2', 'Enrolled', 'Grace Kim', 'Matriculation Finalized', 'Tuition deposit paid. Assigned to Room 2B with Mr. Tanaka.', 'mint')" class="kanban-card p-3.5 bg-white border border-border hover:border-mint rounded-xl shadow-warm hover:shadow-warm-lg transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-mint/30 text-charcoal font-serif font-bold text-xs flex items-center justify-center">NK</div>
+                <div>
+                  <h4 class="text-xs font-bold text-charcoal leading-tight">Noah Kim</h4>
+                  <span class="text-[10px] text-muted">Grade 2 &bull; Homeroom 2B</span>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-mint text-base fill">verified</span>
+            </div>
+            <p class="text-[11px] text-muted line-clamp-2 mb-2.5">Matriculation complete. Student ID #STU-2026-077 issued. Welcome pack dispatched.</p>
+            <div class="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted">
+              <span>Teacher: Mr. Tanaka</span>
+              <span class="font-bold text-mint">Finalized</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Slide-Over Application Preview Drawer (Triggered by clicking any card) -->
+  <div id="drawerOverlay" onclick="closeDrawer()" class="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 transition-opacity opacity-0 pointer-events-none duration-300"></div>
+  <aside id="appDrawer" class="fixed top-0 right-0 h-full w-full max-w-lg bg-white border-l border-border z-50 transform translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-warm-lg">
+    <!-- Drawer Header -->
+    <div class="p-5 border-b border-border flex items-center justify-between bg-canvas/60">
+      <div>
+        <span id="drawerAppId" class="text-[11px] font-mono text-muted uppercase tracking-wider block">APP-2026-0891</span>
+        <h3 id="drawerStudentName" class="text-xl font-bold font-serif text-charcoal">Sophia Chen</h3>
+      </div>
+      <button type="button" onclick="closeDrawer()" class="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-muted hover:text-charcoal transition-colors">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+    </div>
+
+    <!-- Drawer Body -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <!-- Status Pill & Quick Stage Jump -->
+      <div class="flex items-center justify-between p-3.5 rounded-xl bg-canvas border border-border">
+        <div>
+          <span class="text-[10px] font-bold uppercase text-muted tracking-wider block">Current Pipeline Stage</span>
+          <span id="drawerStageName" class="text-sm font-bold text-terracotta">Applied (Reviewing Docs)</span>
+        </div>
+        <a href="Application_Detail_Modal.html" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-border text-charcoal hover:bg-cream transition-colors flex items-center gap-1 shadow-sm">
+          <span>Full Application View</span>
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+        </a>
+      </div>
+
+      <!-- Applicant Overview -->
+      <div>
+        <h4 class="text-xs font-bold uppercase tracking-wider text-charcoal mb-3">Applicant Snapshot</h4>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="p-3 rounded-xl border border-border bg-canvas/30">
+            <span class="text-muted block text-[10px]">Applying Grade:</span>
+            <span id="drawerGrade" class="font-bold text-charcoal">Grade 2</span>
+          </div>
+          <div class="p-3 rounded-xl border border-border bg-canvas/30">
+            <span class="text-muted block text-[10px]">Academic Term:</span>
+            <span class="font-bold text-charcoal">Fall 2026</span>
+          </div>
+          <div class="p-3 rounded-xl border border-border bg-canvas/30">
+            <span class="text-muted block text-[10px]">Primary Guardian:</span>
+            <span id="drawerGuardian" class="font-bold text-charcoal">Elena Vance-Chen</span>
+          </div>
+          <div class="p-3 rounded-xl border border-border bg-canvas/30">
+            <span class="text-muted block text-[10px]">Profile Tags:</span>
+            <span id="drawerTags" class="font-bold text-mint">Sibling Match</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Required Documents Checklist -->
+      <div>
+        <h4 class="text-xs font-bold uppercase tracking-wider text-charcoal mb-3">Intake Documents Review</h4>
+        <div class="space-y-2 text-xs">
+          <div class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-white">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-mint text-base fill">check_circle</span>
+              <span>Official Birth Certificate</span>
+            </div>
+            <span class="text-[10px] font-bold text-mint">Verified</span>
+          </div>
+          <div class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-white">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-mint text-base fill">check_circle</span>
+              <span>Ontario Immunization Record (Yellow Card)</span>
+            </div>
+            <span class="text-[10px] font-bold text-mint">Verified</span>
+          </div>
+          <div class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-white">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-marigold text-base fill">hourglass_top</span>
+              <span>Previous Term Academic Transcript</span>
+            </div>
+            <span class="text-[10px] font-bold text-marigold">Pending Evaluation</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admissions Staff Notes -->
+      <div>
+        <h4 class="text-xs font-bold uppercase tracking-wider text-charcoal mb-2">Staff Notes &amp; Observations</h4>
+        <div class="p-3.5 rounded-xl bg-canvas border border-border text-xs text-muted mb-3 italic">
+          <p id="drawerNotes">"Student demonstrates strong reading readiness in bilingual assessment. Family requested morning extended bus route. Recommend scheduling entrance assessment."</p>
+        </div>
+        <div class="flex gap-2">
+          <input type="text" placeholder="Add an admissions note..." class="flex-1 px-3 py-2 text-xs bg-white border border-border rounded-xl focus:outline-none focus:border-terracotta">
+          <button type="button" class="px-3 py-2 text-xs font-bold text-white bg-terracotta rounded-xl hover:bg-terracotta/90 transition-all">Post</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="p-4 border-t border-border bg-canvas/40 flex items-center justify-between gap-3">
+      <button type="button" onclick="moveActiveCardNext()" class="flex-1 py-2.5 px-4 rounded-xl bg-terracotta text-white font-bold text-xs hover:bg-terracotta/90 transition-all flex items-center justify-center gap-1.5 shadow-warm">
+        <span>Advance to Next Stage</span>
+        <span class="material-symbols-outlined text-sm">fast_forward</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Drag & Drop + Interactive Logic -->
+  <script>
+    let draggedCardId = null;
+    let activeCardId = 'c4';
+
+    function dragStart(e, cardId) {
+      draggedCardId = cardId;
+      e.dataTransfer.setData('text/plain', cardId);
+      setTimeout(() => {
+        const el = document.getElementById(cardId);
+        if (el) el.classList.add('dragging');
+      }, 0);
+    }
+
+    function allowDrop(e) {
+      e.preventDefault();
+      const col = e.currentTarget;
+      col.classList.add('drag-over');
+    }
+
+    function dragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(e, targetColName) {
+      e.preventDefault();
+      const col = e.currentTarget;
+      col.classList.remove('drag-over');
+      
+      const cardId = draggedCardId || e.dataTransfer.getData('text/plain');
+      const card = document.getElementById(cardId);
+      if (card) {
+        card.classList.remove('dragging');
+        const targetContainer = document.getElementById(`col-${targetColName}`);
+        if (targetContainer) {
+          targetContainer.appendChild(card);
+          updateCounters();
+        }
+      }
+      draggedCardId = null;
+    }
+
+    document.addEventListener('dragend', () => {
+      if (draggedCardId) {
+        const el = document.getElementById(draggedCardId);
+        if (el) el.classList.remove('dragging');
+      }
+    });
+
+    function updateCounters() {
+      const stages = ['inquiry', 'applied', 'assessment', 'offer', 'enrolled'];
+      stages.forEach(st => {
+        const col = document.getElementById(`col-${st}`);
+        const count = col ? col.querySelectorAll('.kanban-card').length : 0;
+        const badge = document.getElementById(`badge-${st}`);
+        if (badge) badge.textContent = count;
+      });
+    }
+
+    function openDrawer(name, appId, grade, stage, guardian, tags, notes, color) {
+      document.getElementById('drawerStudentName').textContent = name;
+      document.getElementById('drawerAppId').textContent = appId;
+      document.getElementById('drawerGrade').textContent = grade;
+      document.getElementById('drawerStageName').textContent = stage;
+      document.getElementById('drawerGuardian').textContent = guardian;
+      document.getElementById('drawerTags').textContent = tags || 'None';
+      document.getElementById('drawerNotes').textContent = `"${notes}"`;
+
+      document.getElementById('drawerOverlay').classList.remove('pointer-events-none', 'opacity-0');
+      document.getElementById('appDrawer').classList.remove('translate-x-full');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawerOverlay').classList.add('pointer-events-none', 'opacity-0');
+      document.getElementById('appDrawer').classList.add('translate-x-full');
+    }
+
+    function moveActiveCardNext() {
+      alert('Student Sophia Chen advanced from "Applied" to "Assessment Scheduled". Notification dispatched to parent!');
+      closeDrawer();
+      const card = document.getElementById('c4');
+      const target = document.getElementById('col-assessment');
+      if (card && target) {
+        target.prepend(card);
+        updateCounters();
+      }
+    }
+
+    function filterCards() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const grade = document.getElementById('filterGrade').value;
+      const cards = document.querySelectorAll('.kanban-card');
+
+      cards.forEach(c => {
+        const name = (c.getAttribute('data-name') || '').toLowerCase();
+        const cGrade = c.getAttribute('data-grade') || '';
+        const matchQ = !q || name.includes(q);
+        const matchGrade = grade === 'All' || cGrade === grade;
+
+        if (matchQ && matchGrade) {
+          c.classList.remove('hidden');
+        } else {
+          c.classList.add('hidden');
+        }
+      });
+    }
+
+    let activeFilterTag = null;
+    function toggleTagFilter(tag, btn) {
+      if (activeFilterTag === tag) {
+        activeFilterTag = null;
+        btn.classList.remove('bg-terracotta', 'text-white');
+        btn.classList.add('bg-canvas', 'text-charcoal');
+      } else {
+        document.querySelectorAll('[onclick^="toggleTagFilter"]').forEach(b => {
+          b.classList.remove('bg-terracotta', 'text-white');
+          b.classList.add('bg-canvas', 'text-charcoal');
+        });
+        activeFilterTag = tag;
+        btn.classList.add('bg-terracotta', 'text-white');
+        btn.classList.remove('bg-canvas', 'text-charcoal');
+      }
+
+      const cards = document.querySelectorAll('.kanban-card');
+      cards.forEach(c => {
+        const cTags = c.getAttribute('data-tags') || '';
+        if (!activeFilterTag || cTags.includes(activeFilterTag)) {
+          c.classList.remove('hidden');
+        } else {
+          c.classList.add('hidden');
+        }
+      });
+    }
+
+    function resetKanban() {
+      location.reload();
+    }
+  </script>
+</body>
+</html>

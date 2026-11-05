@@ -1,3 +1,5 @@
+"""Standard API response envelopes, error structures, pagination metadata, and response builder helper functions."""
+
 from typing import Generic, TypeVar, Optional, List, Any
 from pydantic import BaseModel, Field
 

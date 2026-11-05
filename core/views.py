@@ -1,3 +1,5 @@
+"""Django template views and HTML portal renderers."""
+
 from django.shortcuts import render
 
 

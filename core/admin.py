@@ -1,3 +1,5 @@
+"""Django admin configuration and model registration for School CRM entities."""
+
 from django.contrib import admin
 from .models import (
     Tenant, TenantSequence, Student, Application,

@@ -1,3 +1,5 @@
+"""API v1 endpoints for authentication, login, parent signup, token validation, and password management."""
+
 import hashlib
 import time
 import uuid
@@ -301,7 +303,7 @@ def signup(request, payload: SignupSchema):
                 password=payload.password,
                 first_name=first_name,
                 last_name=last_name,
-                is_active=False,
+                is_active=True,
             )
             parent_group, _ = Group.objects.get_or_create(name="Parent")
             user.groups.add(parent_group)
@@ -334,7 +336,7 @@ def signup(request, payload: SignupSchema):
                 "email": user.email,
                 "name": user.get_full_name() or user.username,
                 "role": "parent",
-                "status": "pending_activation",
+                "status": "active",
             },
             tenant_id=tenant.tenant_id,
             role="parent",

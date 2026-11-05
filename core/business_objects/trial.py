@@ -1,3 +1,5 @@
+"""Domain business logic for self-service daycare free trial onboarding and automated initial admin account provisioning."""
+
 import hashlib
 import secrets
 import string

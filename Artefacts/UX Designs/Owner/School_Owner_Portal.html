@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"background":"#fef8f1","on-error-container":"#93000a","charcoal-slate":"#2B2D42","surface-container-low":"#f9f3ec","tertiary":"#406922","tertiary-fixed-dim":"#a5d480","tertiary-container":"#76a355","surface":"#fef8f1","on-primary-container":"#5b1604","on-secondary-fixed":"#251a00","on-secondary-fixed-variant":"#5b4300","surface-variant":"#e7e2db","inverse-surface":"#32302c","error":"#ba1a1a","on-tertiary":"#ffffff","butter-yellow":"#F9C74F","on-tertiary-fixed":"#0b2000","on-secondary":"#ffffff","on-surface-variant":"#55423e","secondary-container":"#fdcb52","surface-bright":"#fef8f1","surface-dim":"#dfd9d2","inverse-on-surface":"#f6f0e9","secondary-fixed":"#ffdf9c","on-primary-fixed-variant":"#7c2e19","surface-container":"#f3ede6","primary-fixed":"#ffdbd2","on-surface":"#1d1b17","secondary":"#785a00","outline":"#88726d","primary-fixed-dim":"#ffb4a1","surface-container-lowest":"#ffffff","on-tertiary-fixed-variant":"#29500b","on-tertiary-container":"#173600","primary":"#9a442d","error-container":"#ffdad6","peach-apricot":"#F4A261","tertiary-fixed":"#c0f19a","on-background":"#1d1b17","terracotta-crayon":"#E07A5F","primary-container":"#e07a5f","outline-variant":"#dbc1ba","surface-tint":"#9a442d","lavender-lilac":"#B39DDB","surface-container-highest":"#e7e2db","mint-sage":"#90BE6D","on-secondary-container":"#725500","on-error":"#ffffff","cerulean-sky":"#64B5F6","on-primary-fixed":"#3c0800","secondary-fixed-dim":"#f1c048","on-primary":"#ffffff","inverse-primary":"#ffb4a1","surface-container-high":"#ede7e0"},borderRadius:{"DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px"},spacing:{"space-xl":"2.5rem","space-lg":"1.5rem","gutter":"1.5rem","gutter-mobile":"1rem","space-md":"1rem","margin":"2.5rem","margin-mobile":"1rem","space-sm":"0.5rem","space-xs":"0.25rem"},fontFamily:{"label-md":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"]},fontSize:{"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"600"}],"display-lg":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["26px",{"lineHeight":"34px","letterSpacing":"-0.01em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"22px","fontWeight":"400"}],"title-md":["18px",{"lineHeight":"24px","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"display-lg-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.015em","fontWeight":"700"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.03em","fontWeight":"700"}]}}}};</script><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head><body class="bg-surface font-body-md text-body-md text-on-surface"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-space-lg lg:px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[24px]">menu</span></button><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-DEFAULT bg-primary-container flex items-center justify-center text-on-primary font-headline-sm font-bold shadow-[0_2px_8px_rgba(224,122,95,0.2)]"><span class="material-symbols-outlined text-[20px] text-on-primary">child_care</span></div><div class="flex flex-col"><span class="font-title-md text-title-md text-on-surface tracking-tight leading-none">The Purple Cubby Inc.</span><span class="font-label-sm text-label-sm text-on-surface-variant tracking-wider uppercase">School CRM</span></div></div><div class="h-6 w-px bg-surface-variant mx-space-xs hidden sm:block"></div><div class="relative hidden sm:flex items-center"><div class="flex items-center gap-space-xs bg-surface-container-low hover:bg-surface-container-high px-space-sm py-1.5 rounded-full cursor-pointer transition-colors"><span class="material-symbols-outlined text-primary text-[18px]">domain</span><span class="font-label-md text-label-md text-on-surface">North Valley Main Campus</span><span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span></div></div></div><nav class="hidden xl:flex items-center gap-space-xs bg-surface-container-low p-1 rounded-full" data-active-classes="bg-primary-container text-on-primary font-label-lg rounded-full shadow-[0_2px_6px_rgba(224,122,95,0.18)]"><a class="px-space-md py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors font-label-lg text-label-lg" data-path="overview" href="#">Overview</a><a aria-current="page" class="px-space-md py-1.5 transition-colors bg-primary-container text-on-primary font-label-lg rounded-full shadow-[0_2px_6px_rgba(224,122,95,0.18)]" data-path="school-owner-portal" href="#">Owner Portal</a><a class="px-space-md py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors font-label-lg text-label-lg" data-path="board-trustee-portal" href="#">Board Trustee</a><a class="px-space-md py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors font-label-lg text-label-lg" data-path="vendor-partner-portal" href="#">Vendor Partner</a><a class="px-space-md py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors font-label-lg text-label-lg" data-path="staff-self-service" href="#">Staff Self-Service</a></nav><div class="flex items-center gap-space-sm"><button aria-label="Quick Notifications" class="relative w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary ring-2 ring-surface"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[0_2px_6px_rgba(154,68,45,0.25)]"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-surface"><div class="flex flex-col w-full">
+<div class="w-full px-space-lg lg:px-margin py-space-xl flex flex-col gap-space-xl">
+<!-- Executive Header Banner -->
+<div class="w-full bg-surface-container-lowest rounded-lg p-space-lg lg:p-space-xl shadow-[0_8px_24px_rgba(224,122,95,0.08),0_2px_6px_rgba(43,45,66,0.03)] flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg relative overflow-hidden">
+<div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-peach-apricot/10 blur-2xl pointer-events-none"></div>
+<div class="absolute -left-10 -bottom-10 w-48 h-48 rounded-full bg-butter-yellow/15 blur-xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-space-xs">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+            Network Executive • 3 Campuses Active
+          </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-container/20 text-on-tertiary-container font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            FY26 Q4 Audit Window
+          </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">
+          Welcome back, Owner Elizabeth Sterling
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+          Consolidated governance, fiduciary delegation limits (BR-02), and cross-campus enrollment pipelines across North Valley Academic Trust.
+        </p>
+</div>
+<div class="relative z-10 flex flex-wrap items-center gap-space-sm">
+<!-- DUAL VIEW SWITCHER -->
+<div class="flex items-center bg-surface-container-low p-1 rounded-full border border-outline-variant/30 text-label-sm font-label-sm shadow-inner">
+  <span class="flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-lowest text-primary font-bold shadow-sm">
+    <span class="material-symbols-outlined text-[16px]">grid_view</span>
+    <span>Cards</span>
+  </span>
+  <a href="School_Owner_Portal_Compact.html" class="flex items-center gap-1 px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition">
+    <span class="material-symbols-outlined text-[16px]">view_list</span>
+    <span>Compact List</span>
+  </a>
+</div>
+<button class="inline-flex items-center gap-2 px-space-md py-3 rounded-full bg-surface-container-low hover:bg-surface-container text-charcoal-slate font-label-lg text-label-lg shadow-[0_2px_6px_rgba(43,45,66,0.04)] transition-all active:scale-95" type="button">
+<span class="material-symbols-outlined text-primary text-[20px]">download</span>
+          Export Multi-Tenant P&amp;L
+        </button>
+<button class="inline-flex items-center gap-2 px-space-md py-3 rounded-full bg-primary-container text-on-primary font-label-lg text-label-lg shadow-[0_4px_16px_rgba(224,122,95,0.28)] hover:brightness-105 active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">fact_check</span>
+          Review High-Value Waivers (3)
+        </button>
+</div>
+</div>
+<!-- Top 4 Metrics Row (Oil Pastel Styled Cards with 36px bold counters) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Metric 1: Revenue -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06),0_2px_6px_rgba(43,45,66,0.02)] flex flex-col justify-between relative overflow-hidden group hover:translate-y-[-2px] transition-all">
+<div class="h-1.5 w-full bg-peach-apricot absolute top-0 left-0"></div>
+<div class="flex items-center justify-between gap-space-sm mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant">Consolidated Net Revenue</span>
+<div class="w-8 h-8 rounded-full bg-peach-apricot/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 mb-1">
+<span class="font-display-lg text-[36px] leading-[44px] font-bold text-charcoal-slate tracking-tight">$1.42M</span>
+<span class="inline-flex items-center text-tertiary font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span> +$84k
+          </span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-2">
+<span>98.2% collection rate</span>
+<span class="text-primary font-label-sm text-label-sm bg-primary-fixed px-2 py-0.5 rounded-full">BR-02-01</span>
+</div>
+</div>
+<!-- Metric 2: Enrollment -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06),0_2px_6px_rgba(43,45,66,0.02)] flex flex-col justify-between relative overflow-hidden group hover:translate-y-[-2px] transition-all">
+<div class="h-1.5 w-full bg-butter-yellow absolute top-0 left-0"></div>
+<div class="flex items-center justify-between gap-space-sm mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant">Network Enrollment</span>
+<div class="w-8 h-8 rounded-full bg-butter-yellow/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">groups</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 mb-1">
+<span class="font-display-lg text-[36px] leading-[44px] font-bold text-charcoal-slate tracking-tight">648 / 680</span>
+<span class="text-tertiary font-label-md text-label-md font-bold">95.3%</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-2">
+<span class="truncate">Central, Garden, &amp; West</span>
+<span class="text-tertiary font-label-sm text-label-sm bg-tertiary-fixed px-2 py-0.5 rounded-full">Cap Opt</span>
+</div>
+</div>
+<!-- Metric 3: High-Value Overrides Pending -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06),0_2px_6px_rgba(43,45,66,0.02)] flex flex-col justify-between relative overflow-hidden group hover:translate-y-[-2px] transition-all">
+<div class="h-1.5 w-full bg-terracotta-crayon absolute top-0 left-0"></div>
+<div class="flex items-center justify-between gap-space-sm mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant">High-Value Overrides</span>
+<div class="w-8 h-8 rounded-full bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[18px]">rule</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 mb-1">
+<span class="font-display-lg text-[36px] leading-[44px] font-bold text-primary tracking-tight">3 Actions</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-error-container text-on-error-container font-label-sm text-label-sm">Urgent</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-2">
+<span class="truncate">&gt;$200 Disc / &gt;$500 Ref</span>
+<span class="text-on-secondary-fixed-variant font-label-sm text-label-sm bg-secondary-fixed px-2 py-0.5 rounded-full">BR-02-03/05</span>
+</div>
+</div>
+<!-- Metric 4: Safeguarding & DBS Audit -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.06),0_2px_6px_rgba(43,45,66,0.02)] flex flex-col justify-between relative overflow-hidden group hover:translate-y-[-2px] transition-all">
+<div class="h-1.5 w-full bg-mint-sage absolute top-0 left-0"></div>
+<div class="flex items-center justify-between gap-space-sm mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant">Safeguarding &amp; Audit Health</span>
+<div class="w-8 h-8 rounded-full bg-mint-sage/25 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">security</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 mb-1">
+<span class="font-display-lg text-[36px] leading-[44px] font-bold text-charcoal-slate tracking-tight">99.8%</span>
+<span class="text-tertiary font-label-md text-label-md">0 Breaches</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-2">
+<span>100% DBS Verified Staff</span>
+<span class="text-tertiary font-label-sm text-label-sm bg-tertiary-fixed px-2 py-0.5 rounded-full">Compliant</span>
+</div>
+</div>
+</div>
+<!-- Main Content Workspace: Asymmetrical Split (2/3 Left, 1/3 Right) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Left Column: Queue & Yield Performance (8 Cols) -->
+<div class="lg:col-span-8 flex flex-col gap-space-lg">
+<!-- Section: Executive Multi-Tier Override Queue -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg lg:p-space-xl shadow-[0_8px_24px_rgba(224,122,95,0.08),0_2px_6px_rgba(43,45,66,0.03)] flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2">
+<div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-terracotta-crayon"></span>
+<h2 class="font-headline-sm text-headline-sm text-charcoal-slate tracking-tight">Executive Multi-Tier Override Queue</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Statutory fiduciary thresholds (BR-02-03, BR-02-05, BR-01-04) requiring Governing Body / Owner sign-off.
+              </p>
+</div>
+<span class="self-start sm:self-auto px-3 py-1 rounded-full bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant">
+              3 Requires Decision
+            </span>
+</div>
+<div class="flex flex-col gap-space-md">
+<!-- Queue Item 1: Sibling Bursary -->
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-sm hover:shadow-[0_4px_12px_rgba(224,122,95,0.08)] transition-all" id="queue-item-1">
+<div class="flex flex-wrap items-start justify-between gap-space-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-butter-yellow/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">family_restroom</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Sibling Bursary Hardship Request</h3>
+<div class="flex flex-wrap items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="font-semibold text-charcoal-slate">Maple Leaf Central</span>
+<span>•</span>
+<span>Theo &amp; Clara Miller (Grade 1 &amp; Pre-K)</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-headline-sm text-headline-sm font-bold text-primary">$450.00 waiver</div>
+<span class="inline-block px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm">
+                    Exceeds Principal $200 Limit (BR-02-03)
+                  </span>
+</div>
+</div>
+<div class="p-3 rounded-DEFAULT bg-surface-container-lowest font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-semibold text-charcoal-slate">Justification:</span> Mid-year single parent emergency furlough. Principal Davies approved local $200 tranche; executive balance of $250 requires Owner sign-off to prevent enrollment hiatus.
+              </div>
+<div class="flex flex-wrap items-center justify-end gap-space-sm pt-1">
+<button class="px-space-md py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-colors" onclick="handleQueueAction('queue-item-1', 'rejected')" type="button">
+                  Reject
+                </button>
+<button class="inline-flex items-center gap-1.5 px-space-md py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:brightness-105 active:scale-95 transition-all shadow-[0_2px_8px_rgba(224,122,95,0.25)]" onclick="handleQueueAction('queue-item-1', 'approved')" type="button">
+<span class="material-symbols-outlined text-[18px]">done</span>
+                  Approve Waiver
+                </button>
+</div>
+</div>
+<!-- Queue Item 2: Relocation Tuition Refund -->
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-sm hover:shadow-[0_4px_12px_rgba(224,122,95,0.08)] transition-all" id="queue-item-2">
+<div class="flex flex-wrap items-start justify-between gap-space-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-cerulean-sky/25 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">currency_exchange</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Relocation Tuition Refund</h3>
+<div class="flex flex-wrap items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="font-semibold text-charcoal-slate">Garden Campus</span>
+<span>•</span>
+<span>Parent: Marcus Dupont (Student: Lucas Dupont)</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-headline-sm text-headline-sm font-bold text-primary">$850.00 refund</div>
+<span class="inline-block px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm">
+                    Exceeds $500 Threshold (BR-02-05)
+                  </span>
+</div>
+</div>
+<div class="p-3 rounded-DEFAULT bg-surface-container-lowest font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-semibold text-charcoal-slate">Justification:</span> Diplomatic relocation notice provided within 14 calendar days. Standard policy retention waived due to verified international re-posting documentation.
+              </div>
+<div class="flex flex-wrap items-center justify-end gap-space-sm pt-1">
+<button class="px-space-md py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-colors" onclick="handleQueueAction('queue-item-2', 'flagged')" type="button">
+                  Flag for Audit
+                </button>
+<button class="inline-flex items-center gap-1.5 px-space-md py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:brightness-105 active:scale-95 transition-all shadow-[0_2px_8px_rgba(224,122,95,0.25)]" onclick="handleQueueAction('queue-item-2', 'approved')" type="button">
+<span class="material-symbols-outlined text-[18px]">done</span>
+                  Approve Refund
+                </button>
+</div>
+</div>
+<!-- Queue Item 3: Post-Notification Slot Reversal -->
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-sm hover:shadow-[0_4px_12px_rgba(224,122,95,0.08)] transition-all" id="queue-item-3">
+<div class="flex flex-wrap items-start justify-between gap-space-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-lavender-lilac/30 flex items-center justify-center text-charcoal-slate">
+<span class="material-symbols-outlined text-[20px]">published_with_changes</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Post-Notification Enrollment Reversal</h3>
+<div class="flex flex-wrap items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="font-semibold text-charcoal-slate">West Early Years</span>
+<span>•</span>
+<span>Maya Lin • Kindergarten Slot Allocation</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<span class="inline-block px-2.5 py-1 rounded-full bg-butter-yellow/30 text-on-secondary-fixed-variant font-label-md text-label-md">
+                    Policy BR-01-04 Lockout
+                  </span>
+</div>
+</div>
+<div class="p-3 rounded-DEFAULT bg-surface-container-lowest font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-semibold text-charcoal-slate">Details:</span> Roster finalized 72 hrs ago. Inter-campus transfer request from Maple Leaf Central to West Early Years to accommodate twin sibling medical accommodations.
+              </div>
+<div class="flex flex-wrap items-center justify-end gap-space-sm pt-1">
+<button class="px-space-md py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-colors" onclick="handleQueueAction('queue-item-3', 'dismissed')" type="button">
+                  Refer to Registrar
+                </button>
+<button class="inline-flex items-center gap-1.5 px-space-md py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:brightness-105 active:scale-95 transition-all shadow-[0_2px_8px_rgba(224,122,95,0.25)]" onclick="handleQueueAction('queue-item-3', 'approved')" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+                  Authorize Exception
+                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Section: Campus Operational Performance & Enrollment Yield -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg lg:p-space-xl shadow-[0_8px_24px_rgba(224,122,95,0.08),0_2px_6px_rgba(43,45,66,0.03)] flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-charcoal-slate tracking-tight">Campus Operational Performance &amp; Enrollment Yield</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Real-time attendance cadence, revenue distribution, and nursery capacity metrics.</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Current Term:</span>
+<span class="font-label-md text-label-md text-on-surface bg-surface-container px-2.5 py-1 rounded-full">Autumn 2026</span>
+</div>
+</div>
+<!-- Comparison Table Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Campus 1: Central -->
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md flex flex-col justify-between gap-space-md relative overflow-hidden">
+<div class="h-1 w-full bg-mint-sage absolute top-0 left-0"></div>
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="inline-flex items-center gap-1 text-tertiary font-label-sm text-label-sm bg-tertiary-fixed px-2 py-0.5 rounded-full font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    Optimal
+                  </span>
+<span class="font-label-md text-label-md text-on-surface-variant">ID: NV-01</span>
+</div>
+<h3 class="font-title-md text-title-md text-charcoal-slate">Central Campus</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Maple Leaf Main Site</p>
+<div class="mt-4 flex flex-col gap-2">
+<div class="flex justify-between items-baseline font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Headcount:</span>
+<span class="font-bold text-on-surface">310 Students (98.4%)</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-mint-sage h-full rounded-full" style="width: 98.4%;"></div>
+</div>
+<div class="flex justify-between items-baseline font-body-sm text-body-sm pt-2">
+<span class="text-on-surface-variant">Q4 Yield:</span>
+<span class="font-bold text-charcoal-slate">$680,000</span>
+</div>
+<div class="flex justify-between items-baseline font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Attendance Avg:</span>
+<span class="font-bold text-tertiary">98.0%</span>
+</div>
+</div>
+</div>
+<div class="pt-2">
+<button class="w-full py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-label-md text-label-md text-center transition-colors" type="button">
+                  Campus Drilldown
+                </button>
+</div>
+</div>
+<!-- Campus 2: Garden Campus -->
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md flex flex-col justify-between gap-space-md relative overflow-hidden">
+<div class="h-1 w-full bg-butter-yellow absolute top-0 left-0"></div>
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="inline-flex items-center gap-1 text-on-secondary-fixed-variant font-label-sm text-label-sm bg-secondary-fixed px-2 py-0.5 rounded-full font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    Waitlist Active
+                  </span>
+<span class="font-label-md text-label-md text-on-surface-variant">ID: NV-02</span>
+</div>
+<h3 class="font-title-md text-title-md text-charcoal-slate">Garden Campus</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Meadow Montessori Wing</p>
+<div class="mt-4 flex flex-col gap-2">
+<div class="flex justify-between items-baseline font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Headcount:</span>
+<span class="font-bold text-on-surface">214 Students (96.8%)</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-butter-yellow h-full rounded-full" style="width: 96.8%;"></div>
+</div>
+<div class="flex justify-between items-baseline font-body-sm text-body-sm pt-2">
+<span class="text-on-surface-variant">Q4 Yield:</span>
+<span class="font-bold text-charcoal-slate">$470,000</span>
+</div>
+<div class="flex justify-between items-baseline font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Attendance Avg:</span>
+<span class="font-bold text-tertiary">94.0%</span>
+</div>
+</div>
+</div>
+<div class="pt-2">
+<button class="w-full py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-label-md text-label-md text-center transition-colors" type="button">
+                  Campus Drilldown
+                </button>
+</div>
+</div>
+<!-- Campus 3: West Early Years -->
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md flex flex-col justify-between gap-space-md relative overflow-hidden">
+<div class="h-1 w-full bg-cerulean-sky absolute top-0 left-0"></div>
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="inline-flex items-center gap-1 text-primary font-label-sm text-label-sm bg-primary-fixed px-2 py-0.5 rounded-full font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                    Expansion Planned
+                  </span>
+<span class="font-label-md text-label-md text-on-surface-variant">ID: NV-03</span>
+</div>
+<h3 class="font-title-md text-title-md text-charcoal-slate">West Early Years</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pre-K &amp; Reception Hub</p>
+<div class="mt-4 flex flex-col gap-2">
+<div class="flex justify-between items-baseline font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Headcount:</span>
+<span class="font-bold text-on-surface">124 Students (88.5%)</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-cerulean-sky h-full rounded-full" style="width: 88.5%;"></div>
+</div>
+<div class="flex justify-between items-baseline font-body-sm text-body-sm pt-2">
+<span class="text-on-surface-variant">Q4 Yield:</span>
+<span class="font-bold text-charcoal-slate">$270,000</span>
+</div>
+<div class="flex justify-between items-baseline font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Attendance Avg:</span>
+<span class="font-bold text-tertiary">96.0%</span>
+</div>
+</div>
+</div>
+<div class="pt-2">
+<button class="w-full py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-label-md text-label-md text-center transition-colors" type="button">
+                  Campus Drilldown
+                </button>
+</div>
+</div>
+</div>
+<!-- Network Snapshot SVG Sparkline Bar Visualization -->
+<div class="p-space-md rounded-DEFAULT bg-surface-container-low flex flex-col md:flex-row items-center justify-between gap-space-md mt-2">
+<div class="flex flex-col gap-1 max-w-sm">
+<span class="font-title-md text-title-md text-charcoal-slate">Rolling 6-Month Cross-Campus Tuition Pace</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Projected forward run-rate: +6.4% year-over-year factoring Q1 nursery additions.</p>
+</div>
+<div class="w-full md:w-64 h-16 flex items-end gap-3 justify-center md:justify-end">
+<div class="flex flex-col items-center gap-1 h-full justify-end">
+<div class="w-6 rounded-t-full bg-peach-apricot/40 h-8"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">May</span>
+</div>
+<div class="flex flex-col items-center gap-1 h-full justify-end">
+<div class="w-6 rounded-t-full bg-peach-apricot/60 h-10"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jun</span>
+</div>
+<div class="flex flex-col items-center gap-1 h-full justify-end">
+<div class="w-6 rounded-t-full bg-peach-apricot/60 h-9"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jul</span>
+</div>
+<div class="flex flex-col items-center gap-1 h-full justify-end">
+<div class="w-6 rounded-t-full bg-peach-apricot/80 h-12"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Aug</span>
+</div>
+<div class="flex flex-col items-center gap-1 h-full justify-end">
+<div class="w-6 rounded-t-full bg-primary-container h-14 shadow-[0_2px_8px_rgba(224,122,95,0.3)]"></div>
+<span class="font-label-sm text-label-sm font-bold text-primary">Sep</span>
+</div>
+<div class="flex flex-col items-center gap-1 h-full justify-end">
+<div class="w-6 rounded-t-full bg-primary h-16 shadow-[0_2px_8px_rgba(154,68,45,0.3)]"></div>
+<span class="font-label-sm text-label-sm font-bold text-charcoal-slate">Oct</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Reconciliation, Procurement & Governance (4 Cols) -->
+<div class="lg:col-span-4 flex flex-col gap-space-lg">
+<!-- Section: Monthly Ledger Reconciliation & Discrepancy Lock (BR-02-06) -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.08),0_2px_6px_rgba(43,45,66,0.03)] flex flex-col gap-space-md relative overflow-hidden">
+<div class="h-1.5 w-full bg-terracotta-crayon absolute top-0 left-0"></div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<h2 class="font-title-md text-title-md text-charcoal-slate">Monthly Ledger Reconciliation</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant -mt-2">
+            Fiscal policy rule BR-02-06 requires Owner authorization prior to period lock when automated variance &gt;$100 exists.
+          </p>
+<div class="p-space-md rounded-DEFAULT bg-error-container/20 flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Oct 2026 Close Status</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">warning</span> Discrepancy
+              </span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Stripe Gate Fee Variance:</span>
+<span class="font-title-md text-title-md font-bold text-primary">+$420.00</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Batch settlement ID #STR-9918 reflects foreign currency surcharge from 3 expat enrollee registrations without automated surcharge code.
+            </p>
+<div class="pt-2">
+<button class="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full bg-primary-container text-on-primary font-label-lg text-label-lg hover:brightness-105 active:scale-95 transition-all shadow-[0_2px_8px_rgba(224,122,95,0.25)]" id="lock-ledger-btn" onclick="lockLedger()" type="button">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+                Override &amp; Lock Period Ledger
+              </button>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-1">
+<span>Prior Month: Sep 2026</span>
+<span class="text-tertiary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Locked (0 Variance)
+            </span>
+</div>
+</div>
+<!-- Section: Network Capital & Procurement Approvals (BR-08-01) -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.08),0_2px_6px_rgba(43,45,66,0.03)] flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-charcoal-slate">Procurement Approvals</h2>
+<span class="px-2 py-0.5 rounded-full bg-butter-yellow/30 text-on-secondary-fixed-variant font-label-sm text-label-sm">
+              BR-08-01 (&gt;$10k)
+            </span>
+</div>
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-mint-sage/25 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">forest</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-charcoal-slate">Outdoor Nature Playscape</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Vendor: EcoPlay Timberworks Ltd</span>
+</div>
+</div>
+<div class="flex items-baseline justify-between pt-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Requisition Amount:</span>
+<span class="font-headline-sm text-headline-sm font-bold text-charcoal-slate">$14,250.00</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              FSC-certified timber climbing frame and mud-kitchen sensory installation for Garden Campus. Includes 5-year commercial safety guarantee.
+            </p>
+<div class="flex items-center gap-2 pt-2">
+<button class="flex-1 py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-colors" type="button">
+                Specs
+              </button>
+<button class="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:brightness-105 active:scale-95 transition-all shadow-[0_2px_8px_rgba(224,122,95,0.2)]" onclick="approveProcurement(this)" type="button">
+<span class="material-symbols-outlined text-[16px]">check</span>
+                Approve PO
+              </button>
+</div>
+</div>
+<!-- Secondary Procurement Item -->
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-cerulean-sky/25 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">devices</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-charcoal-slate">Interactive Displays</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">West Early Years • $11,800.00</span>
+</div>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-container text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Campus Leadership Directory Snapshot -->
+<div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-[0_8px_24px_rgba(224,122,95,0.08),0_2px_6px_rgba(43,45,66,0.03)] flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-charcoal-slate">Leadership Key Contacts</h2>
+<span class="font-label-sm text-label-sm text-primary font-bold cursor-pointer hover:underline">All Principals</span>
+</div>
+<div class="flex flex-col gap-space-xs pt-1">
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold font-label-sm text-label-sm">
+                  MD
+                </div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Margaret Davies</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Principal • Central</div>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-mint-sage" title="On Campus"></span>
+</div>
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed text-secondary flex items-center justify-center font-bold font-label-sm text-label-sm">
+                  SK
+                </div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Dr. Simon Klein</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Head of School • Garden</div>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-mint-sage" title="On Campus"></span>
+</div>
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold font-label-sm text-label-sm">
+                  AP
+                </div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Amina Patel</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Director • West Early Years</div>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-butter-yellow" title="In Meetings"></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Feedback Toast for Interactive Clicks -->
+<div class="fixed bottom-space-xl left-1/2 -translate-x-1/2 z-50 px-space-md py-2.5 rounded-full bg-inverse-surface text-inverse-on-surface font-label-md text-label-md shadow-xl opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2" id="executive-toast">
+<span class="material-symbols-outlined text-[18px] text-mint-sage">check_circle</span>
+<span id="toast-message">Action processed securely under BR-02 audit logging.</span>
+</div>
+</div>
+<!-- Interactive JavaScript logic for micro-interactions -->
+<script>
+    function showExecutiveToast(msg) {
+      const toast = document.getElementById('executive-toast');
+      const toastMsg = document.getElementById('toast-message');
+      if (toast && toastMsg) {
+        toastMsg.textContent = msg;
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        toast.classList.add('opacity-100');
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'pointer-events-none');
+          toast.classList.remove('opacity-100');
+        }, 3200);
+      }
+    }
+
+    function handleQueueAction(itemId, actionType) {
+      const itemEl = document.getElementById(itemId);
+      if (itemEl) {
+        itemEl.style.transition = 'all 0.3s ease';
+        itemEl.style.opacity = '0.4';
+        itemEl.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+          itemEl.remove();
+          showExecutiveToast('Request ' + actionType + ' with cryptographic sign-off logged to audit ledger.');
+        }, 350);
+      }
+    }
+
+    function lockLedger() {
+      const btn = document.getElementById('lock-ledger-btn');
+      if (btn) {
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">verified</span> Period Locked & Ledger Certified';
+        btn.classList.remove('bg-primary-container', 'text-on-primary');
+        btn.classList.add('bg-tertiary-container', 'text-on-tertiary-container', 'pointer-events-none');
+        showExecutiveToast('Oct 2026 Ledger locked. Discrepancy override noted under Owner credential.');
+      }
+    }
+
+    function approveProcurement(btn) {
+      if (btn) {
+        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">verified</span> Approved';
+        btn.classList.remove('bg-primary-container', 'text-on-primary');
+        btn.classList.add('bg-tertiary-container', 'text-on-tertiary-container', 'pointer-events-none');
+        showExecutiveToast('PO #ECO-8819 approved for $14,250.00 with Trustee sync.');
+      }
+    }
+  </script>
+</div></main><aside class="fixed bottom-space-lg right-space-lg z-50"><button aria-label="ThePuffy AI Agent Assistant" class="group relative flex items-center gap-space-sm bg-primary-container text-on-primary px-space-md py-3 rounded-full shadow-[0_14px_32px_rgba(224,122,95,0.25),0_4px_10px_rgba(43,45,66,0.06)] hover:brightness-105 active:scale-95 transition-all" type="button"><span class="w-8 h-8 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]"><span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span></span><div class="flex flex-col text-left"><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-fixed-variant leading-none">Agent AI</span><span class="font-title-md text-title-md font-bold leading-tight">ThePuffy</span></div><span class="material-symbols-outlined text-[18px] text-on-primary">smart_toy</span></button></aside><footer class="w-full bg-surface-container-low py-space-xl"><div class="w-full px-space-lg lg:px-margin flex flex-col md:flex-row items-center justify-between gap-space-md"><div class="flex items-center gap-space-sm"><div class="w-7 h-7 rounded-DEFAULT bg-primary-container flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[16px]">child_care</span></div><span class="font-title-md text-title-md text-on-surface">The Purple Cubby Inc.</span></div><div class="flex flex-wrap items-center justify-center gap-space-lg text-on-surface-variant font-label-md text-label-md"><a class="hover:text-on-surface transition-colors" href="#">Security &amp; Trust</a><a class="hover:text-on-surface transition-colors" href="#">Privacy Policy</a><a class="hover:text-on-surface transition-colors" href="#">Campus Directory</a><a class="hover:text-on-surface transition-colors" href="#">Help Center</a></div><div class="text-on-surface-variant font-body-sm text-body-sm text-center md:text-right">© 2025 The Purple Cubby Inc.. All rights reserved.</div></div></footer>
+  <!-- Responsive Slide-Over Drawer -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-50 transition-opacity duration-300 opacity-0 pointer-events-none" onclick="closeDrawer()"></div>
+  <div id="slide-drawer" class="fixed top-0 right-0 h-full w-full max-w-lg bg-surface shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-border md:rounded-l-3xl overflow-hidden max-md:top-auto max-md:inset-x-0 max-md:bottom-0 max-md:max-h-[88vh] max-md:rounded-t-3xl max-md:translate-x-0 max-md:translate-y-full max-md:border-t">
+    <!-- Drawer Header -->
+    <div class="px-6 py-4 bg-canvas/70 border-b border-border flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div id="drawer-icon-container" class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center font-bold">
+          <span id="drawer-icon" class="material-symbols-outlined text-xl">info</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="drawer-title" class="font-serif font-bold text-base text-charcoal leading-snug">Drawer Title</h3>
+            <span id="drawer-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/20 text-green-800">Status</span>
+          </div>
+          <p id="drawer-subtitle" class="text-xs text-charcoal/60 mt-0.5">Subtitle</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="drawer-fullscreen-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-semibold text-charcoal hover:bg-canvas flex items-center gap-1 shadow-xs" title="Open full workspace">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+          <span class="hidden sm:inline">Workspace</span>
+        </a>
+        <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Drawer Body -->
+    <div id="drawer-content" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+
+    <!-- Drawer Footer -->
+    <div id="drawer-footer" class="px-6 py-4 bg-cream/40 border-t border-border flex items-center justify-between shrink-0">
+      <span id="drawer-footer-note" class="text-xs text-charcoal/50">Auto-saved to cloud ledger</span>
+      <div id="drawer-actions" class="flex items-center gap-2">
+        <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-charcoal hover:bg-canvas">Cancel</button>
+        <button id="drawer-primary-btn" onclick="executeDrawerAction()" class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-bold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">check</span>
+          <span id="drawer-btn-text">Confirm Action</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-notify" class="fixed bottom-6 right-6 z-50 bg-charcoal text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="w-7 h-7 rounded-full bg-mint/30 text-mint flex items-center justify-center">
+      <span class="material-symbols-outlined text-base font-bold">check_circle</span>
+    </div>
+    <div>
+      <span id="toast-title" class="text-xs font-bold block">Action Completed</span>
+      <span id="toast-msg" class="text-[11px] text-white/70 block">Record updated and state synced.</span>
+    </div>
+  </div>
+
+  <script>
+  let currentDrawerAction = null;
+
+  function openDrawer(config) {
+    document.getElementById('drawer-title').textContent = config.title || 'Details';
+    document.getElementById('drawer-subtitle').textContent = config.subtitle || '';
+    
+    const badgeEl = document.getElementById('drawer-badge');
+    badgeEl.textContent = config.badge || 'Active';
+    badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (config.badgeClass || 'bg-mint/20 text-green-800');
+    
+    document.getElementById('drawer-icon').textContent = config.icon || 'info';
+    document.getElementById('drawer-fullscreen-link').href = config.fullscreenUrl || '#';
+    document.getElementById('drawer-btn-text').textContent = config.actionText || 'Confirm';
+    document.getElementById('drawer-content').innerHTML = config.contentHtml || '';
+    
+    if (config.footerNote) {
+      document.getElementById('drawer-footer-note').textContent = config.footerNote;
+    }
+    
+    currentDrawerAction = config.onAction || null;
+
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    backdrop.classList.add('opacity-100');
+
+    if (window.innerWidth >= 768) {
+      drawer.classList.remove('translate-x-full');
+    } else {
+      drawer.classList.remove('max-md:translate-y-full');
+    }
+  }
+
+  function closeDrawer() {
+    const drawer = document.getElementById('slide-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+
+    backdrop.classList.add('opacity-0', 'pointer-events-none');
+    backdrop.classList.remove('opacity-100');
+
+    drawer.classList.add('translate-x-full');
+    drawer.classList.add('max-md:translate-y-full');
+  }
+
+  function executeDrawerAction() {
+    if (currentDrawerAction) {
+      currentDrawerAction();
+    }
+    closeDrawer();
+  }
+
+  function showToast(title, msg) {
+    const toast = document.getElementById('toast-notify');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3500);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+  
+  function openCampusVarianceDrawer(campusName, enrollment, capacity, ebitda, url) {
+    openDrawer({
+      title: campusName + " — Executive Radar",
+      subtitle: enrollment + " / " + capacity + " Seats Filled",
+      badge: "EBITDA: " + ebitda,
+      badgeClass: "bg-mint/20 text-green-800 font-bold",
+      icon: "domain",
+      fullscreenUrl: url || "../Analytics/Kpi_Metrics_Overview_Widget.html",
+      actionText: "Download Campus Audit Dossier",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-2">
+            <span class="font-bold text-charcoal block">Operational & Fiscal Variance</span>
+            <p class="text-charcoal/70 text-[11px]">Enrolment yield operating at 94.2% capacity. Annual EBITDA margin outpacing board target by +3.4%.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-center">
+            <div class="p-3 bg-surface rounded-xl border border-border">
+              <span class="text-charcoal/50 text-[10px] block">Tuition Collection</span>
+              <span class="font-bold text-mint text-sm">98.6%</span>
+            </div>
+            <div class="p-3 bg-surface rounded-xl border border-border">
+              <span class="text-charcoal/50 text-[10px] block">Staff Retention</span>
+              <span class="font-bold text-charcoal text-sm">96.0%</span>
+            </div>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Audit Dossier Exported", campusName + " comprehensive fiscal report downloaded.");
+      }
+    });
+  }
+
+  function openExecutiveWaiverDrawer(beneficiary, amount, reason, url) {
+    openDrawer({
+      title: "Bursary Override: " + beneficiary,
+      subtitle: reason + " • " + amount,
+      badge: "Executive Approval",
+      badgeClass: "bg-terracotta/20 text-terracotta font-bold",
+      icon: "verified_user",
+      fullscreenUrl: url || "../Billing/Discount_Waiver_Modal.html",
+      actionText: "Authorize Hardship Bursary",
+      contentHtml: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-canvas/60 rounded-2xl border border-border space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-charcoal">${beneficiary}</span>
+              <span class="font-bold text-terracotta text-sm">${amount}</span>
+            </div>
+            <p class="text-charcoal/70 text-[11px]">Discretionary endowment waiver granted under founder humanitarian scholarship program.</p>
+          </div>
+          <div class="p-3 bg-surface rounded-xl border border-border">
+            <span class="text-[10px] text-charcoal/50 uppercase font-bold block">Budget Ledger Allocation</span>
+            <p class="font-semibold text-charcoal">Drawn from Board Special Assistance Endowment Fund</p>
+          </div>
+        </div>
+      `,
+      onAction: () => {
+        showToast("Bursary Authorized", amount + " executive waiver granted to " + beneficiary + ".");
+      }
+    });
+  }
+  </script>
+
+</body></html>

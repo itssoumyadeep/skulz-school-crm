@@ -1,3 +1,5 @@
+"""API v1 endpoints for HR appraisals, staff contracts, CPD, payroll leave deductions, vendor procurement, events, and communications."""
+
 from uuid import UUID
 
 from django.http import JsonResponse

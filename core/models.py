@@ -1,3 +1,5 @@
+"""Data models for the multi-tenant School CRM, including tenant-scoped entities, identity, academics, attendance, health, billing, HR, procurement, and events."""
+
 import uuid
 from datetime import datetime
 from django.conf import settings

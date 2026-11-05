@@ -1,3 +1,5 @@
+"""Role-based access control (RBAC) decorators enforcing role permissions on API routes."""
+
 from functools import wraps
 from django.http import JsonResponse
 from core.schemas.base import build_error

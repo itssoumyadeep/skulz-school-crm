@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Permission Slip Modal — School CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#fff8f2',
+            surface: '#ffffff',
+            border: '#ead8c7',
+            charcoal: '#121417',
+            terracotta: '#e07a5f',
+            mint: '#90be6d',
+            marigold: '#fdba3b',
+            cerulean: '#64b5f6',
+            lilac: '#b39ddb',
+            cream: '#faf0e6'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-canvas text-charcoal font-sans min-h-screen p-4 md:p-8 flex items-center justify-center">
+
+  <div class="relative w-full max-w-4xl bg-surface border border-border rounded-2xl shadow-xl overflow-hidden">
+    
+    <!-- Modal Header -->
+    <div class="px-6 py-5 border-b border-border bg-canvas/60 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-terracotta/20 text-terracotta flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">assignment_turned_in</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="font-serif text-xl font-bold text-charcoal">Digital Excursion Permission & Waiver</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-terracotta/20 text-terracotta border border-terracotta/40">Action Required</span>
+          </div>
+          <p class="text-xs text-charcoal/60 mt-0.5">Ontario Science Centre & Planetarium Inquiry Workshop • Grade 5 Field Trip</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 rounded-lg hover:bg-border/40 text-charcoal/60 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <!-- Student & Trip Summary -->
+    <div class="px-6 py-3.5 bg-cream/40 border-b border-border flex flex-wrap items-center justify-between gap-4 text-xs">
+      <div>
+        <span class="text-charcoal/50 block">Student Name:</span>
+        <span class="font-bold text-charcoal">Liam Vance (Grade 5A)</span>
+      </div>
+      <div>
+        <span class="text-charcoal/50 block">Excursion Date:</span>
+        <span class="font-semibold text-charcoal">Friday, Nov 14, 2026</span>
+      </div>
+      <div>
+        <span class="text-charcoal/50 block">Departure & Return:</span>
+        <span class="font-semibold text-charcoal">8:45 AM Departure • 3:15 PM Return</span>
+      </div>
+      <div>
+        <span class="text-charcoal/50 block">Lead Educator:</span>
+        <span class="font-semibold text-charcoal">Mrs. Margaret Kowalski</span>
+      </div>
+    </div>
+
+    <!-- Slip Form Body -->
+    <div class="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
+
+      <!-- Section 1: Trip Itinerary & Logistics -->
+      <div class="p-4 rounded-xl border border-border bg-canvas/30 space-y-3">
+        <h3 class="text-xs font-bold text-charcoal uppercase tracking-wider flex items-center gap-2">
+          <span class="material-symbols-outlined text-base text-terracotta">map</span>
+          Excursion Itinerary & Transportation
+        </h3>
+        <p class="text-xs text-charcoal/80 leading-relaxed">
+          Students will depart Oakwood Academy aboard chartered First Student Canada school coaches equipped with 3-point seatbelts. The program includes a guided physics robotics lab at the Ontario Science Centre followed by lunch in the cafeteria and a special planetarium screening.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+          <div class="p-2.5 bg-surface rounded-lg border border-border">
+            <span class="text-charcoal/50 block text-[10px]">Supervisor Ratio</span>
+            <span class="font-bold text-charcoal">1 Adult to 7 Students</span>
+          </div>
+          <div class="p-2.5 bg-surface rounded-lg border border-border">
+            <span class="text-charcoal/50 block text-[10px]">Lunch Arrangements</span>
+            <span class="font-bold text-charcoal">Packed Brown-Bag Nut-Free Lunch</span>
+          </div>
+          <div class="p-2.5 bg-surface rounded-lg border border-border">
+            <span class="text-charcoal/50 block text-[10px]">Required Dress</span>
+            <span class="font-bold text-charcoal">School Polo & Closed-Toe Shoes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Emergency Medical & Dietary Consent -->
+      <div class="p-4 rounded-xl border border-border bg-canvas/30 space-y-3">
+        <h3 class="text-xs font-bold text-charcoal uppercase tracking-wider flex items-center gap-2">
+          <span class="material-symbols-outlined text-base text-mint">medical_services</span>
+          Emergency Medical & Dietary Authorization
+        </h3>
+        
+        <div class="space-y-2 text-xs">
+          <div class="p-3 bg-surface rounded-lg border border-border flex items-center justify-between">
+            <div>
+              <span class="font-bold text-charcoal block">Sabrina's Law / EpiPen Notice:</span>
+              <span class="text-charcoal/60">Liam has severe peanut anaphylaxis on file. Lead educator carries secondary school auto-injector.</span>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-terracotta/20 text-terracotta">Medical Alert Active</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1">Special Medical Notes / Day-of Instructions</label>
+            <input type="text" placeholder="E.g., Inhaler before physical activity, travel motion sickness..." class="w-full px-3 py-2 text-xs bg-surface border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-terracotta">
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Fee Payment Integration ($28.50) -->
+      <div class="p-4 rounded-xl border border-border bg-cream/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-bold text-charcoal uppercase tracking-wider block">Field Trip Fee & Admission Charge</span>
+          <p class="text-xs text-charcoal/60 mt-0.5">Includes charter coach travel, admission, and science workshop materials.</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="font-mono text-xl font-bold text-charcoal">$28.50 CAD</span>
+          <select class="px-3 py-1.5 text-xs bg-surface border border-border rounded-lg text-charcoal font-semibold">
+            <option>Bill to Parent Stripe Account (•••• 4242)</option>
+            <option>Deduct from Prepaid Student Activity Ledger</option>
+            <option>Request Hardship Subsidy Waiver</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section 4: Digital Parent Signature & Waiver Pad -->
+      <div class="p-4 rounded-xl border border-border bg-canvas/40 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-charcoal uppercase tracking-wider">Parent / Guardian Legal E-Signature</h3>
+          <span class="text-[11px] text-charcoal/50">Legally binding consent under Ontario Electronic Commerce Act</span>
+        </div>
+
+        <div class="p-3 bg-surface rounded-xl border border-border">
+          <div class="flex items-center justify-between pb-2 border-b border-border text-xs text-charcoal/60">
+            <span>Draw or type your signature below:</span>
+            <button class="text-terracotta font-semibold hover:underline">Clear Signature</button>
+          </div>
+          <div class="py-4 text-center">
+            <span class="font-serif italic text-2xl font-bold text-charcoal tracking-wide">Eleanor Vance</span>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-2 pt-1">
+          <input type="checkbox" id="consentAgree" checked class="w-4 h-4 rounded text-terracotta focus:ring-terracotta border-border mt-0.5">
+          <label for="consentAgree" class="text-xs text-charcoal/80 cursor-pointer leading-tight">
+            I, Eleanor Vance (Parent/Guardian), grant permission for Liam Vance to participate in the Ontario Science Centre excursion. I authorize supervising staff to obtain emergency medical treatment in case of urgent illness or injury.
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div class="px-6 py-4 bg-cream/30 border-t border-border flex items-center justify-between">
+      <button class="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-canvas text-charcoal flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-sm">download</span> Download PDF Copy
+      </button>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-canvas text-charcoal">
+          Cancel
+        </button>
+        <button class="px-5 py-2 rounded-xl bg-terracotta text-white text-xs font-semibold hover:bg-terracotta/90 transition shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">verified</span> Sign & Authorize Payment ($28.50)
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

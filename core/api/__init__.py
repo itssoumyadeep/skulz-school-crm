@@ -1,3 +1,5 @@
+"""Root NinjaAPI router initialization and v1 API aggregator."""
+
 from django.http import JsonResponse
 from ninja import NinjaAPI
 from core.api.v1.enrollments import router as enrollments_router

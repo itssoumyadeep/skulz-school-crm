@@ -1,3 +1,5 @@
+"""Pydantic schemas for fee structures, invoices, payment submissions, receipts, refunds, discounts, and Stripe checkout."""
+
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Literal

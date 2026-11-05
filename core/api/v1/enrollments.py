@@ -1,3 +1,5 @@
+"""API v1 endpoints for student admissions, application drafts, document uploads/verification, assessment scoring, and decision workflows."""
+
 import uuid
 import mimetypes
 from pathlib import Path
@@ -10,6 +12,13 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse
 from ninja import Router
+
+import time
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.db import transaction
+from jose import jwt
 
 from core.models import Tenant, Application, Student, Parent, Document, EmergencyContact, AuditLog, PortalRoleMembership
 from core.auth.bearer import JWTAuthBearer
@@ -31,6 +40,8 @@ from core.schemas.enrollment import (
     ParentUpdateInput,
     EmergencyContactCreateSchema,
     EmergencyContactUpdateSchema,
+    ParentPublicApplySchema,
+    SiblingEnrollmentCreateSchema,
 )
 from core.business_objects.analytics import ParentDashboardBO
 from core.business_objects.enrollment import StudentProfileBO, EnrollmentCaseBO
@@ -106,6 +117,156 @@ def create_enrollment(request, payload: EnrollmentCreateSchema):
         actor_role=actor_role
     )
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=201)
+
+
+@router.post("/enrollments/public-apply")
+def public_apply(request, payload: ParentPublicApplySchema):
+    """
+    Public admissions intake: Allows a prospective parent to create an account and submit
+    their child's initial enrollment application in a single atomic transaction.
+    Returns parent JWT token, student number (STU-YYYY-XXXX), and application details.
+    """
+    school_code = payload.school_code.strip()
+    tenant = Tenant.objects.filter(
+        models.Q(subdomain__iexact=school_code) |
+        (models.Q(tenant_id=school_code) if len(school_code) == 36 else models.Q(pk__isnull=True)),
+        is_deleted=False
+    ).first()
+    if not tenant:
+        return JsonResponse(build_error(
+            errors=[{"code": "TENANT_NOT_FOUND", "field": "school_code", "message": f"School with code '{school_code}' not found."}],
+            role="Parent"
+        ), status=404)
+
+    user_model = get_user_model()
+    parent_email = str(payload.parent_email).strip().lower()
+    username = f"{parent_email}_{tenant.subdomain}"
+    first_name, _, last_name = payload.parent_name.partition(" ")
+
+    with transaction.atomic():
+        user = user_model.objects.filter(username__iexact=username).first() or user_model.objects.filter(email__iexact=parent_email).first()
+        if not user:
+            user = user_model.objects.create_user(
+                username=username,
+                email=parent_email,
+                password=payload.password,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=True,
+            )
+            parent_group, _ = Group.objects.get_or_create(name="Parent")
+            user.groups.add(parent_group)
+            PortalRoleMembership.objects.create(
+                user=user,
+                tenant=tenant,
+                group=parent_group,
+                role="Parent",
+                is_active=True,
+            )
+
+        data = {
+            "student_name": payload.student_name,
+            "dob": payload.dob,
+            "grade": payload.grade,
+            "desired_start_date": payload.desired_start_date,
+            "preferred_intake": "Fall 2026",
+            "comments": payload.comments,
+            "save_as_draft": True,
+            "parent_name": payload.parent_name,
+            "parent_relationship": payload.parent_relationship,
+            "parent_email": parent_email,
+            "parent_phone": payload.parent_phone,
+            "emergency_contact_name": payload.emergency_contact_name,
+            "emergency_contact_phone": payload.emergency_contact_phone,
+            "emergency_contact_relationship": payload.emergency_contact_relationship,
+            "medical_consent": payload.medical_consent,
+        }
+
+        user_uuid = user.pk if isinstance(user.pk, UUID) else None
+        bo = EnrollmentCaseBO.create_enrollment(
+            tenant=tenant,
+            data=data,
+            actor_id=user_uuid,
+            actor_role="Parent"
+        )
+
+        subject = uuid.uuid5(uuid.NAMESPACE_URL, f"school-crm:{tenant.tenant_id}:{user.pk}")
+        claims = {
+            "sub": str(subject),
+            "user_id": str(subject),
+            "user_name": user.get_full_name() or user.username,
+            "email": user.email,
+            "tenant_id": str(tenant.tenant_id),
+            "role": "parent",
+            "exp": int(time.time()) + 60 * 60 * 8,
+            "linked_student_ids": [str(bo.student.student_id)],
+        }
+        access_token = jwt.encode(claims, settings.JWT_SECRET_KEY, algorithm="HS256")
+
+        resp_data = bo.to_dict()
+        resp_data["auth"] = {
+            "access_token": access_token,
+            "token_type": "Bearer",
+            "role": "parent",
+            "username": user.username,
+        }
+
+        return JsonResponse(build_response(data=resp_data, tenant_id=tenant.tenant_id, role="Parent"), status=201)
+
+
+@router.post("/enrollments/sibling-apply", auth=JWTAuthBearer())
+@require_roles('Parent')
+def sibling_apply(request, payload: SiblingEnrollmentCreateSchema):
+    """
+    Sibling admissions intake: Authenticated parent registers an additional sibling.
+    Automatically reuses parent contact records and flags sibling discount eligibility (BR-02-01).
+    """
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    user_email = getattr(request, 'user_email', '')
+
+    existing_parent = Parent.objects.filter(
+        tenant_id=request.tenant_id,
+        email__iexact=user_email,
+        is_deleted=False
+    ).first()
+
+    parent_name = existing_parent.name if existing_parent else getattr(request, 'user_name', 'Parent')
+    parent_phone = existing_parent.phone if existing_parent else ''
+    parent_rel = existing_parent.relationship if existing_parent else 'Parent'
+
+    data = {
+        "student_name": payload.student_name,
+        "dob": payload.dob,
+        "grade": payload.grade,
+        "desired_start_date": payload.desired_start_date,
+        "preferred_intake": "Fall 2026",
+        "comments": payload.comments,
+        "save_as_draft": True,
+        "parent_name": parent_name,
+        "parent_relationship": parent_rel,
+        "parent_email": user_email,
+        "parent_phone": parent_phone,
+        "emergency_contact_name": payload.emergency_contact_name,
+        "emergency_contact_phone": payload.emergency_contact_phone,
+        "emergency_contact_relationship": payload.emergency_contact_relationship or "Emergency Contact",
+        "medical_consent": payload.medical_consent,
+    }
+
+    bo = EnrollmentCaseBO.create_enrollment(
+        tenant=tenant,
+        data=data,
+        actor_id=actor_id,
+        actor_role="Parent"
+    )
+
+    if payload.sibling_discount_requested:
+        bo.application.workflow_data["sibling_discount_eligible"] = True
+        bo.application.workflow_data["sibling_discount_rate"] = 0.15
+        bo.application.save(update_fields=["workflow_data"])
+
+    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role="Parent"), status=201)
+
 
 
 @router.patch("/enrollments/{uuid:application_id}", auth=JWTAuthBearer())

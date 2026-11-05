@@ -1,79 +1,176 @@
 :root {
-  --background: #f8f9fd;
-  --surface: #ffffff;
-  --border: #e5e7eb;
-  --foreground: #111827;
-  --muted: #6b7280;
-  --primary: #7c3aed;
-  --primary-foreground: #ffffff;
-  --primary-50: #faf5ff;
-  --primary-100: #f3e8ff;
-  --primary-200: #e9d5ff;
-  --primary-300: #d8b4fe;
-  --primary-400: #c084fc;
-  --primary-500: #a855f7;
-  --primary-600: #9333ea;
-  --primary-700: #7e22ce;
-  --primary-800: #6b21a8;
-  --primary-900: #581c87;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --input: var(--border);
-  --ring: var(--primary);
-  --popover: var(--surface);
-  --popover-foreground: var(--foreground);
-  --secondary: var(--background);
-  --secondary-foreground: var(--foreground);
-  --accent-surface: var(--primary-50);
-  --accent-foreground: var(--primary-800);
-  --destructive: var(--danger);
-  --destructive-foreground: var(--primary-foreground);
-  --overlay: var(--foreground);
-  --radius: var(--app-radius-md);
-  --app-radius-sm: 0.25rem;
-  --app-radius-md: 0.5rem;
-  --app-radius-lg: 0.75rem;
-  --app-shadow:
-    0 1px 3px 0 rgb(17 24 39 / 0.1), 0 1px 2px -1px rgb(17 24 39 / 0.1);
+  /* StitchMCP — Warm Editorial Pedagogic Surface & Canvas Palette */
+  --background: #fff8f2;
+  --surface: #fff8f2;
+  --surface-dim: #dfd9d3;
+  --surface-bright: #fff8f2;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f9f3ec;
+  --surface-container: #f3ede7;
+  --surface-container-high: #ede7e1;
+  --surface-container-highest: #e7e1dc;
+  --surface-variant: #e7e1dc;
+  --surface-tint: #5d5e62;
 
-  --sidebar-light-background: var(--surface);
-  --sidebar-light-foreground: var(--foreground);
-  --sidebar-light-muted: var(--muted);
-  --sidebar-light-border: var(--border);
-  --sidebar-light-active: var(--primary-50);
-  --sidebar-light-active-foreground: var(--primary);
-  --sidebar-light-hover: var(--background);
-  --sidebar-dark-background: var(--foreground);
-  --sidebar-dark-foreground: var(--primary-foreground);
-  --sidebar-dark-muted: color-mix(
-    in srgb,
-    var(--primary-foreground) 68%,
-    transparent
-  );
-  --sidebar-dark-border: color-mix(
-    in srgb,
-    var(--primary-foreground) 14%,
-    transparent
-  );
-  --sidebar-dark-active: color-mix(
-    in srgb,
-    var(--primary) 26%,
-    var(--foreground)
-  );
-  --sidebar-dark-active-foreground: var(--primary-foreground);
+  /* StitchMCP — Typography & Ink Hierarchy */
+  --on-background: #1d1b18;
+  --on-surface: #1d1b18;
+  --on-surface-variant: #45474a;
+  --inverse-surface: #32302c;
+  --inverse-on-surface: #f6f0ea;
+  --outline: #76777b;
+  --outline-variant: #c6c6ca;
+
+  /* StitchMCP — Primary (Deep Carbon Obsidian) */
+  --primary: #000000;
+  --on-primary: #ffffff;
+  --primary-container: #1a1c1f;
+  --on-primary-container: #838487;
+  --inverse-primary: #c6c6ca;
+  --primary-fixed: #e2e2e6;
+  --primary-fixed-dim: #c6c6ca;
+  --on-primary-fixed: #1a1c1f;
+  --on-primary-fixed-variant: #45474a;
+
+  /* StitchMCP — Secondary (Warm Marigold) */
+  --secondary: #7e5700;
+  --on-secondary: #ffffff;
+  --secondary-container: #febb3c;
+  --on-secondary-container: #6f4c00;
+  --secondary-fixed: #ffdeac;
+  --secondary-fixed-dim: #febb3c;
+  --on-secondary-fixed: #281900;
+  --on-secondary-fixed-variant: #5f4100;
+
+  /* StitchMCP — Tertiary (Fresh Mint) */
+  --tertiary: #000000;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #002113;
+  --on-tertiary-container: #009765;
+  --tertiary-fixed: #7dfabd;
+  --tertiary-fixed-dim: #5fdda3;
+  --on-tertiary-fixed: #002113;
+  --on-tertiary-fixed-variant: #005235;
+
+  /* StitchMCP — Error / Safeguarding Coral */
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  /* StitchMCP — Oil Pastel Edition Tokens */
+  --paper: #fcf9f2;
+  --paper-card: #fffdf9;
+  --paper-tint: #f5efe6;
+  --crayon-charcoal: #2d2a26;
+  --crayon-espresso: #4a443d;
+  --crayon-muted: #756d63;
+  --pastel-sun: #fed766;
+  --pastel-butter: #ffe68c;
+  --pastel-mint: #bce6cd;
+  --pastel-mint-deep: #3e7b58;
+  --pastel-sky: #bde0fe;
+  --pastel-sky-deep: #2563eb;
+  --pastel-peach: #ffc6b3;
+  --pastel-peach-deep: #c2410c;
+  --pastel-apricot: #ffb4a2;
+  --pastel-lilac: #e2d4f0;
+  --pastel-lilac-deep: #6b46c1;
+  --pastel-coral: #ff8a65;
+  --crayon-red: #d9381e;
+
+  /* Shared Component Compatibility Mappings */
+  --foreground: var(--on-surface);
+  --muted: var(--on-surface-variant);
+  --border: var(--surface-container-high);
+  --primary-foreground: var(--on-primary);
+  --primary-50: var(--surface-container-low);
+  --primary-100: var(--surface-container);
+  --primary-200: var(--surface-container-high);
+  --primary-300: var(--surface-container-highest);
+  --primary-400: var(--outline-variant);
+  --primary-500: var(--outline);
+  --primary-600: var(--on-surface-variant);
+  --primary-700: var(--inverse-surface);
+  --primary-800: var(--primary-container);
+  --primary-900: var(--primary);
+
+  --success: #28b07a;
+  --warning: #febb3c;
+  --danger: #ba1a1a;
+  --input: var(--outline-variant);
+  --ring: var(--primary);
+  --popover: var(--surface-container-lowest);
+  --popover-foreground: var(--on-surface);
+  --secondary-foreground: var(--on-secondary);
+  --accent-surface: var(--surface-container);
+  --accent-foreground: var(--on-surface);
+  --destructive: var(--error);
+  --destructive-foreground: var(--on-error);
+  --overlay: var(--on-surface);
+
+  /* StitchMCP — Radii */
+  --app-radius-sm: 0.5rem;
+  --app-radius-md: 1rem;
+  --app-radius-lg: 2rem;
+  --app-radius-xl: 3rem;
+  --radius: var(--app-radius-md);
+
+  /* StitchMCP — Spacing Scale */
+  --spacing-margin: 2.5rem;
+  --spacing-margin-mobile: 1rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-gutter-mobile: 1rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2rem;
+
+  /* StitchMCP — Elevation & Ambient Shadows */
+  --app-shadow:
+    0px 8px 30px rgb(18 20 23 / 0.04), 0px 2px 6px rgb(18 20 23 / 0.02);
+  --app-shadow-hover:
+    0px 16px 40px rgb(18 20 23 / 0.08), 0px 4px 12px rgb(18 20 23 / 0.03);
+  --app-shadow-pill:
+    0px 10px 25px rgb(0 0 0 / 0.04), 0px 2px 8px rgb(0 0 0 / 0.02);
+  --app-shadow-warm: 0px 8px 30px rgb(254 187 60 / 0.18);
+  --app-shadow-floating: 0px 18px 45px rgb(18 20 23 / 0.12);
+  --app-shadow-cta: 0px 10px 35px rgb(18 20 23 / 0.22);
+  --app-shadow-pastel:
+    0px 8px 24px -4px rgb(74 68 61 / 0.06),
+    0px 2px 6px -1px rgb(74 68 61 / 0.04);
+  --app-shadow-pastel-hover:
+    0px 14px 30px -4px rgb(74 68 61 / 0.1),
+    0px 4px 10px -2px rgb(74 68 61 / 0.06);
+  --app-shadow-pastel-warm: 0px 10px 25px -3px rgb(254 215 102 / 0.35);
+
+  /* Sidebar Compatibility Tokens */
+  --sidebar-light-background: var(--surface-container-lowest);
+  --sidebar-light-foreground: var(--on-surface);
+  --sidebar-light-muted: var(--on-surface-variant);
+  --sidebar-light-border: var(--surface-container-high);
+  --sidebar-light-active: var(--primary);
+  --sidebar-light-active-foreground: var(--on-primary);
+  --sidebar-light-hover: var(--surface-container-low);
+  --sidebar-dark-background: var(--primary-container);
+  --sidebar-dark-foreground: var(--on-primary);
+  --sidebar-dark-muted: var(--on-primary-container);
+  --sidebar-dark-border: color-mix(in srgb, var(--on-primary) 14%, transparent);
+  --sidebar-dark-active: var(--secondary-container);
+  --sidebar-dark-active-foreground: var(--on-secondary-container);
   --sidebar-dark-hover: color-mix(
     in srgb,
-    var(--primary-foreground) 8%,
-    var(--foreground)
+    var(--on-primary) 8%,
+    var(--primary-container)
   );
 
-  --card: var(--surface);
-  --surface2: var(--background);
+  --card: var(--surface-container-lowest);
+  --surface2: var(--surface-container-low);
   --purple: var(--primary);
-  --purple-light: var(--primary-50);
-  --purple-dark: var(--primary-800);
-  --accent: var(--success);
+  --purple-light: var(--surface-container-low);
+  --purple-dark: var(--primary-container);
+  --accent: var(--tertiary-fixed-dim);
 }
 
 [data-sidebar="light"] {
@@ -97,13 +194,86 @@
 }
 
 @theme inline {
+  /* Core & StitchMCP Semantic Colors */
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-variant: var(--surface-variant);
+  --color-surface-tint: var(--surface-tint);
+
+  --color-on-background: var(--on-background);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-inverse-primary: var(--inverse-primary);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-on-primary-fixed: var(--on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
+
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
+
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+
+  /* StitchMCP Oil Pastel Edition Semantic Colors */
+  --color-paper: var(--paper);
+  --color-paper-card: var(--paper-card);
+  --color-paper-tint: var(--paper-tint);
+  --color-crayon-charcoal: var(--crayon-charcoal);
+  --color-crayon-espresso: var(--crayon-espresso);
+  --color-crayon-muted: var(--crayon-muted);
+  --color-pastel-sun: var(--pastel-sun);
+  --color-pastel-butter: var(--pastel-butter);
+  --color-pastel-mint: var(--pastel-mint);
+  --color-pastel-mint-deep: var(--pastel-mint-deep);
+  --color-pastel-sky: var(--pastel-sky);
+  --color-pastel-sky-deep: var(--pastel-sky-deep);
+  --color-pastel-peach: var(--pastel-peach);
+  --color-pastel-peach-deep: var(--pastel-peach-deep);
+  --color-pastel-apricot: var(--pastel-apricot);
+  --color-pastel-lilac: var(--pastel-lilac);
+  --color-pastel-lilac-deep: var(--pastel-lilac-deep);
+  --color-pastel-coral: var(--pastel-coral);
+  --color-crayon-red: var(--crayon-red);
+
+  /* Shared UI Primitive Color Aliases */
   --color-border: var(--border);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted);
-  --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-50: var(--primary-50);
   --color-primary-100: var(--primary-100);
@@ -122,7 +292,6 @@
   --color-ring: var(--ring);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent-surface);
   --color-accent-foreground: var(--accent-foreground);
@@ -136,13 +305,110 @@
   --color-sidebar-active: var(--sidebar-active);
   --color-sidebar-active-foreground: var(--sidebar-active-foreground);
   --color-sidebar-hover: var(--sidebar-hover);
+
+  /* StitchMCP Spacing Tokens */
+  --spacing-margin: var(--spacing-margin);
+  --spacing-margin-mobile: var(--spacing-margin-mobile);
+  --spacing-gutter: var(--spacing-gutter);
+  --spacing-gutter-mobile: var(--spacing-gutter-mobile);
+  --spacing-space-xs: var(--spacing-space-xs);
+  --spacing-space-sm: var(--spacing-space-sm);
+  --spacing-space-md: var(--spacing-space-md);
+  --spacing-space-lg: var(--spacing-space-lg);
+  --spacing-space-xl: var(--spacing-space-xl);
+
+  /* StitchMCP Radii & Shadows */
   --radius-sm: var(--app-radius-sm);
   --radius-md: var(--app-radius-md);
   --radius-lg: var(--app-radius-lg);
+  --radius-xl: var(--app-radius-xl);
   --shadow: var(--app-shadow);
   --shadow-xs: var(--app-shadow);
   --shadow-sm: var(--app-shadow);
-  --shadow-md: var(--app-shadow);
-  --shadow-lg: var(--app-shadow);
-  --font-sans: var(--font-inter);
+  --shadow-md: var(--app-shadow-hover);
+  --shadow-lg: var(--app-shadow-floating);
+  --shadow-pill: var(--app-shadow-pill);
+  --shadow-warm: var(--app-shadow-warm);
+  --shadow-floating: var(--app-shadow-floating);
+  --shadow-cta: var(--app-shadow-cta);
+  --shadow-pastel: var(--app-shadow-pastel);
+  --shadow-pastel-hover: var(--app-shadow-pastel-hover);
+  --shadow-pastel-warm: var(--app-shadow-pastel-warm);
+
+  /* StitchMCP Typography Font Family */
+  --font-sans: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-display-lg: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-display-lg-mobile:
+    var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-headline-lg: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-headline-md: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-headline-sm: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-title-md: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-body-lg: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-body-md: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-body-sm: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-label-lg: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-label-md: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-label-sm: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+
+  /* StitchMCP Typography Scale */
+  --text-display-lg: 56px;
+  --text-display-lg--line-height: 64px;
+  --text-display-lg--letter-spacing: -0.03em;
+  --text-display-lg--font-weight: 700;
+
+  --text-display-lg-mobile: 38px;
+  --text-display-lg-mobile--line-height: 44px;
+  --text-display-lg-mobile--letter-spacing: -0.02em;
+  --text-display-lg-mobile--font-weight: 700;
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 700;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--letter-spacing: -0.015em;
+  --text-headline-md--font-weight: 600;
+
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--letter-spacing: -0.01em;
+  --text-headline-sm--font-weight: 600;
+
+  --text-title-md: 16px;
+  --text-title-md--line-height: 22px;
+  --text-title-md--letter-spacing: -0.005em;
+  --text-title-md--font-weight: 600;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--letter-spacing: 0em;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--letter-spacing: 0em;
+  --text-body-md--font-weight: 400;
+
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 16px;
+  --text-body-sm--letter-spacing: 0.01em;
+  --text-body-sm--font-weight: 400;
+
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 18px;
+  --text-label-lg--letter-spacing: 0.01em;
+  --text-label-lg--font-weight: 600;
+
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.02em;
+  --text-label-md--font-weight: 600;
+
+  --text-label-sm: 11px;
+  --text-label-sm--line-height: 14px;
+  --text-label-sm--letter-spacing: 0.03em;
+  --text-label-sm--font-weight: 700;
 }

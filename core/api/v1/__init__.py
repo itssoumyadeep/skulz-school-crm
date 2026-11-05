@@ -1,3 +1,5 @@
+"""API v1 router aggregator grouping all domain-specific routers."""
+
 from .enrollments import router as enrollments_router
 from .academics import router as academics_router
 from .attendance import router as attendance_router

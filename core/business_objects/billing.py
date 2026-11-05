@@ -1,3 +1,5 @@
+"""Domain business logic for fee structures, invoice generation, payment balance validation, refunds, discounts, and Stripe webhooks."""
+
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
