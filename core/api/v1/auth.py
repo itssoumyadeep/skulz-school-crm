@@ -315,7 +315,7 @@ def signup(request, payload: SignupSchema):
                 password=payload.password,
                 first_name=first_name,
                 last_name=last_name,
-                is_active=True,
+                is_active=False,
             )
             parent_group, _ = Group.objects.get_or_create(name="Parent")
             user.groups.add(parent_group)
@@ -348,7 +348,7 @@ def signup(request, payload: SignupSchema):
                 "email": user.email,
                 "name": user.get_full_name() or user.username,
                 "role": "parent",
-                "status": "active",
+                "status": "pending_activation",
             },
             tenant_id=tenant.tenant_id,
             role="parent",
@@ -522,5 +522,3 @@ def update_my_profile_picture(request, payload: ProfilePictureUpdateSchema):
         ),
         status=200,
     )
-
-

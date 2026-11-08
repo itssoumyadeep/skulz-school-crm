@@ -615,3 +615,10 @@ This log records durable architecture, security, and product decisions so later 
 
 
 
+
+### 2026-11-08 — Parent Signup Activation State CI Repair
+
+- **Status:** Completed & Verified (PR #2)
+- **Decision:** Updated `POST /api/v1/auth/signup` to create newly registered parent users with `is_active=False` and return `status: "pending_activation"`, matching the auth API contract and test expectations for pending account activation.
+- **Verification:** `pytest /home/runner/work/skulz-school-crm/skulz-school-crm/tests/test_api_auth.py -k signup_creates_parent_user_with_hashed_password_and_tenant_membership` passed.
+- **Evidence:** [`core/api/v1/auth.py`](../core/api/v1/auth.py), [`tests/test_api_auth.py`](../tests/test_api_auth.py).
