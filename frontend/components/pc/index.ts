@@ -46,3 +46,17 @@ export { KpiCard } from "./kpi-card";
 export { PageHeader } from "./page-header";
 export { StatusPill, type StatusPillVariant } from "./status-pill";
 export { SectionPanel, type SectionPanelProps } from "./section-panel";
+export {
+  ProfilePictureModal,
+  TeacherIcon,
+  DEFAULT_TEACHER_AVATAR,
+  DEFAULT_PARENT_AVATAR,
+  CO_TEACHER_AVATAR_1,
+  CO_TEACHER_AVATAR_2,
+  PRESET_AVATARS,
+  PROFILE_PICTURE_EVENT,
+  getCachedProfilePicture,
+  setCachedProfilePicture,
+  type ProfilePictureModalProps,
+  type PresetAvatarOption,
+} from "./profile-picture-modal";

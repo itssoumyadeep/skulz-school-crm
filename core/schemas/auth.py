@@ -73,3 +73,25 @@ class TrialSignupSchema(BaseModel):
         if self.password != self.confirm_password:
             raise ValueError("Password and confirmation do not match.")
         return self
+
+
+class ProfilePictureUpdateSchema(BaseModel):
+    avatar_url: Optional[str] = Field(default=None, max_length=524288)
+
+    @field_validator("avatar_url")
+    @classmethod
+    def validate_avatar_url(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            return None
+        if (
+            value.startswith("data:image/")
+            or value.startswith("https://")
+            or value.startswith("http://")
+            or value.startswith("/")
+        ):
+            return value
+        raise ValueError("Avatar must be a valid image data URI or URL.")
+

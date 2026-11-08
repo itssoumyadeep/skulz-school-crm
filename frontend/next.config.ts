@@ -9,13 +9,21 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' http://127.0.0.1:8000 ws: wss:",
+  "connect-src 'self' http://127.0.0.1:8000 http://192.168.10.101:8000 ws: wss:",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
 ].join("; ");
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["10.0.0.156"],
+  allowedDevOrigins: ["10.0.0.156", "192.168.10.101", "localhost"],
+  async rewrites() {
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: "http://127.0.0.1:8000/api/v1/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {

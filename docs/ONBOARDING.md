@@ -21,7 +21,7 @@ Welcome to the team! This guide walks you through setting up your local environm
 - **Backend:** Python 3.10+, Django 4.2+, Django Ninja (FastAPI-like type-safe routing on Django), Pydantic v2 schemas.
 - **Database:** PostgreSQL 15+ with Row-Level Security (RLS) enabled via `TenantScopedModel`.
 - **Authentication:** Stateless JWT bearer tokens (`core/auth/bearer.py`), Role-Based Access Control (RBAC), and Tenant Scoping (`core/auth/scoping.py`).
-- **Frontend:** Next.js 16+ (App Router), TypeScript, Tailwind CSS, Lucide icons, Storybook 8.
+- **Frontend:** Next.js 16+ (App Router), TypeScript, Tailwind CSS, Lucide icons.
 - **Styling:** Semantic CSS variables in `frontend/styles/tokens.css` following the Stitch Design System.
 
 ---
@@ -111,7 +111,6 @@ npm install
 npm run dev
 ```
 - Open `http://localhost:3000` to view the portal.
-- Run `npm run storybook` to launch the isolated component sandbox on `http://localhost:6006`.
 
 ---
 

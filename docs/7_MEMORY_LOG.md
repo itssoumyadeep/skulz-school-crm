@@ -259,6 +259,17 @@ This log records durable architecture, security, and product decisions so later 
 - **Verification:** `git status` clean; TypeScript validation (`tsc -p frontend/tsconfig.json --noEmit`) passes with 0 errors.
 
 
+### 2026-11-05 — Storybook Deprecation & Removal
+
+- **Status:** Accepted
+- **Decision:** Fully remove unused Storybook infrastructure across the repository:
+  1. Deleted Storybook directories and files: `frontend/.storybook/`, `frontend/storybook-static/`, `frontend/stories/`, and all 11 component story files in `frontend/components/pc/*.stories.tsx`.
+  2. Removed `storybook` and `build-storybook` scripts, as well as Storybook devDependencies (`storybook`, `@storybook/nextjs-vite`, `eslint-plugin-storybook`, `vite`) from `frontend/package.json`.
+  3. Cleaned up `frontend/eslint.config.mjs` to remove `eslint-plugin-storybook` imports and configuration.
+  4. Removed Storybook references and commands from `README.md` and `docs/ONBOARDING.md`.
+- **Context:** User requested removal of Storybook as it is not used in the project lifecycle (all visual prototyping follows the 3-Stage workflow with standalone HTML prototypes under `Artefacts/UX Designs/` and portable React widgets in `frontend/components/widgets/`).
+- **Evidence:** `README.md`, `frontend/package.json`, `frontend/eslint.config.mjs`, `docs/ONBOARDING.md`. Verified with `npx tsc --noEmit` passing with 0 errors.
+
 ### 2026-11-05 — Prospective Parent Admissions Onboarding & Sibling Enrollment Lifecycle
 
 - **Status:** Accepted
@@ -274,8 +285,30 @@ This log records durable architecture, security, and product decisions so later 
 - **Context:** Solves the missing link where prospective parents (and parents applying for a sibling) need portal access before active student admission without violating server-side data access boundaries.
 - **Evidence:** [`Artefacts/UX Designs/Parent/Parent_Apply_Registration.html`](../Artefacts/UX%20Designs/Parent/Parent_Apply_Registration.html), [`Artefacts/UX Designs/Parent/Parent_Applicant_Dashboard.html`](../Artefacts/UX%20Designs/Parent/Parent_Applicant_Dashboard.html), [`core/api/v1/enrollments.py`](../core/api/v1/enrollments.py), [`core/schemas/enrollment.py`](../core/schemas/enrollment.py), [`core/auth/scoping.py`](../core/auth/scoping.py).
 
+### 2026-11-05 — Feature Branch `feature/parent-screens`: Full Functional Parent Portal & Admissions Intake Suite
 
-
+- **Status:** Completed & Verified (Branch `feature/parent-screens`)
+- **Decision:** Designed, developed, and verified the complete functional Parent Portal Suite across Tier 3 portable widgets and Tier 4 Next.js App Router routes, strictly adhering to the 4-Tier Component Hierarchy, tokenized styling, and portable widget contract (`WidgetBaseProps`):
+  1. **Branch Creation:** Switched to dedicated feature branch `feature/parent-screens`.
+  2. **Tier 3 Portable Functional Widgets (`frontend/components/widgets/parent/`):**
+     - `ParentMultiChildDashboardWidget` (`parent-multi-child-dashboard.tsx` & `.types.ts`): Dual-mode dashboard supporting active enrolled students (academic progress, attendance streak, health alerts, fee payment slider, events) and applicant students (5-stage admissions progress tracker, document checklist, offer review, and acceptance trigger).
+     - `SiblingIntakeModal` (`sibling-intake-modal.tsx` & `.types.ts`): Multi-child intake dialog pre-populating family contacts with automatic 10% sibling tuition discount calculation (`BR-02-01`).
+     - `OfferAcceptanceModal` (`offer-acceptance-modal.tsx` & `.types.ts`): Formal offer confirmation modal requiring mandatory passport photo upload and terms sign-off (`BR-01-08`).
+     - `ParentBillingWidget` (`parent-billing-widget.tsx` & `.types.ts`): Invoices table with status pills, sibling discount badge, partial payment amount slider, and Stripe Checkout redirect.
+     - `ParentEventsWidget` (`parent-events-widget.tsx` & `.types.ts`): Activity roster with digital parental permission slip sign-off.
+     - `PublicApplyWizard` (`public-apply-wizard.tsx` & `.types.ts`): 4-step wizard for public student intake & instant parent account registration.
+  3. **Tier 4 Next.js App Router Routes:**
+     - `/parent`: Main multi-child dashboard with live API data fetching, optimistic fallback data, sibling modal trigger, and offer acceptance workflow.
+     - `/parent/billing`: Dedicated financial and invoices hub with partial payment slider and Stripe integration.
+     - `/parent/events`: School excursions and activities with permission slip signing.
+     - `/apply`: Public admissions onboarding flow writing session cookie and redirecting to the parent dashboard.
+     - `/parent/layout.tsx`: Responsive `AppShell` with parent-branded sidebar, topbar, and session integration.
+  4. **API Client Integration (`frontend/app/lib/api.ts`):** Added `submitPublicApply`, `submitSiblingApply`, `fetchEvents`, and typed schemas.
+  5. **Verification & Clean Build:**
+     - TypeScript check: 0 errors (`tsc --noEmit`).
+     - ESLint check: 0 errors (`npm run lint`).
+     - Next.js production build: 100% successful static page generation across `/apply`, `/parent`, `/parent/billing`, and `/parent/events`.
+- **Evidence:** [`frontend/app/parent/`](../frontend/app/parent/), [`frontend/app/apply/`](../frontend/app/apply/), [`frontend/components/widgets/parent/`](../frontend/components/widgets/parent/), [`frontend/app/lib/api.ts`](../frontend/app/lib/api.ts).
 
 ### 2026-11-03 — Admissions & Student Management UX Mockup Suite (`UI_SB`)
 
@@ -476,6 +509,17 @@ This log records durable architecture, security, and product decisions so later 
 - **Verification:** `git status` clean; TypeScript validation (`tsc -p frontend/tsconfig.json --noEmit`) passes with 0 errors.
 
 
+### 2026-11-05 — Storybook Deprecation & Removal
+
+- **Status:** Accepted
+- **Decision:** Fully remove unused Storybook infrastructure across the repository:
+  1. Deleted Storybook directories and files: `frontend/.storybook/`, `frontend/storybook-static/`, `frontend/stories/`, and all 11 component story files in `frontend/components/pc/*.stories.tsx`.
+  2. Removed `storybook` and `build-storybook` scripts, as well as Storybook devDependencies (`storybook`, `@storybook/nextjs-vite`, `eslint-plugin-storybook`, `vite`) from `frontend/package.json`.
+  3. Cleaned up `frontend/eslint.config.mjs` to remove `eslint-plugin-storybook` imports and configuration.
+  4. Removed Storybook references and commands from `README.md` and `docs/ONBOARDING.md`.
+- **Context:** User requested removal of Storybook as it is not used in the project lifecycle (all visual prototyping follows the 3-Stage workflow with standalone HTML prototypes under `Artefacts/UX Designs/` and portable React widgets in `frontend/components/widgets/`).
+- **Evidence:** `README.md`, `frontend/package.json`, `frontend/eslint.config.mjs`, `docs/ONBOARDING.md`. Verified with `npx tsc --noEmit` passing with 0 errors.
+
 ### 2026-11-05 — Prospective Parent Admissions Onboarding & Sibling Enrollment Lifecycle
 
 - **Status:** Accepted
@@ -491,6 +535,67 @@ This log records durable architecture, security, and product decisions so later 
 - **Context:** Solves the missing link where prospective parents (and parents applying for a sibling) need portal access before active student admission without violating server-side data access boundaries.
 - **Evidence:** [`Artefacts/UX Designs/Parent/Parent_Apply_Registration.html`](../Artefacts/UX%20Designs/Parent/Parent_Apply_Registration.html), [`Artefacts/UX Designs/Parent/Parent_Applicant_Dashboard.html`](../Artefacts/UX%20Designs/Parent/Parent_Applicant_Dashboard.html), [`core/api/v1/enrollments.py`](../core/api/v1/enrollments.py), [`core/schemas/enrollment.py`](../core/schemas/enrollment.py), [`core/auth/scoping.py`](../core/auth/scoping.py).
 
+### 2026-11-05 — Feature Branch `feature/parent-screens`: Full Functional Parent Portal & Admissions Intake Suite
+
+- **Status:** Completed & Verified (Branch `feature/parent-screens`)
+- **Decision:** Designed, developed, and verified the complete functional Parent Portal Suite across Tier 3 portable widgets and Tier 4 Next.js App Router routes, strictly adhering to the 4-Tier Component Hierarchy, tokenized styling, and portable widget contract (`WidgetBaseProps`):
+  1. **Branch Creation:** Switched to dedicated feature branch `feature/parent-screens`.
+  2. **Tier 3 Portable Functional Widgets (`frontend/components/widgets/parent/`):**
+     - `ParentMultiChildDashboardWidget` (`parent-multi-child-dashboard.tsx` & `.types.ts`): Dual-mode dashboard supporting active enrolled students (academic progress, attendance streak, health alerts, fee payment slider, events) and applicant students (5-stage admissions progress tracker, document checklist, offer review, and acceptance trigger).
+     - `SiblingIntakeModal` (`sibling-intake-modal.tsx` & `.types.ts`): Multi-child intake dialog pre-populating family contacts with automatic 10% sibling tuition discount calculation (`BR-02-01`).
+     - `OfferAcceptanceModal` (`offer-acceptance-modal.tsx` & `.types.ts`): Formal offer confirmation modal requiring mandatory passport photo upload and terms sign-off (`BR-01-08`).
+     - `ParentBillingWidget` (`parent-billing-widget.tsx` & `.types.ts`): Invoices table with status pills, sibling discount badge, partial payment amount slider, and Stripe Checkout redirect.
+     - `ParentEventsWidget` (`parent-events-widget.tsx` & `.types.ts`): Activity roster with digital parental permission slip sign-off.
+     - `PublicApplyWizard` (`public-apply-wizard.tsx` & `.types.ts`): 4-step wizard for public student intake & instant parent account registration.
+  3. **Tier 4 Next.js App Router Routes:**
+     - `/parent`: Main multi-child dashboard with live API data fetching, optimistic fallback data, sibling modal trigger, and offer acceptance workflow.
+     - `/parent/billing`: Dedicated financial and invoices hub with partial payment slider and Stripe integration.
+     - `/parent/events`: School excursions and activities with permission slip signing.
+     - `/apply`: Public admissions onboarding flow writing session cookie and redirecting to the parent dashboard.
+     - `/parent/layout.tsx`: Responsive `AppShell` with parent-branded sidebar, topbar, and session integration.
+  4. **API Client Integration (`frontend/app/lib/api.ts`):** Added `submitPublicApply`, `submitSiblingApply`, `fetchEvents`, and typed schemas.
+  5. **Verification & Clean Build:**
+     - TypeScript check: 0 errors (`tsc --noEmit`).
+     - ESLint check: 0 errors (`npm run lint`).
+     - Next.js production build: 100% successful static page generation across `/apply`, `/parent`, `/parent/billing`, and `/parent/events`.
+- **Evidence:** [`frontend/app/parent/`](../frontend/app/parent/), [`frontend/app/apply/`](../frontend/app/apply/), [`frontend/components/widgets/parent/`](../frontend/components/widgets/parent/), [`frontend/app/lib/api.ts`](../frontend/app/lib/api.ts).
+
+### 2026-11-06 — Full Functional Teacher Portal Suite (Middleware, RBAC & 4-Tier UX Architecture)
+
+- **Status:** Completed & Verified (Branch `feature/parent-screens`)
+- **Decision:** Replaced the legacy 2,231-line monolithic `frontend/app/teacher/page.tsx` with a modular, multi-route **4-Tier Teacher Portal** built on reusable **Tier 3 Portable Functional Domain Widgets** (`WidgetBaseProps`) and hardened client/server RBAC boundaries:
+  1. **Middleware Hardening (`frontend/middleware.ts`):**
+     - Fixed URL-encoded `pc_session` cookie decoding (`safeDecodeCookie`), enforced path-segment boundary matching (`path === prefix || path.startsWith(\`${prefix}/\`)`) across `/teacher` and `/teacher/:path*`, removed the duplicate `/staff/:path*` matcher, and added exact `/governance` protection while preserving `/?denied=missing-session`, `/?denied=expired-session`, and `/?denied=role-mismatch` redirects.
+  2. **Backend RBAC Alignment (`core/api/v1/sprint5.py`):**
+     - Enabled `'Teacher'` on `POST /messages`, `GET /messages`, and `GET /messages/{message_id}` for classroom guardian notes and excursion waiver reminders while keeping `POST /broadcasts/emergency` and `PATCH /messages/{message_id}` restricted to `'Admin'`, `'Principal'`, and `'Owner'`.
+  3. **Tier 3 Portable Domain Widgets (`frontend/components/widgets/`):**
+     - `teacher/`: `TeacherDashboardOverviewWidget` (implementing both the Oil Pastel 12-col **Cards** view from `Teacher_Dashboard_Overview.html` and the **Compact List** timeline/table view from `Teacher_Dashboard_Overview_Compact.html`, 3 contextual `DetailPanel` slide-over drawers, and the floating `ThePuffy` Classroom Copilot) and `TeacherMessagesWidget` (guardian comms ledger + excursion permission slip waiver tracker).
+     - `attendance/`: `AttendanceRosterWidget` (`P | A | L | E` inline toggles, `Mark All Present`, `Commit Morning Roll`, `BR-03-01` 24-hour statutory lock, `BR-03-02` absence alert badges), `AttendanceMarkModal`, and `LeaveRequestModal` (`BR-03-04`).
+     - `academics/`: `CurriculumPlannerWidget`, `LessonPlanModal` (5-stage instructional sequence + IEP scaffolds, `BR-04-01`), `AssignmentHomeworkModal` (`BR-04-02`), `MarksModerationWidget` (cohort KPIs, bell-curve distribution, `BR-04-04` moderation & `BR-04-07` immutability lock, applicant assessment queue), and `ReportCardWidget` (`BR-04-06`).
+     - `admissions/` & `students/`: `AssessmentScoreModal` (3-domain 100-point rubric) and `StudentProfileDrawer` (360 student slide-over with `showBilling: false` capability gating for Teachers).
+     - `health/` & `operations/`: `HealthProfileWidget` (Sabrina's Law anaphylaxis/asthma action plan cards, `BR-07-04` drill readiness), `IncidentReportModal` (interactive anatomical body-zone selector, `BR-07-02` 1h SLA & `BR-07-03` escalation), `MedicationLogModal` (`BR-07-01` consent gate), and `BroadcastComposerModal` (merge variable chips & capability-gated emergency broadcast).
+  4. **Tier 4 Teacher Portal Routes (`frontend/app/teacher/`):**
+     - `layout.tsx` (Oil Pastel Floating Pill Topbar with `School CRM Navigator` hamburger menu, `ThePurpleCubby • Staff Portal` brand, center rounded-full navigation pills, notification bell, profile avatar, `bg-paper` stage, and `ThePurpleCubby Inc.` footer matching `Teacher_Dashboard_Overview.html`), `/teacher` (1:1 visual & interactive match with `Teacher_Dashboard_Overview.html` and `Teacher_Dashboard_Overview_Compact.html`), `/teacher/attendance`, `/teacher/lessons`, `/teacher/assessments`, `/teacher/safeguarding`, and `/teacher/messages`, wired to live `frontend/app/lib/api.ts` endpoints with optimistic updates and offline classroom fallbacks.
+  5. **Verification:**
+     - `tsc -p frontend/tsconfig.json --noEmit`: 0 errors.
+     - `npm --prefix frontend run lint`: 0 errors across all widgets and routes, 0 hex/arbitrary color violations, and 0 forbidden `@/app/lib` or `next/navigation` imports inside `frontend/components/widgets/`.
+- **Evidence:** [`frontend/middleware.ts`](../frontend/middleware.ts), [`core/api/v1/sprint5.py`](../core/api/v1/sprint5.py), [`frontend/components/widgets/`](../frontend/components/widgets/), [`frontend/app/teacher/`](../frontend/app/teacher/), [`frontend/app/lib/api.ts`](../frontend/app/lib/api.ts).
+
+### 2026-11-06 — Teacher & Parent Profile Picture Management + Local SVG Icon Replacement
+
+- **Status:** Completed & Verified (Branch `feature/parent-screens`)
+- **Decision:** Updated [`docs/2_PRD.md`](2_PRD.md) first and built end-to-end profile picture management for Teachers and Parents while replacing all broken Material Symbols ligatures and expired external Google portrait links with local SVG icons and illustrated Oil Pastel avatars:
+  1. **PRD Documentation (`docs/2_PRD.md`):** Added the **Teacher & Parent Profile Pictures** requirement row under Section 3 (`P2 — Role Portals & Self-Service Experiences`) and updated the Teacher & Caregiver Portals and Parent Multi-Child Portal specifications.
+  2. **Backend Profile Picture API (`core/schemas/auth.py`, `core/api/v1/auth.py`):**
+     - Added `ProfilePictureUpdateSchema` validating `avatar_url` (`data:image/...`, `https://...`, `http://...`, `/...`, or `None`).
+     - Added `GET /api/v1/auth/profile` and `PUT /api/v1/auth/profile/picture` persisting per-user profile pictures in `Tenant.config["profile_pictures"][user_id]`, and exposed `avatar_url` on `POST /api/v1/auth/login`.
+  3. **Reusable Profile Picture Modal & Local SVG Icon System (`frontend/components/pc/profile-picture-modal.tsx`, `frontend/components/pc/index.ts`):**
+     - Built `ProfilePictureModal` supporting device image file upload (`PNG`/`JPG`/`WebP`) with automatic `256x256` `<canvas>` center-crop & compression, 6 curated Oil Pastel SVG preset portraits, custom image URL preview, and reset to default.
+     - Built `TeacherIcon` mapping all 38 Material Symbols ligature names used across the Teacher Portal to crisp `lucide-react` SVG icons so zero icons depend on external Google Fonts ligatures.
+  4. **Teacher & Parent Portal Integration (`frontend/app/teacher/layout.tsx`, `frontend/app/teacher/page.tsx`, `frontend/components/widgets/teacher/teacher-dashboard-overview.tsx`, `frontend/app/parent/layout.tsx`, `frontend/app/lib/api.ts`):**
+     - Replaced all `<span className="material-symbols-outlined">...</span>` in `frontend/app/teacher/layout.tsx` and `frontend/components/widgets/teacher/teacher-dashboard-overview.tsx` with `<TeacherIcon />`.
+     - Wired live profile picture display and `"Update Profile Picture"` triggers in both the Teacher Portal (topbar profile menu + greeting portrait) and the Parent Portal (topbar user menu + family profile header bar).
+- **Evidence:** [`docs/2_PRD.md`](2_PRD.md), [`core/schemas/auth.py`](../core/schemas/auth.py), [`core/api/v1/auth.py`](../core/api/v1/auth.py), [`frontend/components/pc/profile-picture-modal.tsx`](../frontend/components/pc/profile-picture-modal.tsx), [`frontend/app/teacher/layout.tsx`](../frontend/app/teacher/layout.tsx), [`frontend/components/widgets/teacher/teacher-dashboard-overview.tsx`](../frontend/components/widgets/teacher/teacher-dashboard-overview.tsx), [`frontend/app/parent/layout.tsx`](../frontend/app/parent/layout.tsx).
 
 
 
@@ -507,3 +612,13 @@ This log records durable architecture, security, and product decisions so later 
 
 
 
+
+
+
+
+### 2026-11-08 — Parent Signup Activation State CI Repair
+
+- **Status:** Completed & Verified (PR #2)
+- **Decision:** Updated `POST /api/v1/auth/signup` to create newly registered parent users with `is_active=False` and return `status: "pending_activation"`, matching the auth API contract and test expectations for pending account activation.
+- **Verification:** `pytest /home/runner/work/skulz-school-crm/skulz-school-crm/tests/test_api_auth.py -k signup_creates_parent_user_with_hashed_password_and_tenant_membership` passed.
+- **Evidence:** [`core/api/v1/auth.py`](../core/api/v1/auth.py), [`tests/test_api_auth.py`](../tests/test_api_auth.py).

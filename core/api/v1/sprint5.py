@@ -350,7 +350,7 @@ def create_notification_rule(request, payload: NotificationRuleCreateSchema):
 
 
 @router.post('/messages', auth=JWTAuthBearer())
-@require_roles('Admin', 'Principal', 'Owner', 'Staff')
+@require_roles('Admin', 'Principal', 'Owner', 'Teacher', 'Staff')
 def create_message(request, payload: MessageCreateSchema):
     tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
     message = CommunicationBundleBO.create_message(tenant, payload.model_dump())
@@ -970,7 +970,7 @@ def update_event_report(request, event_id: UUID, payload: EventReportUpdateSchem
 
 
 @router.get('/messages', auth=JWTAuthBearer())
-@require_roles('Admin', 'Principal', 'Owner', 'Staff', 'Parent')
+@require_roles('Admin', 'Principal', 'Owner', 'Teacher', 'Staff', 'Parent')
 def list_messages(request, recipient_id: UUID = None, channel: str = None):
     tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
     actor_role = getattr(request, 'user_role', 'Admin')
@@ -986,7 +986,7 @@ def list_messages(request, recipient_id: UUID = None, channel: str = None):
 
 
 @router.get('/messages/{message_id}', auth=JWTAuthBearer())
-@require_roles('Admin', 'Principal', 'Owner', 'Staff', 'Parent')
+@require_roles('Admin', 'Principal', 'Owner', 'Teacher', 'Staff', 'Parent')
 def get_message(request, message_id: UUID):
     tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
     msg = get_object_or_404(Message, message_id=message_id, tenant=tenant, is_deleted=False)

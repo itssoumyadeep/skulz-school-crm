@@ -30,3 +30,14 @@ export interface WidgetBaseProps<
   footerSlot?: ReactNode;
 }
 
+export * from "./parent";
+export * from "./teacher";
+export * from "./attendance";
+export * from "./academics";
+export * from "./admissions";
+export * from "./students";
+export * from "./health";
+export * from "./operations";
+
+
+

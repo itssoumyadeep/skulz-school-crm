@@ -64,7 +64,6 @@ npm install
 npm run dev
 ```
 - **Web App:** http://localhost:3000
-- **Storybook UI Component Catalog:** `npm run storybook` (http://localhost:6006)
 
 ---
 

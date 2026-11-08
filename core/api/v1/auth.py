@@ -21,6 +21,7 @@ from core.business_objects.school_setup import RoleMembershipBO
 from core.business_objects.trial import TrialSignupBO, TrialSignupError
 from core.schemas.auth import (
     LoginSchema,
+    ProfilePictureUpdateSchema,
     RoleMembershipCreateInput,
     RoleMembershipUpdateInput,
     SignupSchema,
@@ -81,6 +82,16 @@ def _error(request, status: int, code: str, message: str):
         ),
         status=status,
     )
+
+
+def _get_user_avatar_url(tenant: Tenant, user_id: str):
+    if not tenant.config or not isinstance(tenant.config, dict):
+        return None
+    pictures = tenant.config.get("profile_pictures")
+    if not isinstance(pictures, dict):
+        return None
+    return pictures.get(str(user_id))
+
 
 
 @router.post("/auth/login")
@@ -189,6 +200,7 @@ def login(request, payload: LoginSchema):
                     "username": user.username,
                     "name": user.get_full_name() or user.username,
                     "email": user.email,
+                    "avatar_url": _get_user_avatar_url(tenant, str(subject)),
                 },
             },
             tenant_id=tenant.tenant_id,
@@ -303,7 +315,7 @@ def signup(request, payload: SignupSchema):
                 password=payload.password,
                 first_name=first_name,
                 last_name=last_name,
-                is_active=True,
+                is_active=False,
             )
             parent_group, _ = Group.objects.get_or_create(name="Parent")
             user.groups.add(parent_group)
@@ -336,7 +348,7 @@ def signup(request, payload: SignupSchema):
                 "email": user.email,
                 "name": user.get_full_name() or user.username,
                 "role": "parent",
-                "status": "active",
+                "status": "pending_activation",
             },
             tenant_id=tenant.tenant_id,
             role="parent",
@@ -425,3 +437,88 @@ def delete_role_membership(request, membership_id: int):
         status=200,
     )
 
+
+@router.get("/auth/profile", auth=JWTAuthBearer())
+@require_roles(
+    "Admin",
+    "Principal",
+    "Vice_Principal",
+    "Teacher",
+    "CareGiver",
+    "Parent",
+    "Vendor",
+    "Owner",
+    "Board",
+    "Trustee",
+    "Staff",
+)
+def get_my_profile(request):
+    from django.shortcuts import get_object_or_404
+
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, "user_role", "Teacher")
+    user_id = str(getattr(request, "user_id", "") or "")
+    avatar_url = _get_user_avatar_url(tenant, user_id)
+    return JsonResponse(
+        build_response(
+            data={
+                "user_id": user_id,
+                "tenant_id": str(tenant.tenant_id),
+                "role": actor_role,
+                "avatar_url": avatar_url,
+            },
+            tenant_id=request.tenant_id,
+            role=actor_role,
+        ),
+        status=200,
+    )
+
+
+@router.put("/auth/profile/picture", auth=JWTAuthBearer())
+@require_roles(
+    "Teacher",
+    "Parent",
+    "Admin",
+    "Principal",
+    "Vice_Principal",
+    "CareGiver",
+    "Staff",
+    "Owner",
+)
+def update_my_profile_picture(request, payload: ProfilePictureUpdateSchema):
+    from django.shortcuts import get_object_or_404
+
+    actor_role = getattr(request, "user_role", "Teacher")
+    user_id = str(getattr(request, "user_id", "") or "default-user")
+    with transaction.atomic():
+        tenant = get_object_or_404(
+            Tenant.objects.select_for_update(),
+            tenant_id=request.tenant_id,
+        )
+        config = dict(tenant.config) if isinstance(tenant.config, dict) else {}
+        pictures = (
+            dict(config.get("profile_pictures"))
+            if isinstance(config.get("profile_pictures"), dict)
+            else {}
+        )
+        if payload.avatar_url:
+            pictures[user_id] = payload.avatar_url
+        else:
+            pictures.pop(user_id, None)
+        config["profile_pictures"] = pictures
+        tenant.config = config
+        tenant.save(update_fields=["config", "updated_at"])
+
+    return JsonResponse(
+        build_response(
+            data={
+                "user_id": user_id,
+                "tenant_id": str(tenant.tenant_id),
+                "role": actor_role,
+                "avatar_url": payload.avatar_url,
+            },
+            tenant_id=request.tenant_id,
+            role=actor_role,
+        ),
+        status=200,
+    )
