@@ -32,7 +32,23 @@ const roleRules: Array<{ prefix: string; roles: Role[] }> = [
   { prefix: "/governance/owner", roles: ["owner", "admin"] },
   { prefix: "/governance/board", roles: ["board", "admin"] },
   { prefix: "/governance/trustee", roles: ["trustee", "admin"] },
+  { prefix: "/governance", roles: ["owner", "board", "trustee", "admin"] },
 ];
+
+function matchesPrefix(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+function safeDecodeCookie(rawValue: string | undefined): string | undefined {
+  if (!rawValue) {
+    return undefined;
+  }
+  try {
+    return decodeURIComponent(rawValue);
+  } catch {
+    return rawValue;
+  }
+}
 
 function decodePart(value: string): string | null {
   try {
@@ -62,12 +78,13 @@ function getClaims(token: string | undefined): Claims | null {
 
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const rule = roleRules.find((entry) => path.startsWith(entry.prefix));
+  const rule = roleRules.find((entry) => matchesPrefix(path, entry.prefix));
   if (!rule) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("pc_session")?.value;
+  const rawCookie = request.cookies.get("pc_session")?.value;
+  const token = safeDecodeCookie(rawCookie);
   const claims = getClaims(token);
 
   if (!claims?.role || !claims?.tenant_id) {
@@ -97,7 +114,6 @@ export const config = {
     "/principal/:path*",
     "/vice-principal/:path*",
     "/teacher/:path*",
-    "/staff/:path*",
     "/staff/:path*",
     "/caregiver/:path*",
     "/parent/:path*",

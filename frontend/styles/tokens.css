@@ -66,6 +66,7 @@
   --crayon-espresso: #4a443d;
   --crayon-muted: #756d63;
   --pastel-sun: #fed766;
+  --pastel-sun-deep: #fdcb52;
   --pastel-butter: #ffe68c;
   --pastel-mint: #bce6cd;
   --pastel-mint-deep: #3e7b58;
@@ -78,6 +79,16 @@
   --pastel-lilac-deep: #6b46c1;
   --pastel-coral: #ff8a65;
   --crayon-red: #d9381e;
+
+  /* Compact & Editorial Companion Tokens */
+  --canvas: #fff8f2;
+  --charcoal: #121417;
+  --terracotta: #e07a5f;
+  --mint: #90be6d;
+  --marigold: #fdba3b;
+  --cerulean: #64b5f6;
+  --lilac: #b39ddb;
+  --cream: #faf0e6;
 
   /* Shared Component Compatibility Mappings */
   --foreground: var(--on-surface);
@@ -110,11 +121,13 @@
   --overlay: var(--on-surface);
 
   /* StitchMCP — Radii */
-  --app-radius-sm: 0.5rem;
-  --app-radius-md: 1rem;
-  --app-radius-lg: 2rem;
-  --app-radius-xl: 3rem;
-  --radius: var(--app-radius-md);
+  --app-radius-sm: 0.25rem;
+  --app-radius-md: 0.375rem;
+  --app-radius-lg: 0.5rem;
+  --app-radius-xl: 0.75rem;
+  --app-radius-2xl: 1.5rem;
+  --app-radius-3xl: 2rem;
+  --radius: 1rem;
 
   /* StitchMCP — Spacing Scale */
   --spacing-margin: 2.5rem;
@@ -256,6 +269,7 @@
   --color-crayon-espresso: var(--crayon-espresso);
   --color-crayon-muted: var(--crayon-muted);
   --color-pastel-sun: var(--pastel-sun);
+  --color-pastel-sun-deep: var(--pastel-sun-deep);
   --color-pastel-butter: var(--pastel-butter);
   --color-pastel-mint: var(--pastel-mint);
   --color-pastel-mint-deep: var(--pastel-mint-deep);
@@ -268,6 +282,15 @@
   --color-pastel-lilac-deep: var(--pastel-lilac-deep);
   --color-pastel-coral: var(--pastel-coral);
   --color-crayon-red: var(--crayon-red);
+
+  --color-canvas: var(--canvas);
+  --color-charcoal: var(--charcoal);
+  --color-terracotta: var(--terracotta);
+  --color-mint: var(--mint);
+  --color-marigold: var(--marigold);
+  --color-cerulean: var(--cerulean);
+  --color-lilac: var(--lilac);
+  --color-cream: var(--cream);
 
   /* Shared UI Primitive Color Aliases */
   --color-border: var(--border);
@@ -322,6 +345,8 @@
   --radius-md: var(--app-radius-md);
   --radius-lg: var(--app-radius-lg);
   --radius-xl: var(--app-radius-xl);
+  --radius-2xl: var(--app-radius-2xl);
+  --radius-3xl: var(--app-radius-3xl);
   --shadow: var(--app-shadow);
   --shadow-xs: var(--app-shadow);
   --shadow-sm: var(--app-shadow);
@@ -334,9 +359,11 @@
   --shadow-pastel: var(--app-shadow-pastel);
   --shadow-pastel-hover: var(--app-shadow-pastel-hover);
   --shadow-pastel-warm: var(--app-shadow-pastel-warm);
+  --shadow-pastel-glow: 0 0 0 3px rgb(254 215 102 / 0.25);
 
   /* StitchMCP Typography Font Family */
   --font-sans: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-serif: var(--font-fraunces), Georgia, serif;
   --font-display-lg: var(--font-plus-jakarta), var(--font-inter), sans-serif;
   --font-display-lg-mobile:
     var(--font-plus-jakarta), var(--font-inter), sans-serif;

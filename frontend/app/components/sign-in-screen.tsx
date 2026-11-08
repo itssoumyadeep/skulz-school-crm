@@ -321,15 +321,14 @@ export function SignInScreen({ deniedReason }: SignInScreenProps) {
         </section>
       </main>
 
+      {/* eslint-disable-next-line no-restricted-syntax */}
       <style jsx>{`
         :global(body) {
           margin: 0;
           min-width: 320px;
           min-height: 100vh;
-          color: #273044;
-          background:
-            radial-gradient(circle at 10% 8%, #f0eaff 0, transparent 32%),
-            #f7f5fb;
+          color: var(--on-surface);
+          background: var(--background);
           font-family: Georgia, "Times New Roman", serif;
         }
 

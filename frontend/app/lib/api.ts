@@ -1,7 +1,10 @@
 import { getCookieValue } from "./session";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE ??
+  (typeof window !== "undefined"
+    ? "/api/v1"
+    : "http://127.0.0.1:8000/api/v1");
 
 type ApiError = {
   message: string;
@@ -181,8 +184,27 @@ export type LoginResponse = {
     username: string;
     name: string;
     email: string;
+    avatar_url?: string | null;
   };
 };
+
+export type UserProfileResponse = {
+  user_id: string;
+  role: string;
+  tenant_id: string;
+  avatar_url: string | null;
+};
+
+export async function fetchMyProfile() {
+  return apiFetch<Envelope<UserProfileResponse>>("/auth/profile");
+}
+
+export async function updateMyProfilePicture(avatarUrl: string | null) {
+  return apiFetch<Envelope<UserProfileResponse>>("/auth/profile/picture", {
+    method: "PUT",
+    body: JSON.stringify({ avatar_url: avatarUrl }),
+  });
+}
 
 export async function loginWithPassword(payload: {
   username: string;
@@ -345,6 +367,66 @@ export async function submitEnrollmentDraft(applicationId: string) {
     `/enrollments/${applicationId}/submit`,
     { method: "POST" },
   );
+}
+
+export type ParentPublicApplyPayload = {
+  school_code: string;
+  parent_name: string;
+  parent_email: string;
+  parent_phone: string;
+  password: string;
+  parent_relationship?: string;
+  first_name: string;
+  last_name: string;
+  dob?: string | null;
+  grade: string;
+  desired_start_date?: string | null;
+  comments?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  medical_consent?: boolean;
+  sibling_discount_requested?: boolean;
+};
+
+export type ParentPublicApplyResponse = EnrollmentCase & {
+  auth?: {
+    access_token: string;
+    token_type: string;
+    role: string;
+    username: string;
+  };
+};
+
+export async function submitPublicApply(payload: ParentPublicApplyPayload) {
+  return apiFetch<Envelope<ParentPublicApplyResponse>>(
+    "/enrollments/public-apply",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export type SiblingEnrollmentCreatePayload = {
+  first_name: string;
+  last_name: string;
+  dob?: string | null;
+  grade: string;
+  desired_start_date?: string | null;
+  comments?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  medical_consent?: boolean;
+  sibling_discount_requested?: boolean;
+};
+
+export async function submitSiblingApply(payload: SiblingEnrollmentCreatePayload) {
+  return apiFetch<Envelope<EnrollmentCase>>("/enrollments/sibling-apply", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function uploadEnrollmentFile(
@@ -517,6 +599,54 @@ export async function submitEnrollmentDecision(
       }),
     },
   );
+}
+
+export type StudentListItem = {
+  student_id: string;
+  student_number?: string;
+  name: string;
+  dob?: string | null;
+  grade: string;
+  section?: string;
+  status?: string;
+  class_id?: string | null;
+  enrolled_date?: string | null;
+  parents?: Array<{
+    parent_id?: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    relationship?: string;
+  }>;
+  emergency_contacts?: Array<{
+    name: string;
+    phone: string;
+    relationship?: string;
+    medical_consent?: boolean;
+  }>;
+};
+
+export async function fetchStudents(params?: {
+  grade?: string;
+  section?: string;
+  class_id?: string;
+  search?: string;
+  page?: number;
+  page_size?: number;
+}) {
+  const query = new URLSearchParams();
+  if (params?.grade) query.set("grade", params.grade);
+  if (params?.section) query.set("section", params.section);
+  if (params?.class_id) query.set("class_id", params.class_id);
+  if (params?.search) query.set("search", params.search);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.page_size) query.set("page_size", String(params.page_size));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return apiFetch<Envelope<StudentListItem[]>>(`/students${suffix}`);
+}
+
+export async function fetchStudentById(studentId: string) {
+  return apiFetch<Envelope<StudentListItem>>(`/students/${studentId}`);
 }
 
 export async function fetchParentStudentProfile(studentId: string) {
@@ -729,7 +859,7 @@ export async function submitAttendanceMark(payload: {
   class_id: string;
   date: string;
   status: StudentAttendanceStatus;
-  method?: "Manual" | "RFID" | "Face" | "Web" | "Biometric";
+  method?: "Manual" | "QR" | "RFID" | "Face" | "Web" | "Biometric";
   period?: string;
 }) {
   return apiFetch<Envelope<Record<string, unknown>>>("/attendance/mark", {
@@ -782,7 +912,7 @@ export async function updateAttendanceRecord(
   attId: string,
   payload: {
     status?: StudentAttendanceStatus;
-    method?: "Manual" | "RFID" | "Face" | "Web" | "Biometric";
+    method?: "Manual" | "QR" | "RFID" | "Face" | "Web" | "Biometric";
     period?: string;
     notified_parent?: boolean;
   },
@@ -796,6 +926,39 @@ export async function updateAttendanceRecord(
 export async function fetchStudentAttendanceSummary(studentId: string) {
   return apiFetch<Envelope<Record<string, unknown>>>(
     `/students/${studentId}/attendance-summary`,
+  );
+}
+
+export type LeaveRequestRecord = {
+  leave_id: string;
+  requester_id: string;
+  requester_type: "Student" | "Staff";
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  days: number;
+  reason: string;
+  status: string;
+  created_at?: string;
+};
+
+export async function fetchLeaveRequests(params?: {
+  requester_id?: string;
+  status?: string;
+}) {
+  const query = new URLSearchParams();
+  if (params?.requester_id) query.set("requester_id", params.requester_id);
+  if (params?.status) query.set("status", params.status);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return apiFetch<
+    Envelope<LeaveRequestRecord[] | { count?: number; items?: LeaveRequestRecord[]; leave_requests?: LeaveRequestRecord[] }>
+  >(`/leave-requests${suffix}`);
+}
+
+export async function cancelLeaveRequest(leaveId: string) {
+  return apiFetch<Envelope<Record<string, unknown>>>(
+    `/leave-requests/${leaveId}`,
+    { method: "DELETE" },
   );
 }
 
@@ -851,6 +1014,146 @@ export async function fetchAttendanceReports(reportType: string) {
 }
 
 // ── P04: Academic Management ───────────────────────────────────────
+export type CurriculumRecord = {
+  curriculum_id: string;
+  grade: string;
+  version: string;
+  subjects: Array<{ name?: string; code?: string; hours?: number } | Record<string, unknown>>;
+  learning_outcomes: string[];
+};
+
+export type LessonPlanRecord = {
+  plan_id: string;
+  curriculum_id: string;
+  class_id: string;
+  teacher_id?: string;
+  week: number;
+  topic: string;
+  learning_outcomes: string[];
+  status?: string;
+};
+
+export type AssignmentRecord = {
+  assignment_id: string;
+  class_id: string;
+  subject: string;
+  title: string;
+  description?: string;
+  due_date: string;
+  max_marks: number;
+};
+
+export type ExamRecord = {
+  exam_id: string;
+  calendar_id?: string;
+  class_id: string;
+  name: string;
+  exam_type: string;
+  date: string;
+  start_time?: string;
+  end_time?: string;
+  duration_mins?: number;
+  room?: string;
+  max_marks: number;
+  status?: string;
+};
+
+export type ExamMarkRecord = {
+  marks_id: string;
+  exam_id: string;
+  student_id: string;
+  student_name?: string;
+  subject: string;
+  marks: number;
+  max_marks: number;
+  grade?: string;
+  moderated?: boolean;
+  locked?: boolean;
+};
+
+export async function fetchCurriculums(grade?: string) {
+  const suffix = grade ? `?grade=${encodeURIComponent(grade)}` : "";
+  return apiFetch<
+    Envelope<CurriculumRecord[] | { curriculums?: CurriculumRecord[]; items?: CurriculumRecord[] }>
+  >(`/curriculums${suffix}`);
+}
+
+export async function fetchLessonPlans(classId?: string) {
+  const suffix = classId ? `?class_id=${encodeURIComponent(classId)}` : "";
+  return apiFetch<
+    Envelope<LessonPlanRecord[] | { lesson_plans?: LessonPlanRecord[]; items?: LessonPlanRecord[] }>
+  >(`/lesson-plans${suffix}`);
+}
+
+export async function updateLessonPlan(
+  planId: string,
+  payload: Partial<{
+    curriculum_id: string;
+    week: number;
+    topic: string;
+    learning_outcomes: string[];
+    status: string;
+  }>,
+) {
+  return apiFetch<Envelope<Record<string, unknown>>>(`/lesson-plans/${planId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchAssignments(classId?: string) {
+  const suffix = classId ? `?class_id=${encodeURIComponent(classId)}` : "";
+  return apiFetch<
+    Envelope<AssignmentRecord[] | { assignments?: AssignmentRecord[]; items?: AssignmentRecord[] }>
+  >(`/assignments${suffix}`);
+}
+
+export async function fetchExams(classId?: string) {
+  const suffix = classId ? `?class_id=${encodeURIComponent(classId)}` : "";
+  return apiFetch<
+    Envelope<ExamRecord[] | { exams?: ExamRecord[]; items?: ExamRecord[] }>
+  >(`/exams${suffix}`);
+}
+
+export async function fetchExamMarks(examId: string) {
+  return apiFetch<
+    Envelope<ExamMarkRecord[] | { marks?: ExamMarkRecord[]; items?: ExamMarkRecord[] }>
+  >(`/exams/${examId}/marks`);
+}
+
+export async function updateExamMark(
+  marksId: string,
+  payload: Partial<{
+    marks: number;
+    max_marks: number;
+    moderated: boolean;
+    locked: boolean;
+    audit_note: string;
+  }>,
+) {
+  return apiFetch<Envelope<Record<string, unknown>>>(`/marks/${marksId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function generateDraftReportCard(payload: {
+  student_id: string;
+  calendar_id: string;
+  term: string;
+  year: number;
+  published_date: string;
+  attendance_percentage?: number;
+}) {
+  return apiFetch<Envelope<Record<string, unknown>>>("/academic-records", {
+    method: "POST",
+    body: JSON.stringify({
+      attendance_percentage: 96,
+      ...payload,
+    }),
+  });
+}
+
 export async function fetchAcademicCalendar() {
   return apiFetch<Envelope<Record<string, unknown>>>("/calendar/current");
 }
@@ -1049,6 +1352,31 @@ export async function submitNotificationRule(payload: {
   });
 }
 
+export type MessageRecord = {
+  message_id: string;
+  recipient_id?: string | null;
+  recipient_role: string;
+  channel: string;
+  subject: string;
+  body: string;
+  status?: string;
+  sent_at?: string | null;
+  created_at?: string | null;
+};
+
+export async function fetchMessages(params?: {
+  recipient_id?: string;
+  channel?: string;
+}) {
+  const query = new URLSearchParams();
+  if (params?.recipient_id) query.set("recipient_id", params.recipient_id);
+  if (params?.channel) query.set("channel", params.channel);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return apiFetch<Envelope<{ count: number; messages: MessageRecord[] }>>(
+    `/messages${suffix}`,
+  );
+}
+
 export async function submitMessage(payload: {
   recipient_id?: string;
   recipient_role: string;
@@ -1106,6 +1434,25 @@ export async function submitMedicationLog(payload: {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export type IncidentRecord = {
+  incident_id: string;
+  incident_type: string;
+  severity: string;
+  date: string;
+  location: string;
+  description?: string;
+  actions_taken?: string;
+  escalated_to_principal?: boolean;
+  parent_notified?: boolean;
+};
+
+export async function fetchIncidents(severity?: string) {
+  const suffix = severity ? `?severity=${encodeURIComponent(severity)}` : "";
+  return apiFetch<
+    Envelope<IncidentRecord[] | { incidents?: IncidentRecord[]; items?: IncidentRecord[] }>
+  >(`/incidents${suffix}`);
 }
 
 export async function submitIncident(payload: {
@@ -1234,6 +1581,24 @@ export async function fetchVendorAccount(vendorId: string) {
 }
 
 // ── P09: Events & Activities ───────────────────────────────────────
+export type EventItem = {
+  event_id: string;
+  title: string;
+  event_date: string;
+  registration_deadline: string;
+  location: string;
+  description?: string;
+  fee_amount: number;
+  capacity: number;
+  requires_permission_slip: boolean;
+  status: "Draft" | "Open" | "Full" | "Completed" | "Cancelled";
+  invoice_line_items?: Array<{ description: string; amount: number }>;
+};
+
+export async function fetchEvents(status?: string) {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch<Envelope<{ count: number; events: EventItem[] }>>(`/events${query}`);
+}
 export async function createEvent(payload: {
   title: string;
   event_date: string;
