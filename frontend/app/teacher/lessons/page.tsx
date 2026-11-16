@@ -164,7 +164,7 @@ export default function TeacherLessonsPage() {
     useState<LessonPlanCardItem[]>(SEEDED_LESSON_PLANS);
   const [assignments, setAssignments] =
     useState<AssignmentHomeworkItem[]>(SEEDED_ASSIGNMENTS);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [bannerNotice, setBannerNotice] = useState<string | null>(null);
 
   const [lessonModalOpen, setLessonModalOpen] = useState(false);
@@ -211,21 +211,56 @@ export default function TeacherLessonsPage() {
             : (raw.lesson_plans ?? raw.items ?? []);
           if (list.length > 0) {
             setLessonPlans(
-              list.map((p) => ({
-                planId: p.plan_id,
-                curriculumId: p.curriculum_id,
-                classId: p.class_id,
-                classLabel: "Homeroom",
-                week: p.week,
-                topic: p.topic,
-                status:
-                  p.status === "Completed"
-                    ? "Completed"
-                    : p.status === "Draft"
-                      ? "Draft"
-                      : "In Progress",
-                learningOutcomes: p.learning_outcomes ?? [],
-              })),
+              list.map((p) => {
+                const seededMatch = SEEDED_LESSON_PLANS.find(
+                  (s) =>
+                    s.planId === p.plan_id ||
+                    s.topic.toLowerCase() === p.topic.toLowerCase(),
+                );
+                return {
+                  planId: p.plan_id,
+                  curriculumId: p.curriculum_id,
+                  classId: p.class_id,
+                  classLabel: "Homeroom",
+                  week: p.week,
+                  topic: p.topic,
+                  status:
+                    p.status === "Completed"
+                      ? "Completed"
+                      : p.status === "Draft"
+                        ? "Draft"
+                        : "In Progress",
+                  learningOutcomes: p.learning_outcomes ?? [],
+                  stages: seededMatch?.stages ?? [
+                    {
+                      stage: "Hook & Warm-Up",
+                      durationMins: 10,
+                      summary: "Concept provocation & inquiry question",
+                    },
+                    {
+                      stage: "Direct Instruction",
+                      durationMins: 15,
+                      summary: "Curriculum standard modeling",
+                    },
+                    {
+                      stage: "Guided Practice",
+                      durationMins: 15,
+                      summary: "Small-group collaborative workshop stations",
+                    },
+                    {
+                      stage: "Independent Synthesis",
+                      durationMins: 10,
+                      summary: "Individual application & portfolio artifact",
+                    },
+                    {
+                      stage: "Exit Ticket",
+                      durationMins: 10,
+                      summary: "Check-for-understanding formative slip",
+                    },
+                  ],
+                  iepAccommodations: seededMatch?.iepAccommodations,
+                };
+              }),
             );
           }
         }
@@ -406,7 +441,12 @@ export default function TeacherLessonsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Curriculum & Weekly Lesson Planner"
+        variant="pastel"
+        icon="menu_book"
+        iconBg="bg-pastel-peach border-pastel-peach-deep/30 text-pastel-peach-deep"
+        title="Curriculum & Lesson Planner"
+        badge="Ontario Curriculum 2026.1"
+        badgeClass="bg-pastel-peach/70 text-pastel-peach-deep border-pastel-peach"
         subtitle="Build 5-stage instructional sequences mapped to curriculum outcomes (BR-04-01) and publish holiday-checked coursework (BR-04-02)."
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -414,6 +454,7 @@ export default function TeacherLessonsPage() {
               type="button"
               variant="outline"
               onClick={() => setAssignmentModalOpen(true)}
+              className="rounded-full border-2 border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-paper-tint text-xs font-bold shadow-pastel cursor-pointer"
             >
               <Plus className="size-4" />
               Publish Homework
@@ -424,6 +465,7 @@ export default function TeacherLessonsPage() {
                 setEditingPlan(null);
                 setLessonModalOpen(true);
               }}
+              className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun text-xs font-extrabold shadow-pastel cursor-pointer"
             >
               <BookOpen className="size-4" />
               New Lesson Plan
@@ -435,9 +477,9 @@ export default function TeacherLessonsPage() {
       {bannerNotice && (
         <div
           role="status"
-          className="flex items-center justify-between gap-3 rounded-xl border border-pastel-mint-deep/30 bg-pastel-mint/45 px-4 py-3 text-sm text-crayon-charcoal"
+          className="flex items-center justify-between gap-3 rounded-2xl border-2 border-pastel-mint-deep/30 bg-pastel-mint/45 px-5 py-3 text-xs font-bold text-crayon-charcoal shadow-pastel"
         >
-          <span className="inline-flex items-center gap-2 font-medium">
+          <span className="inline-flex items-center gap-2 font-bold">
             <CheckCircle2 className="size-4 text-pastel-mint-deep" />
             {bannerNotice}
           </span>
@@ -446,6 +488,7 @@ export default function TeacherLessonsPage() {
             variant="ghost"
             size="xs"
             onClick={() => setBannerNotice(null)}
+            className="rounded-full hover:bg-pastel-mint/60 text-xs font-bold cursor-pointer"
           >
             Dismiss
           </Button>

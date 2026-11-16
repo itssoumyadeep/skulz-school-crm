@@ -87,6 +87,7 @@ export interface TeacherDashboardOverviewData {
   termLabel: string;
   selectedClassId: string;
   classes: TeacherClassOption[];
+  assignedClassesLabel?: string;
   roster: TeacherRollStudent[];
   isRollLocked?: boolean;
   schedule: TeacherSchedulePeriod[];

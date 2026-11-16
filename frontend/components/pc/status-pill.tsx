@@ -15,19 +15,23 @@ type StatusPillProps = {
 };
 
 const variantClasses: Record<StatusPillVariant, string> = {
-  success: "border-success/20 bg-success/10 text-success",
-  warning: "border-warning/20 bg-warning/10 text-warning",
-  danger: "border-danger/20 bg-danger/10 text-danger",
-  info: "border-primary/20 bg-primary/10 text-primary",
-  neutral: "border-border bg-background text-muted-foreground",
+  success:
+    "border-pastel-mint-deep/30 bg-pastel-mint/70 text-pastel-mint-deep font-bold rounded-full px-2.5 py-0.5",
+  warning:
+    "border-pastel-sun-deep/40 bg-pastel-butter text-crayon-charcoal font-bold rounded-full px-2.5 py-0.5",
+  danger:
+    "border-pastel-coral/60 bg-pastel-peach text-pastel-peach-deep font-bold rounded-full px-2.5 py-0.5",
+  info: "border-pastel-sky-deep/30 bg-pastel-sky/70 text-pastel-sky-deep font-bold rounded-full px-2.5 py-0.5",
+  neutral:
+    "border-pastel-butter bg-paper-tint text-crayon-muted font-bold rounded-full px-2.5 py-0.5",
 };
 
 const dotClasses: Record<StatusPillVariant, string> = {
-  success: "bg-success",
-  warning: "bg-warning",
-  danger: "bg-danger",
-  info: "bg-primary",
-  neutral: "bg-muted",
+  success: "bg-pastel-mint-deep",
+  warning: "bg-pastel-sun-deep",
+  danger: "bg-pastel-peach-deep",
+  info: "bg-pastel-sky-deep",
+  neutral: "bg-crayon-muted",
 };
 
 export function StatusPill({

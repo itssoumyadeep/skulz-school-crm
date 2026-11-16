@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import {
   CO_TEACHER_AVATAR_1,
   CO_TEACHER_AVATAR_2,
@@ -35,6 +36,8 @@ interface DrawerConfig {
   periodId?: string;
 }
 
+const subscribeNoop = () => () => {};
+
 export function TeacherDashboardOverviewWidget({
   data,
   capabilities,
@@ -59,10 +62,23 @@ export function TeacherDashboardOverviewWidget({
   const [viewMode, setViewMode] = useState<TeacherViewMode>(defaultViewMode);
   const [classDropdownOpen, setClassDropdownOpen] = useState(false);
   const [compactSearch, setCompactSearch] = useState("");
+  const isMounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
 
-  // Interactive quick roll state for the two featured Homeroom 4B Roll rows (Leo Miller & Amara Khan)
-  const [leoStatus, setLeoStatus] = useState<"P" | "L" | "E">("E");
-  const [amaraStatus, setAmaraStatus] = useState<"P" | "L" | "E">("L");
+  // Interactive quick roll state for the two featured Homeroom Roll rows
+  const [leoStatus, setLeoStatus] = useState<"P" | "L" | "E">(
+    data.roster[0]?.status === "Late"
+      ? "L"
+      : data.roster[0]?.status === "Excused" || data.roster[0]?.status === "Absent"
+        ? "E"
+        : "P",
+  );
+  const [amaraStatus, setAmaraStatus] = useState<"P" | "L" | "E">(
+    data.roster[1]?.status === "Late"
+      ? "L"
+      : data.roster[1]?.status === "Excused" || data.roster[1]?.status === "Absent"
+        ? "E"
+        : "P",
+  );
   const [period2Completed, setPeriod2Completed] = useState(false);
 
   // Slide-over drawer state matching Teacher_Dashboard_Overview.html
@@ -73,8 +89,8 @@ export function TeacherDashboardOverviewWidget({
     null,
   );
 
-  // Floating ThePuffy AI Agent state (open by default to match UX screenshot)
-  const [puffyOpen, setPuffyOpen] = useState(true);
+  // Floating ThePuffy AI Agent state (closed by default on portal load)
+  const [puffyOpen, setPuffyOpen] = useState(false);
   const [puffyInput, setPuffyInput] = useState("");
   const [puffyMessages, setPuffyMessages] = useState<
     Array<{ sender: "educator" | "copilot"; text: string; meta?: string }>
@@ -107,6 +123,25 @@ export function TeacherDashboardOverviewWidget({
     [data.classes, data.selectedClassId],
   );
 
+  const attendanceStats = useMemo(() => {
+    const total = data.roster.length;
+    const present = data.roster.filter((s) => s.status === "Present").length;
+    const late = data.roster.filter((s) => s.status === "Late").length;
+    const excused = data.roster.filter((s) => s.status === "Excused").length;
+    const absent = data.roster.filter((s) => s.status === "Absent").length;
+    const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 100;
+    const firstExcused = data.roster.find((s) => s.status === "Excused");
+    return {
+      total,
+      present,
+      late,
+      excused,
+      absent,
+      rate,
+      firstExcusedName: firstExcused ? firstExcused.name.split(" ")[0] : null,
+    };
+  }, [data.roster]);
+
   const showToast = (title: string, msg: string) => {
     setToast({ title, msg });
     window.setTimeout(() => {
@@ -117,9 +152,11 @@ export function TeacherDashboardOverviewWidget({
   const openAttendanceDrawer = () => {
     setDrawerConfig({
       type: "attendance",
-      title: "Homeroom 4B Attendance Roster",
-      subtitle: "Daily Roll Call • Submitted at 08:35 AM",
-      badge: "96.4% Present",
+      title: activeClass?.label?.includes("4B")
+        ? "Homeroom 4B Attendance Roster"
+        : `${activeClass?.label || "Homeroom 4B"} Attendance Roster`,
+      subtitle: `Daily Roll Call • ${attendanceStats.present + attendanceStats.late} of ${attendanceStats.total || 28} Verified`,
+      badge: `${attendanceStats.rate}% Present`,
       badgeClass: "bg-pastel-mint/70 text-pastel-mint-deep",
       icon: "fact_check",
       iconContainerClass: "bg-pastel-mint text-pastel-mint-deep",
@@ -247,56 +284,75 @@ export function TeacherDashboardOverviewWidget({
 
   const filteredCompactRoster = useMemo(() => {
     const q = compactSearch.trim().toLowerCase();
-    const baseCompactRows = [
-      {
-        studentId: data.roster[0]?.studentId ?? "stu-liam-vance",
-        initials: "LV",
-        avatarClass: "bg-pastel-peach text-pastel-peach-deep",
-        name: "Liam Vance",
-        guardian: "Guardian: Dr. E. Vance",
-        studentNumber: "#STU-2026-042",
-        rollBadge: "Present (08:42 AM)",
-        rollBadgeClass: "bg-pastel-mint/70 text-pastel-mint-deep",
-        healthAlert: "Severe Peanut EpiPen (Room 204)",
-        healthCritical: true,
-        progress: "94.5% (A+)",
-        progressClass: "text-pastel-mint-deep",
-        accommodation: "Gifted STEM Extension",
-        actionLabel: "Profile",
-      },
-      {
-        studentId: data.roster[1]?.studentId ?? "stu-maya-patel",
-        initials: "MP",
-        avatarClass: "bg-pastel-sky text-pastel-sky-deep",
-        name: "Maya Patel",
-        guardian: "Guardian: P. Patel",
-        studentNumber: "#STU-2026-059",
-        rollBadge: "Present (08:45 AM)",
-        rollBadgeClass: "bg-pastel-mint/70 text-pastel-mint-deep",
-        healthAlert: "No critical alerts",
-        healthCritical: false,
-        progress: "88.0% (A)",
-        progressClass: "text-crayon-charcoal",
-        accommodation: "Standard Curriculum",
-        actionLabel: "Profile",
-      },
-      {
-        studentId: data.roster[2]?.studentId ?? "stu-noah-lee",
-        initials: "NL",
-        avatarClass: "bg-pastel-butter text-crayon-charcoal",
-        name: "Noah Lee",
-        guardian: "Guardian: T. Lee",
-        studentNumber: "#STU-2026-071",
-        rollBadge: "Absent (Medical Flu)",
-        rollBadgeClass: "bg-pastel-peach text-pastel-peach-deep",
-        healthAlert: "Mild Asthma Inhaler",
-        healthCritical: false,
-        progress: "76.4% (B)",
-        progressClass: "text-pastel-peach-deep",
-        accommodation: "Extra time on timed quizzes",
-        actionLabel: "Edit Mark",
-      },
+    const avatarColors = [
+      "bg-pastel-peach text-pastel-peach-deep",
+      "bg-pastel-sky text-pastel-sky-deep",
+      "bg-pastel-butter text-crayon-charcoal",
+      "bg-pastel-mint text-pastel-mint-deep",
+      "bg-pastel-lilac text-pastel-lilac-deep",
     ];
+
+    const baseCompactRows =
+      data.roster.length > 0
+        ? data.roster.map((s, index) => {
+            const parts = s.name.split(" ");
+            const initials =
+              parts.length > 1
+                ? `${parts[0][0]}${parts[parts.length - 1][0]}`
+                : s.name.substring(0, 2).toUpperCase();
+            const avatarClass = avatarColors[index % avatarColors.length];
+            const statusLabel = s.status ?? "Unmarked";
+            const rollBadgeClass =
+              s.status === "Present"
+                ? "bg-pastel-mint/70 text-pastel-mint-deep"
+                : s.status === "Late"
+                ? "bg-pastel-butter text-crayon-charcoal"
+                : s.status === "Absent"
+                ? "bg-pastel-peach text-pastel-peach-deep"
+                : s.status === "Excused"
+                ? "bg-pastel-sun/60 text-crayon-charcoal"
+                : "bg-paper-tint text-crayon-muted";
+
+            return {
+              studentId: s.studentId,
+              initials,
+              avatarClass,
+              name: s.name,
+              guardian: `Guardian of ${s.name}`,
+              studentNumber: `#${s.studentNumber}`,
+              rollBadge: statusLabel,
+              rollBadgeClass,
+              healthAlert: s.medicalBadge || "No critical alerts",
+              healthCritical:
+                s.medicalSeverity === "Critical" ||
+                s.medicalSeverity === "High",
+              progress: s.grade,
+              progressClass: "text-crayon-charcoal",
+              accommodation: s.medicalBadge
+                ? "Medical Accommodations Active"
+                : "Standard Curriculum",
+              actionLabel: "Profile",
+            };
+          })
+        : [
+            {
+              studentId: "stu-lucas-vance",
+              initials: "LV",
+              avatarClass: "bg-pastel-peach text-pastel-peach-deep",
+              name: "Lucas Vance",
+              guardian: "Guardian: Dr. E. Vance",
+              studentNumber: "#STU-4021",
+              rollBadge: "Present",
+              rollBadgeClass: "bg-pastel-mint/70 text-pastel-mint-deep",
+              healthAlert: "Peanut Anaphylaxis (EpiPen)",
+              healthCritical: true,
+              progress: "Grade 4",
+              progressClass: "text-pastel-mint-deep",
+              accommodation: "Medical Accommodations Active",
+              actionLabel: "Profile",
+            },
+          ];
+
     if (!q) return baseCompactRows;
     return baseCompactRows.filter(
       (r) =>
@@ -331,12 +387,7 @@ export function TeacherDashboardOverviewWidget({
         </div>
       )}
 
-      {/* Tactile pastel ambient backdrop blobs */}
       <div className="relative w-full">
-        <div className="absolute -top-10 left-1/4 w-96 h-96 bg-pastel-butter/35 rounded-full blur-3xl pointer-events-none -z-10" />
-        <div className="absolute top-44 right-10 w-80 h-80 bg-pastel-mint/30 rounded-full blur-3xl pointer-events-none -z-10" />
-        <div className="absolute bottom-20 left-10 w-72 h-72 bg-pastel-peach/25 rounded-full blur-3xl pointer-events-none -z-10" />
-
         {/* Top Greeting & Header Bar */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
@@ -348,6 +399,7 @@ export function TeacherDashboardOverviewWidget({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
+                suppressHydrationWarning
                 alt={displayEducatorName}
                 className="w-14 h-14 rounded-2xl object-cover shadow-pastel border-2 border-pastel-sun bg-paper-tint group-hover:scale-105 transition-transform"
                 src={data.educatorAvatarUrl || DEFAULT_TEACHER_AVATAR}
@@ -366,7 +418,7 @@ export function TeacherDashboardOverviewWidget({
                   Good morning, {displayEducatorName}!
                 </h1>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-pastel-lilac/70 text-pastel-lilac-deep border border-pastel-lilac">
-                  Homeroom 4B &amp; Gr 5 Science
+                  {data.assignedClassesLabel || "Unassigned"}
                 </span>
               </div>
               <span className="text-sm font-medium text-crayon-espresso mt-0.5">
@@ -520,10 +572,10 @@ export function TeacherDashboardOverviewWidget({
 
                 <div className="my-4">
                   <div className="text-5xl font-black text-crayon-charcoal tracking-tight leading-none">
-                    96%
+                    {attendanceStats.rate}%
                   </div>
                   <p className="text-sm font-semibold text-crayon-espresso mt-2">
-                    27 of 28 Enrolled Present
+                    {attendanceStats.present + attendanceStats.late} of {attendanceStats.total || 28} Enrolled Present
                   </p>
                 </div>
 
@@ -532,7 +584,9 @@ export function TeacherDashboardOverviewWidget({
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-pastel-peach-deep" />
                     <span className="text-xs font-semibold text-crayon-espresso">
-                      1 Excused (Leo M.)
+                      {attendanceStats.excused > 0
+                        ? `${attendanceStats.excused} Excused (${attendanceStats.firstExcusedName || "Verified"})`
+                        : `${attendanceStats.absent} Absent`}
                     </span>
                   </div>
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-pastel-mint/70 text-pastel-mint-deep">
@@ -561,7 +615,7 @@ export function TeacherDashboardOverviewWidget({
                 <div className="grid grid-cols-3 gap-2 py-1 text-center">
                   <div className="bg-paper-card/75 backdrop-blur-xs rounded-2xl p-2.5 border border-paper/60 shadow-xs">
                     <div className="text-2xl font-black text-crayon-charcoal leading-tight">
-                      4
+                      {data.classes.length || 4}
                     </div>
                     <div className="text-xs text-crayon-espresso font-bold mt-0.5">
                       Classes
@@ -569,7 +623,7 @@ export function TeacherDashboardOverviewWidget({
                   </div>
                   <div className="bg-paper-card/75 backdrop-blur-xs rounded-2xl p-2.5 border border-paper/60 shadow-xs">
                     <div className="text-2xl font-black text-crayon-charcoal leading-tight">
-                      28
+                      {data.roster.length || 28}
                     </div>
                     <div className="text-xs text-crayon-espresso font-bold mt-0.5">
                       Roster
@@ -577,7 +631,7 @@ export function TeacherDashboardOverviewWidget({
                   </div>
                   <div className="bg-paper-card/75 backdrop-blur-xs rounded-2xl p-2.5 border border-paper/60 shadow-xs">
                     <div className="text-2xl font-black text-crayon-charcoal leading-tight">
-                      2
+                      {data.pendingApplicantCount ?? 2}
                     </div>
                     <div className="text-xs text-crayon-espresso font-bold mt-0.5">
                       Assessments
@@ -625,135 +679,160 @@ export function TeacherDashboardOverviewWidget({
                 </p>
 
                 <div className="space-y-2 mt-1">
-                  {/* Student 1 item: Leo Miller */}
-                  <div
-                    onClick={() =>
-                      openMedicalAlertDrawer(
-                        "Leo Miller",
-                        "Severe Peanut Anaphylaxis - EpiPen Room 204",
-                        "#STU-2026-042",
-                      )
-                    }
-                    className="flex items-center justify-between p-2.5 rounded-2xl bg-paper-tint hover:bg-pastel-peach/30 border border-pastel-peach/50 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-[0.99]"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-pastel-peach flex items-center justify-center text-xs text-pastel-peach-deep font-black">
-                        LM
-                      </div>
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-crayon-charcoal truncate leading-tight">
-                          Leo Miller
-                        </p>
-                        <p className="text-[11px] font-semibold text-pastel-peach-deep truncate">
-                          Doctor Note #412 • Medical Alert
-                        </p>
-                      </div>
-                    </div>
+                  {/* Student 1 item */}
+                  {(() => {
+                    const student1 = data.roster[0] ?? {
+                      studentId: "00000000-0000-0000-0000-000000005101",
+                      name: "Lucas Vance",
+                      studentNumber: "STU-4021",
+                      medicalBadge: "Peanut Anaphylaxis - EpiPen Room 204",
+                    };
+                    const initials = student1.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .substring(0, 2)
+                      .toUpperCase();
 
-                    <div className="flex items-center gap-1.5">
+                    return (
                       <div
-                        className="flex items-center bg-paper-card p-0.5 rounded-full border border-pastel-butter shrink-0"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={() =>
+                          openMedicalAlertDrawer(
+                            student1.name,
+                            student1.medicalBadge || "Medical Record on File",
+                            `#${student1.studentNumber}`,
+                          )
+                        }
+                        className="flex items-center justify-between p-2.5 rounded-2xl bg-paper-tint hover:bg-pastel-peach/30 border border-pastel-peach/50 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-[0.99]"
                       >
-                        {(["P", "L", "E"] as const).map((code) => {
-                          const active = leoStatus === code;
-                          return (
-                            <button
-                              key={code}
-                              type="button"
-                              disabled={!canMark}
-                              onClick={() => {
-                                setLeoStatus(code);
-                                const targetId =
-                                  data.roster[0]?.studentId ??
-                                  "00000000-0000-0000-0000-000000005101";
-                                onQuickRollMark?.(
-                                  targetId,
-                                  mapCodeToStatus(code),
-                                );
-                              }}
-                              className={
-                                active
-                                  ? "px-2 py-0.5 rounded-full text-xs bg-pastel-sun text-crayon-charcoal font-black shadow-xs cursor-pointer"
-                                  : "px-2 py-0.5 rounded-full text-xs font-semibold text-crayon-muted cursor-pointer hover:text-crayon-charcoal"
-                              }
-                            >
-                              {code}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onNavigateWorkspace?.("safeguarding");
-                        }}
-                        className="p-1 rounded-lg hover:bg-paper-card text-crayon-espresso/70 hover:text-crayon-charcoal transition cursor-pointer"
-                        title="View Full Health Profile"
-                      >
-                        <TeacherIcon name="open_in_new" className="size-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-pastel-peach flex items-center justify-center text-xs text-pastel-peach-deep font-black">
+                            {initials}
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-crayon-charcoal truncate leading-tight">
+                              {student1.name}
+                            </p>
+                            <p className="text-[11px] font-semibold text-pastel-peach-deep truncate">
+                              {student1.medicalBadge || "Doctor Note • Medical Alert"}
+                            </p>
+                          </div>
+                        </div>
 
-                  {/* Student 2 item: Amara Khan */}
-                  <div
-                    onClick={() => {
-                      const targetId =
-                        data.roster[1]?.studentId ??
-                        "00000000-0000-0000-0000-000000005104";
-                      onOpenStudentProfile?.(targetId);
-                    }}
-                    className="flex items-center justify-between p-2.5 rounded-2xl bg-paper-tint hover:bg-pastel-mint/20 border border-pastel-mint/50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-pastel-mint flex items-center justify-center text-xs text-pastel-mint-deep font-black">
-                        AK
-                      </div>
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-crayon-charcoal truncate leading-tight">
-                          Amara Khan
-                        </p>
-                        <p className="text-[11px] font-semibold text-crayon-muted truncate">
-                          Arrived 08:42 AM
-                        </p>
-                      </div>
-                    </div>
-
-                    <div
-                      className="flex items-center bg-paper-card p-0.5 rounded-full border border-pastel-butter shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {(["P", "L", "E"] as const).map((code) => {
-                        const active = amaraStatus === code;
-                        return (
-                          <button
-                            key={code}
-                            type="button"
-                            disabled={!canMark}
-                            onClick={() => {
-                              setAmaraStatus(code);
-                              const targetId =
-                                data.roster[1]?.studentId ??
-                                "00000000-0000-0000-0000-000000005104";
-                              onQuickRollMark?.(
-                                targetId,
-                                mapCodeToStatus(code),
-                              );
-                            }}
-                            className={
-                              active
-                                ? "px-2 py-0.5 rounded-full text-xs bg-pastel-mint text-pastel-mint-deep font-black shadow-xs cursor-pointer"
-                                : "px-2 py-0.5 rounded-full text-xs font-semibold text-crayon-muted cursor-pointer hover:text-crayon-charcoal"
-                            }
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="flex items-center bg-paper-card p-0.5 rounded-full border border-pastel-butter shrink-0"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {code}
+                            {(["P", "L", "E"] as const).map((code) => {
+                              const active = leoStatus === code;
+                              return (
+                                <button
+                                  key={code}
+                                  type="button"
+                                  disabled={!canMark}
+                                  onClick={() => {
+                                    setLeoStatus(code);
+                                    onQuickRollMark?.(
+                                      student1.studentId,
+                                      mapCodeToStatus(code),
+                                    );
+                                  }}
+                                  className={
+                                    active
+                                      ? "px-2 py-0.5 rounded-full text-xs bg-pastel-sun text-crayon-charcoal font-black shadow-xs cursor-pointer"
+                                      : "px-2 py-0.5 rounded-full text-xs font-semibold text-crayon-muted cursor-pointer hover:text-crayon-charcoal"
+                                  }
+                                >
+                                  {code}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onNavigateWorkspace?.("safeguarding");
+                            }}
+                            className="p-1 rounded-lg hover:bg-paper-card text-crayon-espresso/70 hover:text-crayon-charcoal transition cursor-pointer"
+                            title="View Full Health Profile"
+                          >
+                            <TeacherIcon name="open_in_new" className="size-3.5" />
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Student 2 item */}
+                  {(() => {
+                    const student2 = data.roster[1] ?? {
+                      studentId: "00000000-0000-0000-0000-000000005102",
+                      name: "Maya Chen",
+                      studentNumber: "STU-4022",
+                      medicalBadge: null,
+                    };
+                    const initials = student2.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .substring(0, 2)
+                      .toUpperCase();
+
+                    return (
+                      <div
+                        onClick={() => {
+                          onOpenStudentProfile?.(student2.studentId);
+                        }}
+                        className="flex items-center justify-between p-2.5 rounded-2xl bg-paper-tint hover:bg-pastel-mint/20 border border-pastel-mint/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-pastel-mint flex items-center justify-center text-xs text-pastel-mint-deep font-black">
+                            {initials}
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-crayon-charcoal truncate leading-tight">
+                              {student2.name}
+                            </p>
+                            <p className="text-[11px] font-semibold text-crayon-muted truncate">
+                              #{student2.studentNumber} • Grade {student2.grade}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          className="flex items-center bg-paper-card p-0.5 rounded-full border border-pastel-butter shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {(["P", "L", "E"] as const).map((code) => {
+                            const active = amaraStatus === code;
+                            return (
+                              <button
+                                key={code}
+                                type="button"
+                                disabled={!canMark}
+                                onClick={() => {
+                                  setAmaraStatus(code);
+                                  onQuickRollMark?.(
+                                    student2.studentId,
+                                    mapCodeToStatus(code),
+                                  );
+                                }}
+                                className={
+                                  active
+                                    ? "px-2 py-0.5 rounded-full text-xs bg-pastel-mint text-pastel-mint-deep font-black shadow-xs cursor-pointer"
+                                    : "px-2 py-0.5 rounded-full text-xs font-semibold text-crayon-muted cursor-pointer hover:text-crayon-charcoal"
+                                }
+                              >
+                                {code}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <button
@@ -761,7 +840,7 @@ export function TeacherDashboardOverviewWidget({
                   onClick={() => onNavigateWorkspace?.("attendance")}
                   className="inline-flex items-center justify-center w-full py-2.5 bg-paper-tint hover:bg-pastel-butter text-crayon-charcoal border border-pastel-butter rounded-full transition-colors mt-1 text-xs font-bold cursor-pointer"
                 >
-                  View Full 28 Student Roster
+                  View Full {data.roster.length > 0 ? `${data.roster.length} Student` : "28 Student"} Roster
                 </button>
               </div>
             </div>
@@ -1366,10 +1445,10 @@ export function TeacherDashboardOverviewWidget({
                     className="size-4 text-pastel-peach-deep"
                   />
                   <h2 className="font-extrabold text-sm text-crayon-charcoal">
-                    Homeroom 5A Roster &amp; Medical Safeguards (Compact)
+                    {activeClass?.label || "Homeroom"} Roster &amp; Medical Safeguards (Compact)
                   </h2>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pastel-mint/70 text-pastel-mint-deep">
-                    25 Enrolled • 1 Absent
+                    {filteredCompactRoster.length} Enrolled • {attendanceStats.absent} Absent
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
@@ -1616,9 +1695,14 @@ export function TeacherDashboardOverviewWidget({
               Staff Briefing Notice:
             </span>
             <span className="text-xs font-medium text-crayon-espresso">
-              Fire Drill scheduled for Tomorrow at 10:15 AM • Standard Assembly
-              Zone 3
+              {data.complianceBriefing?.detail ||
+                "Fire Drill scheduled for Tomorrow at 10:15 AM • Standard Assembly Zone 3"}
             </span>
+            {data.complianceBriefing?.slaBadge && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pastel-mint/70 text-pastel-mint-deep border border-pastel-mint-deep/30">
+                {data.complianceBriefing.slaBadge}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <span className="text-xs text-crayon-muted font-medium">
@@ -1641,18 +1725,23 @@ export function TeacherDashboardOverviewWidget({
       </div>
 
       {/* Interactive Slide-Over Drawer Shell (matching Teacher_Dashboard_Overview.html lines 506-550) */}
-      {drawerConfig && (
-        <>
-          <div
-            onClick={() => setDrawerConfig(null)}
-            className="fixed inset-0 bg-crayon-charcoal/50 backdrop-blur-xs z-50 transition-opacity duration-300"
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={drawerConfig.title}
-            className="fixed top-0 right-0 h-full w-full max-w-lg bg-paper-card shadow-2xl z-50 flex flex-col border-l-2 border-pastel-butter md:rounded-l-3xl overflow-hidden"
-          >
+      {isMounted &&
+        drawerConfig &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              onClick={() => setDrawerConfig(null)}
+              className="fixed inset-0 bg-crayon-charcoal/50 backdrop-blur-xs z-[60] transition-opacity duration-300"
+              data-testid="drawer-backdrop"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={drawerConfig.title}
+              data-testid="teacher-slideover-drawer"
+              className="fixed top-0 right-0 h-full w-full max-w-lg bg-paper-card shadow-2xl z-[70] flex flex-col border-l-2 border-pastel-butter md:rounded-l-3xl overflow-hidden"
+            >
             {/* Drawer Header */}
             <div className="px-6 py-4 bg-paper-tint border-b border-pastel-butter flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -1695,6 +1784,8 @@ export function TeacherDashboardOverviewWidget({
                   type="button"
                   onClick={() => setDrawerConfig(null)}
                   className="w-8 h-8 rounded-lg hover:bg-paper-tint text-crayon-muted flex items-center justify-center cursor-pointer"
+                  aria-label="Close drawer"
+                  data-testid="drawer-close-button"
                 >
                   <TeacherIcon name="close" className="size-4" />
                 </button>
@@ -1845,7 +1936,8 @@ export function TeacherDashboardOverviewWidget({
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body,
       )}
 
       {/* Reactive Success Toast Notification */}
@@ -1865,7 +1957,7 @@ export function TeacherDashboardOverviewWidget({
       )}
 
       {/* Bottom Floating AI Copilot Widget (matching Teacher_Dashboard_Overview.html line 493) */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
+      <div className="fixed bottom-6 right-6 z-[80] flex flex-col items-end gap-3 pointer-events-none">
         {puffyOpen && (
           <div className="pointer-events-auto bg-paper-card/95 backdrop-blur-xl border-2 border-pastel-butter shadow-pastel-warm rounded-3xl p-4 w-80 sm:w-96 flex flex-col gap-3 transition-all duration-200">
             <div className="flex items-center justify-between pb-2.5 border-b border-pastel-butter/80">

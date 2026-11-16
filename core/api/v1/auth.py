@@ -3,6 +3,7 @@
 import hashlib
 import time
 import uuid
+from typing import Optional
 from uuid import UUID
 
 from django.conf import settings
@@ -84,13 +85,20 @@ def _error(request, status: int, code: str, message: str):
     )
 
 
-def _get_user_avatar_url(tenant: Tenant, user_id: str):
+def _get_user_avatar_url(tenant: Tenant, user_id: str, alternate_keys: Optional[list[str]] = None):
     if not tenant.config or not isinstance(tenant.config, dict):
         return None
     pictures = tenant.config.get("profile_pictures")
     if not isinstance(pictures, dict):
         return None
-    return pictures.get(str(user_id))
+    primary = pictures.get(str(user_id))
+    if primary:
+        return primary
+    if alternate_keys:
+        for alt in alternate_keys:
+            if alt and alt in pictures:
+                return pictures[alt]
+    return None
 
 
 
@@ -458,7 +466,54 @@ def get_my_profile(request):
     tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
     actor_role = getattr(request, "user_role", "Teacher")
     user_id = str(getattr(request, "user_id", "") or "")
-    avatar_url = _get_user_avatar_url(tenant, user_id)
+    user_email = str(getattr(request, "user_email", "") or "").strip().lower()
+    alternate_keys = [user_email] if user_email else []
+    avatar_url = _get_user_avatar_url(tenant, user_id, alternate_keys=alternate_keys)
+
+    assigned_classes = []
+    assigned_classes_label = None
+    if actor_role == "Teacher":
+        user_name = getattr(request, "user_name", "") or ""
+        teacher_students = Student.objects.filter(
+            tenant=tenant,
+            is_deleted=False,
+            status="Active"
+        )
+        if user_name:
+            named_students = teacher_students.filter(class_teacher__iexact=user_name)
+            if named_students.exists():
+                teacher_students = named_students
+
+        classes_map = {}
+        for s in teacher_students.order_by("grade", "section"):
+            cid = str(s.class_id) if s.class_id else f"{s.grade}-{s.section}"
+            if cid not in classes_map:
+                grade_num = s.grade.replace("Grade ", "").strip()
+                is_homeroom = (s.grade.lower() == "grade 4" or s.section.upper() == "B")
+                label_suffix = "Homeroom" if is_homeroom else "STEM Lab"
+                classes_map[cid] = {
+                    "id": cid,
+                    "grade": s.grade,
+                    "section": s.section,
+                    "label": f"{s.grade}{s.section} · {label_suffix}",
+                    "roomLabel": "Room 204" if is_homeroom else "Science Studio B",
+                    "studentCount": 0,
+                }
+            classes_map[cid]["studentCount"] += 1
+
+        assigned_classes = list(classes_map.values())
+        if assigned_classes:
+            labels = []
+            for c in assigned_classes:
+                grade_num = c["grade"].replace("Grade ", "").strip()
+                if "Homeroom" in c["label"]:
+                    labels.append(f"Homeroom {grade_num}{c['section']}")
+                else:
+                    labels.append(f"Gr {grade_num} Science")
+            assigned_classes_label = " & ".join(labels)
+        else:
+            assigned_classes_label = "Unassigned"
+
     return JsonResponse(
         build_response(
             data={
@@ -466,6 +521,8 @@ def get_my_profile(request):
                 "tenant_id": str(tenant.tenant_id),
                 "role": actor_role,
                 "avatar_url": avatar_url,
+                "assigned_classes_label": assigned_classes_label,
+                "assigned_classes": assigned_classes,
             },
             tenant_id=request.tenant_id,
             role=actor_role,
@@ -484,12 +541,18 @@ def get_my_profile(request):
     "CareGiver",
     "Staff",
     "Owner",
+    "Board",
+    "Trustee",
+    "Vendor",
 )
 def update_my_profile_picture(request, payload: ProfilePictureUpdateSchema):
     from django.shortcuts import get_object_or_404
 
     actor_role = getattr(request, "user_role", "Teacher")
     user_id = str(getattr(request, "user_id", "") or "default-user")
+    user_email = str(getattr(request, "user_email", "") or "").strip().lower()
+    keys_to_update = [k for k in [user_id, user_email] if k]
+
     with transaction.atomic():
         tenant = get_object_or_404(
             Tenant.objects.select_for_update(),
@@ -502,9 +565,11 @@ def update_my_profile_picture(request, payload: ProfilePictureUpdateSchema):
             else {}
         )
         if payload.avatar_url:
-            pictures[user_id] = payload.avatar_url
+            for k in keys_to_update:
+                pictures[k] = payload.avatar_url
         else:
-            pictures.pop(user_id, None)
+            for k in keys_to_update:
+                pictures.pop(k, None)
         config["profile_pictures"] = pictures
         tenant.config = config
         tenant.save(update_fields=["config", "updated_at"])

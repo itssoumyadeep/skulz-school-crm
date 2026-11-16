@@ -93,6 +93,21 @@ export const DEFAULT_PARENT_AVATAR = buildSvgDataUri(`
 </svg>
 `);
 
+export const DEFAULT_CAREGIVER_AVATAR = buildSvgDataUri(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <rect width="160" height="160" rx="36" fill="rgb(254, 215, 170)"/>
+  <circle cx="128" cy="32" r="36" fill="rgb(167, 243, 208)" fill-opacity="0.8"/>
+  <circle cx="30" cy="130" r="38" fill="rgb(254, 240, 138)" fill-opacity="0.8"/>
+  <path d="M36 152C39 122 57 108 80 108C103 108 121 122 124 152" fill="rgb(180, 83, 9)"/>
+  <rect x="69" y="94" width="22" height="22" rx="10" fill="rgb(251, 214, 188)"/>
+  <ellipse cx="80" cy="74" rx="26" ry="29" fill="rgb(254, 226, 208)"/>
+  <path d="M50 64C50 42 64 32 80 32C96 32 110 42 110 64C98 56 86 52 72 53C62 54 55 58 50 64Z" fill="rgb(55, 48, 163)"/>
+  <circle cx="69" cy="73" r="2.8" fill="rgb(30, 27, 24)"/>
+  <circle cx="91" cy="73" r="2.8" fill="rgb(30, 27, 24)"/>
+  <path d="M72 86C76 90 84 90 88 86" stroke="rgb(180, 83, 9)" stroke-width="3" stroke-linecap="round"/>
+</svg>
+`);
+
 export const CO_TEACHER_AVATAR_1 = buildSvgDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
   <rect width="120" height="120" rx="60" fill="rgb(167, 243, 208)"/>
@@ -189,10 +204,14 @@ export const PROFILE_PICTURE_EVENT = "pc-profile-picture-updated";
 
 export function getCachedProfilePicture(
   userKey: string,
-  role: "teacher" | "parent",
+  role: "teacher" | "parent" | "caregiver",
 ): string {
   const defaultAvatar =
-    role === "teacher" ? DEFAULT_TEACHER_AVATAR : DEFAULT_PARENT_AVATAR;
+    role === "teacher"
+      ? DEFAULT_TEACHER_AVATAR
+      : role === "caregiver"
+        ? DEFAULT_CAREGIVER_AVATAR
+        : DEFAULT_PARENT_AVATAR;
   if (typeof window === "undefined") {
     return defaultAvatar;
   }
@@ -211,7 +230,7 @@ export function getCachedProfilePicture(
 
 export function setCachedProfilePicture(
   userKey: string,
-  role: "teacher" | "parent",
+  role: "teacher" | "parent" | "caregiver",
   avatarUrl: string | null,
 ): string {
   const resolved =
@@ -219,7 +238,9 @@ export function setCachedProfilePicture(
       ? avatarUrl.trim()
       : role === "teacher"
         ? DEFAULT_TEACHER_AVATAR
-        : DEFAULT_PARENT_AVATAR;
+        : role === "caregiver"
+          ? DEFAULT_CAREGIVER_AVATAR
+          : DEFAULT_PARENT_AVATAR;
 
   if (typeof window !== "undefined") {
     try {
@@ -354,7 +375,7 @@ export function TeacherIcon({
 export interface ProfilePictureModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  actorRole: "teacher" | "parent";
+  actorRole: "teacher" | "parent" | "caregiver";
   actorName: string;
   currentAvatarUrl: string;
   onSaveAvatar: (nextAvatarUrl: string | null) => Promise<void> | void;
@@ -486,7 +507,7 @@ export function ProfilePictureModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div
         onClick={() => onOpenChange(false)}
         className="fixed inset-0 bg-crayon-charcoal/50 backdrop-blur-xs"

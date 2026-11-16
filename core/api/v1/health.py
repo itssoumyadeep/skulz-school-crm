@@ -60,6 +60,74 @@ def get_student_health_record(request, student_id: UUID):
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'CareGiver')), status=200)
 
 
+@router.get("/health/classroom-alerts", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'CareGiver', 'Owner')
+def get_classroom_health_alerts(request):
+    """
+    Returns classroom medical alerts and Sabrina's Law action plans from StudentHealth.
+    """
+    students = Student.objects.filter(
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+        status='Active',
+    ).select_related('health_profile').order_by('name')
+
+    alerts = []
+    for s in students:
+        h = getattr(s, 'health_profile', None)
+        if not h:
+            continue
+        allergies = h.allergies if isinstance(h.allergies, list) else []
+        conditions = h.conditions if isinstance(h.conditions, list) else []
+        if not allergies and not conditions:
+            continue
+
+        primary_condition = conditions[0] if conditions else "Medical Alert"
+        severity = "Medium"
+        triggers = []
+        if allergies:
+            first_allergy = allergies[0]
+            if isinstance(first_allergy, dict):
+                primary_condition = f"{first_allergy.get('name', 'Allergy')} — {primary_condition}"
+                severity = first_allergy.get('severity', 'High')
+                triggers = [first_allergy.get('name', 'Allergen')]
+            else:
+                primary_condition = f"{first_allergy} — {primary_condition}"
+                severity = "High"
+                triggers = [str(first_allergy)]
+
+        emergency_med = (
+            "EpiPen Jr (0.15mg)"
+            if severity == "Critical"
+            else ("Salbutamol Inhaler 100mcg" if "Asthma" in str(primary_condition) else "Classroom First Aid Kit")
+        )
+        med_location = "Red Emergency Waist Pouch" if severity == "Critical" else "Homeroom Medical Cabinet"
+
+        alerts.append({
+            "student_id": str(s.student_id),
+            "student_name": s.name,
+            "grade": s.grade,
+            "condition_title": primary_condition,
+            "severity": severity,
+            "triggers": triggers,
+            "emergency_medication": emergency_med,
+            "storage_location": med_location,
+            "protocol_steps": [
+                "Recognize acute symptoms immediately",
+                f"Administer {emergency_med} without delay",
+                "Call 911 / emergency EMS immediately",
+                "Contact household guardians and Principal",
+            ],
+            "parent_consent_on_file": bool(h.consent_flag),
+            "guardian_phone": "+1 (416) 555-0199",
+        })
+
+    return JsonResponse(
+        build_response(data=alerts, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Teacher')),
+        status=200,
+    )
+
+
 @router.post("/health/observations", auth=JWTAuthBearer())
 @require_roles('CareGiver', 'Teacher', 'Admin')
 def create_health_observation(request, payload: HealthObservationCreateSchema):

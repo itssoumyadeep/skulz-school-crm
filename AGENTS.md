@@ -15,6 +15,7 @@ Read **only** the files required for your current task:
 | **Auth / RBAC / Tenant RLS** | `core/auth/` (`bearer.py`, `decorators.py`, `scoping.py`) + [`docs/1_SECURITY.md`](docs/1_SECURITY.md) |
 | **Frontend / Portal UI Change** | Target route in `frontend/app/`, `frontend/styles/tokens.css`, `frontend/components/ui`, `frontend/components/pc`, `frontend/components/widgets` + [`docs/5_DESIGN.md`](docs/5_DESIGN.md) |
 | **Architecture / Sprint Status** | [`docs/3_ARCHITECTURE.md`](docs/3_ARCHITECTURE.md), [`docs/6_PLAN.md`](docs/6_PLAN.md) |
+| **Defects / Bug Fixes** | [`docs/11_DEFECTS.md`](docs/11_DEFECTS.md) + target module files |
 
 *Ignore `docs/reference/` unless explicitly requested.*
 
@@ -28,6 +29,7 @@ Read **only** the files required for your current task:
 4. **No Broad Refactors:** Keep edits minimal, targeted, and consistent with existing naming and patterns.
 5. **No Untested Changes:** Always run the narrowest relevant test/build check before finishing.
 6. **Memory Log Required:** Append a brief dated decision/status entry to [`docs/7_MEMORY_LOG.md`](docs/7_MEMORY_LOG.md) when completing a task.
+7. **Defect Log Required:** Log every user-raised or QA-discovered defect (with `DEF-XXX` ID, root cause, resolution, and verification) in [`docs/11_DEFECTS.md`](docs/11_DEFECTS.md) going forward.
 
 ---
 
@@ -54,5 +56,5 @@ Read **only** the files required for your current task:
 2. Implement the minimal change across Schema / BO / Route / UI.
 3. Run focused verification:
    - **Backend:** `pytest <path/to/test_file.py>` (or `python manage.py test`)
-   - **Frontend:** focused ESLint on changed files + `npm run build` (from `frontend/`)
-4. Append a dated entry to [`docs/7_MEMORY_LOG.md`](docs/7_MEMORY_LOG.md).
+   - **Frontend:** focused ESLint on changed files + `npm run build` (from `frontend/`) + **Playwright E2E browser verification** via the global `playwright-e2e-testing` skill and `playwright-qa` agent (`npx --prefix frontend playwright test`).
+4. Append a dated entry to [`docs/7_MEMORY_LOG.md`](docs/7_MEMORY_LOG.md) (and log any raised defect in [`docs/11_DEFECTS.md`](docs/11_DEFECTS.md)).

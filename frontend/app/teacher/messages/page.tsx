@@ -90,7 +90,7 @@ export default function TeacherMessagesPage() {
   const [excursions, setExcursions] = useState<TeacherExcursionWaiverCard[]>(
     SEEDED_EXCURSION_CARDS,
   );
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [bannerNotice, setBannerNotice] = useState<string | null>(null);
 
   const [composerOpen, setComposerOpen] = useState(false);
@@ -149,7 +149,7 @@ export default function TeacherMessagesPage() {
               statusLabel: m.status || "Sent",
             }),
           );
-          setMessages([...mapped, ...SEEDED_MESSAGES]);
+          setMessages(mapped.length > 0 ? mapped : SEEDED_MESSAGES);
         }
 
         if (
@@ -254,12 +254,18 @@ export default function TeacherMessagesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Parent Messages & Excursion Waivers"
+        variant="pastel"
+        icon="chat_bubble"
+        iconBg="bg-pastel-sky border-pastel-sky-deep/30 text-pastel-sky-deep"
+        title="Parent Notes & Excursion Waivers"
+        badge="Grade 4B Guardian Channel"
+        badgeClass="bg-pastel-sky/70 text-pastel-sky-deep border-pastel-sky"
         subtitle="Send guardian progress notes, track field trip permission slips, and review homeroom outreach."
         actions={
           <Button
             type="button"
             onClick={() => handleOpenCompose()}
+            className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun text-xs font-extrabold shadow-pastel cursor-pointer"
           >
             <Send className="size-4" />
             New Parent Message
@@ -270,9 +276,9 @@ export default function TeacherMessagesPage() {
       {bannerNotice && (
         <div
           role="status"
-          className="flex items-center justify-between gap-3 rounded-xl border border-pastel-mint-deep/30 bg-pastel-mint/40 px-4 py-3 text-sm text-crayon-charcoal"
+          className="flex items-center justify-between gap-3 rounded-2xl border-2 border-pastel-mint-deep/30 bg-pastel-mint/45 px-5 py-3 text-xs font-bold text-crayon-charcoal shadow-pastel"
         >
-          <span className="inline-flex items-center gap-2 font-medium">
+          <span className="inline-flex items-center gap-2 font-bold">
             <CheckCircle2 className="size-4 text-pastel-mint-deep" />
             {bannerNotice}
           </span>
@@ -281,6 +287,7 @@ export default function TeacherMessagesPage() {
             variant="ghost"
             size="xs"
             onClick={() => setBannerNotice(null)}
+            className="rounded-full hover:bg-pastel-mint/60 text-xs font-bold cursor-pointer"
           >
             Dismiss
           </Button>

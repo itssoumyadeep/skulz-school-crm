@@ -180,6 +180,54 @@ export function SignInScreen({ deniedReason }: SignInScreenProps) {
                   workspace.
                 </p>
 
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIdentity("caregiver1_demo-school");
+                      setPassword("1234");
+                    }}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "9999px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      background: "var(--surface-container, #f3ede7)",
+                      border: "1px solid var(--outline-variant, #c6c6ca)",
+                      cursor: "pointer",
+                      color: "var(--on-surface, #1d1b18)",
+                    }}
+                  >
+                    👶 Quick Login: Nurse Clara Gomez (Caregiver)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIdentity("teacher1_demo-school");
+                      setPassword("1234");
+                    }}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "9999px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      background: "var(--surface-container, #f3ede7)",
+                      border: "1px solid var(--outline-variant, #c6c6ca)",
+                      cursor: "pointer",
+                      color: "var(--on-surface, #1d1b18)",
+                    }}
+                  >
+                    👩‍🏫 Sarah Jenkins (Teacher)
+                  </button>
+                </div>
+
                 <form onSubmit={signIn}>
                   <label className="field">
                     <span>Username with school code</span>

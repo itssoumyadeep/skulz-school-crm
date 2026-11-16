@@ -145,6 +145,8 @@ export type StudentAttendanceRosterRow = {
   attendance_id: string | null;
   status: StudentAttendanceStatus | null;
   notified_parent: boolean;
+  medical_badge?: string | null;
+  medical_severity?: "Critical" | "High" | "Moderate" | null;
 };
 
 export type DataCatalogField = {
@@ -193,6 +195,15 @@ export type UserProfileResponse = {
   role: string;
   tenant_id: string;
   avatar_url: string | null;
+  assigned_classes_label?: string | null;
+  assigned_classes?: Array<{
+    id: string;
+    label: string;
+    grade: string;
+    section: string;
+    roomLabel: string;
+    studentCount: number;
+  }>;
 };
 
 export async function fetchMyProfile() {
@@ -1447,6 +1458,24 @@ export type IncidentRecord = {
   escalated_to_principal?: boolean;
   parent_notified?: boolean;
 };
+
+export type ClassroomAlertRecord = {
+  student_id: string;
+  student_name: string;
+  grade: string;
+  condition_title: string;
+  severity: "Critical" | "High" | "Medium" | "Low";
+  triggers: string[];
+  emergency_medication: string;
+  storage_location: string;
+  protocol_steps: string[];
+  parent_consent_on_file: boolean;
+  guardian_phone: string;
+};
+
+export async function fetchClassroomHealthAlerts() {
+  return apiFetch<Envelope<ClassroomAlertRecord[]>>("/health/classroom-alerts");
+}
 
 export async function fetchIncidents(severity?: string) {
   const suffix = severity ? `?severity=${encodeURIComponent(severity)}` : "";

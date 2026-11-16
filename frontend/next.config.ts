@@ -15,7 +15,7 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["10.0.0.156", "192.168.10.101", "localhost"],
+  allowedDevOrigins: ["127.0.0.1", "localhost", "10.0.0.156", "192.168.10.101"],
   async rewrites() {
     return [
       {

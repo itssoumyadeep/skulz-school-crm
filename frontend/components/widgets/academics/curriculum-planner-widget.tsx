@@ -257,30 +257,34 @@ export function CurriculumPlannerWidget({
           label="Curriculum Standards Mastery"
           value={masteryDisplay}
           delta={`${data.curriculums.length} aligned curriculum framework(s) (BR-04-01)`}
+          accentBorder="border-pastel-peach"
           icon={<Target aria-hidden="true" />}
         />
         <KpiCard
           label="Weekly Lesson Plans"
           value={data.lessonPlans.length}
           delta={`${inProgressCount} currently in progress`}
+          accentBorder="border-pastel-butter"
           icon={<BookOpen aria-hidden="true" />}
         />
         <KpiCard
           label="Active Homework"
           value={data.assignments.length}
           delta="Holiday-checked due dates (BR-04-02)"
+          accentBorder="border-pastel-sky"
           icon={<ClipboardList aria-hidden="true" />}
         />
         <KpiCard
           label="Completed Units"
           value={completedUnitsCount}
           delta={`${completionRatioPct}% of planned instructional units`}
+          accentBorder="border-pastel-mint"
           icon={<CheckCircle2 aria-hidden="true" />}
         />
       </div>
 
       {/* Filter & Action Toolbar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-paper-card p-4 shadow-pastel sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-3xl border-2 border-pastel-butter/80 bg-paper-card p-5 shadow-pastel sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-56">
             <Select
@@ -289,7 +293,7 @@ export function CurriculumPlannerWidget({
             >
               <SelectTrigger
                 aria-label="Filter by class section"
-                className="w-full bg-surface-container-lowest"
+                className="w-full rounded-full border-2 border-pastel-butter bg-paper-card text-xs font-bold text-crayon-charcoal shadow-xs"
               >
                 <SelectValue placeholder="Select class section" />
               </SelectTrigger>
@@ -315,8 +319,9 @@ export function CurriculumPlannerWidget({
               type="button"
               size="sm"
               onClick={() => onOpenNewLessonModal?.()}
+              className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun font-extrabold text-xs shadow-pastel transition-all cursor-pointer"
             >
-              <Plus aria-hidden="true" />
+              <Plus aria-hidden="true" className="size-4" />
               New Lesson Plan
             </Button>
           )}
@@ -326,9 +331,9 @@ export function CurriculumPlannerWidget({
               variant="outline"
               size="sm"
               onClick={() => onOpenNewAssignmentModal?.()}
-              className="border-pastel-peach-deep/30 bg-pastel-peach/25 text-crayon-charcoal hover:bg-pastel-peach/45"
+              className="rounded-full border-2 border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-paper-tint font-bold text-xs shadow-pastel transition-all cursor-pointer"
             >
-              <Plus aria-hidden="true" />
+              <Plus aria-hidden="true" className="size-4" />
               Publish Homework
             </Button>
           )}
@@ -371,24 +376,24 @@ export function CurriculumPlannerWidget({
               const isCompleted = plan.status === "Completed";
 
               const cardSurfaceClass = isInProgress
-                ? "border-pastel-mint-deep/35 bg-pastel-mint/35 shadow-pastel hover:shadow-pastel-hover"
+                ? "border-2 border-pastel-mint bg-paper-card shadow-pastel hover:shadow-pastel-hover"
                 : plan.status === "Draft"
-                  ? "border-dashed border-outline-variant bg-paper-card shadow-sm hover:shadow-pastel"
-                  : "border-border bg-paper-card shadow-pastel hover:shadow-pastel-hover";
+                  ? "border-2 border-dashed border-pastel-butter bg-paper-card shadow-pastel hover:shadow-pastel-hover"
+                  : "border-2 border-pastel-sky/80 bg-paper-card shadow-pastel hover:shadow-pastel-hover";
 
               return (
                 <article
                   key={plan.planId}
-                  className={`flex flex-col justify-between rounded-2xl border p-5 transition-shadow ${cardSurfaceClass}`}
+                  className={`flex flex-col justify-between rounded-3xl p-6 transition-all ${cardSurfaceClass}`}
                 >
                   <div className="space-y-3.5">
                     {/* Top Row: Week Badge, Class Label, Status */}
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center rounded-full bg-pastel-sun/65 px-3 py-0.5 text-xs font-bold text-crayon-charcoal">
+                        <span className="inline-flex items-center rounded-full bg-pastel-sun px-3 py-0.5 text-xs font-black text-crayon-charcoal border border-pastel-sun-deep/30">
                           Week {plan.week}
                         </span>
-                        <span className="inline-flex items-center rounded-full border border-border bg-surface-container-lowest px-2.5 py-0.5 text-xs font-medium text-crayon-espresso">
+                        <span className="inline-flex items-center rounded-full border border-pastel-butter bg-paper-tint px-3 py-0.5 text-xs font-bold text-crayon-espresso">
                           {plan.classLabel}
                         </span>
                       </div>
@@ -402,11 +407,11 @@ export function CurriculumPlannerWidget({
 
                     {/* Topic & Curriculum Standard Reference */}
                     <div>
-                      <h3 className="text-base font-bold text-crayon-charcoal">
+                      <h3 className="text-base font-extrabold text-crayon-charcoal">
                         {plan.topic}
                       </h3>
                       {linkedCurriculum && (
-                        <p className="mt-0.5 text-xs text-crayon-muted">
+                        <p className="mt-0.5 text-xs font-semibold text-crayon-muted">
                           {linkedCurriculum.grade} •{" "}
                           {linkedCurriculum.subjectSummary} (v
                           {linkedCurriculum.version})
@@ -420,7 +425,7 @@ export function CurriculumPlannerWidget({
                         {plan.learningOutcomes.map((outcome, index) => (
                           <span
                             key={`${plan.planId}-outcome-${index}`}
-                            className="inline-flex items-center rounded-md border border-pastel-sky-deep/20 bg-surface-container-lowest/90 px-2 py-0.5 text-xs font-medium text-pastel-sky-deep"
+                            className="inline-flex items-center rounded-full border border-pastel-sky-deep/20 bg-pastel-sky/30 px-3 py-0.5 text-xs font-bold text-pastel-sky-deep"
                           >
                             {outcome}
                           </span>
@@ -430,8 +435,8 @@ export function CurriculumPlannerWidget({
 
                     {/* 5-Stage Instructional Sequence Preview Pills */}
                     {plan.stages && plan.stages.length > 0 && (
-                      <div className="space-y-1.5 rounded-xl border border-border/80 bg-surface-container-lowest/85 p-3">
-                        <p className="text-xs font-semibold tracking-wide text-crayon-muted uppercase">
+                      <div className="space-y-1.5 rounded-2xl border-2 border-pastel-butter/60 bg-paper-tint/60 p-3.5">
+                        <p className="text-[10px] font-black tracking-wider text-crayon-muted uppercase">
                           5-Stage Instructional Arc
                         </p>
                         <div className="flex flex-wrap gap-1.5">
@@ -439,12 +444,12 @@ export function CurriculumPlannerWidget({
                             <span
                               key={`${plan.planId}-stage-${idx}`}
                               title={stg.summary}
-                              className="inline-flex items-center gap-1 rounded-md border border-border bg-paper px-2 py-1 text-xs text-crayon-espresso"
+                              className="inline-flex items-center gap-1 rounded-full border border-pastel-butter bg-paper-card px-2.5 py-1 text-xs text-crayon-espresso shadow-xs"
                             >
-                              <span className="font-semibold text-crayon-charcoal">
+                              <span className="font-extrabold text-crayon-charcoal">
                                 {stg.stage}
                               </span>
-                              <span className="inline-flex items-center gap-0.5 text-xs text-crayon-muted">
+                              <span className="inline-flex items-center gap-0.5 text-xs font-bold text-crayon-muted">
                                 <Clock className="size-3" />
                                 {stg.durationMins}m
                               </span>
@@ -456,13 +461,13 @@ export function CurriculumPlannerWidget({
 
                     {/* IEP / ESL Accommodation Note */}
                     {plan.iepAccommodations && (
-                      <div className="flex items-start gap-2 rounded-xl border border-pastel-lilac-deep/25 bg-pastel-lilac/35 px-3 py-2 text-xs text-crayon-charcoal">
+                      <div className="flex items-start gap-2 rounded-2xl border-2 border-pastel-lilac/70 bg-pastel-lilac/30 px-3.5 py-2.5 text-xs text-crayon-charcoal">
                         <Sparkles className="mt-0.5 size-3.5 shrink-0 text-pastel-lilac-deep" />
                         <div>
-                          <span className="font-semibold text-pastel-lilac-deep">
+                          <span className="font-extrabold text-pastel-lilac-deep">
                             IEP & Differentiation:{" "}
                           </span>
-                          <span>{plan.iepAccommodations}</span>
+                          <span className="font-medium">{plan.iepAccommodations}</span>
                         </div>
                       </div>
                     )}
@@ -470,7 +475,7 @@ export function CurriculumPlannerWidget({
 
                   {/* Card Actions */}
                   {canEditLessonPlan && (
-                    <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+                    <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-pastel-butter/70 pt-3">
                       <Button
                         type="button"
                         variant="outline"
@@ -481,15 +486,16 @@ export function CurriculumPlannerWidget({
                             isCompleted ? "In Progress" : "Completed",
                           )
                         }
+                        className="rounded-full border border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-pastel-butter/50 text-xs font-bold shadow-xs cursor-pointer"
                       >
                         {isCompleted ? (
                           <>
-                            <RotateCcw aria-hidden="true" />
+                            <RotateCcw aria-hidden="true" className="size-3.5" />
                             Reopen
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 aria-hidden="true" />
+                            <CheckCircle2 aria-hidden="true" className="size-3.5" />
                             Mark Completed
                           </>
                         )}
@@ -499,8 +505,9 @@ export function CurriculumPlannerWidget({
                         variant="ghost"
                         size="xs"
                         onClick={() => onEditLessonPlan?.(plan)}
+                        className="rounded-full hover:bg-paper-tint text-crayon-espresso text-xs font-bold cursor-pointer"
                       >
-                        <Edit3 aria-hidden="true" />
+                        <Edit3 aria-hidden="true" className="size-3.5" />
                         Edit Plan
                       </Button>
                     </div>

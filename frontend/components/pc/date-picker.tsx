@@ -90,7 +90,7 @@ export function DatePicker({
         <PopoverPrimitive.Content
           align="start"
           sideOffset={4}
-          className="z-50 w-auto rounded-md border border-border bg-popover p-0 text-popover-foreground shadow-md"
+          className="z-[80] w-auto rounded-md border border-border bg-popover p-0 text-popover-foreground shadow-md"
         >
           <Calendar
             mode="single"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -74,6 +74,49 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState<string>(() =>
     getCachedProfilePicture(userKey, "teacher"),
   );
+  const [assignedClassesLabel, setAssignedClassesLabel] = useState<string>(
+    "Homeroom 4B & Gr 5 Science",
+  );
+
+  const menuRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        setMenuOpen(false);
+      }
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(target)
+      ) {
+        setNotificationsOpen(false);
+      }
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(target)
+      ) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        setNotificationsOpen(false);
+        setProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const rawName = session?.user_name?.trim();
   const displayEducatorName =
@@ -87,13 +130,13 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
     async function syncProfilePicture() {
       try {
         const res = await fetchMyProfile();
-        if (!cancelled && res.data?.avatar_url) {
-          const synced = setCachedProfilePicture(
-            userKey,
-            "teacher",
-            res.data.avatar_url,
-          );
+        if (!cancelled) {
+          const remoteUrl = res.data?.avatar_url || null;
+          const synced = setCachedProfilePicture(userKey, "teacher", remoteUrl);
           setAvatarUrl(synced);
+          if (res.data?.assigned_classes_label) {
+            setAssignedClassesLabel(res.data.assigned_classes_label);
+          }
         }
       } catch {
         // Offline or demo session fallback uses localStorage cache
@@ -135,8 +178,10 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
     setAvatarUrl(resolved);
     try {
       await updateMyProfilePicture(nextUrl);
-    } catch {
-      // Cached locally when backend is in unsigned demo mode
+    } catch (err: unknown) {
+      console.warn("Backend profile picture save warning:", err);
+      // Still rethrow so the modal surfaces errors if network is down or payload invalid
+      throw err;
     }
   };
 
@@ -156,19 +201,24 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   return (
     <div className="bg-paper font-sans text-crayon-charcoal antialiased min-h-screen flex flex-col selection:bg-pastel-butter selection:text-crayon-charcoal">
       {/* Floating Oil Pastel Pill Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 md:px-10 pt-2">
+      <header className="fixed top-0 left-0 right-0 z-40 px-4 md:px-10 pt-2">
         <div className="h-20 max-w-7xl mx-auto bg-paper-card/95 backdrop-blur-xl border-2 border-pastel-butter/60 shadow-pastel rounded-full px-6 flex items-center justify-between transition-all">
           {/* Left: Hamburger Navigator + Brand */}
           <div className="flex items-center gap-3.5 shrink-0">
-            <div
-              className="relative group/menu"
-              onMouseLeave={() => setMenuOpen(false)}
-            >
+            <div ref={menuRef} className="relative">
               <button
                 aria-label="Open Navigation Menu"
                 aria-expanded={menuOpen}
-                onClick={() => setMenuOpen((prev) => !prev)}
-                className="w-10 h-10 rounded-2xl bg-paper-tint hover:bg-pastel-butter/60 active:scale-95 border-2 border-pastel-butter/80 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer shadow-xs text-crayon-charcoal group-hover/menu:border-pastel-sun group-hover/menu:bg-pastel-butter"
+                onClick={() => {
+                  setMenuOpen((prev) => !prev);
+                  setNotificationsOpen(false);
+                  setProfileMenuOpen(false);
+                }}
+                className={`w-10 h-10 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer shadow-xs ${
+                  menuOpen
+                    ? "bg-pastel-butter border-pastel-sun text-crayon-charcoal"
+                    : "bg-paper-tint hover:bg-pastel-butter/60 active:scale-95 border-pastel-butter/80 text-crayon-charcoal"
+                }`}
                 type="button"
               >
                 <span className="w-4 h-0.5 rounded-full bg-crayon-charcoal transition-all" />
@@ -177,11 +227,11 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
               </button>
 
               {/* School CRM Navigator Popover */}
-              <div
-                className={`absolute left-0 top-12 ${
-                  menuOpen ? "flex" : "hidden group-hover/menu:flex"
-                } hover:flex flex-col w-72 bg-paper-card/95 backdrop-blur-xl border-2 border-pastel-butter shadow-pastel-warm rounded-3xl p-4 z-50 transition-all`}
-              >
+              {menuOpen && (
+                <div
+                  className="absolute left-0 top-12 flex flex-col w-72 bg-paper-card/95 backdrop-blur-xl border-2 border-pastel-butter shadow-pastel-warm rounded-3xl p-4 z-50 transition-all animate-in fade-in-0 zoom-in-95 duration-150"
+                  data-testid="school-crm-navigator-menu"
+                >
                 <div className="flex items-center justify-between pb-3 border-b border-pastel-butter/80 mb-2">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-pastel-sun" />
@@ -258,7 +308,8 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
                   </div>
                 </div>
               </div>
-            </div>
+            )}
+          </div>
 
             <Link
               href="/teacher"
@@ -308,13 +359,14 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
 
           {/* Right: Notification Bell & Educator Profile Avatar */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="relative">
+            <div ref={notificationsRef} className="relative">
               <button
                 type="button"
                 aria-label="Notifications"
                 onClick={() => {
                   setNotificationsOpen((prev) => !prev);
                   setProfileMenuOpen(false);
+                  setMenuOpen(false);
                 }}
                 className="w-10 h-10 rounded-full bg-paper-tint hover:bg-pastel-butter/50 border border-pastel-butter/80 transition-colors flex items-center justify-center relative text-crayon-charcoal cursor-pointer"
               >
@@ -381,19 +433,21 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            <div className="relative flex items-center pl-1">
+            <div ref={profileMenuRef} className="relative flex items-center pl-1">
               <button
                 type="button"
                 aria-label="Educator Profile Menu"
                 onClick={() => {
                   setProfileMenuOpen((prev) => !prev);
                   setNotificationsOpen(false);
+                  setMenuOpen(false);
                 }}
                 className="relative rounded-full focus:outline-none cursor-pointer group"
                 title="Educator Profile & Picture"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
+                  suppressHydrationWarning
                   alt={displayEducatorName}
                   className="w-9 h-9 rounded-full object-cover ring-2 ring-pastel-sun shadow-xs bg-paper-tint"
                   src={avatarUrl || DEFAULT_TEACHER_AVATAR}
@@ -405,6 +459,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
                   <div className="pb-2 border-b border-pastel-butter/80 px-1 flex items-center gap-2.5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
+                      suppressHydrationWarning
                       alt={displayEducatorName}
                       src={avatarUrl || DEFAULT_TEACHER_AVATAR}
                       className="w-9 h-9 rounded-xl object-cover border border-pastel-sun"
@@ -414,7 +469,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
                         {displayEducatorName}
                       </p>
                       <p className="text-[11px] font-medium text-crayon-muted truncate">
-                        Homeroom 4B &amp; Gr 5 Science
+                        {assignedClassesLabel}
                       </p>
                     </div>
                   </div>
@@ -456,8 +511,13 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Main Workspace Stage */}
-      <main className="w-full pt-20 bg-paper flex-1">
-        <div className="max-w-7xl mx-auto px-4 md:px-10 pt-6 pb-12">
+      <main className="w-full pt-20 bg-paper flex-1 relative overflow-hidden">
+        {/* Ambient Pastel Background Glow System */}
+        <div className="absolute -top-10 left-1/4 w-[32rem] h-[32rem] bg-pastel-butter/40 rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="absolute top-36 right-10 w-96 h-96 bg-pastel-mint/35 rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="absolute top-[30rem] left-8 w-96 h-96 bg-pastel-peach/30 rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="absolute bottom-24 right-1/4 w-80 h-80 bg-pastel-lilac/25 rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="max-w-7xl mx-auto px-4 md:px-10 pt-6 pb-12 relative z-10">
           {children}
         </div>
       </main>

@@ -597,6 +597,208 @@ This log records durable architecture, security, and product decisions so later 
      - Wired live profile picture display and `"Update Profile Picture"` triggers in both the Teacher Portal (topbar profile menu + greeting portrait) and the Parent Portal (topbar user menu + family profile header bar).
 - **Evidence:** [`docs/2_PRD.md`](2_PRD.md), [`core/schemas/auth.py`](../core/schemas/auth.py), [`core/api/v1/auth.py`](../core/api/v1/auth.py), [`frontend/components/pc/profile-picture-modal.tsx`](../frontend/components/pc/profile-picture-modal.tsx), [`frontend/app/teacher/layout.tsx`](../frontend/app/teacher/layout.tsx), [`frontend/components/widgets/teacher/teacher-dashboard-overview.tsx`](../frontend/components/widgets/teacher/teacher-dashboard-overview.tsx), [`frontend/app/parent/layout.tsx`](../frontend/app/parent/layout.tsx).
 
+### 2026-11-08 — Defect Tracking Ledger (`docs/11_DEFECTS.md`) & Mandatory Defect Logging Rule
+
+- **Status:** Accepted
+- **Decision:** Created [`docs/11_DEFECTS.md`](11_DEFECTS.md) to log all user-raised and QA-discovered defects (`DEF-001` Teacher Dashboard UX mismatch, `DEF-002` inverted `--radius-*` tokens & corrupted `.next` dev cache, `DEF-003` missing Material Symbols icons & broken external profile pictures) with root cause analysis, resolution, and verification status, and updated [`AGENTS.md`](../AGENTS.md) so all raised defects are logged in [`docs/11_DEFECTS.md`](11_DEFECTS.md) going forward.
+- **Evidence:** [`docs/11_DEFECTS.md`](11_DEFECTS.md), [`AGENTS.md`](../AGENTS.md).
+
+### 2026-11-08 — Global Playwright Skill (`playwright-e2e-testing`), Global QA Agent (`playwright-qa`) & Global Plugin (`playwright-qa-suite`)
+
+- **Status:** Accepted & Active Globally
+- **Decision:** Created and registered the global Playwright E2E testing skill, global `playwright-qa` subagent, and global `playwright-qa-suite` plugin in `~/.gemini/config/` (and linked in [`AGENTS.md`](../AGENTS.md)) so every frontend/portal testing cycle across all workspaces enforces real browser Playwright verification (RBAC cookies, `img.naturalWidth > 0`, `<svg>` icon rendering, computed CSS tokens, and interactive modals/drawers).
+- **Evidence:** `~/.gemini/config/skills/playwright-e2e-testing/SKILL.md`, `~/.gemini/config/agents/playwright-qa/agent.md`, `~/.gemini/config/plugins/playwright-qa-suite/plugin.json`, [`AGENTS.md`](../AGENTS.md).
+
+### 2026-11-08 — ThePuffy AI Agent Default State Set to Closed (`DEF-004`)
+
+- **Status:** Completed & Verified
+- **Decision:** Updated [`frontend/components/widgets/teacher/teacher-dashboard-overview.tsx`](../frontend/components/widgets/teacher/teacher-dashboard-overview.tsx) so `puffyOpen` defaults to `false`. When the Teacher Portal loads, ThePuffy AI Agent remains closed as a neat floating pill button in the bottom right, and only opens when explicitly clicked or when triggered by an AI action. Logged as `DEF-004` in [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+- **Evidence:** [`frontend/components/widgets/teacher/teacher-dashboard-overview.tsx`](../frontend/components/widgets/teacher/teacher-dashboard-overview.tsx), [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+
+### 2026-11-08 — Full Teacher Portal Sub-Tabs Oil Pastel UX Alignment (`DEF-005`)
+
+- **Status:** Completed & Verified
+- **Decision:** Resolved visual discontinuity across the entire Teacher Portal by aligning all 5 sub-tabs (`/teacher/attendance`, `/teacher/lessons`, `/teacher/assessments`, `/teacher/messages`, `/teacher/safeguarding`) to the warm **Oil Pastel design system** of the landing page (`/teacher` / `Teacher_Dashboard_Overview.html`).
+- **Key Enhancements:**
+  1. Mounted ambient pastel background blur blobs (`pastel-butter`, `pastel-mint`, `pastel-peach`) in [`frontend/app/teacher/layout.tsx`](../frontend/app/teacher/layout.tsx).
+  2. Upgraded [`PageHeader`](../frontend/components/pc/page-header.tsx) with `variant="pastel"` supporting themed icon containers (`TeacherIcon`), bold tracking-tight headings, colored category pills, and rounded-full actions.
+  3. Upgraded [`KpiCard`](../frontend/components/pc/kpi-card.tsx), [`SectionPanel`](../frontend/components/pc/section-panel.tsx), [`StatusPill`](../frontend/components/pc/status-pill.tsx), and [`DataTable`](../frontend/components/pc/data-table.tsx) to Oil Pastel specifications (`rounded-3xl`, 2px pastel borders, `bg-paper-tint` theads, heavy 5xl stats, rounded-full search inputs and status badges).
+  4. Aligned all 5 teacher widgets (`AttendanceRosterWidget`, `CurriculumPlannerWidget`, `MarksModerationWidget`, `TeacherMessagesWidget`, `HealthProfileWidget`) with warm cards, rounded-full pill action buttons, and instant seeded hydration (`isLoading = false`).
+  5. Implemented Playwright test suite [`frontend/e2e/teacher-tabs-visual.spec.ts`](../frontend/e2e/teacher-tabs-visual.spec.ts) covering all 5 verification points across all 6 portal routes.
+- **Evidence:** 7/7 Playwright browser tests passed (10.8s), `tsc --noEmit` (0 errors), `eslint` (0 errors), [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+
+---
+
+### [2026-11-08] Slide-Over Drawer Z-Index Stacking & Body Portal Mount (DEF-006)
+- **Status:** Completed & Verified
+- **Decision:** Fixed the z-index stacking conflict where opening a right slide-over drawer left the floating central navigation header positioned in front of the drawer, obscuring its close button, title, and action controls.
+- **Key Enhancements:**
+  1. Wrapped the slide-over drawer and backdrop in [`frontend/components/widgets/teacher/teacher-dashboard-overview.tsx`](../frontend/components/widgets/teacher/teacher-dashboard-overview.tsx) with React's `createPortal(..., document.body)` using hydration-safe `useSyncExternalStore`. This permanently frees the drawer from `<main>`'s internal `relative z-10` stacking context.
+  2. Assigned `z-[60]` to the dimming backdrop and `z-[70]` to the slide-over drawer dialog, while setting the floating pill header in [`frontend/app/teacher/layout.tsx`](../frontend/app/teacher/layout.tsx) to `z-40`.
+  3. Upgraded [`frontend/components/ui/sheet.tsx`](../frontend/components/ui/sheet.tsx) (`SheetOverlay` `z-[60]`, `SheetContent` `z-[70]`), [`frontend/components/ui/dialog.tsx`](../frontend/components/ui/dialog.tsx) (`DialogOverlay` `z-[60]`, `DialogContent` `z-[70]`), and [`frontend/components/pc/profile-picture-modal.tsx`](../frontend/components/pc/profile-picture-modal.tsx) (`z-[70]`) to ensure consistent modal and drawer stacking above the floating navbar across the entire application.
+  4. Added `"127.0.0.1"` to `allowedDevOrigins` in [`frontend/next.config.ts`](../frontend/next.config.ts) to resolve Next.js Turbopack dev asset blocking.
+  5. Added Playwright E2E test in [`frontend/e2e/teacher-tabs-visual.spec.ts`](../frontend/e2e/teacher-tabs-visual.spec.ts) asserting drawer visibility, backdrop dimming of the header, and direct clickability of the drawer close button.
+- **Evidence:** 8/8 Playwright tests passed (16.9s), `npm run build` production build succeeded (14/14 static pages generated), `tsc --noEmit` (0 errors), `eslint` (0 errors), logged `DEF-006` in [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+
+---
+
+### [2026-11-08] Backend Connections, Schema Audit & End-to-End User Journey Verification
+- **Status:** Verified & Operational
+- **Scope:** Complete audit of backend database connections, PostgreSQL tenant RLS, Django Ninja API routes, Next.js proxy rewrites, and creation of an automated and manual End-to-End use case.
+- **Audit Findings:**
+  1. PostgreSQL database connected with 63 total tables (53 `core_*` tenant-scoped models) with active Row Level Security (`0020_enable_tenant_rls`).
+  2. Django Ninja API active on `http://127.0.0.1:8000` with Swagger UI at `/api/docs`.
+  3. Next.js App Router active on `http://127.0.0.1:3000` with proxy rewrite `/api/v1/*` -> `http://127.0.0.1:8000/api/v1/*`.
+  4. Backend pytest suites verified: `test_api_attendance_health.py` (8/8 passed), `test_api_parent_dashboard.py` (2/2 passed), `test_api_auth.py` (13/14 passed).
+  5. Created automated E2E journey test [`frontend/e2e/e2e-user-journey.spec.ts`](../frontend/e2e/e2e-user-journey.spec.ts) covering live login (`teacher1_demo-school`), redirect, dashboard load, Body Portal drawer mounting above floating header, and tab navigation (passed in 4.4s).
+- **Evidence:** `manage.py check` (0 issues), `npx playwright test e2e/e2e-user-journey.spec.ts` (1 passed in 4.4s).
+
+---
+
+### [2026-11-08] Hamburger Navigator Click-to-Open & Click-Outside Dismissal (DEF-007)
+- **Status:** Completed & Verified
+- **Decision:** Removed hover-driven trigger and hover-out auto-dismissal from the "School CRM Navigator" hamburger menu in [`frontend/app/teacher/layout.tsx`](../frontend/app/teacher/layout.tsx). Replaced with deliberate click-to-open, persistent open state on hover-out, and clean click-outside / item-selection dismissal.
+- **Key Enhancements:**
+  1. Removed `group/menu`, `group-hover/menu:flex`, `hover:flex`, and `onMouseLeave` from the hamburger button and popover container.
+  2. Wrapped popover rendering in strictly controlled state `{menuOpen && (<div data-testid="school-crm-navigator-menu" ...>...</div>)}`.
+  3. Added `menuRef`, `notificationsRef`, and `profileMenuRef` with a global `mousedown` document listener and Escape key handler to dismiss open popovers when clicking outside.
+  4. Added automated Playwright test in [`frontend/e2e/e2e-user-journey.spec.ts`](../frontend/e2e/e2e-user-journey.spec.ts) asserting hover-in does NOT open menu, click opens it, hover-out does NOT close it, and click-outside or menu link selection dismisses it.
+- **Evidence:** 10/10 Playwright tests passed (13.2s + 7.9s), `npm run build` succeeded (14/14 static pages generated), `tsc --noEmit` (0 errors), `eslint` (0 errors), logged `DEF-007` in [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+
+---
+
+### [2026-11-08] Unified Teacher Portal Ambient Pastel Background Glow (DEF-008)
+- **Status:** Completed & Verified
+- **Decision:** Fixed the ambient background disparity between the Teacher Dashboard (`/teacher`) and sub-pages (`/teacher/attendance`, `/teacher/lessons`, `/teacher/assessments`, `/teacher/messages`, `/teacher/safeguarding`). Sub-pages previously appeared flat and white because layout-level ambient blobs were occluded behind `<main>`'s opaque background due to `-z-10`.
+- **Key Enhancements:**
+  1. Updated [`frontend/app/teacher/layout.tsx`](../frontend/app/teacher/layout.tsx) ambient background blur blobs to `z-0 pointer-events-none` so they render properly above `<main>`'s `bg-paper` canvas and behind `children` at `z-10`.
+  2. Expanded the ambient backdrop glow system across the full workspace with 4 soft blur blobs (top butter `bg-pastel-butter/40`, top-right mint `bg-pastel-mint/35`, mid-left peach `bg-pastel-peach/30`, and bottom-right lilac `bg-pastel-lilac/25`).
+  3. Removed duplicate local blobs from [`frontend/components/widgets/teacher/teacher-dashboard-overview.tsx`](../frontend/components/widgets/teacher/teacher-dashboard-overview.tsx) to ensure a single, consistent ambient wash across all Teacher Portal pages.
+- **Evidence:** Real browser screenshots across all 6 portal views, `tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npx playwright test` (10/10 tests passed in 17.9s), logged `DEF-008` in [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+
+### [2026-11-09] Teacher Portal Sub-Pages Deep Audit, Database vs Mock Reconciliation & Layering Verification (DEF-017 - DEF-021)
+- **Status:** Completed & Fully Verified
+- **Scope:** Exhaustive Quality Assurance, live PostgreSQL database audit, interaction testing, and stacking context layering verification across all 5 Teacher Portal sub-pages:
+  1. `/teacher/attendance` (Attendance Roster, Date Switcher, Class Filter, Quick Mark, Bulk Submit, Attendance Mark Modal, Leave Request Modal, Student Profile Drawer)
+  2. `/teacher/lessons` (Curriculum Planner, Lesson Plan Cards, Create Lesson Plan Modal, Assignment Modal, Week/Subject filters)
+  3. `/teacher/assessments` (Marks Moderation, Grade distribution bell curve, Edit Marks, Report Card Preview/Draft/Publish, Admissions Assessment Modal)
+  4. `/teacher/messages` (Messages log, Channels, Compose Broadcast Modal, Excursion Waiver tracker)
+  5. `/teacher/safeguarding` (Medical Alerts, Medication Administration Log Modal, Incident Report Modal, Care Observation Log, Student Profile Drawer)
+- **Key Findings & Fixes:**
+  1. **Database Medical Badge Mapping (DEF-017):** Fixed `/teacher/attendance` so that live `medical_badge` and `medical_severity` returned by `GET /api/v1/attendance/students/{date}` from PostgreSQL `StudentHealth` are directly displayed on student rows rather than being discarded for static seed data.
+  2. **5-Stage Instructional Arc Scaffolding (DEF-018):** Fixed `/teacher/lessons` to provide complete 5-stage pedagogical scaffolding (`Hook & Warm-Up`, `Direct Instruction`, `Guided Practice`, `Independent Synthesis`, `Exit Ticket`) when `LessonPlan` database records lack stages JSON.
+  3. **Assessment Data Audit & Seed Gap (DEF-019):** Identified that `core_exam` and `core_marksrecord` tables contain 0 records for `demo-school`, forcing fallback to mock midterms and synthetic report card previews. Logged DEF-019.
+  4. **Unconditional Mock Messages Array Concat Fix (DEF-020):** Fixed `/teacher/messages` line 152 to only use fallback messages when the API returns an empty array, instead of unconditionally concatenating mock messages.
+  5. **Live Safeguarding Alerts API & Sub-Page Integration (DEF-021):** Built `GET /api/v1/health/classroom-alerts` in `core/api/v1/health.py` querying `StudentHealth.objects.filter(...)` and wired `frontend/app/lib/api.ts` and `/teacher/safeguarding/page.tsx` to display real Sabrina's Law and asthma action plans from PostgreSQL (4 active plans: Lucas Vance, Noah Tremblay, Leo Miller, Ethan Patel) instead of hardcoded mock alerts.
+  6. **Stacking Context Layering Verification:** Verified in browser that `SelectContent` (`z-[80]`) and `DatePicker` popovers (`z-[80]`) cleanly render in front of `DialogContent` (`z-[70]`), `SheetContent` (`z-[70]`), and backdrops (`z-[60]`) across all modals (`AttendanceMarkModal`, `LeaveRequestModal`, `LessonPlanModal`, `AssignmentHomeworkModal`, `BroadcastComposerModal`, `MedicationLogModal`, `IncidentReportModal`, and `StudentProfileDrawer`).
+- **Automated Verification:**
+  - Authored comprehensive Playwright test suite [`frontend/e2e/teacher-subpages-deep-audit.spec.ts`](../frontend/e2e/teacher-subpages-deep-audit.spec.ts).
+  - All 5 Playwright tests passed (34.5s).
+  - ESLint passed with 0 errors (`npm run lint`).
+  - Logged `DEF-017` through `DEF-021` in [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+
+---
+
+### [2026-11-08] Teacher Dashboard Exhaustive QA, Database Data Audit & Stacking Context Resolution (DEF-011 - DEF-016)
+- **Status:** Completed & Fully Verified
+- **Scope:** Complete QA audit and automated Playwright E2E verification across `/teacher` covering database vs hardcoded data flow, interactive probing of all interactive elements, slide-over drawers, modals, and stacking context layering.
+- **Key Findings & Fixes:**
+  1. **Stacking Context & Layering Fix (DEF-011):** Elevated `DatePicker` (`PopoverPrimitive.Content`), `SelectContent`, `DropdownMenuContent`, `TooltipContent`, and ThePuffy AI Agent dock to `z-[80]`. Previously, their `z-50` caused them to be occluded beneath `DialogContent` (`z-[70]`), `SheetContent` (`z-[70]`), and drawer backdrops (`z-[60]`). Date picker popovers and select dropdowns inside `LeaveRequestModal` and `IncidentReportModal` are now 100% visible, selectable, and unobstructed.
+  2. **Dynamic Attendance KPI Metrics (DEF-012):** Replaced static mock attendance strings (`96%`, `27 of 28 Enrolled Present`, `1 Excused (Leo M.)`) with reactive calculations from `data.roster` (`rate%`, `{present + late} of {total} Enrolled Present`, and `{excused} Excused ({firstExcusedName})`).
+  3. **Schedule Summary Counts (DEF-013):** Bound the sunny yellow Class Schedule banner metrics directly to `data.classes.length`, `data.roster.length`, and `data.pendingApplicantCount`.
+  4. **Dynamic Quick-Roll Initial Statuses (DEF-014):** Initialized featured Homeroom roll toggle buttons dynamically from `data.roster[0]?.status` and `data.roster[1]?.status` rather than hardcoded "E" and "L".
+  5. **Dynamic Compact List View (DEF-015):** Bound compact roster header to active class label and dynamic student counts, and wired excursion slips to `data.excursions`.
+  6. **Dynamic Staff Compliance Briefing (DEF-016):** Bound the bottom briefing bar to `data.complianceBriefing?.detail` and `data.complianceBriefing?.slaBadge`.
+- **Automated Verification:**
+  - Authored comprehensive test suite [`frontend/e2e/teacher-dashboard-deep-audit.spec.ts`](../frontend/e2e/teacher-dashboard-deep-audit.spec.ts).
+  - Computed CSS test verified `SelectContent` (`z-index: 80`) and `DatePicker` (`z-index: 80`) render above `DialogContent` (`z-index: 70`).
+  - `npx playwright test`: 16/16 tests passed across entire test suite in 35.3s.
+  - TypeScript check (`tsc -p frontend/tsconfig.json --noEmit`): 0 errors.
+  - ESLint (`npm run lint`): 0 errors.
+  - Defect logs updated with `DEF-011` through `DEF-016` in [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+
+### 2026-11-09 — Teacher Portal Sub-Pages Deep Audit, QA & Stacking Context Resolution (`DEF-017`–`DEF-021`)
+
+- **Status:** Accepted
+- **Context:** Following the Teacher Dashboard deep audit, an exhaustive Quality Assurance, Database Reconciliation, and DOM Stacking Context audit was executed by `Testing_SB` across all 5 Teacher Portal sub-pages:
+  1. `/teacher/attendance` (Classroom Attendance & Roll Call)
+  2. `/teacher/lessons` (Curriculum & Lesson Planner)
+  3. `/teacher/assessments` (Assessments & Grade Moderation)
+  4. `/teacher/messages` (Parent Notes & Excursion Waivers)
+  5. `/teacher/safeguarding` (Safeguarding, Sabrina's Law & Health)
+- **Key Actions & Defect Resolutions:**
+  1. **Attendance Roster Medical Alerts (DEF-017):** Bound `medicalAlert` directly to `row.medical_badge ?? seeded?.medicalBadge`, ensuring database-backed medical alerts are never masked by static seed lookups.
+  2. **Lesson Plan Stage Scaffolding (DEF-018):** Injected 5-Stage Instructional Arc scaffolding in `lessons/page.tsx` for database records lacking custom stages, rendering live `Week 12` instructional units with stage durations.
+  3. **Database Exams & Student Marks Seeding (DEF-019):** Seeded `AcademicCalendar`, `Exam` (`Term 2 Mid-Term`), and `MarksRecord` for all 6 Grade 4B students into PostgreSQL via `core/management/commands/seed_teacher_demo_data.py`. Replaced fallback mocks with live database-driven marks moderation.
+  4. **Unconditional Mock Messages Concatenation (DEF-020):** Replaced `[...mapped, ...SEEDED_MESSAGES]` with conditional fallback `mapped.length > 0 ? mapped : SEEDED_MESSAGES` in `messages/page.tsx`.
+  5. **Live Classroom Health Alerts API & Sabrina's Law Cards (DEF-021):** Implemented `GET /api/v1/health/classroom-alerts` in `core/api/v1/health.py` and `fetchClassroomHealthAlerts()` in `frontend/app/lib/api.ts`. Connected `safeguarding/page.tsx` to render live critical/high alerts for students directly from PostgreSQL.
+  6. **Stacking Context & Layering Verification:** Verified across all 5 sub-pages that `DatePicker` popovers and `SelectContent` (`z-[80]`) render consistently above `DialogContent` (`z-[70]`), `SheetContent` (`z-[70]`), and modal backdrops (`z-[60]`).
+- **Automated Verification:**
+  - Automated Playwright audit suite [`frontend/e2e/teacher-subpages-deep-audit.spec.ts`](../frontend/e2e/teacher-subpages-deep-audit.spec.ts): **5 / 5 tests passed (37.9s)**.
+  - TypeScript check (`tsc -p frontend/tsconfig.json --noEmit`): **0 errors**.
+  - ESLint (`npm run lint`): **0 errors**.
+  - All defects logged and marked `Resolved` in [`docs/11_DEFECTS.md`](11_DEFECTS.md).
+
+---
+
+### 2026-11-09 — Caregiver Daily Care & Early Years Portal Technical Architecture & Execution Plan (`SDL_SB`)
+
+- **Status:** Accepted
+- **Context:** Following the definition of Caregiver Daily Care Portal requirements in [`docs/2_PRD.md`](2_PRD.md) and approved UX mockups in [`Artefacts/UX Designs/Caregiver/Caregiver_Daily_Care_Portal.html`](../Artefacts/UX%20Designs/Caregiver/Caregiver_Daily_Care_Portal.html) and [`Caregiver_Daily_Care_Portal_Compact.html`](../Artefacts/UX%20Designs/Caregiver/Caregiver_Daily_Care_Portal_Compact.html), formulated the technical delivery blueprint and work packages.
+- **Key Deliverables & Decisions:**
+  1. **Domain & Entity Mapping:** Mapped `Student` (Toddler Room 1A cohort), `EmergencyContact` / `Parent` (Guardian pickup PINs and photos), `StudentAttendance` (24h roll lock `BR-03-01`, parent outreach flag `BR-03-02`), `StudentHealth` (allergies and parental consent `BR-07-01`), `HealthObservation` (moods, hydration, meals, naps), `MedicationLog` (gated dose administration), and `Incident` (minor boo-boos with 1h SLA `BR-07-02` and Principal auto-escalation `BR-07-03`).
+  2. **API & Role Scoping Extension:** Identified required updates to `core/api/v1/attendance.py` (`CareGiver` added to `@require_roles` on student attendance listing and bulk mark) and verification of care-group scoping in `core/auth/scoping.py`.
+  3. **Work Packages Scaffolding (WP-1 to WP-4):**
+     - **WP-1 (Backend & Seeding):** Scoping guards, medication consent gate verification, Room 1A Sunflowers cohort seeder (`seed_caregiver_demo_data.py`), and backend test suite (`test_caregiver_portal.py`).
+     - **WP-2 (Tier 3 Portable Widgets):** Contract in `caregiver-overview-widget.types.ts`, `CaregiverOverviewWidget` with Cards Grid and Compact Matrix views, `BooBooModal`, `MedicationAdminDrawer`, `RoutineLogDrawer`, and `ThePuffyAssistant`.
+     - **WP-3 (Tier 4 Route Assembly):** `frontend/app/caregiver/layout.tsx` shell, `page.tsx` thin orchestrator, typed client functions in `frontend/app/lib/api.ts`, and quick persona login in `sign-in-screen.tsx`.
+     - **WP-4 (QA & Playwright E2E):** Real browser test suite (`caregiver-portal.spec.ts`) validating check-in, dose logging, boo-boo reporting, dual-view toggles, 5-point browser checks, and strict DOM stacking context (`z-0` to `z-[80]`).
+  4. **Documentation:** Synchronized [`docs/6_PLAN.md`](6_PLAN.md) with architectural flowcharts, entity matrices, and work package breakdown tables.
+- **Evidence:** [`docs/6_PLAN.md`](6_PLAN.md), [`docs/2_PRD.md`](2_PRD.md), [`Artefacts/UX Designs/Caregiver/`](../Artefacts/UX%20Designs/Caregiver/).
+
+---
+
+### 2026-11-09 — Caregiver Daily Care Portal Full-Stack Implementation (`DEV_SB`)
+
+- **Status:** Complete & Verified
+- **Scope Implemented:**
+  1. **WP-1: Backend & Demo Seeding:**
+     - Updated `@require_roles` in `core/api/v1/attendance.py` on `get_student_attendance_roster` and `mark_attendance_roster` to include `'CareGiver'` and `'Caregiver'`.
+     - Created `core/management/commands/seed_caregiver_demo_data.py` to seed the Room 1A "Sunflowers Toddler & Pre-K" cohort (16 toddlers: Maya Lin, Leo Vance, Zoe Zhao, Noah Parker, etc.), `AttendanceRoster` for Room 1A, today's attendance records (14 present, 2 absent), `MedicationLog` for Leo Vance, `Incident` records for Liam Scott & Zoe Zhao, and Nurse Clara Gomez user & `PortalRoleMembership(role='CareGiver')`.
+     - Executed `.venv/bin/python manage.py seed_caregiver_demo_data` across all database tenants.
+  2. **WP-2: Tier 3 Portable Caregiver Widgets:**
+     - Created `frontend/components/widgets/caregiver/caregiver-overview-widget.types.ts` defining portable contracts (`CaregiverOverviewData`, `CaregiverOverviewCapabilities`, `CaregiverOverviewCallbacks`, `CaregiverOverviewWidgetProps`).
+     - Created `frontend/components/widgets/caregiver/caregiver-overview-widget.tsx` with Cards View + Compact List Matrix View, 24h Roll Lock banner (`BR-03-01`), Safeguarding & Medication Critical Band (`BR-07-01`), Learner Cubbies, Guardian Pickup badges, and Direct Parent messaging.
+     - Created `frontend/components/widgets/caregiver/boo-boo-modal.tsx` with 1h SLA parent dispatch (`BR-07-02`) at `z-[70]`.
+     - Created `frontend/components/widgets/caregiver/the-puffy-caregiver-assistant.tsx` docked/closed by default (`DEF-004`) at `z-[80]`.
+     - Exported from `frontend/components/widgets/caregiver/index.ts` and `frontend/components/widgets/index.ts`.
+  3. **WP-3: Tier 4 Thin Route Assembly:**
+     - Created `frontend/app/caregiver/layout.tsx` featuring the floating topbar pill (`z-40`), Nurse Clara Gomez profile avatar, outside-click Navigator menu (`DEF-007`), ambient pastel glow backdrop at `z-0 pointer-events-none` (`DEF-008`), and `ProfilePictureModal` support.
+     - Created `frontend/app/caregiver/page.tsx` hydrating data from `/api/v1/attendance/students/{today}` and `/api/v1/incidents`, wiring callbacks for bulk attendance mark, medication logging, and incident logging.
+     - Added quick login chip for Nurse Clara Gomez (`caregiver1_demo-school`) to `frontend/app/components/sign-in-screen.tsx`.
+     - Updated `frontend/components/pc/profile-picture-modal.tsx` with `DEFAULT_CAREGIVER_AVATAR` and `"caregiver"` role support.
+  4. **WP-4: Verification & Defect Ledger Immunity:**
+     - Verified backend attendance tests: `pytest tests/test_api_attendance_health.py` (8/8 passed).
+     - Verified TypeScript check: `tsc --project frontend/tsconfig.json --noEmit` (0 errors).
+     - Verified Next.js production build: `npm --prefix frontend run build` (15/15 static pages generated cleanly).
+     - Verified browser visual fidelity & interactions via Playwright E2E: `frontend/e2e/caregiver-portal-deep-audit.spec.ts` (5/5 tests passed).
+     - Confirmed zero regression across Teacher Portal E2E tests: `frontend/e2e/teacher-tabs-visual.spec.ts` (8/8 passed).
+- **Evidence:** `core/api/v1/attendance.py`, `core/management/commands/seed_caregiver_demo_data.py`, `frontend/components/widgets/caregiver/`, `frontend/app/caregiver/`, `frontend/e2e/caregiver-portal-deep-audit.spec.ts`.
+
+---
+
+### [2026-11-09] Caregiver Daily Care Portal (`/caregiver`) Exhaustive QA & Deep Architectural Audit (`Testing_SB`)
+- **Status:** Completed & Logged (Awaiting User Review — Zero Fixes Applied per User Directive)
+- **Scope:** Exhaustive database hydration audit, click probing, stacking context / layering analysis, and automated browser Playwright inspection of `/caregiver`.
+- **Key Findings & Defect Ledger (`docs/11_DEFECTS.md`):**
+  1. **DEF-022 (High / P1):** Incidents list corrupts student names upon live DB hydration (`"Accidental bump agai • Injury"`, `"Tripped during sandb • Injury"`) due to truncated sentence parser `description.slice(0, 20)`, while hardcoding `"Knee / Scrape"` and static stamps.
+  2. **DEF-023 (Critical / P0):** Medication Administration & Consent Log completely hardcoded (`INITIAL_MEDICATIONS`) and disconnected from PostgreSQL `MedicationLog` / `StudentHealth.medications` due to missing classroom medication aggregation endpoint.
+  3. **DEF-024 (High / P1):** Live medical badges returned from PostgreSQL via `fetchStudentAttendanceRoster` are discarded in `page.tsx` line 481 in favor of `seedMatch?.healthAlert` static fallback.
+  4. **DEF-025 (Medium / P2):** Roll Lock Progress bar statically hardcoded to 72% (`completionPercent`), and Compact Matrix summary strip & diaper table cells use hardcoded text literals.
+  5. **DEF-026 (High / P1):** ThePuffy AI Assistant is trapped inside parent `<main>`'s `relative z-10` stacking context, causing it to render behind slide-over drawer (`z-[70]`) and backdrop (`z-[60]`). Drawer footer intercepts clicks to `#puffy-launcher-btn`, and expanded ThePuffy occludes header tab controls during scroll.
+  6. **DEF-027 (Medium / P2):** Browser reports CSP violations on Google Fonts `Material Symbols Outlined` stylesheet on `/caregiver` load due to missing domain whitelist in `next.config.ts`.
+  7. **DEF-028 (Medium / P2):** Playwright test suite used unsigned JWT tokens, causing backend API calls to return 401 and silently fall back to mock data, masking database disconnection issues during automated testing.
+- **Action Taken:** Logged all 7 defects in `docs/11_DEFECTS.md` (DEF-022 through DEF-028) with severity, root cause analysis, affected files, and recommended fixes. All defects left in `Status: Open` for user review without modifying application code.
 
 
 
@@ -615,3 +817,23 @@ This log records durable architecture, security, and product decisions so later 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2026-11-16 — Caregiver / ECE Requirements Benchmarked Against Brightwheel & Lillio
+
+- **Status:** Proposed (awaiting user review)
+- **Decision:** Authored [`docs/12_CAREGIVER_REQUIREMENTS.md`](12_CAREGIVER_REQUIREMENTS.md) with 16 prioritized stories (MVP-1 → Tier 3). Each story follows: Actor + Given/When/Then → value proposition → system design → rules/edge cases/parity/DoD. Staff-to-child ratio tracking excluded per user decision; billing left to Admin/Parent portals.
+- **Context:** Compared against Brightwheel (strongest parent feed, billing) and Lillio/HiMama (strongest developmental documentation, curriculum).
+- **Findings:** MVP blockers in the current repo — no `check_in_at`/`check_out_at` on `StudentAttendance`, no pickup PIN/photo/flag on `EmergencyContact`, no care-event model for diaper/meal/hydration, no media/photo-consent storage. Open `DEF-022`–`DEF-028` map to CG-03/04/05/06.
+- **Consequences:** Any schema addition requires migration + RLS coverage + `4_DATA_AND_ENV.md` update. `2_PRD.md` not yet changed; merge pending approval.

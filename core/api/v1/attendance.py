@@ -39,7 +39,7 @@ router = Router(tags=["Attendance (P03)"])
 
 
 @router.get("/attendance/students/{att_date}", auth=JWTAuthBearer())
-@require_roles('Teacher', 'Owner', 'Admin', 'Principal')
+@require_roles('Teacher', 'Owner', 'Admin', 'Principal', 'CareGiver', 'Caregiver')
 def get_student_attendance_roster(request, att_date: date):
     students = list(
         Student.objects.filter(
@@ -65,8 +65,37 @@ def get_student_attendance_roster(request, att_date: date):
         if class_ids.get(record.student_id) == record.class_id
     }
 
-    data = [
-        {
+    from core.models import StudentHealth
+    health_records = StudentHealth.objects.filter(
+        tenant_id=request.tenant_id,
+        student_id__in=[s.student_id for s in students],
+        is_deleted=False,
+    )
+    health_by_student = {h.student_id: h for h in health_records}
+
+    def _extract_medical_info(student_id):
+        h = health_by_student.get(student_id)
+        if not h:
+            return None, None
+        allergies = h.allergies if isinstance(h.allergies, list) else []
+        conditions = h.conditions if isinstance(h.conditions, list) else []
+        if allergies and len(allergies) > 0:
+            first = allergies[0]
+            if isinstance(first, dict):
+                badge = f"{first.get('name', 'Allergy')} ({first.get('severity', 'Medical Alert')})"
+                sev = first.get("severity", "High")
+            else:
+                badge = f"{first} Alert"
+                sev = "High"
+            return badge, sev
+        if conditions and len(conditions) > 0:
+            return str(conditions[0]), "High"
+        return None, None
+
+    data = []
+    for student in students:
+        med_badge, med_sev = _extract_medical_info(student.student_id)
+        data.append({
             'student_id': str(student.student_id),
             'student_number': student.student_number,
             'name': student.name,
@@ -87,9 +116,9 @@ def get_student_attendance_roster(request, att_date: date):
                 if student.student_id in records_by_student
                 else False
             ),
-        }
-        for student in students
-    ]
+            'medical_badge': med_badge,
+            'medical_severity': med_sev,
+        })
     return JsonResponse(
         build_response(
             data=data,
@@ -101,7 +130,7 @@ def get_student_attendance_roster(request, att_date: date):
 
 
 @router.post("/attendance/bulk-mark", auth=JWTAuthBearer())
-@require_roles('Teacher', 'Owner', 'Admin', 'Principal')
+@require_roles('Teacher', 'Owner', 'Admin', 'Principal', 'CareGiver', 'Caregiver')
 def mark_attendance_roster(request, payload: AttendanceRosterBulkMarkSchema):
     student_ids = [record.student_id for record in payload.records]
     if len(student_ids) != len(set(student_ids)):
