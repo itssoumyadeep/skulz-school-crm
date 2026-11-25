@@ -10,9 +10,9 @@ The full visual model references are the [ER diagram](er_diagram.md) and [DBML d
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Tenant and identity        | `Tenant`, `TenantSequence`, `PortalRoleMembership`                                                                                                    |
 | Student/admissions         | `Student`, `Application`, `Parent`, `EmergencyContact`, `Document`, `AuditLog`                                                                        |
-| Academics                  | `Curriculum`, `AcademicCalendar`, `LessonPlan`, `Assignment`, `Exam`, `MarksRecord`, `ReportCard`                                                     |
+| Academics                  | `Curriculum`, `AcademicCalendar`, `LessonPlan`, `Assignment`, `Exam`, `MarksRecord`, `ReportCard`, `LearningFramework`, `LearningObservation`         |
 | Attendance and leave       | `StudentAttendance`, `StaffAttendance`, `LeaveRequest`, `AttendanceRoster`                                                                            |
-| Health and safety          | `StudentHealth`, `HealthObservation`, `MedicationLog`, `Incident`, `SafetyDrill`                                                                      |
+| Health and safety          | `StudentHealth`, `HealthObservation`, `MedicationLog`, `Incident`, `SafetyDrill`, `CareEvent`, `CareMedia`                                          |
 | Billing                    | `FeeStructure`, `Invoice`, `Payment`, `DiscountWaiver`, `Reconciliation`                                                                              |
 | HR and operations          | `Staff`, `Contract`, `PayrollRun`, `Appraisal`, `CPDRecord`, `Vendor`, `Requisition`, `PurchaseOrder`, `DeliveryRecord`, `VendorInvoice`, `Inventory` |
 | Events and communications  | `Event`, `EventRegistration`, `EventVolunteer`, `EventReport`, `Message`, `NotificationRule`                                                          |
@@ -27,6 +27,18 @@ The full visual model references are the [ER diagram](er_diagram.md) and [DBML d
 - Before deployment, run `python manage.py makemigrations --check`, back up the database, and apply migrations with `python manage.py migrate` as a controlled deployment step.
 - Test migration state against the target PostgreSQL version. Do not edit an already-applied migration; add a forward migration instead.
 - New tenant-bound tables require tenant filters and soft-delete behavior. Migration `0020_enable_tenant_rls` enables and forces RLS policies for the current tenant-scoped table inventory; new tenant tables must extend that policy through a same-change migration and catalog test. See [ARCHITECTURE.md](ARCHITECTURE.md) and [SECURITY.md](SECURITY.md).
+- Migration `0021_caregiver_mvp1_fields` extends existing RLS-protected tables for Caregiver MVP-1 (`US-CG-01`..`US-CG-05`):
+  - `StudentAttendance` (`core_student_attendance`): `check_in_at`, `check_out_at` (nullable `DateTimeField`).
+  - `EmergencyContact` (`core_emergency_contact`): `is_authorized_pickup`, `photo_url`, `pickup_pin_hash` (hashed via `make_password`), `id_check_required`, `custody_restricted`, `restriction_note`, `failed_pin_attempts`, `pickup_locked_until`.
+  - `Incident` (`core_incident`): `body_part` (`CharField`, blank=True).
+- Migrations `0022_caregiver_mvp2_care_events_media` and `0023_care_events_media_rls` add Caregiver MVP-2 (`US-CG-06`..`US-CG-08`) schema & forced RLS coverage:
+  - `StudentHealth` (`core_student_health`): `photo_consent` (`BooleanField`), `topical_consent` (`BooleanField`).
+  - `CareEvent` (`core_care_event`, forced RLS): `event_id`, `student`, `event_type`, `occurred_at`, `payload` (JSON), `logged_by`, `parent_visible`, `is_hidden`.
+  - `CareMedia` (`core_care_media`, forced RLS): `media_id`, `students` (M2M), `file_ref`, `mime`, `caption`, `consent_checked`, `captured_by`, `captured_at`, `parent_visible`.
+- Migrations `0024_caregiver_tier2_learning_observations` and `0025_learning_observations_rls` add Caregiver Tier 2 (`US-CG-10`) schema & forced RLS coverage:
+  - `LearningFramework` (`core_learning_framework`, forced RLS): `framework_id`, `code`, `name`, `domains` (JSON), `is_default`.
+  - `LearningObservation` (`core_learning_observation`, forced RLS): `observation_id`, `student`, `framework`, `domains` (JSON), `note`, `media_ids` (JSON), `shared_with_family`, `observed_on`, `logged_by`, `activity_plan_id`.
+- Migration `0026_attendance_timer_late_reason` extends `StudentAttendance` (`core_student_attendance`, already covered by forced RLS) with `late_reason` (`CharField(max_length=64, null=True, blank=True)`) for late check-in cutoff tracking (`US-P1-03B` / `US-P2-01B`).
 
 ## Seed and Test Data
 

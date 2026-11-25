@@ -2,12 +2,33 @@
 
 import { useEffect, useState, useTransition } from "react";
 import {
+  confirmAttendanceRollAudit,
+  fetchAttendanceConfig,
+  fetchAttendanceRollAudit,
+  fetchClassroomMedicationLogs,
   fetchStudentAttendanceRoster,
-  bulkMarkStudentAttendance,
+  fetchStudentCareHistory,
+  checkInStudent,
+  checkOutStudent,
+  fetchClassroomMedications,
+  fetchPickupContacts,
+  verifyPickup,
   fetchIncidents,
   submitIncident,
   submitMedicationLog,
+  fetchCareEvents,
+  createCareEvents,
+  undoCareEvent,
+  uploadCareMedia,
+  deleteCareMedia,
+  sendCaregiverNoteMessage,
+  fetchLearningFrameworks,
+  fetchLearningObservations,
+  createLearningObservation,
+  deleteLearningObservation,
+  type AttendanceRollAuditResponse,
   type IncidentRecord,
+  type CareRoomSummary,
 } from "@/app/lib/api";
 import {
   CaregiverOverviewWidget,
@@ -16,6 +37,11 @@ import {
   type MedicationDoseItem,
   type BooBooIncident,
 } from "@/components/widgets/caregiver";
+
+function toLocalIsoDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 const INITIAL_SEEDED_TODDLERS: CaregiverToddler[] = [
   {
@@ -100,7 +126,7 @@ const INITIAL_SEEDED_TODDLERS: CaregiverToddler[] = [
     ageLabel: "Age 3.5",
     cubbyLabel: "Cubby #09",
     arrivalTime: null,
-    status: "Absent",
+    status: "Expected",
     guardian: {
       name: "Rachel Parker",
       relation: "Mother",
@@ -109,7 +135,7 @@ const INITIAL_SEEDED_TODDLERS: CaregiverToddler[] = [
     },
     mood: "Calm",
     hydration: { currentMl: 0, targetMl: 500 },
-    followUpSla: "12 mins remaining",
+    followUpSla: "Expected (Cutoff 09:15)",
   },
   {
     studentId: "00000000-0000-0000-0000-000000007105",
@@ -311,7 +337,7 @@ const INITIAL_SEEDED_TODDLERS: CaregiverToddler[] = [
     ageLabel: "Age 3.4",
     cubbyLabel: "Cubby #16",
     arrivalTime: null,
-    status: "Absent",
+    status: "Expected",
     guardian: {
       name: "Emily Taylor",
       relation: "Mother",
@@ -320,13 +346,13 @@ const INITIAL_SEEDED_TODDLERS: CaregiverToddler[] = [
     },
     mood: "Calm",
     hydration: { currentMl: 0, targetMl: 500 },
-    followUpSla: "12 mins remaining",
+    followUpSla: "Expected (Cutoff 09:15)",
   },
 ];
 
 const INITIAL_MEDICATIONS: MedicationDoseItem[] = [
   {
-    id: "med-1",
+    id: "00000000-0000-0000-0000-000000007101-0",
     studentId: "00000000-0000-0000-0000-000000007101",
     studentName: "Maya Lin",
     ageLabel: "Age 3.5",
@@ -339,7 +365,7 @@ const INITIAL_MEDICATIONS: MedicationDoseItem[] = [
     accentBorder: "terracotta",
   },
   {
-    id: "med-2",
+    id: "00000000-0000-0000-0000-000000007102-0",
     studentId: "00000000-0000-0000-0000-000000007102",
     studentName: "Leo Vance",
     ageLabel: "Age 4",
@@ -386,21 +412,49 @@ const INITIAL_INCIDENTS: BooBooIncident[] = [
 
 export default function CaregiverPortalPage() {
   const [, startTransition] = useTransition();
+  const [todayLocalIso] = useState(() => toLocalIsoDate(new Date()));
+  const [yesterdayLocalIso] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return toLocalIsoDate(d);
+  });
+  const [selectedDate, setSelectedDate] = useState(() =>
+    toLocalIsoDate(new Date()),
+  );
+  const isHistorical = selectedDate !== todayLocalIso;
+  const isHistoricalReadOnly = selectedDate < yesterdayLocalIso;
+
+  const [rollAuditOpen, setRollAuditOpen] = useState(false);
+  const [rollAuditDate, setRollAuditDate] = useState(() =>
+    toLocalIsoDate(new Date()),
+  );
+  const [rollAuditData, setRollAuditData] =
+    useState<AttendanceRollAuditResponse | null>(null);
+  const [rollAuditLoading, setRollAuditLoading] = useState(false);
+  const [rollAuditSubmitting, setRollAuditSubmitting] = useState(false);
+  const [rollAuditError, setRollAuditError] = useState<string | null>(null);
+  const [rollAuditSuccess, setRollAuditSuccess] = useState<string | null>(null);
+
   const [caregiverData, setCaregiverData] = useState<CaregiverOverviewData>({
     caregiverName: "Clara Gomez",
     caregiverRoleTitle: "Room 1A & Toddler Care Specialist",
     roomLabel: "Room 1A",
     wingLabel: "Ground Floor Garden Wing",
     termLabel: "Thursday, Term 2",
+    selectedDate: todayLocalIso,
+    todayDate: todayLocalIso,
+    isHistoricalReadOnly: false,
+    childHistoryByStudent: {},
     toddlers: INITIAL_SEEDED_TODDLERS,
     medications: INITIAL_MEDICATIONS,
     rollLock: {
       lockedInHours: 18,
+      isLocked: false,
       rollCallCompletedTime: "09:15 AM",
       completionPercent: 72,
       unconfirmedAbsencesCount: 2,
       lockPolicyText:
-        "Official roll modifications close automatically at 09:15 AM tomorrow (24h SLA). 2 unconfirmed absences flagged for guardian outreach.",
+        "Official roll modifications close automatically at cutoff + 24h.",
     },
     incidents: INITIAL_INCIDENTS,
     recentNotes: [
@@ -414,19 +468,119 @@ export default function CaregiverPortalPage() {
     ],
   });
 
-  // Hydrate from PostgreSQL backend endpoints
+  // Hydrate from PostgreSQL backend endpoints for active selectedDate
   useEffect(() => {
     let isCancelled = false;
 
     async function loadData() {
-      const todayStr = new Date().toISOString().split("T")[0];
+      const targetDate = selectedDate;
       try {
-        const [attRosterRes, incidentsRes] = await Promise.allSettled([
-          fetchStudentAttendanceRoster(todayStr),
+        const [
+          attRosterRes,
+          attConfigRes,
+          incidentsRes,
+          medsRes,
+          careEventsRes,
+          fwRes,
+          rollAuditRes,
+        ] = await Promise.allSettled([
+          fetchStudentAttendanceRoster(targetDate),
+          fetchAttendanceConfig(),
           fetchIncidents(),
+          isHistorical
+            ? fetchClassroomMedicationLogs(targetDate)
+            : fetchClassroomMedications(),
+          fetchCareEvents(targetDate),
+          fetchLearningFrameworks(),
+          fetchAttendanceRollAudit(targetDate),
         ]);
 
         if (isCancelled) return;
+
+        const cfgRaw =
+          attConfigRes.status === "fulfilled" ? attConfigRes.value?.data : null;
+        const attConfig = cfgRaw
+          ? {
+              expectedStartTime: cfgRaw.expected_start_time,
+              gracePeriodMinutes: cfgRaw.grace_period_minutes,
+              effectiveCutoff: cfgRaw.effective_cutoff,
+              isConfigured: cfgRaw.is_configured,
+              allowedLateReasons: cfgRaw.allowed_late_reasons,
+            }
+          : {
+              expectedStartTime: "09:00",
+              gracePeriodMinutes: 15,
+              effectiveCutoff: "09:15",
+              isConfigured: false,
+              allowedLateReasons: [
+                "Traffic / Transit Delay",
+                "Family / Morning Routine",
+                "Medical / Appointment",
+                "Weather / Road Conditions",
+                "Other (Parent Notified)",
+              ],
+            };
+
+        const cutoffParts = (attConfig.effectiveCutoff || "09:15").split(":");
+        const cutoffTotalMins =
+          (Number(cutoffParts[0]) || 9) * 60 + (Number(cutoffParts[1]) || 15);
+        const nowLocal = new Date();
+        const nowTotalMins = nowLocal.getHours() * 60 + nowLocal.getMinutes();
+        const minsDelta = cutoffTotalMins - nowTotalMins;
+        const isPastCutoffNow = attConfig.isConfigured && minsDelta < 0;
+        const unarrivedStatus: "Expected" | "Absent" =
+          isHistorical || isPastCutoffNow ? "Absent" : "Expected";
+        const dynamicSlaLabel = isHistorical
+          ? `Historical (${targetDate})`
+          : isPastCutoffNow
+            ? `${Math.abs(minsDelta)}m past cutoff (${attConfig.effectiveCutoff})`
+            : minsDelta > 0
+              ? `${minsDelta} mins until cutoff (${attConfig.effectiveCutoff})`
+              : `Cutoff ${attConfig.effectiveCutoff}`;
+
+        const rollAuditRaw =
+          rollAuditRes.status === "fulfilled" ? rollAuditRes.value?.data : null;
+
+        setCaregiverData((prev) => ({
+          ...prev,
+          selectedDate: targetDate,
+          todayDate: todayLocalIso,
+          isHistoricalReadOnly,
+          attendanceConfig: attConfig,
+          rollLock: rollAuditRaw
+            ? {
+                lockedInHours: rollAuditRaw.locked_in_hours,
+                isLocked: rollAuditRaw.is_locked,
+                rollCallCompletedTime: rollAuditRaw.effective_cutoff || "09:15",
+                completionPercent: rollAuditRaw.completion_percent,
+                unconfirmedAbsencesCount:
+                  rollAuditRaw.kpis.unexcused_absent +
+                  rollAuditRaw.kpis.not_checked_in,
+                lockPolicyText: rollAuditRaw.is_locked
+                  ? `BR-03-01 locked (>24h) for ${targetDate}. Edits require Principal/Owner override.`
+                  : `BR-03-01 window closes in ${rollAuditRaw.locked_in_hours}h (cutoff ${rollAuditRaw.effective_cutoff}).`,
+              }
+            : prev.rollLock,
+        }));
+
+        const careSummary: CareRoomSummary | null =
+          careEventsRes.status === "fulfilled" && careEventsRes.value?.data?.summary
+            ? careEventsRes.value.data.summary
+            : null;
+
+        if (fwRes.status === "fulfilled" && fwRes.value?.data?.frameworks) {
+          const fws = fwRes.value.data.frameworks.map((f) => ({
+            frameworkId: f.framework_id,
+            code: f.code,
+            name: f.name,
+            domains: f.domains,
+            isDefault: f.is_default,
+          }));
+          setCaregiverData((prev) => ({
+            ...prev,
+            learningFrameworks: fws,
+          }));
+        }
 
         // 1. Process attendance roster from database
         if (
@@ -435,7 +589,6 @@ export default function CaregiverPortalPage() {
           attRosterRes.value.data.length > 0
         ) {
           const dbStudents = attRosterRes.value.data;
-          // Filter to Room 1A / Toddler students if available, or map them
           const room1AStudents = dbStudents.filter(
             (s) => s.grade === "Toddler & Pre-K" || s.grade === "Toddler",
           );
@@ -448,6 +601,17 @@ export default function CaregiverPortalPage() {
                     st.name.toLowerCase() === s.name.toLowerCase() ||
                     st.studentId === s.student_id,
                 );
+                const formattedCheckIn = s.check_in_at
+                  ? new Date(s.check_in_at).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : null;
+                const evState = careSummary?.per_student?.[s.student_id];
+                const rawRow = s as unknown as {
+                  photo_consent?: boolean;
+                  topical_consent?: boolean;
+                };
                 return {
                   studentId: s.student_id,
                   studentNumber: s.student_number,
@@ -455,48 +619,205 @@ export default function CaregiverPortalPage() {
                   ageLabel: seedMatch?.ageLabel || "Age 3.5",
                   cubbyLabel:
                     seedMatch?.cubbyLabel || `Cubby #${String(index + 1).padStart(2, "0")}`,
-                  arrivalTime:
-                    s.status === "Present"
-                      ? seedMatch?.arrivalTime || "08:30 AM"
-                      : null,
-                  status: (s.status as "Present" | "Absent" | "Late") || "Present",
+                  arrivalTime: isHistorical
+                    ? formattedCheckIn
+                    : formattedCheckIn ||
+                      (s.status === "Present" || s.status === "Late"
+                        ? seedMatch?.arrivalTime || "08:30 AM"
+                        : null),
+                  checkInAt: s.check_in_at ?? null,
+                  checkOutAt: s.check_out_at ?? null,
+                  lateReason: s.late_reason ?? null,
+                  status: isHistorical
+                    ? ((s.status as CaregiverToddler["status"]) || "Expected")
+                    : (s.status as CaregiverToddler["status"]) || unarrivedStatus,
                   guardian: seedMatch?.guardian || {
                     name: `Guardian of ${s.name}`,
                     relation: "Parent",
                     authType: "PIN",
                     authCode: "4321",
                   },
-                  mood: seedMatch?.mood || "Sunny",
-                  hydration: seedMatch?.hydration || {
-                    currentMl: 300,
+                  mood:
+                    (evState?.mood as CaregiverToddler["mood"]) ||
+                    (isHistorical ? "Calm" : seedMatch?.mood || "Sunny"),
+                  hydration: {
+                    currentMl: isHistorical
+                      ? evState?.hydration_ml ?? 0
+                      : evState && evState.hydration_ml > 0
+                        ? evState.hydration_ml
+                        : seedMatch?.hydration?.currentMl ?? 0,
                     targetMl: 500,
                   },
-                  napStatus: seedMatch?.napStatus || "1:00 PM Target",
-                  mealStatus: seedMatch?.mealStatus || "Morning snack eaten",
-                  diaperStatus: seedMatch?.diaperStatus || {
-                    time: "10:00 AM",
-                    note: "Dry Diaper",
-                    nextDueTime: "12:00 PM",
-                  },
-                  healthAlert: seedMatch?.healthAlert,
+                  napStatus: isHistorical
+                    ? evState?.nap_status || "No nap logged"
+                    : evState?.nap_status || seedMatch?.napStatus || "1:00 PM Target",
+                  isSleeping: evState?.is_sleeping ?? false,
+                  mealStatus: isHistorical
+                    ? evState?.meal_status || "No meal logged"
+                    : evState?.meal_status || seedMatch?.mealStatus || "Morning snack eaten",
+                  diaperStatus: evState?.last_diaper
+                    ? {
+                        time: evState.last_diaper.time,
+                        note: evState.last_diaper.note,
+                        nextDueTime: evState.last_diaper.next_due_time,
+                      }
+                    : isHistorical
+                      ? { time: "—", note: "No diaper logged" }
+                      : seedMatch?.diaperStatus || {
+                          time: "10:00 AM",
+                          note: "Dry Diaper",
+                          nextDueTime: "12:00 PM",
+                        },
+                  photoConsent: Boolean(rawRow.photo_consent),
+                  topicalConsent: Boolean(rawRow.topical_consent),
+                  recentEvents: (evState?.events ?? []).map((ev) => ({
+                    eventId: ev.event_id,
+                    eventType: ev.event_type,
+                    occurredAt: ev.occurred_at,
+                    createdAt: ev.created_at,
+                    payload: ev.payload,
+                    parentVisible: ev.parent_visible,
+                  })),
+                  healthAlert: s.medical_badge
+                    ? {
+                        title: s.medical_badge,
+                        severity:
+                          (s.medical_severity as
+                            | "Critical"
+                            | "High"
+                            | "Medium"
+                            | "Low") || "High",
+                        badge: s.medical_badge,
+                      }
+                    : undefined,
                   followUpSla:
-                    s.status === "Absent" ? "12 mins remaining" : undefined,
+                    !s.status || s.status === "Absent"
+                      ? dynamicSlaLabel
+                      : undefined,
                 };
               },
+            );
+
+            const presentCount = mappedToddlers.filter(
+              (t) => t.status === "Present" || t.status === "Late",
+            ).length;
+            const unconfirmedAbsencesCount = mappedToddlers.length - presentCount;
+            const completionPercent = Math.round(
+              (presentCount / mappedToddlers.length) * 100,
             );
 
             setCaregiverData((prev) => ({
               ...prev,
               toddlers: mappedToddlers,
+              roomCareSummary: careSummary
+                ? {
+                    hydrationPct: careSummary.hydration_pct,
+                    snackPct: careSummary.snack_pct,
+                    asleepCount: careSummary.asleep_count,
+                    diapersDueCount: careSummary.diapers_due_count,
+                    diapersLoggedCount: careSummary.diapers_logged_count,
+                  }
+                : prev.roomCareSummary,
+              rollLock: rollAuditRaw
+                ? prev.rollLock
+                : {
+                    ...prev.rollLock,
+                    completionPercent,
+                    unconfirmedAbsencesCount,
+                  },
             }));
           }
         }
 
-        // 2. Process incidents from database
-        if (
-          incidentsRes.status === "fulfilled" &&
-          incidentsRes.value?.data
-        ) {
+        // 2. Process classroom medications from database (DEF-023 / US-CG-17)
+        if (medsRes.status === "fulfilled" && Array.isArray(medsRes.value?.data)) {
+          if (isHistorical) {
+            const histLogs = medsRes.value.data as Array<{
+              med_log_id: string;
+              student_id: string;
+              student_name: string;
+              grade: string;
+              medicine_name: string;
+              dose: string;
+              time_administered: string;
+              parent_notified: boolean;
+              notes: string;
+            }>;
+            const mappedHistMeds: MedicationDoseItem[] = histLogs.map((m, idx) => ({
+              id: m.med_log_id,
+              studentId: m.student_id,
+              studentName: m.student_name,
+              ageLabel: m.grade || "Toddler & Pre-K",
+              medicineName: m.medicine_name,
+              dosage: m.dose || "Administered",
+              scheduledTime: targetDate,
+              instructions: m.notes || m.dose || "Historical dose record",
+              consentVerifiedBy: m.parent_notified
+                ? "Verified · Parent Notified"
+                : "Verified Parental Consent",
+              consentFlag: true,
+              status: "Administered",
+              administeredTime: m.time_administered
+                ? new Date(m.time_administered).toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : undefined,
+              accentBorder: idx % 2 === 0 ? "terracotta" : "mint",
+            }));
+            setCaregiverData((prev) => ({
+              ...prev,
+              medications: mappedHistMeds,
+            }));
+          } else {
+            const sched = medsRes.value.data as Array<{
+              id: string;
+              student_id: string;
+              student_name: string;
+              grade: string;
+              medicine_name: string;
+              dosage: string;
+              scheduled_time: string;
+              consent_flag: boolean;
+              consent_note?: string;
+              status:
+                | "Pending"
+                | "Administered"
+                | "Skipped (absent)"
+                | "Blocked (Consent Missing)";
+              administered_at: string | null;
+            }>;
+            const mappedMeds: MedicationDoseItem[] = sched.map((m, idx) => ({
+              id: m.id,
+              studentId: m.student_id,
+              studentName: m.student_name,
+              ageLabel: m.grade || "Toddler & Pre-K",
+              medicineName: m.medicine_name,
+              dosage: m.dosage || "Per prescription",
+              scheduledTime: m.scheduled_time || "Today",
+              instructions: m.dosage || "Administer per room medical plan",
+              consentVerifiedBy: m.consent_flag
+                ? m.consent_note || "Verified Parental Consent on File"
+                : m.consent_note || "Missing Parental Consent",
+              consentFlag: m.consent_flag,
+              status: m.status,
+              administeredTime: m.administered_at
+                ? new Date(m.administered_at).toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : undefined,
+              accentBorder: idx % 2 === 0 ? "terracotta" : "mint",
+            }));
+            setCaregiverData((prev) => ({
+              ...prev,
+              medications: mappedMeds,
+            }));
+          }
+        }
+
+        // 3. Process incidents from database (DEF-022 / US-CG-17)
+        if (incidentsRes.status === "fulfilled" && incidentsRes.value?.data) {
           const raw = incidentsRes.value.data;
           const incList: IncidentRecord[] = Array.isArray(raw)
             ? raw
@@ -506,25 +827,28 @@ export default function CaregiverPortalPage() {
                 ? raw.items
                 : [];
 
-          if (incList.length > 0) {
-            const mappedIncidents: BooBooIncident[] = incList.map(
+          const dateFilteredInc = isHistorical
+            ? incList.filter((item) => item.date === targetDate)
+            : incList;
+
+          if (isHistorical || dateFilteredInc.length > 0) {
+            const mappedIncidents: BooBooIncident[] = dateFilteredInc.map(
               (item, idx) => ({
                 id: item.incident_id || `inc-db-${idx}`,
-                studentName:
-                  item.description?.split(".")[0]?.slice(0, 20) || "Toddler Incident",
+                studentName: item.students?.[0] || "Classroom Incident",
                 incidentType: item.incident_type || "Minor Tumble",
                 location: item.location || "Room 1A Playroom",
-                bodyPart: "Knee / Scrape",
+                bodyPart: item.body_part || "Unspecified",
                 parentStatus: item.parent_notified
                   ? "Acknowledged"
                   : "SLA_Pending",
-                slaRemainingLabel: item.parent_notified ? undefined : "34m Left",
+                slaRemainingLabel: item.parent_notified ? undefined : "1h SLA",
                 description: item.description || "Minor tumble treated safely.",
-                loggedTime: "10:14 AM",
-                staffStamp: "Nurse Stamp #CG-408",
+                loggedTime: item.time || "Just now",
+                staffStamp: item.staff?.[0] || "Caregiver",
                 slaNote: item.parent_notified
-                  ? "Notice Delivered in 14m (SLA Met)"
-                  : "Parent Notice Pending",
+                  ? "Notice Delivered (1h SLA Met)"
+                  : "Parent Notice Pending (1h SLA)",
               }),
             );
 
@@ -535,21 +859,36 @@ export default function CaregiverPortalPage() {
           }
         }
       } catch {
-        // Safe fallback to initial seeded data
+        // Safe fallback to initial seeded data on network offline
       }
     }
 
-    loadData();
+    const timer = window.setTimeout(() => {
+      if (!isCancelled) void loadData();
+    }, 0);
     return () => {
       isCancelled = true;
+      window.clearTimeout(timer);
     };
-  }, []);
+  }, [selectedDate, todayLocalIso, isHistorical, isHistoricalReadOnly]);
 
   // Handlers for Caregiver actions
   const handleLogDose = async (medicationId: string, studentName: string) => {
     startTransition(async () => {
       const med = caregiverData.medications.find((m) => m.id === medicationId);
       if (med) {
+        const nowStr = new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        setCaregiverData((prev) => ({
+          ...prev,
+          medications: prev.medications.map((m) =>
+            m.id === medicationId
+              ? { ...m, status: "Administered", administeredTime: nowStr }
+              : m,
+          ),
+        }));
         try {
           await submitMedicationLog({
             student_id: med.studentId,
@@ -564,27 +903,206 @@ export default function CaregiverPortalPage() {
     });
   };
 
-  const handleMarkLateArrival = async (studentId: string, studentName: string) => {
-    startTransition(async () => {
-      const todayStr = new Date().toISOString().split("T")[0];
-      try {
-        await bulkMarkStudentAttendance(todayStr, [
-          {
-            student_id: studentId,
-            status: "Present",
+  const handleCheckIn = async (
+    studentId: string,
+    _studentName?: string,
+    lateReason?: string,
+  ) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    try {
+      const res = await checkInStudent({
+        student_id: studentId,
+        date: todayStr,
+        late_reason: lateReason,
+      });
+      const checkInIso = res?.data?.check_in_at || new Date().toISOString();
+      const resolvedStatus =
+        res?.data?.status === "Late" ? ("Late" as const) : ("Present" as const);
+      const arrivalFormatted = new Date(checkInIso).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      setCaregiverData((prev) => {
+        const updatedToddlers = prev.toddlers.map((t) =>
+          t.studentId === studentId
+            ? {
+                ...t,
+                status: resolvedStatus,
+                checkInAt: checkInIso,
+                lateReason: res?.data?.late_reason ?? lateReason ?? null,
+                arrivalTime: arrivalFormatted,
+                followUpSla: undefined,
+              }
+            : t,
+        );
+        const presentCount = updatedToddlers.filter(
+          (t) => t.status === "Present" || t.status === "Late",
+        ).length;
+        return {
+          ...prev,
+          toddlers: updatedToddlers,
+          rollLock: {
+            ...prev.rollLock,
+            completionPercent: Math.round(
+              (presentCount / Math.max(updatedToddlers.length, 1)) * 100,
+            ),
+            unconfirmedAbsencesCount: updatedToddlers.length - presentCount,
           },
-        ]);
-      } catch {
-        // Optimistic in UI
+        };
+      });
+    } catch {
+      // Keep UI responsive
+    }
+  };
+
+  const handleCheckOut = async (studentId: string) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    try {
+      const res = await checkOutStudent({ student_id: studentId, date: todayStr });
+      const checkOutIso = res?.data?.check_out_at || new Date().toISOString();
+      setCaregiverData((prev) => ({
+        ...prev,
+        toddlers: prev.toddlers.map((t) =>
+          t.studentId === studentId ? { ...t, checkOutAt: checkOutIso } : t,
+        ),
+      }));
+    } catch {
+      // Keep UI responsive
+    }
+  };
+
+  const handleLoadPickupContacts = async (studentId: string) => {
+    try {
+      const res = await fetchPickupContacts(studentId);
+      if (Array.isArray(res?.data)) {
+        setCaregiverData((prev) => ({
+          ...prev,
+          pickupContactsByStudent: {
+            ...(prev.pickupContactsByStudent ?? {}),
+            [studentId]: res.data.map((c) => ({
+              contactId: c.contact_id,
+              name: c.name,
+              phone: c.phone,
+              relationship: c.relationship,
+              isAuthorizedPickup: c.is_authorized_pickup,
+              photoUrl: c.photo_url,
+              hasPin: c.has_pin,
+              idCheckRequired: c.id_check_required,
+              custodyRestricted: c.custody_restricted,
+              restrictionNote: c.restriction_note,
+              isLocked: c.is_locked,
+              pickupLockedUntil: c.pickup_locked_until,
+            })),
+          },
+        }));
       }
-      alert(`${studentName} marked as Checked In. Guardian attendance PIN validated.`);
-    });
+    } catch {
+      // Fallback to guardian card
+    }
+  };
+
+  const handleVerifyPickup = async (
+    studentId: string,
+    contactId: string,
+    pin?: string,
+    idVerified?: boolean,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await verifyPickup(studentId, {
+        contact_id: contactId,
+        pin,
+        id_verified: idVerified,
+      });
+      if (res?.data?.verified) {
+        setCaregiverData((prev) => ({
+          ...prev,
+          pickupVerifiedByStudent: {
+            ...(prev.pickupVerifiedByStudent ?? {}),
+            [studentId]: {
+              contactName: res.data.contact_name,
+              verifiedAt: res.data.verified_at,
+            },
+          },
+        }));
+        return { ok: true };
+      }
+      return { ok: false, error: "Verification failed." };
+    } catch (err: unknown) {
+      await handleLoadPickupContacts(studentId);
+      const message =
+        err instanceof Error ? err.message : "Pickup verification failed.";
+      return { ok: false, error: message };
+    }
+  };
+
+  const handleMarkLateArrival = async (studentId: string) => {
+    await handleCheckIn(studentId);
+  };
+
+  const loadRollAudit = async (dateIso: string) => {
+    setRollAuditDate(dateIso);
+    setRollAuditLoading(true);
+    setRollAuditError(null);
+    try {
+      const res = await fetchAttendanceRollAudit(dateIso);
+      setRollAuditData(res.data ?? null);
+    } catch (err: unknown) {
+      const msg =
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as { message?: unknown }).message === "string"
+          ? (err as { message: string }).message
+          : "Unable to load live attendance roll audit trail.";
+      setRollAuditError(msg);
+    } finally {
+      setRollAuditLoading(false);
+    }
   };
 
   const handleTriggerRollAudit = () => {
-    alert(
-      "Policy BR-03-01 Audit: 14 checked in, 2 unconfirmed. Roll lock scheduled at 09:15 AM tomorrow (24-hour edit restriction active).",
-    );
+    setRollAuditSuccess(null);
+    setRollAuditOpen(true);
+    void loadRollAudit(selectedDate);
+  };
+
+  const handleConfirmRollAudit = async (note?: string) => {
+    setRollAuditSubmitting(true);
+    setRollAuditError(null);
+    setRollAuditSuccess(null);
+    try {
+      await confirmAttendanceRollAudit(rollAuditDate, { note });
+      await loadRollAudit(rollAuditDate);
+      setRollAuditSuccess("Attendance roll verification saved to immutable AuditLog.");
+    } catch (err: unknown) {
+      const msg =
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as { message?: unknown }).message === "string"
+          ? (err as { message: string }).message
+          : "Unable to confirm attendance roll audit.";
+      setRollAuditError(msg);
+    } finally {
+      setRollAuditSubmitting(false);
+    }
+  };
+
+  const handleLoadChildHistory = async (studentId: string, dateIso: string) => {
+    try {
+      const res = await fetchStudentCareHistory(studentId, dateIso);
+      if (res.data) {
+        setCaregiverData((prev) => ({
+          ...prev,
+          childHistoryByStudent: {
+            ...(prev.childHistoryByStudent ?? {}),
+            [studentId]: res.data,
+          },
+        }));
+      }
+    } catch {
+      // keep existing state on error
+    }
   };
 
   const handleCallUnchecked = () => {
@@ -614,7 +1132,241 @@ export default function CaregiverPortalPage() {
     }
   };
 
-  const handleSendCaregiverNote = (recipient: string, message: string) => {
+  const refreshCareEvents = async () => {
+    try {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const res = await fetchCareEvents(todayStr);
+      const summary = res.data?.summary;
+      if (!summary) return;
+      setCaregiverData((prev) => ({
+        ...prev,
+        roomCareSummary: {
+          hydrationPct: summary.hydration_pct,
+          snackPct: summary.snack_pct,
+          asleepCount: summary.asleep_count,
+          diapersDueCount: summary.diapers_due_count,
+          diapersLoggedCount: summary.diapers_logged_count,
+        },
+        toddlers: prev.toddlers.map((t) => {
+          const evState = summary.per_student?.[t.studentId];
+          if (!evState) return t;
+          return {
+            ...t,
+            mood: (evState.mood as CaregiverToddler["mood"]) || t.mood,
+            hydration: {
+              currentMl:
+                evState.hydration_ml > 0
+                  ? evState.hydration_ml
+                  : t.hydration.currentMl,
+              targetMl: t.hydration.targetMl,
+            },
+            napStatus: evState.nap_status || t.napStatus,
+            isSleeping: evState.is_sleeping,
+            mealStatus: evState.meal_status || t.mealStatus,
+            diaperStatus: evState.last_diaper
+              ? {
+                  time: evState.last_diaper.time,
+                  note: evState.last_diaper.note,
+                  nextDueTime: evState.last_diaper.next_due_time,
+                }
+              : t.diaperStatus,
+            recentEvents: evState.events.map((ev) => ({
+              eventId: ev.event_id,
+              eventType: ev.event_type,
+              occurredAt: ev.occurred_at,
+              createdAt: ev.created_at,
+              payload: ev.payload,
+              parentVisible: ev.parent_visible,
+            })),
+          };
+        }),
+      }));
+    } catch {
+      // Keep current state
+    }
+  };
+
+  const handleUpdateMood = async (
+    studentId: string,
+    mood: CaregiverToddler["mood"],
+  ) => {
+    try {
+      await createCareEvents({
+        student_id: studentId,
+        event_type: "mood",
+        payload: { mood },
+        parent_visible: true,
+      });
+      await refreshCareEvents();
+    } catch {
+      // Optimistic fallback
+    }
+  };
+
+  const handleLogHydration = async (studentId: string, amountMl: number) => {
+    setCaregiverData((prev) => ({
+      ...prev,
+      toddlers: prev.toddlers.map((t) =>
+        t.studentId === studentId
+          ? {
+              ...t,
+              hydration: {
+                ...t.hydration,
+                currentMl: t.hydration.currentMl + amountMl,
+              },
+            }
+          : t,
+      ),
+    }));
+    try {
+      await createCareEvents({
+        student_id: studentId,
+        event_type: "water",
+        payload: { amount_ml: amountMl },
+        parent_visible: true,
+      });
+      await refreshCareEvents();
+    } catch {
+      // Keep optimistic UI
+    }
+  };
+
+  const handleLogCareEvent = async (
+    studentId: string,
+    eventType: string,
+    payload: Record<string, unknown>,
+    parentVisible = true,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      await createCareEvents({
+        student_id: studentId,
+        event_type: eventType,
+        payload,
+        parent_visible: parentVisible,
+      });
+      await refreshCareEvents();
+      return { ok: true };
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message || "Failed to log care event.";
+      return { ok: false, error: msg };
+    }
+  };
+
+  const handleUndoCareEvent = async (
+    eventId: string,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      await undoCareEvent(eventId);
+      await refreshCareEvents();
+      return { ok: true };
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message || "Failed to undo care event.";
+      return { ok: false, error: msg };
+    }
+  };
+
+  const handleQuickBatchMealLog = async () => {
+    const presentIds = caregiverData.toddlers
+      .filter((t) => t.status === "Present" || t.status === "Late")
+      .map((t) => t.studentId);
+    if (presentIds.length === 0) return;
+    try {
+      await createCareEvents({
+        student_ids: presentIds,
+        event_type: "meal",
+        payload: { meal_type: "Morning Snack / Meal", portion: "All (100%)" },
+        parent_visible: true,
+      });
+      await refreshCareEvents();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleMarkAllAsleep = async () => {
+    const presentIds = caregiverData.toddlers
+      .filter((t) => t.status === "Present" || t.status === "Late")
+      .map((t) => t.studentId);
+    if (presentIds.length === 0) return;
+    try {
+      await createCareEvents({
+        student_ids: presentIds,
+        event_type: "nap_start",
+        payload: { note: "Room 1A Nap Window" },
+        parent_visible: true,
+      });
+      await refreshCareEvents();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleUploadCareMedia = async (
+    studentIds: string[],
+    file: File,
+    caption: string,
+  ) => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("student_ids", studentIds.join(","));
+      fd.append("caption", caption);
+      const res = await uploadCareMedia(fd);
+      const m = res.data;
+      if (m) {
+        setCaregiverData((prev) => ({
+          ...prev,
+          uploadedMedia: [
+            {
+              mediaId: m.media_id,
+              studentIds: m.student_ids,
+              caption: m.caption,
+              signedUrl: m.signed_url,
+              capturedAt: m.captured_at,
+            },
+            ...(prev.uploadedMedia ?? []),
+          ],
+        }));
+        return {
+          ok: true,
+          media: {
+            mediaId: m.media_id,
+            signedUrl: m.signed_url,
+            caption: m.caption,
+          },
+        };
+      }
+      return { ok: false, error: "Upload returned empty response." };
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message || "Photo upload failed.";
+      return { ok: false, error: msg };
+    }
+  };
+
+  const handleDeleteCareMedia = async (mediaId: string) => {
+    try {
+      await deleteCareMedia(mediaId);
+      setCaregiverData((prev) => ({
+        ...prev,
+        uploadedMedia: (prev.uploadedMedia ?? []).filter(
+          (m) => m.mediaId !== mediaId,
+        ),
+      }));
+      return { ok: true };
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message || "Failed to delete media.";
+      return { ok: false, error: msg };
+    }
+  };
+
+  const handleSendCaregiverNote = async (recipient: string, message: string) => {
+    const matched = caregiverData.toddlers.find(
+      (t) => t.name.toLowerCase() === recipient.toLowerCase(),
+    );
     setCaregiverData((prev) => ({
       ...prev,
       recentNotes: [
@@ -631,6 +1383,145 @@ export default function CaregiverPortalPage() {
         ...prev.recentNotes,
       ],
     }));
+    try {
+      await sendCaregiverNoteMessage({
+        recipient_id: matched?.studentId,
+        body: message,
+        subject: `Room 1A Note for ${recipient}`,
+        payload: matched ? { student_id: matched.studentId } : { room: "Room 1A" },
+      });
+    } catch {
+      // Optimistic fallback
+    }
+  };
+
+  const handleCheckInWithScreening = async (
+    studentId: string,
+    _studentName: string,
+    screening: {
+      symptoms: string[];
+      temperature_c?: number;
+      supervisor_override?: boolean;
+      override_reason?: string;
+      late_reason?: string;
+    },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const res = await checkInStudent({
+        student_id: studentId,
+        date: todayStr,
+        symptoms: screening.symptoms,
+        temperature_c: screening.temperature_c,
+        supervisor_override: screening.supervisor_override,
+        override_reason: screening.override_reason,
+        late_reason: screening.late_reason,
+      });
+      const checkInAt = res.data?.check_in_at ?? new Date().toISOString();
+      const resolvedStatus =
+        res.data?.status === "Late" ? ("Late" as const) : ("Present" as const);
+      const arrivalFormatted = new Date(checkInAt).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      setCaregiverData((prev) => ({
+        ...prev,
+        toddlers: prev.toddlers.map((t) =>
+          t.studentId === studentId
+            ? {
+                ...t,
+                status: resolvedStatus,
+                checkInAt,
+                lateReason: res.data?.late_reason ?? screening.late_reason ?? null,
+                arrivalTime: arrivalFormatted,
+                followUpSla: undefined,
+              }
+            : t,
+        ),
+      }));
+      return { ok: true };
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        "Do Not Admit / Notify Director — positive symptom screen.";
+      return { ok: false, error: msg };
+    }
+  };
+
+  const handleLoadLearningPortfolio = async (studentId: string) => {
+    try {
+      const res = await fetchLearningObservations(studentId);
+      const obsList = (res.data?.observations ?? []).map((o) => ({
+        observationId: o.observation_id,
+        studentId: o.student_id,
+        framework: o.framework,
+        domains: o.domains,
+        note: o.note,
+        sharedWithFamily: o.shared_with_family,
+        observedOn: o.observed_on,
+      }));
+      const summary = res.data?.developmental_summary;
+      setCaregiverData((prev) => ({
+        ...prev,
+        learningObservationsByStudent: {
+          ...(prev.learningObservationsByStudent ?? {}),
+          [studentId]: obsList,
+        },
+        developmentalSummaryByStudent: summary
+          ? {
+              ...(prev.developmentalSummaryByStudent ?? {}),
+              [studentId]: {
+                totalObservations: summary.total_observations,
+                domainCounts: summary.domain_counts,
+                frameworkCounts: summary.framework_counts,
+              },
+            }
+          : prev.developmentalSummaryByStudent,
+      }));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCreateLearningObservation = async (payload: {
+    studentId: string;
+    framework: string;
+    domains: string[];
+    note: string;
+    sharedWithFamily: boolean;
+  }): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      await createLearningObservation({
+        student_id: payload.studentId,
+        framework: payload.framework,
+        domains: payload.domains,
+        note: payload.note,
+        shared_with_family: payload.sharedWithFamily,
+      });
+      await handleLoadLearningPortfolio(payload.studentId);
+      return { ok: true };
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        "Failed to save learning observation.";
+      return { ok: false, error: msg };
+    }
+  };
+
+  const handleDeleteLearningObservation = async (
+    observationId: string,
+    studentId: string,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      await deleteLearningObservation(observationId);
+      await handleLoadLearningPortfolio(studentId);
+      return { ok: true };
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        "Failed to delete learning observation.";
+      return { ok: false, error: msg };
+    }
   };
 
   return (
@@ -644,17 +1535,41 @@ export default function CaregiverPortalPage() {
         canAuditRoll: true,
       }}
       onLogDose={handleLogDose}
+      onCheckIn={handleCheckIn}
+      onCheckInWithScreening={handleCheckInWithScreening}
+      onCheckOut={handleCheckOut}
+      onLoadPickupContacts={handleLoadPickupContacts}
+      onVerifyPickup={handleVerifyPickup}
       onMarkLateArrival={handleMarkLateArrival}
       onTriggerRollAudit={handleTriggerRollAudit}
       onCallUnchecked={handleCallUnchecked}
       onOpenBooBooModal={handleOpenBooBooModal}
       onSendCaregiverNote={handleSendCaregiverNote}
-      onQuickBatchMealLog={() =>
-        alert("Batch Action: Morning snack logged for all present toddlers!")
-      }
-      onMarkAllAsleep={() =>
-        alert("Batch Action: Quiet nap window activated for Room 1A cots.")
-      }
+      onUpdateMood={handleUpdateMood}
+      onLogHydration={handleLogHydration}
+      onLogCareEvent={handleLogCareEvent}
+      onUndoCareEvent={handleUndoCareEvent}
+      onQuickBatchMealLog={handleQuickBatchMealLog}
+      onMarkAllAsleep={handleMarkAllAsleep}
+      onUploadCareMedia={handleUploadCareMedia}
+      onDeleteCareMedia={handleDeleteCareMedia}
+      onLoadLearningPortfolio={handleLoadLearningPortfolio}
+      onCreateLearningObservation={handleCreateLearningObservation}
+      onDeleteLearningObservation={handleDeleteLearningObservation}
+      onSelectDate={(nextDate) => setSelectedDate(nextDate)}
+      onLoadChildHistory={handleLoadChildHistory}
+      rollAuditModal={{
+        open: rollAuditOpen,
+        selectedDate: rollAuditDate,
+        data: rollAuditData,
+        isLoading: rollAuditLoading,
+        isSubmitting: rollAuditSubmitting,
+        errorMessage: rollAuditError,
+        confirmSuccessMessage: rollAuditSuccess,
+        onClose: () => setRollAuditOpen(false),
+        onSelectDate: (nextDate) => void loadRollAudit(nextDate),
+        onConfirmAudit: handleConfirmRollAudit,
+      }}
     />
   );
 }

@@ -18,6 +18,7 @@ import {
   acceptEnrollmentOffer,
   startParentCheckout,
   registerEventParticipant,
+  fetchParentChildFeed,
   type EnrollmentCase,
   type ParentDashboardSummary,
   type ParentBillingSummary,
@@ -229,12 +230,46 @@ export default function ParentDashboardPage() {
                   }))
                 : prev.events,
           }));
-        } else if (summary || billing) {
-          setData((prev) => ({
-            ...prev,
-            attendance_rate: summary?.attendance_rate ?? prev.attendance_rate,
-            outstanding_balance: billing?.outstanding_balance ?? prev.outstanding_balance,
-          }));
+        } else {
+          const linkedId = session?.linked_student_ids?.[0];
+          if (linkedId) {
+            try {
+              const feedRes = await fetchParentChildFeed(linkedId);
+              if (mounted && feedRes.data) {
+                const linkedChild: ChildSummary = {
+                  student_id: feedRes.data.student_id,
+                  student_number: "SUN-1001",
+                  name: feedRes.data.student_name,
+                  grade: "Toddler & Pre-K",
+                  section: "Room 1A",
+                  status: "Active",
+                  avatar_emoji: "👧",
+                };
+                setData((prev) => ({
+                  ...prev,
+                  household_name: session?.user_name
+                    ? `${session.user_name} Household`
+                    : prev.household_name,
+                  parent_name: session?.user_name || prev.parent_name,
+                  parent_email: session?.email || prev.parent_email,
+                  children: [linkedChild],
+                  selected_child_id: linkedChild.student_id,
+                  attendance_rate: summary?.attendance_rate ?? prev.attendance_rate,
+                  outstanding_balance:
+                    billing?.outstanding_balance ?? prev.outstanding_balance,
+                  daily_feed: feedRes.data.feed,
+                }));
+              }
+            } catch {
+              // ignore if linked child feed is unavailable
+            }
+          } else if (summary || billing) {
+            setData((prev) => ({
+              ...prev,
+              attendance_rate: summary?.attendance_rate ?? prev.attendance_rate,
+              outstanding_balance: billing?.outstanding_balance ?? prev.outstanding_balance,
+            }));
+          }
         }
       } catch (err) {
         console.warn("Using fallback parent dashboard records:", err);
@@ -248,6 +283,28 @@ export default function ParentDashboardPage() {
       mounted = false;
     };
   }, []);
+
+  // Load Live Daily-Report Feed for selected child (US-CG-07 / US-CG-08)
+  useEffect(() => {
+    const childId = data.selected_child_id;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      childId || "",
+    );
+    if (!isUuid) return;
+    let active = true;
+    fetchParentChildFeed(childId)
+      .then((res) => {
+        if (!active || !res.data) return;
+        setData((prev) => ({
+          ...prev,
+          daily_feed: res.data!.feed,
+        }));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [data.selected_child_id]);
 
   // Child selection
   const handleSelectChild = (studentId: string) => {

@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
+
+const emptySubscribe = () => () => {};
 import {
   Sparkles,
   X,
@@ -21,6 +24,7 @@ interface ThePuffyCaregiverAssistantProps {
   onOpenBooBooModal?: () => void;
   onTriggerRollAudit?: () => void;
   onScrollToMedications?: () => void;
+  isDrawerOpen?: boolean;
 }
 
 interface ChatMessage {
@@ -38,9 +42,15 @@ export function ThePuffyCaregiverAssistant({
   onOpenBooBooModal,
   onTriggerRollAudit,
   onScrollToMedications,
+  isDrawerOpen = false,
 }: ThePuffyCaregiverAssistantProps) {
   // DEF-004: MUST BE CLOSED/DOCKED BY DEFAULT
   const [isOpen, setIsOpen] = useState(false);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
   const [inputText, setInputText] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -86,8 +96,12 @@ export function ThePuffyCaregiverAssistant({
     }, 500);
   };
 
-  return (
-    // DEF-011: z-[80] floating stacking context
+  if (!mounted || isDrawerOpen) {
+    return null;
+  }
+
+  return createPortal(
+    // DEF-011 / DEF-026: Portaled to document.body at z-[80] floating stacking context
     <aside
       className="fixed bottom-6 right-6 z-[80] flex flex-col items-end gap-3"
       aria-label="ThePuffy AI Caregiver Assistant"
@@ -256,6 +270,7 @@ export function ThePuffyCaregiverAssistant({
           <span className="text-xs font-bold text-on-primary">AI Agent</span>
         </div>
       </button>
-    </aside>
+    </aside>,
+    document.body
   );
 }

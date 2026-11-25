@@ -21,7 +21,7 @@ export interface TeacherRollStudent {
   status: TeacherRollStatus | null;
   notifiedParent: boolean;
   medicalBadge?: string | null;
-  medicalSeverity?: "Critical" | "High" | "Moderate" | null;
+  medicalSeverity?: "Critical" | "High" | "Moderate" | "Low" | null;
   arrivalNote?: string | null;
 }
 

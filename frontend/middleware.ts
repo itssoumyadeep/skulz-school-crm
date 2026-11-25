@@ -21,6 +21,7 @@ type Claims = {
 };
 
 const roleRules: Array<{ prefix: string; roles: Role[] }> = [
+  { prefix: "/admin/history", roles: ["admin", "owner"] },
   { prefix: "/admin", roles: ["admin"] },
   { prefix: "/principal", roles: ["principal", "admin"] },
   { prefix: "/vice-principal", roles: ["vice_principal", "admin"] },

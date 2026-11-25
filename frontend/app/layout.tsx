@@ -1,24 +1,28 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Fraunces, Inter, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { ServiceWorkerRegister } from "./sw-register";
 import "./globals.css";
 
-const inter = Inter({
+const inter = localFont({
+  src: "./fonts/inter-latin.woff2",
   variable: "--font-inter",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const plusJakartaSans = localFont({
+  src: "./fonts/plus-jakarta-sans-latin.woff2",
   variable: "--font-plus-jakarta",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: "200 800",
+  display: "swap",
 });
 
-const fraunces = Fraunces({
+const fraunces = localFont({
+  src: "./fonts/fraunces-latin.woff2",
   variable: "--font-fraunces",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: "100 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -35,13 +39,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${inter.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <head>
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         {children}
         <ServiceWorkerRegister />

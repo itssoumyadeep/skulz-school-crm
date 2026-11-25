@@ -2,9 +2,13 @@ import pytest
 from django.db import connection
 from importlib import import_module
 
-TENANT_TABLES = import_module(
-    "core.migrations.0020_enable_tenant_rls"
-).TENANT_TABLES
+TENANT_TABLES = tuple(
+    import_module("core.migrations.0020_enable_tenant_rls").TENANT_TABLES
+) + tuple(
+    import_module("core.migrations.0023_care_events_media_rls").CARE_TENANT_TABLES
+) + tuple(
+    import_module("core.migrations.0025_learning_observations_rls").LEARNING_TENANT_TABLES
+)
 
 
 @pytest.mark.django_db

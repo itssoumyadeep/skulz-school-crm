@@ -3,17 +3,18 @@
 import uuid
 from uuid import UUID
 from datetime import date
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+from django.utils import timezone
 from ninja import Router
 
 from core.models import (
-    Tenant, Student, HealthObservation, MedicationLog, Incident, SafetyDrill
+    Tenant, Student, StudentAttendance, HealthObservation, MedicationLog, Incident, SafetyDrill
 )
 from core.auth.bearer import JWTAuthBearer
 from core.auth.decorators import require_roles
-from core.auth.scoping import verify_student_access
+from core.auth.scoping import verify_student_access, get_student_queryset
 from core.schemas.base import build_response, build_error
 from core.schemas.attendance_health import (
     StudentHealthUpsertInput,
@@ -25,10 +26,13 @@ from core.schemas.attendance_health import (
     IncidentAcknowledgeInput,
     SafetyDrillCreateSchema,
     SafetyDrillUpdateInput,
+    PickupVerifySchema,
 )
 from core.business_objects.attendance_health import (
     HealthRecordBO,
-    SafetyComplianceBO
+    SafetyComplianceBO,
+    PickupVerificationBO,
+    PickupVerificationError,
 )
 from core.business_objects.base import BusinessRuleError
 
@@ -66,9 +70,7 @@ def get_classroom_health_alerts(request):
     """
     Returns classroom medical alerts and Sabrina's Law action plans from StudentHealth.
     """
-    students = Student.objects.filter(
-        tenant_id=request.tenant_id,
-        is_deleted=False,
+    students = get_student_queryset(request).filter(
         status='Active',
     ).select_related('health_profile').order_by('name')
 
@@ -128,6 +130,103 @@ def get_classroom_health_alerts(request):
     )
 
 
+@router.get("/health/classroom-medications", auth=JWTAuthBearer())
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Owner')
+def get_classroom_medications(request):
+    """
+    US-CG-04 / DEF-023: Returns today's room medication schedule from StudentHealth,
+    cross-referenced with today's MedicationLog and StudentAttendance.
+    """
+    today = timezone.localdate()
+    students = list(
+        get_student_queryset(request).filter(
+            status='Active',
+        ).select_related('health_profile').order_by('name')
+    )
+    student_ids = [s.student_id for s in students]
+
+    today_logs = MedicationLog.objects.filter(
+        tenant_id=request.tenant_id,
+        student_id__in=student_ids,
+        time_administered__date=today,
+        is_deleted=False,
+    ).order_by('-time_administered')
+    logs_by_key = {}
+    for log in today_logs:
+        key = (log.student_id, (log.medicine_name or '').strip().lower())
+        if key not in logs_by_key:
+            logs_by_key[key] = log
+
+    absent_ids = set(
+        StudentAttendance.objects.filter(
+            tenant_id=request.tenant_id,
+            student_id__in=student_ids,
+            date=today,
+            status='Absent',
+            is_deleted=False,
+        ).values_list('student_id', flat=True)
+    )
+
+    schedule = []
+    for s in students:
+        h = getattr(s, 'health_profile', None)
+        if not h:
+            continue
+        meds = h.medications if isinstance(h.medications, list) else []
+        for idx, med in enumerate(meds):
+            if isinstance(med, dict):
+                med_name = med.get('name', 'Medication')
+                dosage = med.get('dosage', '')
+                scheduled_time = med.get('scheduled_time', '')
+                consent_note = med.get('consent', '')
+            else:
+                med_name = str(med)
+                dosage = ''
+                scheduled_time = ''
+                consent_note = ''
+
+            log = logs_by_key.get((s.student_id, med_name.strip().lower()))
+            actor_role = getattr(request, 'user_role', 'CareGiver')
+            if s.student_id in absent_ids:
+                status = 'Skipped (absent)'
+                administered_at = None
+                if not bool(h.consent_flag) and actor_role in ('CareGiver', 'Caregiver', 'Teacher'):
+                    dosage = 'Restricted until parental consent is on file'
+            elif not bool(h.consent_flag):
+                status = 'Blocked (Consent Missing)'
+                administered_at = None
+                consent_note = 'Parent Share & Medication Consent Not On File'
+                if actor_role in ('CareGiver', 'Caregiver', 'Teacher'):
+                    dosage = 'Restricted until parental consent is on file'
+            elif log:
+                status = 'Administered'
+                administered_at = log.time_administered.isoformat()
+            else:
+                status = 'Pending'
+                administered_at = None
+
+            schedule.append({
+                "id": f"{s.student_id}-{idx}",
+                "med_log_id": str(log.med_log_id) if log else None,
+                "student_id": str(s.student_id),
+                "student_name": s.name,
+                "grade": s.grade,
+                "medicine_name": med_name,
+                "dosage": dosage,
+                "scheduled_time": scheduled_time,
+                "consent_flag": bool(h.consent_flag),
+                "consent_date": h.consent_date.isoformat() if h.consent_date else None,
+                "consent_note": consent_note,
+                "status": status,
+                "administered_at": administered_at,
+            })
+
+    return JsonResponse(
+        build_response(data=schedule, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'CareGiver')),
+        status=200,
+    )
+
+
 @router.post("/health/observations", auth=JWTAuthBearer())
 @require_roles('CareGiver', 'Teacher', 'Admin')
 def create_health_observation(request, payload: HealthObservationCreateSchema):
@@ -158,7 +257,7 @@ def create_health_observation(request, payload: HealthObservationCreateSchema):
 
 
 @router.post("/health/medication-log", auth=JWTAuthBearer())
-@require_roles('CareGiver', 'Teacher', 'Admin', 'Staff')
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Owner', 'Staff')
 def create_medication_log(request, payload: MedicationLogCreateSchema):
     """
     P07: Administer medication, enforcing parental consent gate (BR-07-01).
@@ -169,6 +268,15 @@ def create_medication_log(request, payload: MedicationLogCreateSchema):
         tenant_id=request.tenant_id,
         is_deleted=False
     )
+    if not verify_student_access(request, student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "Access denied to this student's room."}],
+                tenant_id=request.tenant_id,
+                role=getattr(request, 'user_role', 'CareGiver'),
+            ),
+            status=403,
+        )
     actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else uuid.uuid4()
     actor_role = getattr(request, 'user_role', 'CareGiver')
 
@@ -177,10 +285,17 @@ def create_medication_log(request, payload: MedicationLogCreateSchema):
         staff_id=actor_id,
         medicine_name=payload.medicine_name,
         dose=payload.dose,
-        notes=payload.notes or ""
+        notes=payload.notes or "",
+        force=payload.force,
+        time_administered=payload.time_administered,
+        parent_notified=payload.parent_notified,
+        actor_id=actor_id,
     )
 
-    return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=201)
+    resp = bo.to_response(tenant_id=request.tenant_id, role=actor_role)
+    if isinstance(resp.get("data"), dict):
+        resp["data"]["created_med_log_id"] = str(med_log.med_log_id)
+    return JsonResponse(resp, status=201)
 
 
 @router.post("/incidents", auth=JWTAuthBearer())
@@ -193,6 +308,24 @@ def report_incident(request, payload: IncidentCreateSchema):
     actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     actor_role = getattr(request, 'user_role', 'Staff')
 
+    for raw_sid in payload.students:
+        try:
+            sid_uuid = UUID(str(raw_sid))
+        except (ValueError, TypeError):
+            continue
+        target_student = get_object_or_404(
+            Student, student_id=sid_uuid, tenant_id=request.tenant_id, is_deleted=False
+        )
+        if not verify_student_access(request, target_student):
+            return JsonResponse(
+                build_error(
+                    errors=[{"code": "ACCESS_DENIED", "message": "Access denied to student in another room."}],
+                    tenant_id=request.tenant_id,
+                    role=actor_role,
+                ),
+                status=403,
+            )
+
     incident = SafetyComplianceBO.report_incident(
         tenant=tenant,
         incident_type=payload.incident_type,
@@ -203,7 +336,9 @@ def report_incident(request, payload: IncidentCreateSchema):
         actions_taken=payload.actions_taken,
         students=payload.students,
         staff=payload.staff,
-        actor_id=actor_id
+        actor_id=actor_id,
+        body_part=payload.body_part,
+        incident_time=payload.time,
     )
 
     data = {
@@ -212,7 +347,9 @@ def report_incident(request, payload: IncidentCreateSchema):
         "incident_type": incident.incident_type,
         "severity": incident.severity,
         "date": incident.date.isoformat(),
+        "time": incident.time,
         "location": incident.location,
+        "body_part": incident.body_part,
         "escalated_to_principal": incident.escalated_to_principal,
         "parent_notified": incident.parent_notified
     }
@@ -300,7 +437,7 @@ def get_compliance_dashboard(request):
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')), status=200)
 
 
-@router.put("/students/{uuid:student_id}/health-record", auth=JWTAuthBearer())
+@router.put("/students/{student_id}/health-record", auth=JWTAuthBearer())
 @require_roles('Admin', 'Principal', 'CareGiver', 'Parent', 'Owner')
 def upsert_student_health_record(request, student_id: UUID, payload: StudentHealthUpsertInput):
     student = get_object_or_404(
@@ -362,7 +499,6 @@ def update_health_observation(request, obs_id: UUID, payload: HealthObservationU
     data = HealthRecordBO.update_observation(obs=obs, data=payload.model_dump(exclude_none=True), actor_id=actor_id)
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 
-
 @router.delete("/health/observations/{uuid:obs_id}", auth=JWTAuthBearer())
 @require_roles('Admin', 'Principal', 'Owner')
 def delete_health_observation(request, obs_id: UUID):
@@ -376,6 +512,39 @@ def delete_health_observation(request, obs_id: UUID):
     actor_role = getattr(request, 'user_role', 'Admin')
     data = HealthRecordBO.delete_observation(obs=obs, actor_id=actor_id)
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+@router.get("/health/medication-logs", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'CareGiver', 'Owner')
+def list_classroom_medication_logs(request, log_date: Optional[date] = None):
+    """Return tenant/room-scoped chronological MedicationLog audit trail rows."""
+    scoped_students = get_student_queryset(request)
+    qs = MedicationLog.objects.filter(
+        tenant_id=request.tenant_id,
+        student__in=scoped_students,
+        is_deleted=False,
+    ).select_related('student').order_by('-time_administered', '-created_at')
+    if log_date is not None:
+        qs = qs.filter(time_administered__date=log_date)
+
+    rows = [
+        {
+            "med_log_id": str(log.med_log_id),
+            "student_id": str(log.student_id),
+            "student_name": log.student.name,
+            "grade": log.student.grade,
+            "medicine_name": log.medicine_name,
+            "dose": log.dose,
+            "time_administered": log.time_administered.isoformat(),
+            "parent_notified": bool(log.parent_notified),
+            "notes": log.notes,
+            "staff_id": str(log.staff_id),
+        }
+        for log in qs[:100]
+    ]
+    return JsonResponse(
+        build_response(data=rows, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
 
 
 @router.get("/students/{uuid:student_id}/medication-logs", auth=JWTAuthBearer())
@@ -402,7 +571,7 @@ def list_student_medication_logs(request, student_id: UUID):
 
 
 @router.patch("/health/medication-log/{uuid:med_log_id}", auth=JWTAuthBearer())
-@require_roles('CareGiver', 'Teacher', 'Admin', 'Principal', 'Owner')
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Owner')
 def update_medication_log(request, med_log_id: UUID, payload: MedicationLogUpdateInput):
     med_log = get_object_or_404(
         MedicationLog.objects.select_related('student', 'student__health_profile', 'tenant'),
@@ -410,12 +579,35 @@ def update_medication_log(request, med_log_id: UUID, payload: MedicationLogUpdat
         tenant_id=request.tenant_id,
         is_deleted=False,
     )
-    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     actor_role = getattr(request, 'user_role', 'CareGiver')
+    if not verify_student_access(request, med_log.student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "You are not authorized to update this medication log."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     bo = HealthRecordBO(student=med_log.student, actor_role=actor_role)
     data = bo.update_medication_log(med_log=med_log, data=payload.model_dump(exclude_none=True), actor_id=actor_id)
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 
+
+@router.delete("/health/medication-log/{uuid:med_log_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def delete_medication_log(request, med_log_id: UUID):
+    med_log = get_object_or_404(
+        MedicationLog.objects.select_related('student', 'tenant'),
+        med_log_id=med_log_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = HealthRecordBO.delete_medication_log(med_log=med_log, actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 
 @router.get("/incidents", auth=JWTAuthBearer())
 @require_roles('Admin', 'Principal', 'Vice_Principal', 'Teacher', 'CareGiver', 'Owner')
@@ -424,8 +616,7 @@ def list_incidents(request, severity: str = None):
     data = SafetyComplianceBO.list_incidents(tenant_id=request.tenant_id, severity=severity)
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 
-
-@router.patch("/incidents/{uuid:incident_id}", auth=JWTAuthBearer())
+@router.patch("/incidents/{incident_id}", auth=JWTAuthBearer())
 @require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
 def acknowledge_or_update_incident(request, incident_id: UUID, payload: IncidentAcknowledgeInput):
     incident = get_object_or_404(
@@ -444,13 +635,26 @@ def acknowledge_or_update_incident(request, incident_id: UUID, payload: Incident
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 
 
+@router.delete("/incidents/{incident_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def delete_incident(request, incident_id: UUID):
+    incident = get_object_or_404(
+        Incident.objects.select_related('tenant'),
+        incident_id=incident_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = SafetyComplianceBO.delete_incident(incident=incident, actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
 @router.get("/safety/drills", auth=JWTAuthBearer())
 @require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
 def list_safety_drills(request):
     actor_role = getattr(request, 'user_role', 'Admin')
     data = SafetyComplianceBO.list_drills(tenant_id=request.tenant_id)
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
-
 
 @router.get("/safety/drills/{uuid:drill_id}", auth=JWTAuthBearer())
 @require_roles('Admin', 'Principal', 'Vice_Principal', 'Owner')
@@ -473,7 +677,6 @@ def get_safety_drill(request, drill_id: UUID):
     }
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 
-
 @router.patch("/safety/drills/{uuid:drill_id}", auth=JWTAuthBearer())
 @require_roles('Admin', 'Principal', 'Owner')
 def update_safety_drill(request, drill_id: UUID, payload: SafetyDrillUpdateInput):
@@ -491,4 +694,88 @@ def update_safety_drill(request, drill_id: UUID, payload: SafetyDrillUpdateInput
         actor_id=actor_id,
     )
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.get("/students/{student_id}/pickup-contacts", auth=JWTAuthBearer())
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Owner')
+def list_student_pickup_contacts(request, student_id: UUID):
+    """US-CG-02: Return pickup contacts for a student (strictly omitting pickup_pin_hash)."""
+    student = get_object_or_404(
+        Student,
+        student_id=student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'CareGiver')
+    if not verify_student_access(request, student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "Access denied to this student's room."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    contacts = PickupVerificationBO.list_pickup_contacts(student)
+    return JsonResponse(
+        build_response(data=contacts, tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
+
+@router.post("/students/{student_id}/pickup-verify", auth=JWTAuthBearer())
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Owner')
+def verify_student_pickup(request, student_id: UUID, payload: PickupVerifySchema):
+    """US-CG-02: Verify pickup adult PIN / ID / custody restriction."""
+    student = get_object_or_404(
+        Student,
+        student_id=student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_role = getattr(request, 'user_role', 'CareGiver')
+    if not verify_student_access(request, student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "Access denied to this student's room."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    allow_override = bool(
+        payload.admin_override and actor_role in ('Admin', 'Administrator', 'Principal', 'Vice_Principal', 'Owner')
+    )
+    if payload.admin_override and not allow_override:
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "FORBIDDEN", "message": "Admin or Principal role required for pickup override."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    try:
+        result = PickupVerificationBO.verify_pickup(
+            student=student,
+            contact_id=payload.contact_id,
+            pin=payload.pin,
+            id_verified=payload.id_verified,
+            admin_override=allow_override,
+            actor_id=actor_id,
+        )
+    except PickupVerificationError as exc:
+        return JsonResponse(
+            build_error(
+                errors=[v.to_dict() for v in exc.violations],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=exc.status_code,
+        )
+    return JsonResponse(
+        build_response(data=result, tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
 

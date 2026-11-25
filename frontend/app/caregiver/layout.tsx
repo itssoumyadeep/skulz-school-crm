@@ -15,10 +15,10 @@ import {
   Flower2,
   Calendar,
   Baby,
-  Stethoscope,
   Heart,
-  Shield,
   Layers,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import {
   DEFAULT_CAREGIVER_AVATAR,
@@ -27,6 +27,10 @@ import {
   getCachedProfilePicture,
   setCachedProfilePicture,
 } from "@/components/pc/profile-picture-modal";
+import {
+  setCachedViewMode,
+  usePortalViewMode,
+} from "@/components/pc/view-mode-preference";
 import { fetchMyProfile, updateMyProfilePicture } from "@/app/lib/api";
 import { getClientSession, type SessionClaims } from "@/app/lib/session";
 
@@ -46,6 +50,7 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
   const [avatarUrl, setAvatarUrl] = useState<string>(() =>
     getCachedProfilePicture(userKey, "caregiver"),
   );
+  const [viewMode] = usePortalViewMode("caregiver", "cards");
 
   const menuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -360,6 +365,49 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
                       <p className="text-[11px] font-medium text-crayon-muted truncate">
                         Room 1A • Sunflowers Toddler
                       </p>
+                    </div>
+                  </div>
+                  <div className="py-1.5 border-b border-pastel-butter/80 px-1 space-y-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-crayon-muted px-1">
+                      Workspace View
+                    </p>
+                    <div
+                      role="group"
+                      aria-label="Account Profile View Mode"
+                      className="grid grid-cols-2 gap-1 bg-paper-tint p-1 rounded-2xl border border-pastel-butter/80"
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={viewMode === "cards"}
+                        onClick={() => {
+                          setCachedViewMode("caregiver", "cards");
+                          setProfileMenuOpen(false);
+                        }}
+                        className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          viewMode === "cards"
+                            ? "bg-paper-card text-crayon-charcoal shadow-xs"
+                            : "text-crayon-muted hover:text-crayon-charcoal"
+                        }`}
+                      >
+                        <LayoutGrid className="size-3.5 shrink-0" />
+                        <span>Cards View</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={viewMode === "compact"}
+                        onClick={() => {
+                          setCachedViewMode("caregiver", "compact");
+                          setProfileMenuOpen(false);
+                        }}
+                        className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          viewMode === "compact"
+                            ? "bg-paper-card text-crayon-charcoal shadow-xs"
+                            : "text-crayon-muted hover:text-crayon-charcoal"
+                        }`}
+                      >
+                        <List className="size-3.5 shrink-0" />
+                        <span>Compact View</span>
+                      </button>
                     </div>
                   </div>
                   <button

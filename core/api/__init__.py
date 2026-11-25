@@ -12,6 +12,7 @@ from core.api.v1.sprint5 import router as sprint5_router
 from core.api.v1.analytics import router as analytics_router
 from core.api.v1.metadata import router as metadata_router
 from core.api.v1.school_setup import router as school_setup_router
+from core.api.v1.care_events import router as care_events_router
 from core.business_objects.base import BusinessRuleError
 from core.schemas.base import build_error
 
@@ -46,5 +47,6 @@ api.add_router("/v1/", sprint5_router)
 api.add_router("/v1/", analytics_router)
 api.add_router("/v1/", metadata_router)
 api.add_router("/v1/", school_setup_router)
+api.add_router("/v1/", care_events_router)
 
 __all__ = ['api']

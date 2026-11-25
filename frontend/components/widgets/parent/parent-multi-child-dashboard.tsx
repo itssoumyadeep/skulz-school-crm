@@ -357,6 +357,65 @@ export function ParentMultiChildDashboardWidget({
                 </div>
               </div>
 
+              {/* Live Daily-Report Feed (US-CG-07 / US-CG-08) */}
+              <div className="p-6 rounded-3xl bg-surface-container-lowest border border-border shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-on-surface">
+                      Live Daily-Report Feed
+                    </h3>
+                    <p className="text-xs text-on-surface-variant">
+                      Chronological care logs, reassuring notes &amp; classroom moments for {activeChild.name}
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full border border-border text-[11px] font-semibold text-on-surface-variant">
+                    {(data.daily_feed ?? []).length} updates today
+                  </span>
+                </div>
+
+                {(data.daily_feed ?? []).length === 0 ? (
+                  <p className="text-xs text-on-surface-variant py-3">
+                    No care events, notes, or classroom moments logged yet today.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {(data.daily_feed ?? []).map((item) => (
+                      <div
+                        key={item.item_id}
+                        className="p-3.5 rounded-2xl bg-surface-container-low border border-border/70 flex flex-col gap-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-on-surface">
+                            {item.title}
+                          </span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {item.delivery_status && (
+                              <span className="px-2 py-0.5 rounded-full bg-pastel-mint/40 text-[10px] font-semibold text-on-surface">
+                                {item.delivery_status}
+                              </span>
+                            )}
+                            <span className="text-[11px] text-on-surface-variant">
+                              {new Date(item.timestamp).toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-on-surface-variant">{item.detail}</p>
+                        {item.kind === "media" && item.signed_url && (
+                          <img
+                            src={item.signed_url}
+                            alt={item.title || "Classroom moment"}
+                            className="w-full max-w-xs h-44 object-cover rounded-xl border border-border/50"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Upcoming Events & Slips */}
               {data.events && data.events.length > 0 && (
                 <div className="p-6 rounded-3xl bg-surface-container-lowest border border-border shadow-xs space-y-4">

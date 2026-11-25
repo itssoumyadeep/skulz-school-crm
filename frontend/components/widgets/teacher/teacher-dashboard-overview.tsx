@@ -8,6 +8,7 @@ import {
   DEFAULT_TEACHER_AVATAR,
   TeacherIcon,
 } from "@/components/pc/profile-picture-modal";
+import { usePortalViewMode } from "@/components/pc/view-mode-preference";
 import type {
   TeacherDashboardOverviewWidgetProps,
   TeacherRollStatus,
@@ -59,7 +60,10 @@ export function TeacherDashboardOverviewWidget({
   onRemindExcursionParents,
   onNavigateWorkspace,
 }: TeacherDashboardOverviewWidgetProps) {
-  const [viewMode, setViewMode] = useState<TeacherViewMode>(defaultViewMode);
+  const [viewMode, handleViewModeChange] = usePortalViewMode(
+    "teacher",
+    defaultViewMode,
+  );
   const [classDropdownOpen, setClassDropdownOpen] = useState(false);
   const [compactSearch, setCompactSearch] = useState("");
   const isMounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
@@ -503,7 +507,7 @@ export function TeacherDashboardOverviewWidget({
             >
               <button
                 type="button"
-                onClick={() => setViewMode("cards")}
+                onClick={() => handleViewModeChange("cards")}
                 aria-pressed={viewMode === "cards"}
                 className={
                   viewMode === "cards"
@@ -516,7 +520,7 @@ export function TeacherDashboardOverviewWidget({
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode("compact")}
+                onClick={() => handleViewModeChange("compact")}
                 aria-pressed={viewMode === "compact"}
                 className={
                   viewMode === "compact"

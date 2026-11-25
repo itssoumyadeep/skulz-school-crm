@@ -9,6 +9,7 @@ from .models import (
     StudentAttendance, StaffAttendance, LeaveRequest,
     AttendanceRoster, StudentHealth, HealthObservation,
     MedicationLog, Incident, SafetyDrill,
+    CareEvent, CareMedia, LearningFramework, LearningObservation,
     FeeStructure, Invoice, Payment, DiscountWaiver, Reconciliation,
     Staff, Contract, PayrollRun, Appraisal, CPDRecord,
     Vendor, Requisition, PurchaseOrder, DeliveryRecord, VendorInvoice,
@@ -327,3 +328,27 @@ class MessageAdmin(admin.ModelAdmin):
 class NotificationRuleAdmin(admin.ModelAdmin):
     list_display = ('trigger_event', 'channel', 'template_name', 'active', 'priority', 'tenant')
     list_filter = ('active', 'channel', 'tenant')
+
+
+@admin.register(CareEvent)
+class CareEventAdmin(admin.ModelAdmin):
+    list_display = ('student', 'event_type', 'occurred_at', 'parent_visible', 'is_hidden', 'tenant')
+    list_filter = ('event_type', 'parent_visible', 'is_hidden', 'tenant')
+
+
+@admin.register(CareMedia)
+class CareMediaAdmin(admin.ModelAdmin):
+    list_display = ('media_id', 'mime', 'consent_checked', 'parent_visible', 'captured_at', 'tenant')
+    list_filter = ('mime', 'consent_checked', 'parent_visible', 'tenant')
+
+
+@admin.register(LearningFramework)
+class LearningFrameworkAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'is_default', 'tenant')
+    list_filter = ('is_default', 'tenant')
+
+
+@admin.register(LearningObservation)
+class LearningObservationAdmin(admin.ModelAdmin):
+    list_display = ('student', 'framework', 'observed_on', 'shared_with_family', 'tenant')
+    list_filter = ('framework', 'shared_with_family', 'tenant')

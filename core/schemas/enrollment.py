@@ -126,11 +126,33 @@ class StudentUpdateSchema(BaseModel):
         return v
 
 
+def _validate_optional_pickup_pin(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return None
+    cleaned = v.strip()
+    if cleaned == "":
+        return ""
+    if not cleaned.isdigit() or not (4 <= len(cleaned) <= 6):
+        raise ValueError("pickup_pin must be a 4 to 6 digit numeric PIN.")
+    return cleaned
+
+
 class EmergencyContactCreateSchema(BaseModel):
     name: str
     phone: str
     relationship: str
     medical_consent: bool = False
+    is_authorized_pickup: bool = True
+    photo_url: str = ""
+    pickup_pin: Optional[str] = None
+    id_check_required: bool = False
+    custody_restricted: bool = False
+    restriction_note: str = ""
+
+    @field_validator('pickup_pin')
+    @classmethod
+    def valid_pickup_pin(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_optional_pickup_pin(v)
 
 
 class EmergencyContactUpdateSchema(BaseModel):
@@ -138,6 +160,17 @@ class EmergencyContactUpdateSchema(BaseModel):
     phone: Optional[str] = None
     relationship: Optional[str] = None
     medical_consent: Optional[bool] = None
+    is_authorized_pickup: Optional[bool] = None
+    photo_url: Optional[str] = None
+    pickup_pin: Optional[str] = None
+    id_check_required: Optional[bool] = None
+    custody_restricted: Optional[bool] = None
+    restriction_note: Optional[str] = None
+
+    @field_validator('pickup_pin')
+    @classmethod
+    def valid_pickup_pin(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_optional_pickup_pin(v)
 
 
 class StudentCreateInput(BaseModel):
@@ -157,6 +190,12 @@ class StudentCreateInput(BaseModel):
     emergency_contact_phone: Optional[str] = None
     emergency_contact_relationship: str = "Emergency Contact"
     medical_consent: bool = False
+    emergency_contact_pickup_pin: Optional[str] = None
+
+    @field_validator('emergency_contact_pickup_pin')
+    @classmethod
+    def valid_ec_pin(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_optional_pickup_pin(v)
 
 
 class ParentCreateInput(BaseModel):

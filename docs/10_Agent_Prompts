@@ -53,20 +53,7 @@
     1. Full-Stack Work Package Execution:
        - Backend: Implement schemas in 'core/schemas/', business logic in 'core/business_objects/', database models/migrations in 'core/models.py', HTTP routes in 'core/api/v1/', and database seeders in 'core/management/commands/'.
        - Frontend: Implement Tier 3 portable widgets in 'frontend/components/widgets/<domain>/' following the strict portability contract (100% API-agnostic, capability flags over role names), and mount them inside Tier 4 thin App Router routes ('frontend/app/<domain>/').
-    2. Defect Ledger Immunitization (11_DEFECTS.md):
-       - Before writing code, inspect 'docs/11_DEFECTS.md' to ensure zero regression of prior defects:
-         * DEF-002: Zero hardcoded hex/RGB colors; use semantic Tailwind tokens backed by 'tokens.css'.
-         * DEF-003: Zero broken external URLs or icon font ligatures; use local SVG icons ('lucide-react') and inline SVG portraits.
-         * DEF-004: ThePuffy AI Agent widget MUST be closed/docked by default.
-         * DEF-006: Drawers/Sheets must not be occluded by headers; headers at 'z-40', backdrops at 'z-[60]', drawers/modals at 'z-[70]'.
-         * DEF-007: Dropdown menus & hamburgers must toggle on click and stay open until outside click (no hover-in/hover-out).
-         * DEF-008: Ambient background glow blobs must render consistently across all views at 'z-0' without negative z-index occlusion.
-         * DEF-010/DEF-019: Real PostgreSQL database seeding & queries, zero disconnected fake mock strings shown in UI.
-         * DEF-011: Stacking context rule: ALL Popovers, DatePickers, Select dropdowns, and Floating Assistants MUST be 'z-[80]' so they never render behind 'z-[70]' dialogs or sheets.
-         * DEF-012..DEF-016: Reactive metric calculations from props/state rather than hardcoded string literals.
-         * DEF-020: Use conditional fallbacks rather than unconditional mock array concatenation.
-         * DEF-021: Provide aggregated backend endpoints for classroom health/routine alerts.
-    3. Verification & Build Quality:
+    2. Verification & Build Quality:
        - Ensure every change passes TypeScript check ('tsc --noEmit'), ESLint, and Next.js production build ('npm run build').
 
     SECURITY & OPERATIONAL RULES:

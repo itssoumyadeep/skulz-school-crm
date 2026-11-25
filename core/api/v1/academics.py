@@ -664,7 +664,23 @@ def update_marks_record(request, marks_id: UUID, payload: MarksUpdateInput):
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 
 
-@router.post("/academic-records", auth=JWTAuthBearer())
+@router.delete("/marks/{uuid:marks_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def delete_marks_record(request, marks_id: UUID):
+    record = get_object_or_404(
+        MarksRecord.objects.select_related('student', 'exam', 'tenant'),
+        marks_id=marks_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = AcademicRecordBO.delete_marks_record(
+        record=record,
+        actor_role=actor_role,
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 @require_roles('Teacher', 'Principal', 'Vice_Principal', 'Admin', 'Owner')
 def create_draft_report_card(request, payload: ReportCardGenerateSchema):
     if not payload.student_id:
@@ -720,4 +736,25 @@ def update_report_card(request, report_id: UUID, payload: ReportCardUpdateInput)
     )
     bo.update_report_card(data=payload.model_dump(exclude_none=True), actor_id=actor_id)
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.delete("/academic-records/{uuid:report_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def delete_report_card(request, report_id: UUID):
+    report_card = get_object_or_404(
+        ReportCard.objects.select_related('student', 'calendar', 'tenant'),
+        report_id=report_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    bo = AcademicRecordBO(
+        student=report_card.student,
+        calendar=report_card.calendar,
+        report_card=report_card,
+        actor_role=actor_role,
+    )
+    data = bo.delete_report_card(actor_id=actor_id)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 

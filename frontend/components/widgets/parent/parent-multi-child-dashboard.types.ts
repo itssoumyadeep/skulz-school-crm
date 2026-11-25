@@ -64,6 +64,19 @@ export type DocumentChecklistItem = {
   uploaded_at?: string;
 };
 
+export type ParentDailyFeedEntry = {
+  item_id: string;
+  kind: "care_event" | "note" | "media" | "medication";
+  event_type: string;
+  timestamp: string;
+  title: string;
+  detail: string;
+  delivery_status?: string;
+  channel?: string;
+  mime?: string;
+  signed_url?: string;
+};
+
 export type ParentDashboardData = {
   household_name: string;
   parent_name: string;
@@ -78,6 +91,7 @@ export type ParentDashboardData = {
   courses?: AcademicCourse[];
   health_alerts?: HealthAlertItem[];
   events?: EventPermissionItem[];
+  daily_feed?: ParentDailyFeedEntry[];
   // Data for applicant child
   admission_stage?: 1 | 2 | 3 | 4 | 5;
   application_id?: string;

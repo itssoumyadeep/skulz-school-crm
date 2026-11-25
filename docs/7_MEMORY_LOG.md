@@ -837,3 +837,311 @@ This log records durable architecture, security, and product decisions so later 
 - **Context:** Compared against Brightwheel (strongest parent feed, billing) and Lillio/HiMama (strongest developmental documentation, curriculum).
 - **Findings:** MVP blockers in the current repo — no `check_in_at`/`check_out_at` on `StudentAttendance`, no pickup PIN/photo/flag on `EmergencyContact`, no care-event model for diaper/meal/hydration, no media/photo-consent storage. Open `DEF-022`–`DEF-028` map to CG-03/04/05/06.
 - **Consequences:** Any schema addition requires migration + RLS coverage + `4_DATA_AND_ENV.md` update. `2_PRD.md` not yet changed; merge pending approval.
+
+### 2026-11-16 — Consolidate & Simplify `8_PRODUCT_BACKLOG_STORIES.md` with Single-Developer Breakdown & Caregiver Stories
+
+- **Status:** Accepted
+- **Decision:** Restructured [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md) into a simplified Executive Summary + Global DoD followed by a single unified backlog table (`48` atomic stories), broke bundled stories into single-developer build-and-test vertical slices (`US-P0-01A/B`, `US-P0-03A/B`, `US-P1-01A/B`, `US-P1-02A/B`, `US-P1-05A/B`, `US-P1-06A/B`, `US-P2-01A/B`, `US-P2-02A/B`, `US-P2-03A`), merged all 16 Caregiver/ECE stories (`US-CG-01`..`US-CG-16`) directly into the table, and deleted `docs/12_CAREGIVER_REQUIREMENTS.md`.
+- **Evidence:** [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md).
+
+### 2026-11-16 — Caregiver Portal Batch A (MVP-1: `US-CG-01`..`US-CG-05` & `DEF-022`..`DEF-028`)
+
+- **Status:** In Review (SDL)
+- **Summary:** Implemented Batch A (MVP-1) of the Caregiver Portal blueprint across Django/PostgreSQL and Next.js:
+  - **Schema & Migration (`0021_caregiver_mvp1_fields`):** Added `check_in_at`/`check_out_at` to `StudentAttendance`, pickup authorization/PIN/custody fields to `EmergencyContact`, and `body_part` to `Incident` (all covered by `0020_enable_tenant_rls`); updated [`docs/4_DATA_AND_ENV.md`](4_DATA_AND_ENV.md) and `seed_caregiver_demo_data`.
+  - **BO & API (`core/business_objects/attendance_health.py`, `core/api/v1/attendance.py`, `core/api/v1/health.py`):** Added `AttendanceSheetBO.check_in`/`check_out`, `PickupVerificationBO` (hashed PINs, 3-attempt lockout + Admin alert, custody restriction block, zero PIN-hash leakage), `GET /health/classroom-medications`, duplicate/absent medication gates, room-scoped `get_student_queryset` on attendance/health, and `SafetyComplianceBO.list_incidents` student name resolution + `body_part`/`time`.
+  - **Frontend & Defect Fixes:** Removed blocked Google Fonts stylesheet (`DEF-027`), portaled `ThePuffyCaregiverAssistant` to `document.body` at `z-[80]` (`DEF-026`), hydrated live DB allergies (`DEF-024`), medications (`DEF-023`), incidents (`DEF-022`), dynamic Roll Lock % (`DEF-025`), Check-In/Out, and Pickup Verification PIN UI in `/caregiver`; switched Playwright E2E to signed HS256 JWTs (`DEF-028`).
+- **Verification:** `pytest tests/test_api_attendance_health.py tests/test_student_scope.py -v` (16/16 passed); `npx eslint` (0 errors); `npx tsc --noEmit` (0 errors); `npx playwright test e2e/caregiver-portal-deep-audit.spec.ts` (6/6 passed).
+
+### 2026-11-16 — Add Step-by-Step Verifiable Manual Testing Scripts to Every Backlog Story (`8_PRODUCT_BACKLOG_STORIES.md`)
+
+- **Status:** Accepted
+- **Decision:** Added Section `1.2 Manual Testing Environment, Prerequisites & Demo Credentials` (verified server commands, seeder commands, `create_role_users` credentials `*_demo-school` / `1234`, Swagger `/api/docs`, and current vs. planned Next.js routes) and appended a dedicated 10th column (`Step-by-Step Manual Testing & Verification Script`) to all **50** stories (`US-P0-01A`..`US-P3-05` and `US-CG-01`..`US-CG-16`) in [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md).
+- **Verification:** Cross-checked routes/payloads/logins directly against `core/api/v1/`, `core/management/commands/`, `frontend/app/`, `frontend/components/widgets/caregiver/`, and `frontend/next.config.ts`; validated markdown table alignment across all 52 table lines (`0` malformed rows, `50` stories).
+- **Evidence:** [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md).
+
+### 2026-11-16 — Caregiver Portal Batch A (MVP-1: `US-CG-01`..`US-CG-05` & `DEF-022`..`DEF-028`)
+
+- **Status:** In Review (SDL)
+- **Summary:** Implemented Batch A (MVP-1) of the Caregiver Portal blueprint across Django/PostgreSQL and Next.js:
+  - **Schema & Migration (`0021_caregiver_mvp1_fields`):** Added `check_in_at`/`check_out_at` to `StudentAttendance`, pickup authorization/PIN/custody fields to `EmergencyContact`, and `body_part` to `Incident` (all covered by `0020_enable_tenant_rls`); updated [`docs/4_DATA_AND_ENV.md`](4_DATA_AND_ENV.md) and `seed_caregiver_demo_data`.
+  - **BO & API (`core/business_objects/attendance_health.py`, `core/api/v1/attendance.py`, `core/api/v1/health.py`):** Added `AttendanceSheetBO.check_in`/`check_out`, `PickupVerificationBO` (hashed PINs, 3-attempt lockout + Admin alert, custody restriction block, zero PIN-hash leakage), `GET /health/classroom-medications`, duplicate/absent medication gates, room-scoped `get_student_queryset` on attendance/health, and `SafetyComplianceBO.list_incidents` student name resolution + `body_part`/`time`.
+  - **Frontend & Defect Fixes:** Removed blocked Google Fonts stylesheet (`DEF-027`), portaled `ThePuffyCaregiverAssistant` to `document.body` at `z-[80]` (`DEF-026`), hydrated live DB allergies (`DEF-024`), medications (`DEF-023`), incidents (`DEF-022`), dynamic Roll Lock % (`DEF-025`), Check-In/Out, and Pickup Verification PIN UI in `/caregiver`; switched Playwright E2E to signed HS256 JWTs (`DEF-028`).
+- **Verification:** `pytest tests/test_api_attendance_health.py tests/test_student_scope.py -v` (16/16 passed); `npx eslint` (0 errors); `npx tsc --noEmit` (0 errors); `npx playwright test e2e/caregiver-portal-deep-audit.spec.ts` (6/6 passed).
+
+### 2026-11-16 — SDL_SB Acceptance Sign-Off: Caregiver Portal Batch A (MVP-1: `US-CG-01`..`US-CG-05`)
+
+- **Status:** Accepted (`Done`)
+- **Decision:** Verified Batch A (`US-CG-01`..`US-CG-05`, `DEF-022`..`DEF-028`) directly in the workspace and promoted `US-CG-01`..`US-CG-05` to `**Done**` in [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md).
+- **Verification:**
+  - `.venv/bin/pytest tests/test_api_attendance_health.py tests/test_student_scope.py -v` — **16 passed** in 9.09s.
+  - `.venv/bin/python manage.py makemigrations --check --dry-run` — **No changes detected**; `0021_caregiver_mvp1_fields` extends existing RLS-protected tables covered by `0020_enable_tenant_rls` and is documented in [`docs/4_DATA_AND_ENV.md`](4_DATA_AND_ENV.md).
+  - `npx eslint app/caregiver/page.tsx app/caregiver/layout.tsx app/layout.tsx app/lib/api.ts components/widgets/caregiver/` — **0 errors** (6 warnings); `npx tsc --noEmit` — **0 errors**.
+  - `npx playwright test e2e/caregiver-portal-deep-audit.spec.ts` — **6 passed** (11.5s) with signed HS256 JWTs, zero CSP errors, zero broken images, and verified z-index layering (`z-40`, `z-[60]`, `z-[70]`, `z-[80]`).
+
+### 2026-11-16 — Caregiver Portal Batch B (MVP-2: `US-CG-06`..`US-CG-08`)
+
+- **Status:** In Review (SDL)
+- **Summary:** Implemented Batch B (MVP-2) across Django/PostgreSQL and Next.js:
+  - **Schema, Migrations & RLS (`0022_caregiver_mvp2_care_events_media`, `0023_care_events_media_rls`):** Added `photo_consent` and `topical_consent` on `StudentHealth`, plus `CareEvent(TenantScopedModel)` and `CareMedia(TenantScopedModel)` with forced PostgreSQL RLS policies (`core_care_event`, `core_care_media`); updated [`docs/4_DATA_AND_ENV.md`](4_DATA_AND_ENV.md) and `seed_caregiver_demo_data`.
+  - **BO & API (`core/business_objects/care_events.py`, `core/schemas/care_events.py`, `core/api/v1/care_events.py`, `core/api/v1/sprint5.py`, `core/schemas/sprint5.py`, `core/api/v1/attendance.py`):** Implemented `POST /api/v1/care-events` (single & batch + topical consent gate), `GET /api/v1/care-events` (dynamic room summary for `DEF-025`), `DELETE /api/v1/care-events/{event_id}` (5-min undo/hide), `GET /api/v1/parent/children/{student_id}/feed` (chronological parent feed with strict `verify_student_access`), `POST /api/v1/care-media` (pure-Python JPEG/PNG/WebP EXIF/metadata stripping, `photo_consent` gate, HMAC-signed URL), `GET /api/v1/care-media/{media_id}/file`, and `DELETE /api/v1/care-media/{media_id}`; enabled `CareGiver`/`Caregiver` on `/api/v1/messages` with `UUID` recipient support.
+  - **Frontend (`frontend/app/lib/api.ts`, `frontend/components/widgets/caregiver/`, `frontend/app/caregiver/page.tsx`, `frontend/components/widgets/parent/`, `frontend/app/parent/page.tsx`):** Wired quick care micro-logs (`+120 mL`, mood, diaper with topical consent gate, meal, nap, 5-min undo), batch actions (`All Asleep`, `Quick Batch Meal Log`), dynamic Compact List 4-card strip (`DEF-025`), photo upload/delete with consent gate, and Parent `/parent` Live Daily-Report Feed.
+- **Verification:** `pytest tests/test_api_caregiver_mvp2.py tests/test_api_attendance_health.py tests/test_rls_configuration.py -v` (15 passed); `makemigrations --check --dry-run` (no changes); `npx tsc --noEmit` (0 errors); `npx playwright test e2e/caregiver-mvp2.spec.ts` (3 passed).
+
+### 2026-11-16 — SDL_SB Acceptance Sign-Off: Caregiver Portal Batch B (MVP-2: `US-CG-06`..`US-CG-08`)
+
+- **Status:** Accepted (`Done`)
+- **Decision:** Verified Batch B (`US-CG-06`..`US-CG-08`) directly in the workspace against `AGENTS.md` and `docs/8_PRODUCT_BACKLOG_STORIES.md` and promoted `US-CG-06`..`US-CG-08` to `**Done**` in [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md).
+- **Verification:**
+  - `.venv/bin/python manage.py makemigrations --check --dry-run` — **No changes detected**; `0022_caregiver_mvp2_care_events_media` and `0023_care_events_media_rls` (forced RLS on `core_care_event`, `core_care_media`) are documented in [`docs/4_DATA_AND_ENV.md`](4_DATA_AND_ENV.md).
+  - `.venv/bin/pytest tests/test_api_caregiver_mvp2.py tests/test_api_attendance_health.py tests/test_rls_configuration.py -v` — **15 passed** in 9.32s.
+  - `cd frontend && npx tsc --noEmit` — **0 errors**; `npx eslint` on changed files — **0 errors** (6 warnings); zero hardcoded colors/mock data, portable widget contract intact, strict z-index layering (`z-[60]`, `z-[70]`, `z-[80]`).
+  - `cd frontend && npx playwright test e2e/caregiver-mvp2.spec.ts` — **3 passed** (15.2s) covering micro-logs/batch/topical consent/reload persistence (`US-CG-06`), cross-session Parent feed/5-min undo/403 isolation (`US-CG-07`), and EXIF/metadata stripping, `naturalWidth > 0`, `photo_consent` 422 gate, and immediate delete (`US-CG-08`).
+
+### 2026-11-16 — Caregiver Portal Batch C (Tier 2: `US-CG-09`..`US-CG-10`)
+
+- **Status:** In Review (SDL)
+- **Summary:** Implemented Batch C (Tier 2) across Django/PostgreSQL and Next.js:
+  - **Schema, Migrations & RLS (`0024_caregiver_tier2_learning_observations`, `0025_learning_observations_rls`):** Added `LearningFramework(TenantScopedModel)` (`core_learning_framework`) and `LearningObservation(TenantScopedModel)` (`core_learning_observation`) with forced PostgreSQL RLS policies; updated [`docs/4_DATA_AND_ENV.md`](4_DATA_AND_ENV.md).
+  - **BO & API (`core/business_objects/care_events.py`, `core/schemas/care_events.py`, `core/schemas/attendance_health.py`, `core/api/v1/attendance.py`, `core/api/v1/care_events.py`):**
+    - `US-CG-09`: Added `HealthScreenBO.process_screen` wired into `POST /api/v1/attendance/check-in` (`symptoms`, `temperature_c`, `supervisor_override`, `override_reason`) saving `CareEvent(event_type='health_screen')`, blocking positive screens with HTTP 422 (`BR-07-02`) + Admin alert, and enforcing Supervisor-only override with `AuditLog` (`HealthScreenOverride`).
+    - `US-CG-10`: Added `LearningObservationBO` + `GET /api/v1/learning-frameworks` (auto-seeding `ELECT`, `HDLH`, `EYFS`), `POST /api/v1/learning-observations`, `GET /api/v1/learning-observations` (Parent role strictly filtered to `shared_with_family=True`), `PATCH /api/v1/learning-observations/{id}`, `DELETE /api/v1/learning-observations/{id}`, `GET /api/v1/students/{id}/developmental-summary`, and included shared observations in `GET /api/v1/parent/children/{id}/feed`.
+  - **Frontend (`frontend/app/lib/api.ts`, `frontend/components/widgets/caregiver/`, `frontend/app/caregiver/page.tsx`):** Added Drop-Off Health & Symptom Screener modal (`z-[70]`) in Caregiver Check-In flow and **Learning Portfolio & Developmental Summary** tab in the child drawer; shared observations render in `/parent` Live Daily-Report Feed.
+- **Verification:** `pytest tests/test_api_caregiver_tier2.py tests/test_api_caregiver_mvp2.py tests/test_api_attendance_health.py tests/test_rls_configuration.py -v` (17 passed); `makemigrations --check --dry-run` (no changes); `npx tsc -p frontend/tsconfig.json --noEmit` (0 errors); `npm --prefix frontend run lint` (0 errors, 5 warnings on changed files); `npx playwright test e2e/caregiver-tier2.spec.ts e2e/caregiver-mvp2.spec.ts` (5 passed).
+
+### 2026-11-16 — SDL_SB Final Acceptance Sign-Off: Caregiver Portal (`US-CG-01`..`US-CG-10`)
+
+- **Status:** Accepted (`Done` for all 10 stories `US-CG-01`..`US-CG-10`)
+- **Decision:** Verified Batch C (`US-CG-09`..`US-CG-10`) and ran final end-to-end verification across `US-CG-01`..`US-CG-10`; promoted `US-CG-09` and `US-CG-10` to `**Done**` in [`docs/8_PRODUCT_BACKLOG_STORIES.md`](8_PRODUCT_BACKLOG_STORIES.md).
+- **Verification:**
+  - `.venv/bin/python manage.py makemigrations --check --dry-run` — **No changes detected**; `0024_caregiver_tier2_learning_observations` and `0025_learning_observations_rls` (forced RLS on `core_learning_framework`, `core_learning_observation`) are documented in [`docs/4_DATA_AND_ENV.md`](4_DATA_AND_ENV.md).
+  - `.venv/bin/pytest tests/test_api_caregiver_tier2.py tests/test_api_caregiver_mvp2.py tests/test_api_attendance_health.py tests/test_student_scope.py tests/test_rls_configuration.py -v` — **22 passed** in 9.85s.
+  - `npx --prefix frontend tsc -p frontend/tsconfig.json --noEmit` — **0 errors**; `npm --prefix frontend run lint` on changed files — **0 errors** (5 warnings); zero hardcoded colors.
+  - `cd frontend && npx playwright test e2e/caregiver-portal-deep-audit.spec.ts e2e/caregiver-mvp2.spec.ts e2e/caregiver-tier2.spec.ts` (after `seed_caregiver_demo_data`) — **11 passed** in 34.9s.
+  - Note: `npm --prefix frontend run build` (Next.js 16.3.3 Turbopack) fails in this offline/sandboxed environment on `@vercel/turbopack-next/internal/font/google/font` resolution for `next/font/google` in `frontend/app/layout.tsx` (pre-existing environment constraint).
+
+### 2026-11-17 — UX Enhancement: Cards View / Compact View Options Inside Account Profile Menu
+
+- **Status:** Accepted
+- **Decision:** Added `Workspace View` (`Cards View` / `Compact View`) toggle inside the top-right Account Profile dropdown in [`frontend/app/caregiver/layout.tsx`](../frontend/app/caregiver/layout.tsx) and [`frontend/app/teacher/layout.tsx`](../frontend/app/teacher/layout.tsx), backed by a shared React 19 `useSyncExternalStore` + `localStorage` + `CustomEvent` helper [`frontend/components/pc/view-mode-preference.ts`](../frontend/components/pc/view-mode-preference.ts) synced with [`CaregiverOverviewWidget`](../frontend/components/widgets/caregiver/caregiver-overview-widget.tsx) and [`TeacherDashboardOverviewWidget`](../frontend/components/widgets/teacher/teacher-dashboard-overview.tsx).
+- **Verification:** `tsc -p frontend/tsconfig.json --noEmit` (0 errors), focused ESLint (0 errors), and Playwright E2E [`frontend/e2e/account-profile-view-switcher.spec.ts`](../frontend/e2e/account-profile-view-switcher.spec.ts).
+
+### 2026-11-17 — Update Caregiver Landing Page HTML & UI Alignment (`Caregiver_Daily_Care_Portal.html`)
+
+- **Status:** Accepted
+- **Decision:** Replaced [`Artefacts/UX Designs/Caregiver/Caregiver_Daily_Care_Portal.html`](../Artefacts/UX%20Designs/Caregiver/Caregiver_Daily_Care_Portal.html) with the updated HTML mockup and aligned the hero/top-banner layout in [`frontend/components/widgets/caregiver/caregiver-overview-widget.tsx`](../frontend/components/widgets/caregiver/caregiver-overview-widget.tsx) (two-column hero with initials badge + on-duty dot, greeting + session subtitle, interactive class group switcher button, caregiver team pill, unified divided KPI card for Attendance % & Prescriptions due, dual Cards/Compact List switcher, and `Log Boo-Boo` CTA).
+- **Evidence:** `tsc --noEmit` (0 errors), focused ESLint, and Playwright E2E Caregiver suites.
+
+### 2026-11-17 — Fix `npm run build` Next.js 16 Turbopack Google Font Resolution Failure
+
+- **Status:** Accepted
+- **Decision:** Updated [`frontend/package.json`](../frontend/package.json) `"build"` script from `"next build"` to `"next build --webpack"` so `npm run build` avoids the Next.js 16.3.3 Turbopack `@vercel/turbopack-next/internal/font/google/font` module resolution failure.
+- **Evidence:** `npm --prefix frontend run build` exits with code 0 (`15/15` static routes compiled).
+
+### 2026-11-17 — Switch RootLayout to Local Self-Hosted Fonts (`next/font/local`) for Turbopack Builds
+
+- **Status:** Accepted
+- **Decision:** Bundled `plus-jakarta-sans-latin.woff2`, `inter-latin.woff2`, and `fraunces-latin.woff2` under `frontend/app/fonts/` and switched [`frontend/app/layout.tsx`](../frontend/app/layout.tsx) from `next/font/google` to `next/font/local`; restored `"build": "next build"` (default Turbopack) in [`frontend/package.json`](../frontend/package.json).
+- **Evidence:** `npm --prefix frontend run build` (Turbopack) compiled and generated all routes cleanly.
+
+### 2026-11-17 — Expand `US-P1-03` Manual Testing Script to Cover Caregiver Persona
+
+- **Status:** Accepted
+- **Decision:** Updated [`docs/8_PRODUCT_BACKLOG_STORIES.md`](../docs/8_PRODUCT_BACKLOG_STORIES.md) row `US-P1-03` (`Class/Group Attendance Scoping, 24h Lock & Absence Flags`) so its `Step-by-Step Manual Testing & Verification Script` explicitly covers both **Part A — Teacher** (`teacher1_demo-school` on `/teacher/attendance`) and **Part B — Caregiver** (`caregiver1_demo-school` on `/caregiver` + attendance APIs), clarifying its relationship to `US-CG-01` (`Done`).
+- **Evidence:** Verified markdown table pipe counts and `core/auth/scoping.py`, `core/api/v1/attendance.py`, and `core/business_objects/attendance_health.py` behavior.
+
+### 2026-11-17 — Restructure `docs/11_DEFECTS.md` to Single Standardized 7-Column Table
+
+- **Status:** Accepted
+- **Decision:** Simplified [`docs/11_DEFECTS.md`](../docs/11_DEFECTS.md) per user specification to contain only the initial file description followed by a single 7-column defect table (`Defect Id`, `Date Raised`, `Issue Description`, `Reviewed by Me`, `Resolution`, `Status`, `Fixed Date`) covering `DEF-001` through `DEF-028`.
+- **Evidence:** Verified table formatting (`30` table lines including header/separator, `0` malformed rows).
+
+### 2026-11-17 — Log `DEF-029` (Missing Dedicated On-Time Check-In Button in Caregiver Portal)
+
+- **Status:** Accepted
+- **Decision:** Logged `DEF-029` as `Open` in [`docs/11_DEFECTS.md`](../docs/11_DEFECTS.md) per user request (no code changes made).
+- **Evidence:** Verified table formatting in `docs/11_DEFECTS.md`.
+
+### 2026-11-19 — Consolidate Backlog into `docs/2_PRD.md` & Remove `docs/8_PRODUCT_BACKLOG_STORIES.md`
+
+- **Status:** Accepted
+- **Decision:** Restructured [`docs/2_PRD.md`](../docs/2_PRD.md) into 4 primary sections (**1. Summary of the File**, **2. Objective of the Entire Project**, **3. Personas**, **4. Processes** with 11 operational process subsections containing the verbatim 11-column requirements tables for all 50 stories), deleted `docs/8_PRODUCT_BACKLOG_STORIES.md`, and updated [`AGENTS.md`](../AGENTS.md) to point solely to `docs/2_PRD.md`.
+- **Evidence:** Automated verification confirmed 50/50 verbatim stories preserved and 0 malformed markdown table rows (`186` total lines).
+
+### 2026-11-21 — Log `DEF-030` & Add `US-P1-03B` (Planned Check-In Timer & Late Check-In Reason) to `docs/2_PRD.md`
+
+- **Status:** Accepted
+- **Decision:** Logged `DEF-030` as `Open` in [`docs/11_DEFECTS.md`](../docs/11_DEFECTS.md) for unmarked toddlers defaulting to `Absent` with hardcoded `12 mins remaining` / `Absent (SLA 12m)`, and added `US-P1-03B` (*Planned Check-In Timer & Late Check-In Reason*) under Section 4.4 of [`docs/2_PRD.md`](../docs/2_PRD.md) with all 11 columns populated (`Not Started`).
+- **Evidence:** Verified markdown table pipe counts in both `docs/11_DEFECTS.md` and `docs/2_PRD.md`.
+
+### 2026-11-21 — Replace `docs/9_CURRENT_JOB_EXECUTION_PLAN.md` with `docs/9_TECHNICAL_DESIGN_DOC.md`
+
+- **Status:** Accepted
+- **Decision:** Created [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md) replacing `docs/9_CURRENT_JOB_EXECUTION_PLAN.md` with two sections: (1) Document description & verified project file references (`docs/`, `config/`, `core/`, `frontend/`, `tests/`, `Artefacts/UX Designs/`), and (2) a 5-column Technical Design & Unit Testing table (`Requirement Id`, `Requirement Description`, `Technical Implementation Plan`, `Unit Testing Steps`, `Status`) covering all 51 requirements from [`docs/2_PRD.md`](../docs/2_PRD.md).
+- **Evidence:** Automated verification confirmed 51/51 requirement IDs match `docs/2_PRD.md` 1:1, 0 malformed table rows (`53` total table lines), and `0` missing cited project files.
+
+### 2026-11-22 — Expand `docs/9_TECHNICAL_DESIGN_DOC.md` with New-Developer Step-by-Step Implementation Plans
+
+- **Status:** Accepted
+- **Decision:** Expanded the `Technical Implementation Plan` column across all 51 requirements in [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md) (and added a 4-layer onboarding quick-start pattern in Section 1) with exact model fields, migration/RLS steps, BO method names (`core/business_objects/*.py`), Pydantic/Ninja schema classes (`core/schemas/*.py`), API routes/guards (`core/api/v1/*.py`, `core/auth/scoping.py`), and `frontend/app/lib/api.ts` + Tier-3/Tier-4 UI wiring instructions.
+- **Evidence:** Automated audit verified 51/51 requirement IDs & statuses match [`docs/2_PRD.md`](../docs/2_PRD.md) 1:1, `0` malformed table rows (`53` table lines), `0` missing file paths, `0` unknown BO/Schema classes, and `0` unknown frontend helper functions.
+
+### 2026-11-22 — Simplify Section 4.6 Columns & Update All `docs/2_PRD.md` Story Statuses to `Developed`
+
+- **Status:** Accepted
+- **Decision:** Updated Section `4.6 Early Years & Caregiver Daily Care Operations` in [`docs/2_PRD.md`](../docs/2_PRD.md) to keep only the 6 requested columns (`Story ID`, `Persona(s)`, `User Story`, `Edge Cases & Security / Tenant Isolation Gates`, `Step-by-Step Manual Testing & Verification Script`, `Current Status`) across all 15 Caregiver rows, and updated `Current Status` to **`Developed`** for all 51 stories across `docs/2_PRD.md` per user direction.
+- **Evidence:** Automated validation verified `15` Section 4.6 rows (`7` pipe delimiters each), `51/51` stories marked `**Developed**`, and `0` malformed table rows.
+
+### 2026-11-22 — Log Caregiver Check-Out Defects `DEF-031`, `DEF-032`, `DEF-033`
+
+- **Status:** Accepted
+- **Decision:** Logged 3 user-raised Caregiver Check-Out defects (`DEF-031`: missing Check-Out confirmation feedback; `DEF-032`: drawer still shows `"Present"` after Check-Out; `DEF-033`: drawer remains editable post-Check-Out without Admin/Supervisor override key) as `Open` in [`docs/11_DEFECTS.md`](../docs/11_DEFECTS.md). No code modifications made.
+- **Evidence:** Verified markdown table formatting in `docs/11_DEFECTS.md`.
+
+### 2026-11-22 — Add `US-CG-17` (Historical DatePicker & Child History View) to `docs/2_PRD.md`
+
+- **Status:** Accepted
+- **Decision:** Added `US-CG-17` (*Historical DatePicker & Child Daily Care History View* across `/caregiver`, `/admin`, and `/owner` portals) under Section 4.6 of [`docs/2_PRD.md`](../docs/2_PRD.md) with status `Not Started`, matching Section 4.6's 6-column schema.
+- **Evidence:** Verified markdown table pipe counts across `docs/2_PRD.md` (`52` total stories, `0` malformed rows).
+
+### 2026-11-22 — Add Detailed `US-CG-17` Entry to `docs/9_TECHNICAL_DESIGN_DOC.md` via `SDL_SB`
+
+- **Status:** Accepted
+- **Decision:** Delegated authoring of `US-CG-17` (*Historical DatePicker & Child Daily Care History View* across `/caregiver`, `/admin`, and `/owner`) to the `SDL_SB` (Software Development Lead) subagent, which inserted the detailed 4-layer implementation plan and unit-testing steps immediately after `US-CG-16` in [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md), added `core/admin.py` to Section 1 references, and updated the PRD count to `52` User Stories.
+- **Evidence:** Independent verification confirmed 52/52 IDs match [`docs/2_PRD.md`](../docs/2_PRD.md) 1:1, `0` malformed table rows, and `0` missing cited project files.
+
+### 2026-11-22 — Log `DEF-034` (Missing Incident Severity Field in Caregiver Log Boo-Boo Modal)
+
+- **Status:** Accepted
+- **Decision:** Logged `DEF-034` as `Open` in [`docs/11_DEFECTS.md`](../docs/11_DEFECTS.md) per user report (no code changes made).
+- **Evidence:** Verified markdown table formatting in `docs/11_DEFECTS.md`.
+
+### 2026-11-22 — Add `US-CG-18` (`Other` Option on Caregiver Incident Modal) to `docs/2_PRD.md`
+
+- **Status:** Accepted
+- **Decision:** Added `US-CG-18` under Section 4.6 of [`docs/2_PRD.md`](../docs/2_PRD.md) requiring a 4th Incident Classification pill labeled `Other` (alongside `Skin Scrape`, `Bump / Bruise`, and `Small Pinch`) with a required note when `Other` is selected on the Caregiver Incident Modal (`Not Started`).
+- **Evidence:** Verified markdown table formatting across `docs/2_PRD.md` (`53` total stories, `0` malformed rows).
+
+### 2026-11-22 — Standing SDL $\rightarrow$ TDD Workflow & Technical Designs for `US-CG-18` and `DEF-029`–`DEF-034`
+
+- **Status:** Accepted
+- **Decision:** Adopted standing rule to automatically invoke `SDL_SB` to author Technical Implementation Plans & Unit Testing Steps in [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md) whenever any new Requirement or Defect is added. `SDL_SB` added detailed 4-layer designs for `US-CG-18` (`Not Started`) and open defects `DEF-029` through `DEF-034` (`Open`).
+- **Evidence:** Independent verification confirmed `53/53` User Stories match [`docs/2_PRD.md`](../docs/2_PRD.md) 1:1, `6` open defect rows (`DEF-029`–`DEF-034`), `0` malformed table rows (`61` total table lines), and `0` missing cited project files.
+
+### 2026-11-22 — Persist Learned Rules (`AGENTS.md`) & Workspace Skill (`.agent/skills/sdl-tdd-sync/SKILL.md`)
+
+- **Status:** Accepted
+- **Decision:** After user approval of `learning_proposal.md`, updated [`AGENTS.md`](../AGENTS.md) with TDD selective reading (`docs/9_TECHNICAL_DESIGN_DOC.md`), strict PRD/TDD/Defects schemas, automatic `SDL_SB` $\rightarrow$ TDD sync rule, no unrequested code edits during QA/defect logging, `care_events.py` in Router Map, and self-hosted local fonts invariant (`next/font/local`); created workspace skill [`.agent/skills/sdl-tdd-sync/SKILL.md`](../.agent/skills/sdl-tdd-sync/SKILL.md) including explicit target file paths per layer.
+- **Evidence:** Verified `AGENTS.md` byte size well under the 24,000-byte per-file cap and valid YAML frontmatter in `.agent/skills/sdl-tdd-sync/SKILL.md`.
+
+### 2026-11-22 — Add `US-CG-19` (Attendance Roll Lock Live Audit Trail), UX Prototype & Auto-TDD Sync
+
+- **Status:** Accepted
+- **Decision:** Added `US-CG-19` (*Caregiver Attendance Roll Lock — Live Audit Trail Modal & Compliance Ledger*) under Section 4.6 of [`docs/2_PRD.md`](../docs/2_PRD.md), created interactive Stage-1 Oil Pastel UX prototype [`Artefacts/UX Designs/Caregiver/Attendance_Roll_Audit_Trail_Modal.html`](../Artefacts/UX%20Designs/Caregiver/Attendance_Roll_Audit_Trail_Modal.html), and automatically invoked `SDL_SB` via the `sdl-tdd-sync` skill to append the verified 4-layer Technical Implementation Plan (with explicit target file paths) and Unit Testing Steps to [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md).
+- **Evidence:** Independent audit verified `US-CG-19` matches `docs/2_PRD.md` (`54` synced User Stories + `6` open defect rows `DEF-029`–`DEF-034`, `0` malformed table rows, `0` missing cited project files); also detected `8` newly added Admin stories (`US-AD-01`–`US-AD-08`) in `docs/2_PRD.md` pending TDD sync.
+
+### 2026-11-22 — Create 3 Admin Portal UX Blueprints & Expand Admin Requirements (`US-AD-01`–`US-AD-08`) in PRD + TDD
+
+- **Status:** Accepted
+- **Decision:**
+  1. Created 3 Oil Pastel Admin UX HTML blueprints under `Artefacts/UX Designs/Admin/` (`Admin_Attendance_Timer_Config.html`, `Admin_Medication_Consent_Setup.html`, `Admin_Child_History_Audit.html`) and registered them in `Artefacts/UX Designs/index.html`.
+  2. Updated `US-P1-03B`, `US-P2-01A`, and `US-P2-01B` in [`docs/2_PRD.md`](../docs/2_PRD.md) to `Not Started` with accurate links to the new UX blueprints, and added Section `4.12 Admin Operational Console & Configuration Portal` with 8 single-developer stories (`US-AD-01` through `US-AD-08`).
+  3. Invoked `SDL_SB` (via `sdl-tdd-sync`) to synchronize `US-AD-01`–`US-AD-08`, `US-CG-19`, and updated `US-P1-03B`/`US-P2-01A`/`US-P2-01B` into [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md) with verified 4-layer implementation plans and unit-testing steps.
+- **Evidence:** Independent verification confirmed 62/62 `US-*` IDs match 1:1 in exact order between `docs/2_PRD.md` and `docs/9_TECHNICAL_DESIGN_DOC.md`, `0` malformed table rows across both docs, `0` missing existing project file references, and all 3 new Admin HTML files created cleanly.
+
+### 2026-11-22 — Sync Statuses Between `docs/2_PRD.md`, `docs/11_DEFECTS.md`, and `docs/9_TECHNICAL_DESIGN_DOC.md`
+
+- **Status:** Accepted
+- **Decision:** Synchronized the `Status` column across all 62 User Stories (`US-*`) and 6 Open Defect entries (`DEF-029`–`DEF-034`) in [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md) to match [`docs/2_PRD.md`](../docs/2_PRD.md) and [`docs/11_DEFECTS.md`](../docs/11_DEFECTS.md) 100% 1:1.
+- **Evidence:** Verified `0` US mismatches, `0` Defect mismatches, and `0` malformed table rows (`70` table lines).
+
+### 2026-11-22 — Retire `docs/6_PLAN.md`
+
+- **Status:** Accepted
+- **Decision:** Retired and deleted [`docs/6_PLAN.md`](../docs/6_PLAN.md) (superseded by `docs/2_PRD.md` + `docs/9_TECHNICAL_DESIGN_DOC.md`), removed stale links from [`AGENTS.md`](../AGENTS.md), [`docs/2_PRD.md`](../docs/2_PRD.md), and [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md), and added `6_PLAN.md` to the retired-files list in `AGENTS.md`.
+- **Evidence:** Verified `docs/6_PLAN.md` no longer exists and active docs have zero remaining references to it.
+
+### 2026-11-22 — Implement & Verify `US-P2-01A` (Admin Operational Console: Overview, Admissions, Students, Setup & Data Governance)
+
+- **Status:** Accepted
+- **Decision:** Implemented the rebuilt Oil Pastel Admin Operational Console for `US-P2-01A`:
+  - **Backend Fix:** Added missing Caregiver MVP-2/Tier-2 models (`CareEvent`, `CareMedia`, `LearningObservation`, `LearningFramework`) to `MODEL_CATEGORIES` in [`core/business_objects/data_catalog.py`](../core/business_objects/data_catalog.py), resolving the HTTP 500 on `GET /api/v1/metadata/data-classification`.
+  - **Tier-2 Shared Extensions:** Added `"admin"` scope to [`frontend/components/pc/view-mode-preference.ts`](../frontend/components/pc/view-mode-preference.ts) and [`frontend/components/pc/profile-picture-modal.tsx`](../frontend/components/pc/profile-picture-modal.tsx) (with inline SVG `DEFAULT_ADMIN_AVATAR`).
+  - **API Client:** Extended [`frontend/app/lib/api.ts`](../frontend/app/lib/api.ts) with Admin helpers (`fetchRoleMemberships`, `createRoleMembership`, `updateRoleMembership`, `revokeRoleMembership`, `fetchSchoolSequences`, `updateSchoolSetupConfig`, `fetchAuditLogs`) and aligned live fields on `EnrollmentCase`, `SchoolSetupContext`, and `StudentListItem`.
+  - **Tier-3 Portable Widgets:** Created API-agnostic widgets under `frontend/components/widgets/admin/` (`AdminOverviewWidget`, `AdminAdmissionsWidget`, `AdminStudentsWidget`, `AdminSetupWidget`, `AdminGovernanceWidget`) using semantic `tokens.css` styling and portaled `z-[70]` modals (`z-[60]` backdrop, `z-[80]` menus).
+  - **Tier-4 Admin Routes:** Created [`frontend/app/admin/layout.tsx`](../frontend/app/admin/layout.tsx), `page.tsx`, `admissions/page.tsx`, `students/page.tsx`, `setup/page.tsx`, and `governance/page.tsx`.
+  - Updated `US-P2-01A` status to **`Developed`** in [`docs/2_PRD.md`](../docs/2_PRD.md) and [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md).
+- **Evidence:**
+  - Backend: `./.venv/bin/pytest tests/test_api_metadata.py tests/test_api_enrollments.py tests/test_api_school_setup.py tests/test_crud_execution_plan.py` $\rightarrow$ **32 passed in 44.21s**.
+  - Static & Build: `tsc --noEmit` (0 errors), focused ESLint (0 errors), `npm --prefix frontend run build` (Turbopack, **20/20** pages compiled cleanly).
+  - Real-Browser Playwright E2E: `npx --prefix frontend playwright test e2e/admin-portal-audit.spec.ts --workers=1` $\rightarrow$ **5 passed (53.7s)** covering `/admin` overview + Cards/Compact switcher, `/admin/admissions` `BR-01-01` & `Owner Approval Required` gates, `/admin/setup` CSV rollback + valid Student import verified on `/admin/students`, `/admin/governance` live catalog & audit logs, 5-point visual/DOM health, and non-Admin RBAC redirects.
+
+### 2026-11-22 — Complete `US-AD-01` & Implement `US-P2-01B` (`US-AD-02`–`US-AD-08`, `US-P1-03B`, `DEF-030`)
+
+- **Status:** Accepted
+- **Decision:** Completed `US-AD-01` and implemented `US-P2-01B` across backend, portable Tier-3 widgets, Tier-4 `/admin/*` sub-routes, and live `/caregiver` synchronization:
+  - **Database & Backend (`core/`):**
+    - Added nullable `late_reason = models.CharField(max_length=64, null=True, blank=True)` to `StudentAttendance` in [`core/models.py`](../core/models.py) with migration [`core/migrations/0026_attendance_timer_late_reason.py`](../core/migrations/0026_attendance_timer_late_reason.py) and updated [`docs/4_DATA_AND_ENV.md`](../docs/4_DATA_AND_ENV.md).
+    - Extended `AttendanceSheetBO` in [`core/business_objects/attendance_health.py`](../core/business_objects/attendance_health.py) with `ALLOWED_LATE_REASONS` (`Traffic / Transit Delay`, `Family / Morning Routine`, `Medical / Appointment`, `Weather / Road Conditions`, `Other (Parent Notified)`), `get_attendance_config()`, `update_attendance_config()` (writing `TenantConfig` `AuditLog`), and cutoff + 5-reason late check-in enforcement in `check_in()`. Exposed `GET /api/v1/attendance/config` and `PUT /api/v1/attendance/config` in [`core/api/v1/attendance.py`](../core/api/v1/attendance.py).
+    - Extended `StudentHealthUpsertInput` ([`core/schemas/attendance_health.py`](../core/schemas/attendance_health.py)) and `HealthRecordBO.to_dict()` / `upsert_health_record()` with `photo_consent`, `topical_consent`, `medications`, `vaccinations`, and `doctor_phone`; fixed the `/students/{student_id}/health-record` `PUT` URL converter in [`core/api/v1/health.py`](../core/api/v1/health.py) and added `GET /api/v1/health/medication-logs`.
+    - Implemented `ChildCareHistoryBO.get_child_day_history()` in [`core/business_objects/care_events.py`](../core/business_objects/care_events.py) and `GET /api/v1/students/{student_id}/care-history` in [`core/api/v1/care_events.py`](../core/api/v1/care_events.py); registered `CareEvent`, `CareMedia`, `LearningFramework`, and `LearningObservation` in [`core/admin.py`](../core/admin.py).
+    - Permitted `["admin", "owner"]` on `/admin/history` in [`frontend/middleware.ts`](../frontend/middleware.ts).
+  - **Frontend API Client, Portable Tier-3 Widgets & Tier-4 Admin Routes (`frontend/`):**
+    - Extended [`frontend/app/lib/api.ts`](../frontend/app/lib/api.ts) with helpers for attendance timer config, student health upsert & medication logs, child care history, academic calendars/curriculums CRUD, billing fee structures/invoices/late-fee/discounts/reconciliation finalize, and operations/payroll/procurement 3-way match/events.
+    - Updated [`frontend/components/widgets/admin/admin-overview-widget.tsx`](../frontend/components/widgets/admin/admin-overview-widget.tsx), [`frontend/app/admin/layout.tsx`](../frontend/app/admin/layout.tsx), and [`frontend/app/admin/page.tsx`](../frontend/app/admin/page.tsx) with live **Pending Meds & Consent Alerts** KPI counts and 11-module navigation.
+    - Built portable API-agnostic Tier-3 widgets (`AttendanceTimerConfigWidget`, `MedicationConsentSetupWidget`, `AdminAcademicsWidget`, `AdminBillingWidget`, `AdminOperationsWidget`, and `ChildCareHistoryWidget`) and mounted them in [`frontend/app/admin/attendance-config/page.tsx`](../frontend/app/admin/attendance-config/page.tsx), [`frontend/app/admin/health-medications/page.tsx`](../frontend/app/admin/health-medications/page.tsx), [`frontend/app/admin/history/page.tsx`](../frontend/app/admin/history/page.tsx), [`frontend/app/admin/academics/page.tsx`](../frontend/app/admin/academics/page.tsx), [`frontend/app/admin/billing/page.tsx`](../frontend/app/admin/billing/page.tsx), and [`frontend/app/admin/operations/page.tsx`](../frontend/app/admin/operations/page.tsx).
+    - Synchronized [`frontend/app/caregiver/page.tsx`](../frontend/app/caregiver/page.tsx) and [`frontend/components/widgets/caregiver/caregiver-overview-widget.tsx`](../frontend/components/widgets/caregiver/caregiver-overview-widget.tsx) with `fetchAttendanceConfig()`, `Expected` pre-cutoff status, live SLA countdowns (removing hardcoded `12 mins remaining` / `Absent (SLA 12m)` strings for `DEF-030`), and the 5-option `late_reason` selector.
+    - Marked `US-P1-03B`, `US-P2-01B`, and `US-AD-01`..`US-AD-08` as **`Developed`** in [`docs/2_PRD.md`](../docs/2_PRD.md) & [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md), and `DEF-030` as **`Fixed`** in [`docs/11_DEFECTS.md`](../docs/11_DEFECTS.md) & [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md).
+- **Evidence:**
+  - Backend Pytest: `./.venv/bin/pytest tests/test_api_attendance_health.py tests/test_api_metadata.py -v` $\rightarrow$ **13 passed in 11.43s**; `./.venv/bin/pytest tests/test_rls_configuration.py tests/test_api_caregiver_mvp2.py tests/test_api_academics.py tests/test_api_billing.py tests/test_api_sprint5.py -q` $\rightarrow$ **18 passed in 12.70s**.
+  - Static & Build: `npx tsc --noEmit` (0 errors), focused ESLint on all 20 modified/created TS/TSX files (0 errors), `npm --prefix frontend run build` (26/26 routes compiled cleanly).
+  - Real-Browser Playwright E2E: `npx --prefix frontend playwright test e2e/admin-portal-audit.spec.ts e2e/caregiver-portal-deep-audit.spec.ts --workers=1` $\rightarrow$ **13 passed (1.0m)** with 0 failures.
+
+### 2026-11-24 — Log & Auto-Sync New Admin Requirements (`US-AD-09`, `US-AD-10`, `US-AD-11`)
+
+- **Status:** Accepted
+- **Decision:**
+  1. Appended three new Admin User Stories (`US-AD-09`, `US-AD-10`, `US-AD-11`, marked `Not Started`) to Section `4.12` of [`docs/2_PRD.md`](../docs/2_PRD.md) covering:
+     - `US-AD-09`: Admin Create/Modify/Delete of `MedicationLog` and scheduled prescriptions against students.
+     - `US-AD-10`: Admin capture/un-check of Parental Consent (`consent_flag` & `consent_date` lifecycle) to share student health/medication information with care providers (`BR-07-01`).
+     - `US-AD-11`: Admin 360° Student Card on `/admin/students` exposing full student visibility and edit/modify/delete CRUD across all child domains (`Profile & Docs`, `Guardians & Pickup`, `Health & Medications`, `Attendance & Care`, `Academics & Billing`).
+  2. Synchronized all three requirements into [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md) via the `SDL_SB` subagent (`sdl-tdd-sync`), detailing 4-layer implementation plans, exact target file paths, and concrete verification steps (and updated Section 1 count to `65 User Stories`).
+  3. Kept application code untouched (`AGENTS.md` Never Rule #7 / #8) pending explicit user confirmation to begin `DEV_SB` implementation.
+- **Evidence:** Python verification confirmed `docs/2_PRD.md` (`65` US rows, `0` malformed) and `docs/9_TECHNICAL_DESIGN_DOC.md` (`65` US rows, `0` malformed) match 65/65 in exact order and status (`0` mismatches), with all cited existing repository files verified on disk.
+
+### 2026-11-24 — Verify & Ship `US-AD-09`, `US-AD-10`, `US-AD-11`, `US-CG-17`, and `US-CG-19`
+
+- **Status:** Accepted
+- **Decision:**
+  1. **Restored Frontend RBAC Route Guard ([`frontend/middleware.ts`](../frontend/middleware.ts)):** Reinstated the full JWT cookie claim verification and role-prefix routing rules, ensuring `/admin/history` permits `["admin", "owner"]`, `/admin/*` permits `["admin"]`, and unauthorized roles redirect cleanly to `/?denied=role-mismatch` or `/?denied=missing-session`.
+  2. **Enforced `BR-07-01` Consent-Missing Precedence ([`core/api/v1/health.py`](../core/api/v1/health.py)):** Updated `get_classroom_medications()` so `not bool(h.consent_flag)` takes precedence over an earlier same-day `MedicationLog`, guaranteeing Caregiver/Teacher views show `Blocked (Consent Missing)` and masked instructions whenever parental consent is revoked (`US-AD-10`).
+  3. **Fixed Frontend State Synchronization & Caregiver Pickup Hydration:**
+     - Wired `onLoadPickupContacts?.(toddler.studentId)` across all remaining child slide-over drawer triggers (`MoreVertical`, Compact List `<tr onClick>`, and Compact List `Add Note`) in [`frontend/components/widgets/caregiver/caregiver-overview-widget.tsx`](../frontend/components/widgets/caregiver/caregiver-overview-widget.tsx).
+     - Refactored [`frontend/app/admin/health-medications/page.tsx`](../frontend/app/admin/health-medications/page.tsx) with `normalizeHealthProfile`, `selectedStudentIdRef`, and direct post-PUT `healthProfile` state hydration so saving consent toggles updates `MedicationConsentSetupWidget` without stale `loadStudentProfile` races.
+     - Aligned initial `loadedKey` in [`frontend/components/widgets/admin/medication-consent-setup-widget.tsx`](../frontend/components/widgets/admin/medication-consent-setup-widget.tsx) and cleaned up pre-hydration/locator waits in [`frontend/e2e/admin-portal-audit.spec.ts`](../frontend/e2e/admin-portal-audit.spec.ts) and [`frontend/e2e/caregiver-portal-deep-audit.spec.ts`](../frontend/e2e/caregiver-portal-deep-audit.spec.ts).
+  4. **Normalized Demo Fixture State & Completed Documentation:** Deduplicated Maya Lin's `EmergencyContact` records and aligned `tenant_id` to `demo-school`, marked `US-AD-09`, `US-AD-10`, `US-AD-11`, `US-CG-17`, and `US-CG-19` as **`Developed`** in [`docs/2_PRD.md`](../docs/2_PRD.md) and [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md).
+- **Evidence:**
+  - Backend Pytest: `./.venv/bin/pytest tests/test_api_attendance_health.py` $\rightarrow$ **13 passed in 13.00s**.
+  - Static & Production Build: `npx tsc --noEmit` (**0 errors**), focused ESLint on `middleware.ts`, `app/admin/health-medications/page.tsx`, `components/widgets/admin/medication-consent-setup-widget.tsx`, `components/widgets/caregiver/caregiver-overview-widget.tsx`, and `app/lib/api.ts` (**0 errors**), `npm --prefix frontend run build` (**26/26** routes compiled cleanly).
+  - Real-Browser Playwright E2E: `cd frontend && npx playwright test e2e/admin-portal-audit.spec.ts e2e/caregiver-portal-deep-audit.spec.ts --workers=1` $\rightarrow$ **16 passed (2.0m)** with **0 failed**.
+
+### 2026-11-24 — Log & Auto-Sync New Requirement (`US-AD-12`)
+
+- **Status:** Accepted
+- **Decision:**
+  1. Appended **`US-AD-12`** (`Scheduled Dose Start/End Date Tenure & Caregiver Daily Reminder`, marked `Not Started`) to Section `4.12` of [`docs/2_PRD.md`](../docs/2_PRD.md#L209) covering Admin configuration of `start_date` and `end_date` tenure per student prescription and Caregiver daily active reminder surfacing on `/caregiver` until that day's dose is logged completed (`BR-07-01`).
+  2. Automatically synchronized `US-AD-12` into [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md#L113) via the `SDL_SB` subagent (`sdl-tdd-sync`), detailing a verified 4-layer implementation plan and unit/E2E testing steps, and updated Section 1 count to `66 User Stories`.
+  3. Kept application code untouched per `AGENTS.md` Never Rule #7 / #8 pending explicit user confirmation to begin `DEV_SB` implementation.
+- **Evidence:** Python verification confirmed `docs/2_PRD.md` (`66` US rows, `0` malformed rows in Section `4.12`) and `docs/9_TECHNICAL_DESIGN_DOC.md` (`66` US rows, `0` malformed rows) match `66/66` in ID and status (`0` mismatches), with all `27` cited workspace file paths verified on disk.
+
+### 2026-11-24 — Export `2_PRD.md` Sections `4.1`–`4.11` to `docs/6_STATUS_UPDATE.csv`
+
+- **Status:** Accepted
+- **Decision:** Populated [`docs/6_STATUS_UPDATE.csv`](../docs/6_STATUS_UPDATE.csv) with all `54` user-story requirements from Sections `4.1` through `4.11` of [`docs/2_PRD.md`](../docs/2_PRD.md) using the `Sl No,Item,Update` format (`US-CG-*` short titles sourced from [`docs/9_TECHNICAL_DESIGN_DOC.md`](../docs/9_TECHNICAL_DESIGN_DOC.md)).
+- **Evidence:** CSV round-trip validation via Python `csv.reader` confirmed `54` valid 3-column rows (`53` `Developed`, `1` `Not Started` — `US-CG-18`, excluding Section `4.12`).
+
+### 2026-11-24 — Populate `Module` Column in `docs/6_STATUS_UPDATE.csv`
+
+- **Status:** Accepted
+- **Decision:** Added and populated the `Module` column in [`docs/6_STATUS_UPDATE.csv`](../docs/6_STATUS_UPDATE.csv) (`Sl No,Module,Item,Update`) by mapping each of the `54` rows in Sections `4.1`–`4.11` to its corresponding `### 4.X` section heading in [`docs/2_PRD.md`](../docs/2_PRD.md).
+- **Evidence:** CSV round-trip verification via Python `csv.reader` confirmed `54` 4-column rows spanning `11` modules with zero missing or empty fields.

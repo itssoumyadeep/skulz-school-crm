@@ -200,18 +200,44 @@ export const PRESET_AVATARS: readonly PresetAvatarOption[] = [
   },
 ];
 
+export const DEFAULT_ADMIN_AVATAR = buildSvgDataUri(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <rect width="160" height="160" rx="36" fill="rgb(226, 212, 240)"/>
+  <circle cx="132" cy="30" r="38" fill="rgb(189, 224, 254)" fill-opacity="0.7"/>
+  <circle cx="28" cy="134" r="40" fill="rgb(255, 198, 179)" fill-opacity="0.7"/>
+  <path d="M34 152C36 120 56 106 80 106C104 106 124 120 126 152" fill="rgb(45, 42, 38)"/>
+  <path d="M62 110L80 130L98 110" fill="rgb(254, 215, 102)"/>
+  <rect x="69" y="92" width="22" height="22" rx="10" fill="rgb(240, 192, 162)"/>
+  <ellipse cx="80" cy="72" rx="26" ry="30" fill="rgb(248, 208, 182)"/>
+  <path d="M52 66C54 44 68 34 84 34C100 34 110 44 109 64C96 60 83 56 71 49C64 57 58 62 52 66Z" fill="rgb(54, 42, 38)"/>
+  <circle cx="69" cy="72" r="2.8" fill="rgb(45, 42, 38)"/>
+  <circle cx="91" cy="72" r="2.8" fill="rgb(45, 42, 38)"/>
+  <path d="M71 86C75 90 85 90 89 86" stroke="rgb(154, 68, 45)" stroke-width="3" stroke-linecap="round"/>
+</svg>
+`);
+
 export const PROFILE_PICTURE_EVENT = "pc-profile-picture-updated";
+
+export type ProfilePictureRole = "teacher" | "parent" | "caregiver" | "admin";
+
+function getDefaultAvatarForRole(role: ProfilePictureRole): string {
+  switch (role) {
+    case "teacher":
+      return DEFAULT_TEACHER_AVATAR;
+    case "caregiver":
+      return DEFAULT_CAREGIVER_AVATAR;
+    case "admin":
+      return DEFAULT_ADMIN_AVATAR;
+    default:
+      return DEFAULT_PARENT_AVATAR;
+  }
+}
 
 export function getCachedProfilePicture(
   userKey: string,
-  role: "teacher" | "parent" | "caregiver",
+  role: ProfilePictureRole,
 ): string {
-  const defaultAvatar =
-    role === "teacher"
-      ? DEFAULT_TEACHER_AVATAR
-      : role === "caregiver"
-        ? DEFAULT_CAREGIVER_AVATAR
-        : DEFAULT_PARENT_AVATAR;
+  const defaultAvatar = getDefaultAvatarForRole(role);
   if (typeof window === "undefined") {
     return defaultAvatar;
   }
@@ -230,17 +256,13 @@ export function getCachedProfilePicture(
 
 export function setCachedProfilePicture(
   userKey: string,
-  role: "teacher" | "parent" | "caregiver",
+  role: ProfilePictureRole,
   avatarUrl: string | null,
 ): string {
   const resolved =
     avatarUrl && avatarUrl.trim().length > 0
       ? avatarUrl.trim()
-      : role === "teacher"
-        ? DEFAULT_TEACHER_AVATAR
-        : role === "caregiver"
-          ? DEFAULT_CAREGIVER_AVATAR
-          : DEFAULT_PARENT_AVATAR;
+      : getDefaultAvatarForRole(role);
 
   if (typeof window !== "undefined") {
     try {
@@ -375,7 +397,7 @@ export function TeacherIcon({
 export interface ProfilePictureModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  actorRole: "teacher" | "parent" | "caregiver";
+  actorRole: ProfilePictureRole;
   actorName: string;
   currentAvatarUrl: string;
   onSaveAvatar: (nextAvatarUrl: string | null) => Promise<void> | void;
@@ -494,8 +516,7 @@ export function ProfilePictureModal({
   };
 
   const handleResetDefault = async () => {
-    const fallback =
-      actorRole === "teacher" ? DEFAULT_TEACHER_AVATAR : DEFAULT_PARENT_AVATAR;
+    const fallback = getDefaultAvatarForRole(actorRole);
     setSelectedUrl(fallback);
     setIsSaving(true);
     try {
@@ -530,7 +551,11 @@ export function ProfilePictureModal({
               <p className="text-xs font-medium text-crayon-espresso">
                 {actorRole === "teacher"
                   ? "Educator Staff Portal"
-                  : "Parent & Family Portal"}{" "}
+                  : actorRole === "caregiver"
+                    ? "Caregiver Daily Care Portal"
+                    : actorRole === "admin"
+                      ? "Admin Operational Console"
+                      : "Parent & Family Portal"}{" "}
                 • {actorName}
               </p>
             </div>

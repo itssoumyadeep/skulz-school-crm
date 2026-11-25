@@ -1,6 +1,6 @@
 """Pydantic schemas for attendance marking, rosters, leave requests, medical records, medication logs, and incidents."""
 
-from datetime import date
+from datetime import date, date as DateType
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from decimal import Decimal
@@ -114,6 +114,9 @@ class MedicationLogCreateSchema(BaseModel):
     medicine_name: str
     dose: str
     notes: Optional[str] = ""
+    force: bool = False
+    time_administered: Optional[str] = None
+    parent_notified: bool = True
 
 
 class IncidentCreateSchema(BaseModel):
@@ -122,6 +125,7 @@ class IncidentCreateSchema(BaseModel):
     date: date
     time: str = "12:00"
     location: str
+    body_part: str = ""
     description: str
     actions_taken: str
     students: List[str] = Field(default_factory=list)
@@ -177,6 +181,8 @@ class StudentHealthUpsertInput(BaseModel):
     doctor_name: Optional[str] = None
     doctor_phone: Optional[str] = None
     consent_flag: Optional[bool] = None
+    photo_consent: Optional[bool] = None
+    topical_consent: Optional[bool] = None
 
 
 class HealthObservationUpdateInput(BaseModel):
@@ -192,6 +198,7 @@ class MedicationLogUpdateInput(BaseModel):
     dose: Optional[str] = None
     notes: Optional[str] = None
     parent_notified: Optional[bool] = None
+    time_administered: Optional[str] = None
 
 
 class IncidentAcknowledgeInput(BaseModel):
@@ -206,4 +213,48 @@ class SafetyDrillUpdateInput(BaseModel):
     participation_rate: Optional[Decimal] = None
     issues_noted: Optional[List[str]] = None
     signed_off: Optional[bool] = None
+
+
+class CheckInOutSchema(BaseModel):
+    student_id: UUID
+    class_id: Optional[UUID] = None
+    date: Optional[DateType] = None
+    symptoms: Optional[List[str]] = None
+    temperature_c: Optional[float] = None
+    supervisor_override: bool = False
+    override_reason: str = ""
+    late_reason: Optional[str] = None
+
+
+class AttendanceConfigUpdateSchema(BaseModel):
+    expected_start_time: str = "09:00"
+    grace_period_minutes: int = 15
+    late_check_in_cutoff: Optional[str] = None
+
+
+class PickupVerifySchema(BaseModel):
+    contact_id: UUID
+    pin: Optional[str] = None
+    id_verified: bool = False
+    admin_override: bool = False
+
+
+class SupervisorAttendanceOverrideSchema(BaseModel):
+    student_id: UUID
+    date: DateType
+    status: str = "Present"
+    override_reason: str = ""
+    late_reason: Optional[str] = None
+
+    @field_validator('status')
+    @classmethod
+    def valid_status(cls, v: str) -> str:
+        if v not in ATTENDANCE_STATUSES:
+            raise ValueError(f"status must be one of {ATTENDANCE_STATUSES}")
+        return v
+
+
+class AttendanceRollAuditConfirmSchema(BaseModel):
+    class_id: Optional[UUID] = None
+    note: str = ""
 

@@ -449,6 +449,63 @@ class FeeAccountBO(BaseBusinessObject):
         return invoice
 
     @classmethod
+    def delete_invoice(
+        cls,
+        invoice: Invoice,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        if Payment.objects.filter(
+            tenant=invoice.tenant,
+            invoice=invoice,
+            status='Completed',
+            is_deleted=False,
+        ).exists():
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-02-04',
+                    message="Cannot delete an invoice that already has completed payments recorded.",
+                    field='invoice_id',
+                )
+            ])
+        with transaction.atomic():
+            invoice.is_deleted = True
+            invoice.status = 'Cancelled'
+            invoice.save(update_fields=['is_deleted', 'status', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=invoice.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='Invoice',
+                entity_id=str(invoice.invoice_id),
+                new_values={'is_deleted': True, 'status': 'Cancelled'},
+            )
+        return {'invoice_id': str(invoice.invoice_id), 'is_deleted': True}
+
+    @classmethod
+    def delete_discount_waiver(
+        cls,
+        discount: DiscountWaiver,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        invoice = discount.invoice
+        with transaction.atomic():
+            invoice.total = invoice.total + discount.amount
+            if invoice.status == 'Waived' and invoice.total > Decimal('0.00'):
+                invoice.status = 'Issued'
+            invoice.save(update_fields=['total', 'status', 'updated_at'])
+            discount.is_deleted = True
+            discount.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=discount.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='DiscountWaiver',
+                entity_id=str(discount.discount_id),
+                new_values={'is_deleted': True, 'amount_restored': str(discount.amount)},
+            )
+        return {'discount_id': str(discount.discount_id), 'is_deleted': True}
+
+    @classmethod
     def create_fee_structure(cls, tenant: Tenant, data: Dict[str, Any]) -> FeeStructure:
         return FeeStructure.objects.create(
             tenant=tenant,

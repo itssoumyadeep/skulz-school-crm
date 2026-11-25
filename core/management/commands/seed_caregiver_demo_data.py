@@ -5,10 +5,12 @@ attendance roster, health records, caregiver profile, and incident logs.
 import uuid
 from datetime import date, datetime, timezone
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from core.models import (
     AttendanceRoster,
+    EmergencyContact,
     Incident,
     MedicationLog,
     PortalRoleMembership,
@@ -340,12 +342,15 @@ class Command(BaseCommand):
                             "conditions": h_data.get("conditions", []),
                             "medications": h_data.get("medications", []),
                             "consent_flag": h_data.get("consent_flag", True),
+                            "photo_consent": h_data.get("photo_consent", h_data.get("consent_flag", True)),
+                            "topical_consent": h_data.get("topical_consent", h_data.get("consent_flag", True)),
                             "doctor_name": "Dr. Sarah Chen, MD",
                             "doctor_phone": "416-555-0199",
                         },
                     )
 
                 # Daily Attendance record
+                is_present = item["att_status"] in ("Present", "Late")
                 StudentAttendance.objects.update_or_create(
                     student=student,
                     date=today,
@@ -356,28 +361,111 @@ class Command(BaseCommand):
                         "status": item["att_status"],
                         "marked_by": caregiver_user.id if hasattr(caregiver_user, "id") else NURSE_CLARA_USER_ID,
                         "notified_parent": item["att_status"] == "Absent",
+                        "check_in_at": datetime.now(timezone.utc) if is_present else None,
+                        "check_out_at": None,
                         "is_deleted": False,
                     },
                 )
 
+            # 3b. Seed Authorized Pickup Contacts (with hashed PINs + 1 custody_restricted contact)
+            pickup_seeds = [
+                (
+                    uuid.UUID("00000000-0000-0000-0000-000000007101"),
+                    "Grandmother Maria R.",
+                    "+1 (416) 555-0142",
+                    "Grandmother",
+                    "8841",
+                    False,
+                    False,
+                    "",
+                ),
+                (
+                    uuid.UUID("00000000-0000-0000-0000-000000007102"),
+                    "David Vance",
+                    "+1 (416) 555-0188",
+                    "Father",
+                    "1092",
+                    True,
+                    False,
+                    "",
+                ),
+                (
+                    uuid.UUID("00000000-0000-0000-0000-000000007103"),
+                    "Mei Zhao",
+                    "+1 (416) 555-0177",
+                    "Mother",
+                    "3390",
+                    False,
+                    False,
+                    "",
+                ),
+                (
+                    uuid.UUID("00000000-0000-0000-0000-000000007105"),
+                    "Marcus Scott (Restricted)",
+                    "+1 (416) 555-0195",
+                    "Uncle",
+                    "",
+                    True,
+                    True,
+                    "Court custody restriction on file — do not release without Principal/Admin sign-off.",
+                ),
+            ]
+            for sid, cname, phone, rel, raw_pin, id_req, restricted, note in pickup_seeds:
+                st = Student.objects.filter(student_id=sid, tenant=demo_tenant).first()
+                if st:
+                    EmergencyContact.objects.update_or_create(
+                        tenant=demo_tenant,
+                        student=st,
+                        name=cname,
+                        defaults={
+                            "phone": phone,
+                            "relationship": rel,
+                            "medical_consent": not restricted,
+                            "is_authorized_pickup": not restricted,
+                            "pickup_pin_hash": make_password(raw_pin) if raw_pin else "",
+                            "id_check_required": id_req,
+                            "custody_restricted": restricted,
+                            "restriction_note": note,
+                            "failed_pin_attempts": 0,
+                            "pickup_locked_until": None,
+                            "is_deleted": False,
+                        },
+                    )
+
             # 4. Seed Medication Log for Leo Vance
+            from core.models import Parent
+            maya_student = Student.objects.filter(student_id=uuid.UUID("00000000-0000-0000-0000-000000007101"), tenant=demo_tenant).first()
+            if maya_student:
+                Parent.objects.update_or_create(
+                    tenant=demo_tenant,
+                    student=maya_student,
+                    email="elena.lin@example.com",
+                    defaults={
+                        "name": "Elena Lin",
+                        "relationship": "Mother",
+                        "phone": "+1 (416) 555-0120",
+                        "media_consent": True,
+                        "is_deleted": False,
+                    },
+                )
             leo_student = Student.objects.filter(student_id=uuid.UUID("00000000-0000-0000-0000-000000007102"), tenant=demo_tenant).first()
-            if leo_student:
-                MedicationLog.objects.get_or_create(
+            if leo_student and not MedicationLog.objects.filter(
+                student=leo_student,
+                medicine_name="Salbutamol Inhaler (100mcg)",
+            ).exists():
+                MedicationLog.objects.create(
                     student=leo_student,
                     medicine_name="Salbutamol Inhaler (100mcg)",
-                    defaults={
-                        "tenant": demo_tenant,
-                        "staff_id": NURSE_CLARA_USER_ID,
-                        "dose": "2 puffs via spacer before nap",
-                        "time_administered": datetime.now(timezone.utc),
-                        "parent_notified": True,
-                        "notes": "Administered at 10:45 AM by Nurse Clara Gomez. Lungs clear, resting calmly.",
-                    },
+                    tenant=demo_tenant,
+                    staff_id=NURSE_CLARA_USER_ID,
+                    dose="2 puffs via spacer before nap",
+                    time_administered=datetime.now(timezone.utc),
+                    parent_notified=True,
+                    notes="Administered at 10:45 AM by Nurse Clara Gomez. Lungs clear, resting calmly.",
                 )
 
             # 5. Seed Incidents (Liam Scott knee scrape & Zoe Zhao forehead bump)
-            Incident.objects.get_or_create(
+            Incident.objects.update_or_create(
                 location="Room 1A Garden Playground",
                 date=today,
                 incident_type="Injury",
@@ -385,6 +473,7 @@ class Command(BaseCommand):
                     "tenant": demo_tenant,
                     "severity": "Low",
                     "time": "10:14",
+                    "body_part": "Right Knee",
                     "students": ["Liam Scott"],
                     "staff": ["Clara Gomez"],
                     "description": "Tripped during sandbox relay. Washed with sterile saline, gentle dinosaur plaster applied by Nurse Clara. Resumed smiling play immediately.",
@@ -392,7 +481,7 @@ class Command(BaseCommand):
                     "parent_notified": True,
                 },
             )
-            Incident.objects.get_or_create(
+            Incident.objects.update_or_create(
                 location="Room 1A Soft Play Corner",
                 date=today,
                 incident_type="Injury",
@@ -400,6 +489,7 @@ class Command(BaseCommand):
                     "tenant": demo_tenant,
                     "severity": "Low",
                     "time": "11:22",
+                    "body_part": "Forehead",
                     "students": ["Zoe Zhao"],
                     "staff": ["Clara Gomez"],
                     "description": "Accidental bump against foam building set. Cold gel penguin pack applied for 5 mins. Skin intact, zero discoloration.",
