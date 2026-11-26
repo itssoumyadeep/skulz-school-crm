@@ -818,17 +818,12 @@ This log records durable architecture, security, and product decisions so later 
 
 
 
+### 2026-11-08 — Parent Signup Activation State CI Repair
 
-
-
-
-
-
-
-
-
-
-
+- **Status:** Completed & Verified (PR #2)
+- **Decision:** Updated `POST /api/v1/auth/signup` to create newly registered parent users with `is_active=False` and return `status: "pending_activation"`, matching the auth API contract and test expectations for pending account activation.
+- **Verification:** `pytest /home/runner/work/skulz-school-crm/skulz-school-crm/tests/test_api_auth.py -k signup_creates_parent_user_with_hashed_password_and_tenant_membership` passed.
+- **Evidence:** [`core/api/v1/auth.py`](../core/api/v1/auth.py), [`tests/test_api_auth.py`](../tests/test_api_auth.py).
 
 ### 2026-11-16 — Caregiver / ECE Requirements Benchmarked Against Brightwheel & Lillio
 
@@ -1222,7 +1217,3 @@ This log records durable architecture, security, and product decisions so later 
   - `US-MKT-04`: Added `SecurityHeadersMiddleware`, `RateLimitMiddleware` (HTTP `429` + `Retry-After`), `JWTAuthBearer` `alg=none` / `REQUIRE_JWT_EXP` enforcement, sanitized non-debug HTTP `500` handler, CSV formula injection protection (`SchoolSetupImportBO._validate_csv_formula_safety`), strict `next.config.ts` CSP without hardcoded LAN IPs or prod `unsafe-eval`, WebCrypto HS256 verification in `frontend/middleware.ts`, non-prod gating on demo quick-login/apply fallbacks, plus `Skulz` `vite.config.js` security headers and `public/_headers`.
   - `US-MKT-05`: Created `core/telemetry.py` (`scrub_pii`, `TelemetryRegistry`, `emit_telemetry_event`), `RequestTelemetryMiddleware` (`X-Request-ID`), `/api/v1/healthz`, `/api/v1/readyz`, `POST /api/v1/telemetry/events` (`202`), `Admin`/`Owner`-scoped `GET /api/v1/telemetry/summary`, `Skulz/frontend/src/lib/telemetry.js`, and `skool_crm/frontend/app/lib/telemetry.ts` + `TelemetryProvider`.
 - **Evidence:** `./.venv/bin/pytest tests/test_api_trial_signup.py tests/test_settings_security.py tests/test_rls_configuration.py tests/test_student_scope.py tests/test_us_mkt_03_trial_lifecycle.py tests/test_us_mkt_04_security_vapt.py tests/test_us_mkt_05_telemetry.py` (`34 passed`), `Skulz/frontend` focused ESLint + `vite build` (`6.64s`, `0` errors), `skool_crm` `tsc --noEmit` + focused ESLint + `next build` (`26/26` routes, `0` errors), live security header + `/healthz` + `/trial-policy` curl checks (`200`), and cross-app Playwright E2E `npx --prefix frontend playwright test e2e/marketing-trial-signup.spec.ts` (`1 passed`, `0` leftover DB rows). Marked `US-MKT-03`, `US-MKT-04`, and `US-MKT-05` `Developed` (`US-MKT-02` remains `Not Started`).
-
-
-
-
