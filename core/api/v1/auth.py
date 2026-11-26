@@ -20,6 +20,7 @@ from core.auth.decorators import require_roles
 from core.models import PortalRoleMembership, Student, Tenant
 from core.business_objects.school_setup import RoleMembershipBO
 from core.business_objects.trial import TrialSignupBO, TrialSignupError
+from core.telemetry import emit_telemetry_event
 from core.schemas.auth import (
     LoginSchema,
     ProfilePictureUpdateSchema,
@@ -104,9 +105,17 @@ def _get_user_avatar_url(tenant: Tenant, user_id: str, alternate_keys: Optional[
 
 @router.post("/auth/login")
 def login(request, payload: LoginSchema):
+    request_id = str(getattr(request, "request_id", "") or "")
     username = payload.username.strip()
     username_prefix, separator, tenant_code = username.rpartition("_")
     if not separator or not username_prefix or not tenant_code:
+        emit_telemetry_event(
+            source="skool_crm_api",
+            event_name="login_failed",
+            request_id=request_id,
+            status_code=400,
+            properties={"reason": "SCHOOL_CODE_REQUIRED"},
+        )
         return _error(
             request,
             400,
@@ -116,6 +125,13 @@ def login(request, payload: LoginSchema):
 
     tenant = Tenant.objects.filter(subdomain__iexact=tenant_code).first()
     if tenant is None:
+        emit_telemetry_event(
+            source="skool_crm_api",
+            event_name="login_failed",
+            request_id=request_id,
+            status_code=401,
+            properties={"reason": "AUTH_INVALID"},
+        )
         return _error(request, 401, "AUTH_INVALID", "Invalid username or password.")
 
     with connection.cursor() as cursor:
@@ -127,6 +143,14 @@ def login(request, payload: LoginSchema):
     user_model = get_user_model()
     user = user_model.objects.filter(username__iexact=username).first()
     if user is None:
+        emit_telemetry_event(
+            source="skool_crm_api",
+            event_name="login_failed",
+            request_id=request_id,
+            tenant_id=str(tenant.tenant_id),
+            status_code=401,
+            properties={"reason": "AUTH_INVALID"},
+        )
         return _error(request, 401, "AUTH_INVALID", "Invalid username or password.")
 
     user = authenticate(
@@ -135,6 +159,14 @@ def login(request, payload: LoginSchema):
         password=payload.password,
     )
     if user is None or not user.is_active:
+        emit_telemetry_event(
+            source="skool_crm_api",
+            event_name="login_failed",
+            request_id=request_id,
+            tenant_id=str(tenant.tenant_id),
+            status_code=401,
+            properties={"reason": "AUTH_INVALID"},
+        )
         return _error(request, 401, "AUTH_INVALID", "Invalid username or password.")
 
     membership = PortalRoleMembership.objects.select_related("group").filter(
@@ -142,6 +174,14 @@ def login(request, payload: LoginSchema):
         tenant=tenant,
     ).first()
     if membership is not None and not membership.is_active:
+        emit_telemetry_event(
+            source="skool_crm_api",
+            event_name="login_failed",
+            request_id=request_id,
+            tenant_id=str(tenant.tenant_id),
+            status_code=403,
+            properties={"reason": "ROLE_MEMBERSHIP_REQUIRED"},
+        )
         return _error(request, 403, "ROLE_MEMBERSHIP_REQUIRED", "This user has no active school role.")
 
     role_groups = list(
@@ -164,6 +204,14 @@ def login(request, payload: LoginSchema):
             membership.save(update_fields=["group", "role"])
 
     if membership is None or membership.role not in ROLE_CLAIMS:
+        emit_telemetry_event(
+            source="skool_crm_api",
+            event_name="login_failed",
+            request_id=request_id,
+            tenant_id=str(tenant.tenant_id),
+            status_code=403,
+            properties={"reason": "ROLE_MEMBERSHIP_REQUIRED"},
+        )
         return _error(request, 403, "ROLE_MEMBERSHIP_REQUIRED", "This user has no active school role.")
 
     role_claim = ROLE_CLAIMS[membership.role]
@@ -193,6 +241,14 @@ def login(request, payload: LoginSchema):
         "linked_student_ids": linked_student_ids,
     }
     access_token = jwt.encode(claims, settings.JWT_SECRET_KEY, algorithm="HS256")
+    emit_telemetry_event(
+        source="skool_crm_api",
+        event_name="login_succeeded",
+        request_id=request_id,
+        tenant_id=str(tenant.tenant_id),
+        role=role_claim,
+        status_code=200,
+    )
 
     return JsonResponse(
         build_response(
@@ -220,6 +276,7 @@ def login(request, payload: LoginSchema):
 
 @router.post("/auth/trial-signup")
 def trial_signup(request, payload: TrialSignupSchema):
+    request_id = str(getattr(request, "request_id", "") or "")
     try:
         tenant, user, membership = TrialSignupBO.create_trial(
             daycare_name=payload.daycare_name,
@@ -228,9 +285,26 @@ def trial_signup(request, payload: TrialSignupSchema):
             password=payload.password,
         )
     except TrialSignupError as exc:
+        emit_telemetry_event(
+            source="skool_crm_api",
+            event_name="trial_signup_failed",
+            request_id=request_id,
+            status_code=exc.status,
+            properties={"code": exc.code, "role": payload.role},
+        )
         return _error(request, exc.status, exc.code, exc.message)
 
     role_claim = TRIAL_ROLE_CLAIMS[membership.role]
+    trial_info = TrialSignupBO.evaluate_trial_status(tenant)
+    emit_telemetry_event(
+        source="skool_crm_api",
+        event_name="trial_signup_succeeded",
+        request_id=request_id,
+        tenant_id=str(tenant.tenant_id),
+        role=role_claim,
+        status_code=201,
+        properties={"trial_duration_days": trial_info.get("trial_duration_days")},
+    )
     return JsonResponse(
         build_response(
             data={
@@ -247,6 +321,7 @@ def trial_signup(request, payload: TrialSignupSchema):
                     "role": membership.role,
                 },
                 "portal_path": TRIAL_ROLE_PORTALS[membership.role],
+                "trial": trial_info,
             },
             tenant_id=tenant.tenant_id,
             role=role_claim,
@@ -523,6 +598,7 @@ def get_my_profile(request):
                 "avatar_url": avatar_url,
                 "assigned_classes_label": assigned_classes_label,
                 "assigned_classes": assigned_classes,
+                "trial": TrialSignupBO.evaluate_trial_status(tenant),
             },
             tenant_id=request.tenant_id,
             role=actor_role,

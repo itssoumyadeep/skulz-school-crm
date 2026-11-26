@@ -4,6 +4,14 @@ import type { CareHistoryDayRecord } from "./child-care-history-widget.types";
 
 export type CaregiverViewMode = "cards" | "compact";
 
+export type IncidentSeverity = "Low" | "Medium" | "High" | "Critical";
+
+export interface SupervisorOverrideContext {
+  supervisorOverride?: boolean;
+  overrideReason?: string;
+  supervisorPin?: string;
+}
+
 export type CaregiverMood =
   | "Sunny"
   | "Playful"
@@ -88,6 +96,8 @@ export interface MedicationDoseItem {
   medicineName: string;
   dosage: string;
   scheduledTime: string;
+  startDate?: string | null;
+  endDate?: string | null;
   instructions: string;
   consentVerifiedBy: string;
   consentFlag?: boolean;
@@ -113,6 +123,8 @@ export interface BooBooIncident {
   id: string;
   studentName: string;
   incidentType: string;
+  severity?: IncidentSeverity;
+  escalatedToPrincipal?: boolean;
   location: string;
   bodyPart: string;
   parentStatus: "Acknowledged" | "SLA_Pending";
@@ -217,13 +229,28 @@ export interface CaregiverOverviewCallbacks {
   onTriggerRollAudit?: () => void;
   onCallUnchecked?: () => void;
   onOpenBooBooModal?: (studentId?: string) => void;
+  onSubmitIncident?: (incident: {
+    studentId: string;
+    studentName: string;
+    incidentType: string;
+    severity: IncidentSeverity;
+    description: string;
+    actionsTaken: string;
+  }) => Promise<void> | void;
   onSendCaregiverNote?: (recipient: string, message: string) => void;
-  onUpdateMood?: (studentId: string, mood: CaregiverMood) => void;
+  onUpdateMood?: (
+    studentId: string,
+    mood: CaregiverMood,
+    override?: SupervisorOverrideContext,
+  ) => void;
   onQuickBatchMealLog?: () => void;
   onMarkAllAsleep?: () => void;
   onSelectToddlerDetails?: (toddler: CaregiverToddler) => void;
   onCheckIn?: (studentId: string, studentName: string, lateReason?: string) => void;
-  onCheckOut?: (studentId: string, studentName: string) => void;
+  onCheckOut?: (
+    studentId: string,
+    studentName: string,
+  ) => Promise<{ ok: boolean; checkOutAt?: string; error?: string }> | void;
   onLoadPickupContacts?: (studentId: string) => void;
   onVerifyPickup?: (
     studentId: string,
@@ -231,12 +258,17 @@ export interface CaregiverOverviewCallbacks {
     pin?: string,
     idVerified?: boolean,
   ) => Promise<{ ok: boolean; error?: string }>;
-  onLogHydration?: (studentId: string, amountMl: number) => Promise<void> | void;
+  onLogHydration?: (
+    studentId: string,
+    amountMl: number,
+    override?: SupervisorOverrideContext,
+  ) => Promise<void> | void;
   onLogCareEvent?: (
     studentId: string,
     eventType: string,
     payload: Record<string, unknown>,
     parentVisible?: boolean,
+    override?: SupervisorOverrideContext,
   ) => Promise<{ ok: boolean; error?: string }>;
   onUndoCareEvent?: (eventId: string) => Promise<{ ok: boolean; error?: string }>;
   onUploadCareMedia?: (
@@ -267,10 +299,16 @@ export interface CaregiverOverviewCallbacks {
     domains: string[];
     note: string;
     sharedWithFamily: boolean;
+    override?: SupervisorOverrideContext;
   }) => Promise<{ ok: boolean; error?: string }>;
   onDeleteLearningObservation?: (
     observationId: string,
     studentId: string,
+  ) => Promise<{ ok: boolean; error?: string }>;
+  onVerifySupervisorPin?: (
+    studentId: string,
+    supervisorPin: string,
+    overrideReason: string,
   ) => Promise<{ ok: boolean; error?: string }>;
   onSelectDate?: (dateIso: string) => void;
   onLoadChildHistory?: (studentId: string, dateIso: string) => void;

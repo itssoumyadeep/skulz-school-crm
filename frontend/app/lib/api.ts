@@ -1,4 +1,5 @@
 import { getCookieValue } from "./session";
+import { createRequestId, trackTelemetryEvent } from "./telemetry";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ??
@@ -16,11 +17,13 @@ export async function apiFetch<T>(
   init?: RequestInit,
 ): Promise<T> {
   const token = getCookieValue("pc_session");
+  const requestId = createRequestId();
 
   const headers = new Headers(init?.headers ?? {});
   if (!(typeof FormData !== "undefined" && init?.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
+  headers.set("X-Request-ID", requestId);
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -34,6 +37,13 @@ export async function apiFetch<T>(
     });
   } catch (err: unknown) {
     const isNetworkError = err instanceof TypeError;
+    if (!path.startsWith("/telemetry")) {
+      trackTelemetryEvent(
+        "api_request_error",
+        { path, request_id: requestId },
+        { statusCode: 0 },
+      );
+    }
     throw {
       message: isNetworkError
         ? `Backend API unreachable at ${API_BASE}. Ensure the Django server is running (python manage.py runserver).`
@@ -58,6 +68,14 @@ export async function apiFetch<T>(
       }
     } catch {
       // response wasn't JSON
+    }
+
+    if (response.status >= 500 && !path.startsWith("/telemetry")) {
+      trackTelemetryEvent(
+        "api_request_error",
+        { path, request_id: response.headers.get("X-Request-ID") || requestId },
+        { statusCode: response.status },
+      );
     }
 
     const err: ApiError = {
@@ -149,6 +167,7 @@ export type StudentAttendanceRosterRow = {
   notified_parent: boolean;
   check_in_at?: string | null;
   check_out_at?: string | null;
+  is_checked_out?: boolean;
   late_reason?: string | null;
   medical_badge?: string | null;
   medical_severity?: "Critical" | "High" | "Moderate" | "Low" | null;
@@ -197,6 +216,17 @@ export type LoginResponse = {
   };
 };
 
+export type TrialStatusSummary = {
+  account_type: string;
+  is_trial: boolean;
+  is_expired: boolean;
+  trial_status: string;
+  trial_duration_days: number | null;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  days_remaining: number | null;
+};
+
 export type UserProfileResponse = {
   user_id: string;
   role: string;
@@ -211,6 +241,7 @@ export type UserProfileResponse = {
     roomLabel: string;
     studentCount: number;
   }>;
+  trial?: TrialStatusSummary | null;
 };
 
 export async function fetchMyProfile() {
@@ -953,6 +984,7 @@ export async function checkOutStudent(payload: {
       status: string;
       check_in_at: string | null;
       check_out_at: string | null;
+      is_checked_out?: boolean;
     }>
   >("/attendance/check-out", {
     method: "POST",
@@ -1570,6 +1602,8 @@ export type ClassroomMedicationRecord = {
   medicine_name: string;
   dosage: string;
   scheduled_time: string;
+  start_date?: string | null;
+  end_date?: string | null;
   consent_flag: boolean;
   consent_date?: string | null;
   consent_note?: string;
@@ -1596,9 +1630,10 @@ export type PickupContactRecord = {
   pickup_locked_until: string | null;
 };
 
-export async function fetchClassroomMedications() {
+export async function fetchClassroomMedications(targetDate?: string) {
+  const qs = targetDate ? `?target_date=${encodeURIComponent(targetDate)}` : "";
   return apiFetch<Envelope<ClassroomMedicationRecord[]>>(
-    "/health/classroom-medications",
+    `/health/classroom-medications${qs}`,
   );
 }
 
@@ -2065,6 +2100,10 @@ export async function createCareEvents(payload: {
   occurred_at?: string;
   payload?: Record<string, unknown>;
   parent_visible?: boolean;
+  supervisor_override?: boolean;
+  override_reason?: string;
+  supervisor_pin?: string;
+  attendance_date?: string;
   events?: Array<{
     student_id: string;
     event_type: string;
@@ -2075,6 +2114,20 @@ export async function createCareEvents(payload: {
 }) {
   return apiFetch<Envelope<{ events: CareEventRecord[]; count: number }>>(
     "/care-events",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function verifySupervisorOverridePin(payload: {
+  student_id: string;
+  supervisor_pin: string;
+  override_reason?: string;
+}) {
+  return apiFetch<Envelope<{ verified: boolean; student_id: string }>>(
+    "/care-events/verify-supervisor-pin",
     {
       method: "POST",
       body: JSON.stringify(payload),
@@ -2198,6 +2251,10 @@ export async function createLearningObservation(payload: {
   media_ids?: string[];
   shared_with_family: boolean;
   observed_on?: string;
+  supervisor_override?: boolean;
+  override_reason?: string;
+  supervisor_pin?: string;
+  attendance_date?: string;
 }) {
   return apiFetch<Envelope<LearningObservationRecord>>(
     "/learning-observations",
@@ -2366,6 +2423,8 @@ export async function upsertStudentHealthRecord(
       dosage: string;
       scheduled_time?: string;
       consent?: string;
+      start_date?: string | null;
+      end_date?: string | null;
     }>;
     vaccinations?: unknown[];
     doctor_name?: string;

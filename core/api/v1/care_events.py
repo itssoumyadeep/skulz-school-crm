@@ -31,6 +31,7 @@ from core.schemas.care_events import (
     CareEventUpdateSchema,
     LearningObservationCreateSchema,
     LearningObservationUpdateSchema,
+    SupervisorPinVerifySchema,
 )
 
 router = Router(tags=["Caregiver Daily Care & Media (MVP-2)"])
@@ -108,6 +109,11 @@ def create_care_events(request, payload: CareEventCreateSchema):
         actor_id=actor_id,
         items=items,
         students_by_id=students_by_id,
+        actor_role=actor_role,
+        supervisor_override=payload.supervisor_override,
+        override_reason=payload.override_reason,
+        supervisor_pin=payload.supervisor_pin,
+        attendance_date=payload.attendance_date,
     )
 
     return JsonResponse(
@@ -117,6 +123,51 @@ def create_care_events(request, payload: CareEventCreateSchema):
             role=actor_role,
         ),
         status=201,
+    )
+
+
+@router.post("/care-events/verify-supervisor-pin", auth=JWTAuthBearer())
+@require_roles("CareGiver", "Caregiver", "Teacher", "Admin", "Principal", "Owner")
+def verify_care_supervisor_pin(request, payload: SupervisorPinVerifySchema):
+    """Verify supervisor authority/PIN to unlock post-checkout care editing (DEF-033)."""
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, "user_role", "CareGiver")
+    student = get_object_or_404(
+        Student,
+        student_id=payload.student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    if not verify_student_access(request, student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": f"Access denied to student {student.name}."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+
+    if not CareEventBO.verify_supervisor_override(tenant, actor_role, payload.supervisor_pin):
+        return JsonResponse(
+            build_error(
+                errors=[{
+                    "code": "INVALID_SUPERVISOR_PIN",
+                    "message": "Invalid supervisor PIN. Post-checkout care records remain locked.",
+                }],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=422,
+        )
+
+    return JsonResponse(
+        build_response(
+            data={"verified": True, "student_id": str(student.student_id)},
+            tenant_id=request.tenant_id,
+            role=actor_role,
+        ),
+        status=200,
     )
 
 
@@ -488,6 +539,11 @@ def create_learning_observation(request, payload: LearningObservationCreateSchem
         student=student,
         actor_id=actor_id,
         data=payload.model_dump(),
+        actor_role=actor_role,
+        supervisor_override=payload.supervisor_override,
+        override_reason=payload.override_reason,
+        supervisor_pin=payload.supervisor_pin,
+        attendance_date=payload.attendance_date,
     )
     return JsonResponse(
         build_response(data=obs, tenant_id=request.tenant_id, role=actor_role),

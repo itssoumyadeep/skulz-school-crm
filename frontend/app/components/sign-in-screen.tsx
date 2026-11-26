@@ -7,7 +7,17 @@ import { loginWithPassword, signupWithPassword } from "@/app/lib/api";
 
 type SignInScreenProps = {
   deniedReason?: string;
+  initialUsername?: string;
 };
+
+function extractInitialTenant(username?: string): string {
+  const trimmed = (username ?? "").trim();
+  const idx = trimmed.lastIndexOf("_");
+  if (idx > 0 && idx < trimmed.length - 1) {
+    return trimmed.slice(idx + 1);
+  }
+  return "demo-school";
+}
 
 const roleRoutes: Record<string, string> = {
   admin: "/admin",
@@ -30,11 +40,18 @@ function errorMessage(error: unknown) {
   return "Something went wrong. Please try again.";
 }
 
-export function SignInScreen({ deniedReason }: SignInScreenProps) {
+export function SignInScreen({
+  deniedReason,
+  initialUsername,
+}: SignInScreenProps) {
   const router = useRouter();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [tenant, setTenant] = useState("demo-school");
-  const [identity, setIdentity] = useState("");
+  const [tenant, setTenant] = useState(() =>
+    extractInitialTenant(initialUsername),
+  );
+  const [identity, setIdentity] = useState(() =>
+    (initialUsername ?? "").trim(),
+  );
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -180,53 +197,55 @@ export function SignInScreen({ deniedReason }: SignInScreenProps) {
                   workspace.
                 </p>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIdentity("caregiver1_demo-school");
-                      setPassword("1234");
-                    }}
+                {process.env.NODE_ENV !== "production" && (
+                  <div
                     style={{
-                      padding: "6px 12px",
-                      borderRadius: "9999px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      background: "var(--surface-container, #f3ede7)",
-                      border: "1px solid var(--outline-variant, #c6c6ca)",
-                      cursor: "pointer",
-                      color: "var(--on-surface, #1d1b18)",
+                      display: "flex",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      marginBottom: "16px",
                     }}
                   >
-                    👶 Quick Login: Nurse Clara Gomez (Caregiver)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIdentity("teacher1_demo-school");
-                      setPassword("1234");
-                    }}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "9999px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      background: "var(--surface-container, #f3ede7)",
-                      border: "1px solid var(--outline-variant, #c6c6ca)",
-                      cursor: "pointer",
-                      color: "var(--on-surface, #1d1b18)",
-                    }}
-                  >
-                    👩‍🏫 Sarah Jenkins (Teacher)
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIdentity("caregiver1_demo-school");
+                        setPassword("1234");
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "9999px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        background: "var(--surface-container, #f3ede7)",
+                        border: "1px solid var(--outline-variant, #c6c6ca)",
+                        cursor: "pointer",
+                        color: "var(--on-surface, #1d1b18)",
+                      }}
+                    >
+                      👶 Quick Login: Nurse Clara Gomez (Caregiver)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIdentity("teacher1_demo-school");
+                        setPassword("1234");
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "9999px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        background: "var(--surface-container, #f3ede7)",
+                        border: "1px solid var(--outline-variant, #c6c6ca)",
+                        cursor: "pointer",
+                        color: "var(--on-surface, #1d1b18)",
+                      }}
+                    >
+                      👩‍🏫 Sarah Jenkins (Teacher)
+                    </button>
+                  </div>
+                )}
 
                 <form onSubmit={signIn}>
                   <label className="field">

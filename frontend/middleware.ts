@@ -20,6 +20,11 @@ type Claims = {
   exp?: number;
 };
 
+type JwtHeader = {
+  alg?: string;
+  typ?: string;
+};
+
 const roleRules: Array<{ prefix: string; roles: Role[] }> = [
   { prefix: "/admin/history", roles: ["admin", "owner"] },
   { prefix: "/admin", roles: ["admin"] },
@@ -51,33 +56,109 @@ function safeDecodeCookie(rawValue: string | undefined): string | undefined {
   }
 }
 
-function decodePart(value: string): string | null {
+function base64UrlToBytes(value: string): Uint8Array | null {
   try {
     const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
-    return atob(padded);
+    const bin = atob(padded);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i += 1) {
+      bytes[i] = bin.charCodeAt(i);
+    }
+    return bytes;
   } catch {
     return null;
   }
 }
 
-function getClaims(token: string | undefined): Claims | null {
-  if (!token) {
-    return null;
-  }
-  const payloadPart = token.includes(".") ? token.split(".")[1] : token;
-  const decoded = decodePart(payloadPart);
-  if (!decoded) {
-    return null;
-  }
+function decodePart(value: string): string | null {
   try {
-    return JSON.parse(decoded) as Claims;
+    const bytes = base64UrlToBytes(value);
+    if (!bytes) return null;
+    return new TextDecoder().decode(bytes);
   } catch {
     return null;
   }
 }
 
-export function middleware(request: NextRequest) {
+async function verifyHs256Signature(
+  signingInput: string,
+  signatureB64Url: string,
+  secret: string,
+): Promise<boolean> {
+  try {
+    const sigBytes = base64UrlToBytes(signatureB64Url);
+    if (!sigBytes) return false;
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"],
+    );
+    return await crypto.subtle.verify(
+      "HMAC",
+      key,
+      Uint8Array.from(sigBytes),
+      new TextEncoder().encode(signingInput),
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function validateAndGetClaims(
+  token: string | undefined,
+): Promise<{ claims: Claims | null; reason?: string }> {
+  if (!token) {
+    return { claims: null, reason: "missing-session" };
+  }
+  const parts = token.split(".");
+  if (parts.length !== 3 || !parts[0] || !parts[1]) {
+    return { claims: null, reason: "invalid-session" };
+  }
+
+  const headerRaw = decodePart(parts[0]);
+  const payloadRaw = decodePart(parts[1]);
+  if (!headerRaw || !payloadRaw) {
+    return { claims: null, reason: "invalid-session" };
+  }
+
+  let header: JwtHeader;
+  let claims: Claims;
+  try {
+    header = JSON.parse(headerRaw) as JwtHeader;
+    claims = JSON.parse(payloadRaw) as Claims;
+  } catch {
+    return { claims: null, reason: "invalid-session" };
+  }
+
+  const allowInsecureDevTokens =
+    process.env.NODE_ENV !== "production" &&
+    process.env.ALLOW_INSECURE_DEV_TOKENS === "true";
+
+  if (header.alg !== "HS256") {
+    if (!(allowInsecureDevTokens && header.alg === "none")) {
+      return { claims: null, reason: "invalid-session" };
+    }
+  } else {
+    const jwtSecret = process.env.JWT_SECRET_KEY?.trim();
+    if (jwtSecret && !jwtSecret.startsWith("replace-me")) {
+      const ok = await verifyHs256Signature(
+        `${parts[0]}.${parts[1]}`,
+        parts[2],
+        jwtSecret,
+      );
+      if (!ok) {
+        return { claims: null, reason: "invalid-session" };
+      }
+    }
+  }
+
+  return { claims };
+}
+
+export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const rule = roleRules.find((entry) => matchesPrefix(path, entry.prefix));
   if (!rule) {
@@ -86,11 +167,11 @@ export function middleware(request: NextRequest) {
 
   const rawCookie = request.cookies.get("pc_session")?.value;
   const token = safeDecodeCookie(rawCookie);
-  const claims = getClaims(token);
+  const { claims, reason } = await validateAndGetClaims(token);
 
   if (!claims?.role || !claims?.tenant_id) {
     return NextResponse.redirect(
-      new URL("/?denied=missing-session", request.url),
+      new URL(`/?denied=${reason ?? "missing-session"}`, request.url),
     );
   }
 

@@ -5,12 +5,13 @@ from datetime import date, timedelta
 
 import pytest
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.utils import timezone
 from jose import jwt
 
-from core.models import CareEvent, CareMedia, Parent, Student, StudentAttendance, StudentHealth
+from core.models import AuditLog, CareEvent, CareMedia, Parent, Student, StudentAttendance, StudentHealth
 
 
 def _make_token(tenant_id, role, user_id=None, email=None, assigned_class_ids=None, linked_student_ids=None):
@@ -360,3 +361,124 @@ class TestCaregiverMVP2:
 
         r_feed_after = client.get(f"/api/v1/parent/children/{maya.student_id}/feed", **p_headers)
         assert not any(item["item_id"] == media_id for item in r_feed_after.json()["data"]["feed"])
+
+    def test_def_033_post_checkout_care_lock_and_supervisor_override(self, setup_room, tenant_a):
+        client = Client()
+        cg_headers = {"HTTP_AUTHORIZATION": f"Bearer {setup_room['cg_token']}"}
+        admin_token = _make_token(tenant_a.tenant_id, "Admin")
+        admin_headers = {"HTTP_AUTHORIZATION": f"Bearer {admin_token}"}
+        maya = setup_room["maya"]
+
+        # Configure hashed supervisor override PIN on tenant
+        cfg = dict(tenant_a.config or {})
+        cfg["supervisor_override_pin_hash"] = make_password("2468")
+        tenant_a.config = cfg
+        tenant_a.save(update_fields=["config", "updated_at"])
+
+        # Mark Maya Lin as checked out today
+        StudentAttendance.objects.filter(
+            tenant=tenant_a,
+            student=maya,
+            date=timezone.localdate(),
+            is_deleted=False,
+        ).update(check_in_at=timezone.now(), check_out_at=timezone.now())
+
+        # 1. Caregiver without supervisor_override is blocked with HTTP 422 STUDENT_CHECKED_OUT
+        r_blocked = client.post(
+            "/api/v1/care-events",
+            data=json.dumps({
+                "student_id": str(maya.student_id),
+                "event_type": "water",
+                "payload": {"amount_ml": 120},
+            }),
+            content_type="application/json",
+            **cg_headers,
+        )
+        assert r_blocked.status_code == 422
+        assert r_blocked.json()["errors"][0]["rule"] == "STUDENT_CHECKED_OUT"
+
+        # 2. Verify PIN endpoint rejects wrong PIN and approves valid PIN
+        r_bad_pin = client.post(
+            "/api/v1/care-events/verify-supervisor-pin",
+            data=json.dumps({
+                "student_id": str(maya.student_id),
+                "supervisor_pin": "0000",
+                "override_reason": "Testing invalid pin",
+            }),
+            content_type="application/json",
+            **cg_headers,
+        )
+        assert r_bad_pin.status_code == 422
+
+        r_good_pin = client.post(
+            "/api/v1/care-events/verify-supervisor-pin",
+            data=json.dumps({
+                "student_id": str(maya.student_id),
+                "supervisor_pin": "2468",
+                "override_reason": "Late bottle entry",
+            }),
+            content_type="application/json",
+            **cg_headers,
+        )
+        assert r_good_pin.status_code == 200
+        assert r_good_pin.json()["data"]["verified"] is True
+
+        # 3. Caregiver submitting with wrong PIN + supervisor_override=True still returns 422
+        r_wrong_override = client.post(
+            "/api/v1/care-events",
+            data=json.dumps({
+                "student_id": str(maya.student_id),
+                "event_type": "water",
+                "payload": {"amount_ml": 120},
+                "supervisor_override": True,
+                "supervisor_pin": "9999",
+                "override_reason": "Wrong PIN",
+            }),
+            content_type="application/json",
+            **cg_headers,
+        )
+        assert r_wrong_override.status_code == 422
+        assert r_wrong_override.json()["errors"][0]["rule"] == "SUPERVISOR_OVERRIDE_REQUIRED"
+
+        # 4. Caregiver with valid supervisor_pin + reason succeeds (HTTP 201) & writes immutable AuditLog
+        r_pin_override = client.post(
+            "/api/v1/care-events",
+            data=json.dumps({
+                "student_id": str(maya.student_id),
+                "event_type": "water",
+                "payload": {"amount_ml": 120},
+                "supervisor_override": True,
+                "supervisor_pin": "2468",
+                "override_reason": "Recorded missed afternoon water bottle",
+            }),
+            content_type="application/json",
+            **cg_headers,
+        )
+        assert r_pin_override.status_code == 201
+        assert AuditLog.objects.filter(
+            tenant=tenant_a,
+            action="OVERRIDE_POST_CHECKOUT_CARE_EVENT",
+            entity="CareEvent",
+            entity_id=str(maya.student_id),
+        ).exists()
+
+        # 5. Admin token with supervisor_override=True (no PIN needed) succeeds (HTTP 201) & logs AuditLog
+        r_admin_override = client.post(
+            "/api/v1/care-events",
+            data=json.dumps({
+                "student_id": str(maya.student_id),
+                "event_type": "meal",
+                "payload": {"meal_type": "Afternoon Snack", "portion": "All (100%)"},
+                "supervisor_override": True,
+                "override_reason": "Principal correction after dismissal",
+            }),
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert r_admin_override.status_code == 201
+        assert AuditLog.objects.filter(
+            tenant=tenant_a,
+            action="OVERRIDE_POST_CHECKOUT_CARE_EVENT",
+            entity="CareEvent",
+            entity_id=str(maya.student_id),
+        ).count() >= 2

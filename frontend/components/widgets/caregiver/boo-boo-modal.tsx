@@ -3,7 +3,10 @@
 import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { Bandage, X, ShieldAlert, Clock, CheckCircle2 } from "lucide-react";
-import type { CaregiverToddler } from "./caregiver-overview-widget.types";
+import type {
+  CaregiverToddler,
+  IncidentSeverity,
+} from "./caregiver-overview-widget.types";
 
 interface BooBooModalProps {
   isOpen: boolean;
@@ -14,10 +17,35 @@ interface BooBooModalProps {
     studentId: string;
     studentName: string;
     incidentType: string;
+    severity: IncidentSeverity;
     description: string;
     actionsTaken: string;
   }) => void;
 }
+
+const SEVERITY_OPTIONS: Array<{
+  level: IncidentSeverity;
+  activeClass: string;
+}> = [
+  {
+    level: "Low",
+    activeClass: "bg-mint/25 text-pastel-mint-deep border-mint shadow-sm scale-[1.02]",
+  },
+  {
+    level: "Medium",
+    activeClass:
+      "bg-pastel-butter text-on-secondary-container border-marigold shadow-sm scale-[1.02]",
+  },
+  {
+    level: "High",
+    activeClass:
+      "bg-pastel-peach text-pastel-peach-deep border-terracotta shadow-sm scale-[1.02]",
+  },
+  {
+    level: "Critical",
+    activeClass: "bg-error-container text-error border-error shadow-sm scale-[1.02]",
+  },
+];
 
 const emptySubscribe = () => () => {};
 
@@ -38,23 +66,28 @@ export function BooBooModal({
     selectedToddlerId || (toddlers[0]?.studentId ?? ""),
   );
   const [incidentType, setIncidentType] = useState("Skin Scrape");
+  const [severity, setSeverity] = useState<IncidentSeverity>("Low");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   if (!isOpen || !isClient) return null;
 
+  const resolvedStudentId =
+    selectedToddlerId || studentId || (toddlers[0]?.studentId ?? "");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     const selectedToddler =
-      toddlers.find((t) => t.studentId === studentId) || toddlers[0];
+      toddlers.find((t) => t.studentId === resolvedStudentId) || toddlers[0];
     const studentName = selectedToddler?.name ?? "Toddler";
 
     onSubmit({
-      studentId: studentId || selectedToddler?.studentId || "",
+      studentId: resolvedStudentId || selectedToddler?.studentId || "",
       studentName,
       incidentType,
+      severity,
       description: description || "Minor tumble during playroom session.",
       actionsTaken:
         "Treated with saline wash and soft plaster by Nurse Clara. Monitored for comfort.",
@@ -64,6 +97,8 @@ export function BooBooModal({
     setTimeout(() => {
       setSubmitted(false);
       setSubmitting(false);
+      setSeverity("Low");
+      setDescription("");
       onClose();
     }, 900);
   };
@@ -137,7 +172,7 @@ export function BooBooModal({
               </label>
               <select
                 id="learner-select"
-                value={studentId}
+                value={resolvedStudentId}
                 onChange={(e) => setStudentId(e.target.value)}
                 className="w-full rounded-2xl bg-surface-container-low px-4 py-2.5 text-sm font-medium text-on-surface border border-outline-variant/40 focus:outline-none focus:ring-2 focus:ring-terracotta/40"
               >
@@ -178,6 +213,50 @@ export function BooBooModal({
                 })}
               </div>
             </div>
+
+            {/* Severity Level Selector (DEF-034 / BR-07-03) */}
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                Severity Level <span className="text-error">*</span>
+              </label>
+              <div
+                className="grid grid-cols-4 gap-2"
+                role="group"
+                aria-label="Severity Level"
+              >
+                {SEVERITY_OPTIONS.map((item) => {
+                  const isSelected = severity === item.level;
+                  return (
+                    <button
+                      key={item.level}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => setSeverity(item.level)}
+                      className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center border ${
+                        isSelected
+                          ? item.activeClass
+                          : "bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container-high"
+                      }`}
+                    >
+                      {item.level}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {(severity === "High" || severity === "Critical") && (
+              <div
+                role="alert"
+                className="p-3 rounded-2xl bg-error-container/70 border border-error/40 text-on-error-container text-xs font-bold flex items-start gap-2"
+              >
+                <ShieldAlert className="w-4 h-4 text-error shrink-0 mt-0.5" />
+                <span>
+                  Rule BR-07-03: High/Critical severity triggers immediate Principal
+                  auto-escalation &amp; emergency parent notification.
+                </span>
+              </div>
+            )}
 
             {/* Note Area */}
             <div>

@@ -253,6 +253,11 @@ class Command(BaseCommand):
 
         for demo_tenant in tenants:
             self.stdout.write(f"Seeding Caregiver demo data for tenant {demo_tenant.name} ({demo_tenant.tenant_id})...")
+            cfg_copy = dict(demo_tenant.config or {})
+            if not cfg_copy.get("supervisor_override_pin_hash"):
+                cfg_copy["supervisor_override_pin_hash"] = make_password("2468")
+                demo_tenant.config = cfg_copy
+                demo_tenant.save(update_fields=["config", "updated_at"])
 
             # 1. Provision / Update Nurse Clara Gomez
             caregiver_usernames = [

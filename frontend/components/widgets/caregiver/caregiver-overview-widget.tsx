@@ -30,12 +30,16 @@ import {
   X,
   ExternalLink,
   ShieldCheck,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import type {
+  CaregiverAttendanceConfig,
   CaregiverOverviewWidgetProps,
   CaregiverViewMode,
   CaregiverMood,
   CaregiverToddler,
+  SupervisorOverrideContext,
 } from "./caregiver-overview-widget.types";
 import { DatePicker } from "@/components/pc/date-picker";
 import { AttendanceRollAuditModal } from "./attendance-roll-audit-modal";
@@ -44,6 +48,73 @@ import { ChildCareHistoryWidget } from "./child-care-history-widget";
 import { ThePuffyCaregiverAssistant } from "./the-puffy-caregiver-assistant";
 
 const emptySubscribe = () => () => {};
+
+export function formatTimeLabel(iso?: string | null): string {
+  if (!iso) return "";
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return String(iso);
+  return parsed.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+export function isNowPastCutoff(cfg?: CaregiverAttendanceConfig): boolean {
+  if (!cfg?.isConfigured || !cfg.effectiveCutoff) return false;
+  const now = new Date();
+  const nowHHMM = `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes(),
+  ).padStart(2, "0")}`;
+  return nowHHMM > cfg.effectiveCutoff;
+}
+
+export function getEffectiveToddlerStatus(
+  t: Pick<CaregiverToddler, "status" | "checkInAt" | "checkOutAt" | "arrivalTime">,
+  effectiveCutoff?: string,
+): {
+  state: "checked_out" | "present" | "expected" | "absent";
+  label: string;
+  tone: string;
+  dotTone: string;
+  subtext: string;
+} {
+  if (t.checkOutAt) {
+    const depTime = formatTimeLabel(t.checkOutAt);
+    return {
+      state: "checked_out",
+      label: "Checked Out",
+      tone: "bg-surface-container text-on-surface-variant border border-outline-variant/40",
+      dotTone: "bg-outline",
+      subtext: depTime ? `Departed ${depTime}` : "Departed",
+    };
+  }
+  if (t.checkInAt || t.status === "Present" || t.status === "Late") {
+    const inTime = t.arrivalTime || formatTimeLabel(t.checkInAt) || "08:30 AM";
+    return {
+      state: "present",
+      label: t.status === "Late" ? "Late" : "Present",
+      tone: "bg-mint/20 text-pastel-mint-deep",
+      dotTone: "bg-mint",
+      subtext: `In at ${inTime}`,
+    };
+  }
+  if (t.status === "Expected") {
+    return {
+      state: "expected",
+      label: "Expected",
+      tone: "bg-pastel-butter/60 text-on-secondary-container",
+      dotTone: "bg-marigold",
+      subtext: `Expected (Cutoff ${effectiveCutoff || "09:15"})`,
+    };
+  }
+  return {
+    state: "absent",
+    label: "Absent",
+    tone: "bg-error-container text-error",
+    dotTone: "bg-error",
+    subtext: "Unexcused Absence",
+  };
+}
 
 export function CaregiverOverviewWidget({
   data,
@@ -63,6 +134,7 @@ export function CaregiverOverviewWidget({
   onTriggerRollAudit,
   onCallUnchecked,
   onOpenBooBooModal,
+  onSubmitIncident,
   onSendCaregiverNote,
   onUpdateMood,
   onQuickBatchMealLog,
@@ -81,6 +153,7 @@ export function CaregiverOverviewWidget({
   onLoadLearningPortfolio,
   onCreateLearningObservation,
   onDeleteLearningObservation,
+  onVerifySupervisorPin,
   onSelectDate,
   onLoadChildHistory,
   rollAuditModal,
@@ -167,6 +240,26 @@ export function CaregiverOverviewWidget({
   } | null>(null);
   const [obsSubmitting, setObsSubmitting] = useState<boolean>(false);
 
+  // DEF-031 & DEF-033: Check-out confirmation modal, toast & post-checkout lock state
+  const [checkoutConfirmToddler, setCheckoutConfirmToddler] =
+    useState<CaregiverToddler | null>(null);
+  const [checkoutSubmitting, setCheckoutSubmitting] = useState<boolean>(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutToast, setCheckoutToast] = useState<string | null>(null);
+  const [unlockedCheckoutByStudent, setUnlockedCheckoutByStudent] = useState<
+    Record<string, { supervisorPin: string; overrideReason: string }>
+  >({});
+  const [supervisorUnlockToddler, setSupervisorUnlockToddler] =
+    useState<CaregiverToddler | null>(null);
+  const [supervisorPinInput, setSupervisorPinInput] = useState<string>("");
+  const [supervisorReasonInput, setSupervisorReasonInput] =
+    useState<string>("");
+  const [supervisorUnlockError, setSupervisorUnlockError] = useState<
+    string | null
+  >(null);
+  const [supervisorUnlockSubmitting, setSupervisorUnlockSubmitting] =
+    useState<boolean>(false);
+
   // Local state overrides for optimistic feedback
   const [administeredDoses, setAdministeredDoses] = useState<
     Record<string, string>
@@ -178,10 +271,34 @@ export function CaregiverOverviewWidget({
     Record<string, boolean>
   >({});
 
-  // Dynamic calculations (DEF-012..DEF-016 compliant)
+  const drawerToddler = activeDrawerToddler ?? selectedDrawerToddler;
+  const isPastCutoff = isNowPastCutoff(data.attendanceConfig);
+
+  const isToddlerCareLocked = (t: CaregiverToddler | null): boolean => {
+    if (!t) return true;
+    if (isHistoricalReadOnly) return true;
+    return Boolean(t.checkOutAt) && !unlockedCheckoutByStudent[t.studentId];
+  };
+
+  const getOverrideForStudent = (
+    studentId: string,
+  ): SupervisorOverrideContext | undefined => {
+    const unlocked = unlockedCheckoutByStudent[studentId];
+    if (!unlocked) return undefined;
+    return {
+      supervisorOverride: true,
+      supervisorPin: unlocked.supervisorPin,
+      overrideReason: unlocked.overrideReason,
+    };
+  };
+
+  const isDrawerCareLocked = isToddlerCareLocked(drawerToddler);
+
+  // Dynamic calculations (DEF-012..DEF-016 & DEF-032 compliant)
   const totalCount = data.toddlers.length;
   const presentCount = useMemo(() => {
     return data.toddlers.filter((t) => {
+      if (t.checkOutAt) return false;
       if (checkedInOverrides[t.studentId] !== undefined) {
         return checkedInOverrides[t.studentId];
       }
@@ -193,6 +310,7 @@ export function CaregiverOverviewWidget({
 
   const unconfirmedCount = useMemo(() => {
     return data.toddlers.filter((t) => {
+      if (t.checkOutAt) return false;
       if (checkedInOverrides[t.studentId] !== undefined) {
         return !checkedInOverrides[t.studentId];
       }
@@ -200,12 +318,13 @@ export function CaregiverOverviewWidget({
     }).length;
   }, [data.toddlers, checkedInOverrides]);
 
+  const medDoseDateKey = data.selectedDate ?? data.todayDate ?? "today";
   const pendingDosesCount = useMemo(() => {
     return data.medications.filter((m) => {
-      if (administeredDoses[m.id]) return false;
+      if (administeredDoses[`${medDoseDateKey}:${m.id}`]) return false;
       return m.status === "Pending";
     }).length;
-  }, [data.medications, administeredDoses]);
+  }, [data.medications, administeredDoses, medDoseDateKey]);
 
   // Filtered Toddler List
   const filteredToddlers = useMemo(() => {
@@ -241,37 +360,38 @@ export function CaregiverOverviewWidget({
     });
     setAdministeredDoses((prev) => ({
       ...prev,
-      [medicationId]: timeStr,
+      [`${medDoseDateKey}:${medicationId}`]: timeStr,
     }));
     onLogDose?.(medicationId, studentName);
   };
 
-  const handleMoodSelect = (studentId: string, mood: CaregiverMood) => {
+  const handleMoodSelect = (toddler: CaregiverToddler, mood: CaregiverMood) => {
+    if (isToddlerCareLocked(toddler)) return;
     setToddlerMoods((prev) => ({
       ...prev,
-      [studentId]: mood,
+      [toddler.studentId]: mood,
     }));
-    onUpdateMood?.(studentId, mood);
+    onUpdateMood?.(toddler.studentId, mood, getOverrideForStudent(toddler.studentId));
   };
 
-  const handleLateArrival = (studentId: string, studentName: string) => {
+  const handleCheckInTrigger = (toddler: CaregiverToddler) => {
+    if (isHistoricalReadOnly) return;
     if (onCheckInWithScreening) {
-      const target = data.toddlers.find((t) => t.studentId === studentId) ?? null;
-      if (target) {
-        setScreenerSymptoms([]);
-        setScreenerTemp("36.7");
-        setScreenerLateReason("");
-        setScreenerError(null);
-        setScreenerToddler(target);
-        return;
-      }
+      setScreenerSymptoms([]);
+      setScreenerTemp("36.7");
+      setScreenerLateReason("");
+      setScreenerError(null);
+      setScreenerToddler(toddler);
+      return;
     }
     setCheckedInOverrides((prev) => ({
       ...prev,
-      [studentId]: true,
+      [toddler.studentId]: true,
     }));
-    onCheckIn?.(studentId, studentName);
-    onMarkLateArrival?.(studentId, studentName);
+    onCheckIn?.(toddler.studentId, toddler.name);
+    if (isPastCutoff) {
+      onMarkLateArrival?.(toddler.studentId, toddler.name);
+    }
   };
 
   const handleSendNote = () => {
@@ -567,8 +687,11 @@ export function CaregiverOverviewWidget({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
             {data.medications.map((med) => {
-              const isDone = Boolean(administeredDoses[med.id]) || med.status === "Administered";
-              const adminTime = administeredDoses[med.id] || med.administeredTime || "10:45 AM";
+              const doseKey = `${medDoseDateKey}:${med.id}`;
+              const isDone =
+                Boolean(administeredDoses[doseKey]) || med.status === "Administered";
+              const adminTime =
+                administeredDoses[doseKey] || med.administeredTime || "10:45 AM";
 
               return (
                 <div
@@ -608,6 +731,14 @@ export function CaregiverOverviewWidget({
                       <span className="font-bold text-on-surface">Instructions:</span>
                       <span>{med.instructions}</span>
                     </div>
+                    {(med.startDate || med.endDate) && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-on-surface">Schedule Tenure:</span>
+                        <span className="px-2 py-0.5 rounded-full bg-pastel-butter/60 text-on-secondary-container text-[11px] font-bold">
+                          {med.startDate || "Active"} – {med.endDate || "Ongoing"}
+                        </span>
+                      </div>
+                    )}
                     <div
                       className={`flex items-center gap-1.5 font-semibold ${
                         med.consentFlag === false
@@ -807,10 +938,18 @@ export function CaregiverOverviewWidget({
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {filteredToddlers.map((toddler) => {
+              const effectiveStatus = getEffectiveToddlerStatus(
+                toddler,
+                data.attendanceConfig?.effectiveCutoff,
+              );
+              const isCheckedOut = effectiveStatus.state === "checked_out";
               const isCheckedIn =
-                checkedInOverrides[toddler.studentId] !== undefined
+                !isCheckedOut &&
+                (checkedInOverrides[toddler.studentId] !== undefined
                   ? checkedInOverrides[toddler.studentId]
-                  : toddler.status === "Present" || toddler.status === "Late";
+                  : effectiveStatus.state === "present");
+              const showRoutineBoard = isCheckedIn || isCheckedOut;
+              const cardLocked = isToddlerCareLocked(toddler);
               const currentMood =
                 toddlerMoods[toddler.studentId] || toddler.mood;
 
@@ -824,15 +963,19 @@ export function CaregiverOverviewWidget({
                   {/* Top color bar */}
                   <div
                     className={`h-1.5 w-full absolute top-0 left-0 ${
-                      isCheckedIn ? "bg-pastel-butter" : "bg-outline-variant"
+                      isCheckedOut
+                        ? "bg-outline-variant"
+                        : isCheckedIn
+                          ? "bg-pastel-butter"
+                          : "bg-outline-variant"
                     }`}
                   />
 
                   <div className="flex flex-col gap-3 pt-1">
                     {/* Header: Avatar, Name, Cubby */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative shrink-0">
                           <div
                             className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shadow-xs ${
                               isCheckedIn
@@ -847,36 +990,57 @@ export function CaregiverOverviewWidget({
                           </div>
                           <span
                             className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ring-2 ring-surface-container-lowest ${
-                              isCheckedIn ? "bg-mint" : "bg-outline-variant"
+                              isCheckedOut
+                                ? effectiveStatus.dotTone
+                                : isCheckedIn
+                                  ? "bg-mint"
+                                  : effectiveStatus.dotTone
                             }`}
                             title={
-                              isCheckedIn
-                                ? toddler.status === "Late"
-                                  ? "Checked In (Late)"
-                                  : "Checked In"
-                                : toddler.status === "Expected"
-                                  ? "Expected Arrival"
-                                  : "Absent / Not Checked In"
+                              isCheckedOut
+                                ? `Checked Out (${effectiveStatus.subtext})`
+                                : isCheckedIn
+                                  ? toddler.status === "Late"
+                                    ? "Checked In (Late)"
+                                    : "Checked In"
+                                  : effectiveStatus.subtext
                             }
                           />
                         </div>
-                        <div className="flex flex-col">
-                          <h3 className="text-base font-bold text-on-surface leading-snug">
-                            {toddler.name}
-                          </h3>
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="text-base font-bold text-on-surface leading-snug truncate">
+                              {toddler.name}
+                            </h3>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                isCheckedOut
+                                  ? effectiveStatus.tone
+                                  : isCheckedIn
+                                    ? "bg-mint/20 text-pastel-mint-deep"
+                                    : effectiveStatus.tone
+                              }`}
+                            >
+                              {isCheckedOut
+                                ? "Checked Out"
+                                : isCheckedIn
+                                  ? toddler.status === "Late"
+                                    ? "Late"
+                                    : "Present"
+                                  : effectiveStatus.label}
+                            </span>
+                          </div>
                           <span className="text-xs text-on-surface-variant">
                             {toddler.cubbyLabel} •{" "}
-                            {isCheckedIn
-                              ? `In at ${toddler.arrivalTime || "08:30 AM"}${
-                                  toddler.lateReason
-                                    ? ` · Late (${toddler.lateReason})`
-                                    : ""
-                                }`
-                              : toddler.status === "Expected"
-                                ? `Expected (Cutoff ${
-                                    data.attendanceConfig?.effectiveCutoff || "09:15"
-                                  })`
-                                : "Unexcused Absence"}
+                            {isCheckedOut
+                              ? `Checked Out (${formatTimeLabel(toddler.checkOutAt) || "Departed"})`
+                              : isCheckedIn
+                                ? `In at ${toddler.arrivalTime || formatTimeLabel(toddler.checkInAt) || "08:30 AM"}${
+                                    toddler.lateReason
+                                      ? ` · Late (${toddler.lateReason})`
+                                      : ""
+                                  }`
+                                : effectiveStatus.subtext}
                           </span>
                         </div>
                       </div>
@@ -885,17 +1049,18 @@ export function CaregiverOverviewWidget({
                         aria-label="Toddler options"
                         onClick={() => {
                           setPickupFeedback(null);
+                          setCareFeedback(null);
                           setSelectedDrawerToddler(toddler);
                           onLoadPickupContacts?.(toddler.studentId);
                           onSelectToddlerDetails?.(toddler);
                         }}
-                        className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors"
+                        className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors shrink-0"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
                     </div>
 
-                    {isCheckedIn ? (
+                    {showRoutineBoard ? (
                       <>
                         {/* Guardian Pickup Authorization */}
                         <div className="p-2.5 rounded-2xl bg-surface-container-low flex items-center gap-2.5">
@@ -916,8 +1081,14 @@ export function CaregiverOverviewWidget({
 
                         {/* Routine Pickers: Mood */}
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[11px] font-semibold text-on-surface-variant">
-                            Mood &amp; Energy Status
+                          <span className="text-[11px] font-semibold text-on-surface-variant flex items-center justify-between">
+                            <span>Mood &amp; Energy Status</span>
+                            {isCheckedOut && (
+                              <span className="text-[10px] font-bold text-terracotta flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                Locked
+                              </span>
+                            )}
                           </span>
                           <div className="grid grid-cols-3 gap-1 bg-surface-container-low p-1 rounded-full text-center text-xs">
                             {[
@@ -930,15 +1101,15 @@ export function CaregiverOverviewWidget({
                                 <button
                                   key={moodOption.label}
                                   type="button"
-                                  disabled={isHistoricalReadOnly}
+                                  disabled={cardLocked}
                                   onClick={() =>
-                                    handleMoodSelect(toddler.studentId, moodOption.label)
+                                    handleMoodSelect(toddler, moodOption.label)
                                   }
                                   className={`py-1 rounded-full font-bold text-[11px] transition-all flex items-center justify-center gap-1 ${
                                     isSelected
                                       ? `${moodOption.tone} shadow-xs scale-100`
                                       : "text-on-surface-variant hover:bg-surface-container"
-                                  } ${isHistoricalReadOnly ? "opacity-60 cursor-not-allowed" : ""}`}
+                                  } ${cardLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                                 >
                                   {moodOption.label}
                                 </button>
@@ -963,8 +1134,15 @@ export function CaregiverOverviewWidget({
                             </div>
                             <button
                               type="button"
-                              disabled={isHistoricalReadOnly}
-                              onClick={() => onLogHydration?.(toddler.studentId, 120)}
+                              disabled={cardLocked}
+                              onClick={() => {
+                                if (cardLocked) return;
+                                onLogHydration?.(
+                                  toddler.studentId,
+                                  120,
+                                  getOverrideForStudent(toddler.studentId),
+                                );
+                              }}
                               title="Log +120 mL water"
                               className="px-2 py-0.5 rounded-full bg-cerulean/20 text-blue-800 hover:bg-cerulean/30 font-bold text-[10px] shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -1016,11 +1194,27 @@ export function CaregiverOverviewWidget({
                   </div>
 
                   {/* Card Action Button */}
-                  {isCheckedIn ? (
+                  {isCheckedOut ? (
                     <button
                       type="button"
                       onClick={() => {
                         setPickupFeedback(null);
+                        setCareFeedback(null);
+                        setSelectedDrawerToddler(toddler);
+                        onLoadPickupContacts?.(toddler.studentId);
+                        onQuickUpdate?.(toddler);
+                      }}
+                      className="w-full py-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>View Locked Care Record</span>
+                    </button>
+                  ) : isCheckedIn ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPickupFeedback(null);
+                        setCareFeedback(null);
                         setSelectedDrawerToddler(toddler);
                         onLoadPickupContacts?.(toddler.studentId);
                         onQuickUpdate?.(toddler);
@@ -1034,14 +1228,20 @@ export function CaregiverOverviewWidget({
                     <button
                       type="button"
                       disabled={isHistoricalReadOnly}
-                      onClick={() => handleLateArrival(toddler.studentId, toddler.name)}
-                      className="w-full py-2.5 rounded-full bg-primary-container text-on-primary text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleCheckInTrigger(toddler)}
+                      className={`w-full py-2.5 rounded-full text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                        isPastCutoff && !isHistoricalReadOnly
+                          ? "bg-terracotta/20 text-terracotta border border-terracotta/30"
+                          : "bg-pastel-mint-deep text-on-primary shadow-xs"
+                      }`}
                     >
                       <UserCheck className="w-4 h-4" />
                       <span>
                         {isHistoricalReadOnly
                           ? "Check-In Locked (>24h)"
-                          : "Log Late Arrival"}
+                          : isPastCutoff
+                            ? "Log Late Arrival"
+                            : "Check-In"}
                       </span>
                     </button>
                   )}
@@ -1161,16 +1361,23 @@ export function CaregiverOverviewWidget({
                 </thead>
                 <tbody className="divide-y divide-outline-variant/20">
                   {filteredToddlers.map((toddler) => {
+                    const effectiveStatus = getEffectiveToddlerStatus(
+                      toddler,
+                      data.attendanceConfig?.effectiveCutoff,
+                    );
+                    const isCheckedOut = effectiveStatus.state === "checked_out";
                     const isCheckedIn =
-                      checkedInOverrides[toddler.studentId] !== undefined
+                      !isCheckedOut &&
+                      (checkedInOverrides[toddler.studentId] !== undefined
                         ? checkedInOverrides[toddler.studentId]
-                        : toddler.status === "Present" || toddler.status === "Late";
+                        : effectiveStatus.state === "present");
 
                     return (
                       <tr
                         key={toddler.studentId}
                         onClick={() => {
                           setPickupFeedback(null);
+                          setCareFeedback(null);
                           setSelectedDrawerToddler(toddler);
                           onLoadPickupContacts?.(toddler.studentId);
                           onSelectToddlerDetails?.(toddler);
@@ -1199,10 +1406,19 @@ export function CaregiverOverviewWidget({
 
                         {/* Check-In */}
                         <td className="py-3 px-4">
-                          {isCheckedIn ? (
+                          {isCheckedOut ? (
+                            <>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-on-surface-variant border border-outline-variant/40">
+                                Checked Out
+                              </span>
+                              <span className="text-[10px] text-on-surface-variant font-semibold block mt-0.5">
+                                {effectiveStatus.subtext}
+                              </span>
+                            </>
+                          ) : isCheckedIn ? (
                             <>
                               <span className="font-bold text-on-surface block">
-                                {toddler.arrivalTime || "08:30 AM"}
+                                {toddler.arrivalTime || formatTimeLabel(toddler.checkInAt) || "08:30 AM"}
                               </span>
                               <span className="text-[10px] text-green-800 font-semibold">
                                 By {toddler.guardian.relation} (PIN Verified)
@@ -1245,10 +1461,12 @@ export function CaregiverOverviewWidget({
                         {/* Diaper */}
                         <td className="py-3 px-4">
                           <div className="text-[11px]">
-                            <span className="font-bold text-on-surface">10:15 AM: </span>
+                            <span className="font-bold text-on-surface">
+                              {toddler.diaperStatus?.time || "10:15 AM"}:{" "}
+                            </span>
                             {toddler.diaperStatus?.note || "Dry Diaper"}
                             <span className="text-[10px] text-secondary block font-medium">
-                              Next due ~ 12:15
+                              Next due ~ {toddler.diaperStatus?.nextDueTime || "12:15 PM"}
                             </span>
                           </div>
                         </td>
@@ -1262,26 +1480,49 @@ export function CaregiverOverviewWidget({
                             </span>
                           ) : (
                             <span className="text-[11px] text-on-surface-variant font-medium">
-                              Sunny &amp; smiling
+                              {toddlerMoods[toddler.studentId] || toddler.mood}
                             </span>
                           )}
                         </td>
 
                         {/* Action */}
                         <td className="py-3 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPickupFeedback(null);
-                              setSelectedDrawerToddler(toddler);
-                              onLoadPickupContacts?.(toddler.studentId);
-                              onQuickUpdate?.(toddler);
-                            }}
-                            className="px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-bold transition-colors"
-                          >
-                            Add Note
-                          </button>
+                          {!isCheckedIn && !isCheckedOut ? (
+                            <button
+                              type="button"
+                              disabled={isHistoricalReadOnly}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCheckInTrigger(toddler);
+                              }}
+                              className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                isPastCutoff && !isHistoricalReadOnly
+                                  ? "bg-terracotta/20 text-terracotta border border-terracotta/30"
+                                  : "bg-pastel-mint-deep text-on-primary hover:opacity-90"
+                              }`}
+                            >
+                              {isHistoricalReadOnly
+                                ? "Locked"
+                                : isPastCutoff
+                                  ? "Log Late Arrival"
+                                  : "Check-In"}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPickupFeedback(null);
+                                setCareFeedback(null);
+                                setSelectedDrawerToddler(toddler);
+                                onLoadPickupContacts?.(toddler.studentId);
+                                onQuickUpdate?.(toddler);
+                              }}
+                              className="px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-bold transition-colors"
+                            >
+                              {isCheckedOut ? "View Log" : "Add Note"}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1331,18 +1572,41 @@ export function CaregiverOverviewWidget({
             <div className="flex flex-col gap-3 mt-2">
               {data.incidents.map((incident) => {
                 const isAck = incident.parentStatus === "Acknowledged";
+                const severityLevel = incident.severity || "Low";
+                const severityTone =
+                  severityLevel === "Critical"
+                    ? "bg-error-container text-error border border-error/30"
+                    : severityLevel === "High"
+                      ? "bg-pastel-peach text-pastel-peach-deep border border-terracotta/30"
+                      : severityLevel === "Medium"
+                        ? "bg-pastel-butter text-on-secondary-container border border-marigold/30"
+                        : "bg-mint/20 text-pastel-mint-deep";
                 return (
                   <div
                     key={incident.id}
                     className={`p-4 rounded-2xl bg-surface-container-low flex flex-col gap-1.5 border-l-4 ${
-                      isAck ? "border-pastel-peach" : "border-marigold"
+                      severityLevel === "Critical"
+                        ? "border-error"
+                        : isAck
+                          ? "border-pastel-peach"
+                          : "border-marigold"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-bold text-on-surface">
                           {incident.studentName} • {incident.incidentType}
                         </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${severityTone}`}
+                        >
+                          {severityLevel}
+                        </span>
+                        {incident.escalatedToPrincipal && (
+                          <span className="px-2 py-0.5 rounded-full bg-error-container text-error text-[10px] font-bold">
+                            Principal Escalated
+                          </span>
+                        )}
                         <span className="px-2 py-0.5 rounded-md bg-surface-container text-[10px] font-semibold text-on-surface-variant">
                           {incident.bodyPart}
                         </span>
@@ -1526,7 +1790,11 @@ export function CaregiverOverviewWidget({
         toddlers={data.toddlers}
         selectedToddlerId={selectedStudentForBooBoo}
         onSubmit={(incident) => {
-          onOpenBooBooModal?.(incident.studentId);
+          if (onSubmitIncident) {
+            void onSubmitIncident(incident);
+          } else {
+            onOpenBooBooModal?.(incident.studentId);
+          }
         }}
       />
 
@@ -1548,935 +1816,1387 @@ export function CaregiverOverviewWidget({
 
       {/* SLIDE-OVER DRAWER (DEF-006: z-[60] backdrop, z-[70] drawer portal) */}
       {isClient &&
-        selectedDrawerToddler &&
+        drawerToddler &&
         createPortal(
-          <div
-            className="fixed inset-0 z-[70]"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="drawer-toddler-title"
-          >
-            {/* Backdrop z-[60] */}
-            <div
-              className="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-[60] transition-opacity"
-              onClick={() => setSelectedDrawerToddler(null)}
-              aria-hidden="true"
-            />
+          (() => {
+            const drawerEffectiveStatus = getEffectiveToddlerStatus(
+              drawerToddler,
+              data.attendanceConfig?.effectiveCutoff,
+            );
+            const activeUnlock =
+              unlockedCheckoutByStudent[drawerToddler.studentId];
+            return (
+              <div
+                className="fixed inset-0 z-[70]"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="drawer-toddler-title"
+              >
+                {/* Backdrop z-[60] */}
+                <div
+                  className="fixed inset-0 bg-charcoal/50 backdrop-blur-xs z-[60] transition-opacity"
+                  onClick={() => setSelectedDrawerToddler(null)}
+                  aria-hidden="true"
+                />
 
-            {/* Drawer Content z-[70] */}
-            <div className="fixed top-0 right-0 h-full w-full max-w-lg bg-surface-container-lowest shadow-2xl z-[70] flex flex-col border-l border-outline-variant/30 md:rounded-l-3xl overflow-hidden animate-in slide-in-from-right duration-300">
-              {/* Header */}
-              <div className="px-6 py-4 bg-surface-container-low border-b border-outline-variant/30 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-terracotta/20 text-terracotta flex items-center justify-center font-bold">
-                    <Smile className="w-5 h-5 text-terracotta" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3
-                        id="drawer-toddler-title"
-                        className="text-base font-bold text-on-surface leading-snug"
-                      >
-                        {selectedDrawerToddler.name}
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/20 text-green-800">
-                        {selectedDrawerToddler.status}
-                      </span>
+                {/* Drawer Content z-[70] */}
+                <div className="fixed top-0 right-0 h-full w-full max-w-lg bg-surface-container-lowest shadow-2xl z-[70] flex flex-col border-l border-outline-variant/30 md:rounded-l-3xl overflow-hidden animate-in slide-in-from-right duration-300">
+                  {/* Header */}
+                  <div className="px-6 py-4 bg-surface-container-low border-b border-outline-variant/30 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-terracotta/20 text-terracotta flex items-center justify-center font-bold">
+                        <Smile className="w-5 h-5 text-terracotta" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3
+                            id="drawer-toddler-title"
+                            className="text-base font-bold text-on-surface leading-snug"
+                          >
+                            {drawerToddler.name}
+                          </h3>
+                          <span
+                            data-testid="drawer-status-badge"
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${drawerEffectiveStatus.tone}`}
+                          >
+                            {drawerEffectiveStatus.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface-variant mt-0.5">
+                          {drawerToddler.cubbyLabel} • Room 1A Sunflowers •{" "}
+                          {drawerEffectiveStatus.subtext}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs text-on-surface-variant mt-0.5">
-                      {selectedDrawerToddler.cubbyLabel} • Room 1A Sunflowers
-                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDrawerToddler(null)}
+                        className="w-8 h-8 rounded-full hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDrawerToddler(null)}
-                    className="w-8 h-8 rounded-full hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+                  {/* Body */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+                    {/* DEF-033: Post-Checkout Departure Lock Banner */}
+                    {Boolean(drawerToddler.checkOutAt) && (
+                      <div
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                          isDrawerCareLocked
+                            ? "bg-pastel-peach/40 border-terracotta/40 text-on-surface"
+                            : "bg-pastel-butter/40 border-marigold/50 text-on-surface"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          {isDrawerCareLocked ? (
+                            <Lock className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
+                          ) : (
+                            <Unlock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+                          )}
+                          <div className="text-xs leading-snug">
+                            {isDrawerCareLocked ? (
+                              <span className="font-bold">
+                                Child departed at{" "}
+                                {formatTimeLabel(drawerToddler.checkOutAt)}.
+                                Daily care records are locked.
+                              </span>
+                            ) : (
+                              <span className="font-bold">
+                                Supervisor Override Active ({activeUnlock?.overrideReason})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {isDrawerCareLocked ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSupervisorPinInput("");
+                              setSupervisorReasonInput("");
+                              setSupervisorUnlockError(null);
+                              setSupervisorUnlockToddler(drawerToddler);
+                            }}
+                            className="px-3.5 py-1.5 rounded-full bg-primary-container text-on-primary text-[11px] font-bold hover:opacity-90 shrink-0"
+                          >
+                            Unlock with Supervisor PIN
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setUnlockedCheckoutByStudent((prev) => {
+                                const copy = { ...prev };
+                                delete copy[drawerToddler.studentId];
+                                return copy;
+                              })
+                            }
+                            className="px-3 py-1.5 rounded-full bg-surface-container text-on-surface text-[11px] font-bold hover:bg-surface-container-high shrink-0"
+                          >
+                            Re-Lock
+                          </button>
+                        )}
+                      </div>
+                    )}
 
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
-                {/* Drawer Tab Switcher: Care & Pickup, Learning Portfolio & History (US-CG-10 / US-CG-17) */}
-                <div className="flex items-center gap-1.5 p-1 rounded-full bg-surface-container">
-                  <button
-                    type="button"
-                    onClick={() => setDrawerTab("care")}
-                    className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      drawerTab === "care"
-                        ? "bg-surface-container-lowest text-on-surface shadow-xs"
-                        : "text-on-surface-variant"
-                    }`}
-                  >
-                    Care &amp; Pickup
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDrawerTab("learning");
-                      onLoadLearningPortfolio?.(selectedDrawerToddler.studentId);
-                    }}
-                    className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      drawerTab === "learning"
-                        ? "bg-surface-container-lowest text-on-surface shadow-xs"
-                        : "text-on-surface-variant"
-                    }`}
-                  >
-                    Learning Portfolio
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDrawerTab("history");
-                      const targetHistDate =
-                        data.selectedDate || drawerHistoryDate;
-                      setDrawerHistoryDate(targetHistDate);
-                      onLoadChildHistory?.(
-                        selectedDrawerToddler.studentId,
-                        targetHistDate,
-                      );
-                    }}
-                    className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      drawerTab === "history"
-                        ? "bg-surface-container-lowest text-on-surface shadow-xs"
-                        : "text-on-surface-variant"
-                    }`}
-                  >
-                    History
-                  </button>
-                </div>
+                    {/* Drawer Tab Switcher: Care & Pickup, Learning Portfolio & History (US-CG-10 / US-CG-17) */}
+                    <div className="flex items-center gap-1.5 p-1 rounded-full bg-surface-container">
+                      <button
+                        type="button"
+                        onClick={() => setDrawerTab("care")}
+                        className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
+                          drawerTab === "care"
+                            ? "bg-surface-container-lowest text-on-surface shadow-xs"
+                            : "text-on-surface-variant"
+                        }`}
+                      >
+                        Care &amp; Pickup
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDrawerTab("learning");
+                          onLoadLearningPortfolio?.(drawerToddler.studentId);
+                        }}
+                        className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
+                          drawerTab === "learning"
+                            ? "bg-surface-container-lowest text-on-surface shadow-xs"
+                            : "text-on-surface-variant"
+                        }`}
+                      >
+                        Learning Portfolio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDrawerTab("history");
+                          const targetHistDate =
+                            data.selectedDate || drawerHistoryDate;
+                          setDrawerHistoryDate(targetHistDate);
+                          onLoadChildHistory?.(
+                            drawerToddler.studentId,
+                            targetHistDate,
+                          );
+                        }}
+                        className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
+                          drawerTab === "history"
+                            ? "bg-surface-container-lowest text-on-surface shadow-xs"
+                            : "text-on-surface-variant"
+                        }`}
+                      >
+                        History
+                      </button>
+                    </div>
 
-                {drawerTab === "history" ? (
-                  <ChildCareHistoryWidget
-                    students={[
-                      {
-                        student_id: selectedDrawerToddler.studentId,
-                        student_number: selectedDrawerToddler.studentNumber,
-                        name: selectedDrawerToddler.name,
-                        grade: "Toddler & Pre-K",
-                      },
-                    ]}
-                    selectedStudentId={selectedDrawerToddler.studentId}
-                    selectedDate={drawerHistoryDate}
-                    history={
-                      data.childHistoryByStudent?.[
-                        selectedDrawerToddler.studentId
-                      ] ?? null
-                    }
-                    viewMode={viewMode}
-                    capabilities={{
-                      canFilterAllRooms: false,
-                      canOverridePastRecords: false,
-                      canViewAuditLog: false,
-                    }}
-                    onSelectStudent={() => {}}
-                    onSelectDate={(nextDate) => {
-                      setDrawerHistoryDate(nextDate);
-                      onLoadChildHistory?.(
-                        selectedDrawerToddler.studentId,
-                        nextDate,
-                      );
-                    }}
-                    onRefresh={() =>
-                      onLoadChildHistory?.(
-                        selectedDrawerToddler.studentId,
-                        drawerHistoryDate,
-                      )
-                    }
-                  />
-                ) : drawerTab === "learning" ? (
-                  <div className="space-y-4">
-                    {/* Developmental Summary */}
-                    <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-2.5">
+                    {drawerTab === "history" ? (
+                      <ChildCareHistoryWidget
+                        students={[
+                          {
+                            student_id: drawerToddler.studentId,
+                            student_number: drawerToddler.studentNumber,
+                            name: drawerToddler.name,
+                            grade: "Toddler & Pre-K",
+                          },
+                        ]}
+                        selectedStudentId={drawerToddler.studentId}
+                        selectedDate={drawerHistoryDate}
+                        history={
+                          data.childHistoryByStudent?.[drawerToddler.studentId] ??
+                          null
+                        }
+                        viewMode={viewMode}
+                        capabilities={{
+                          canFilterAllRooms: false,
+                          canOverridePastRecords: false,
+                          canViewAuditLog: false,
+                        }}
+                        onSelectStudent={() => {}}
+                        onSelectDate={(nextDate) => {
+                          setDrawerHistoryDate(nextDate);
+                          onLoadChildHistory?.(
+                            drawerToddler.studentId,
+                            nextDate,
+                          );
+                        }}
+                        onRefresh={() =>
+                          onLoadChildHistory?.(
+                            drawerToddler.studentId,
+                            drawerHistoryDate,
+                          )
+                        }
+                      />
+                    ) : drawerTab === "learning" ? (
+                      <div className="space-y-4">
+                        {/* Developmental Summary */}
+                        <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
+                              Developmental Summary
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full bg-mint/20 text-green-800 font-bold text-[10px]">
+                              {data.developmentalSummaryByStudent?.[drawerToddler.studentId]?.totalObservations ?? 0} Logged
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {Object.entries(
+                              data.developmentalSummaryByStudent?.[drawerToddler.studentId]?.domainCounts ?? {},
+                            ).map(([dom, cnt]) => (
+                              <span
+                                key={dom}
+                                className="px-2.5 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/20 text-[11px] font-bold text-on-surface"
+                              >
+                                {dom}: {cnt}
+                              </span>
+                            ))}
+                            {Object.keys(
+                              data.developmentalSummaryByStudent?.[drawerToddler.studentId]?.domainCounts ?? {},
+                            ).length === 0 && (
+                              <span className="text-on-surface-variant text-[11px]">
+                                No domain milestones logged yet.
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* New Learning Observation Form */}
+                        <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-3">
+                          <span className="font-bold text-on-surface uppercase tracking-wider text-[10px] block">
+                            New Learning Observation
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <label className="text-[11px] font-semibold text-on-surface-variant">
+                              Framework:
+                            </label>
+                            <select
+                              aria-label="Learning Framework"
+                              disabled={isDrawerCareLocked}
+                              value={obsFramework}
+                              onChange={(e) => {
+                                setObsFramework(e.target.value);
+                                setObsDomains([]);
+                              }}
+                              className="px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/30 text-xs font-bold text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {(data.learningFrameworks && data.learningFrameworks.length > 0
+                                ? data.learningFrameworks
+                                : [
+                                    { code: "ELECT", domains: ["Fine Motor", "Gross Motor", "Language", "Social-Emotional", "Cognitive", "Sensory"] },
+                                    { code: "HDLH", domains: ["Belonging", "Well-Being", "Engagement", "Expression"] },
+                                    { code: "EYFS", domains: ["Communication & Language", "Physical Development", "Personal, Social & Emotional", "Literacy", "Mathematics"] },
+                                  ]
+                              ).map((fw) => (
+                                <option key={fw.code} value={fw.code}>
+                                  {fw.code}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1.5">
+                            {(
+                              (data.learningFrameworks?.find((f) => f.code === obsFramework)?.domains) ??
+                              (obsFramework === "HDLH"
+                                ? ["Belonging", "Well-Being", "Engagement", "Expression"]
+                                : obsFramework === "EYFS"
+                                  ? ["Communication & Language", "Physical Development", "Personal, Social & Emotional", "Literacy", "Mathematics"]
+                                  : ["Fine Motor", "Gross Motor", "Language", "Social-Emotional", "Cognitive", "Sensory"])
+                            ).map((dom) => {
+                              const active = obsDomains.includes(dom);
+                              return (
+                                <button
+                                  key={dom}
+                                  type="button"
+                                  disabled={isDrawerCareLocked}
+                                  onClick={() =>
+                                    setObsDomains((prev) =>
+                                      prev.includes(dom)
+                                        ? prev.filter((d) => d !== dom)
+                                        : [...prev, dom],
+                                    )
+                                  }
+                                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    active
+                                      ? "bg-terracotta text-on-primary"
+                                      : "bg-surface-container text-on-surface-variant"
+                                  }`}
+                                >
+                                  {dom}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <textarea
+                            rows={3}
+                            disabled={isDrawerCareLocked}
+                            value={obsNote}
+                            onChange={(e) => setObsNote(e.target.value)}
+                            placeholder="Describe observed play, skills, and developmental milestone..."
+                            className="w-full rounded-xl bg-surface-container-lowest border border-outline-variant/30 p-2.5 text-xs text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-on-surface">
+                              <input
+                                type="checkbox"
+                                disabled={isDrawerCareLocked}
+                                checked={obsShared}
+                                onChange={(e) => setObsShared(e.target.checked)}
+                              />
+                              <span>Share with family</span>
+                            </label>
+                            <button
+                              type="button"
+                              disabled={obsSubmitting || isDrawerCareLocked}
+                              onClick={async () => {
+                                if (!onCreateLearningObservation || isDrawerCareLocked) return;
+                                setObsSubmitting(true);
+                                setObsFeedback(null);
+                                const res = await onCreateLearningObservation({
+                                  studentId: drawerToddler.studentId,
+                                  framework: obsFramework,
+                                  domains: obsDomains,
+                                  note: obsNote,
+                                  sharedWithFamily: obsShared,
+                                  override: getOverrideForStudent(drawerToddler.studentId),
+                                });
+                                setObsSubmitting(false);
+                                if (res.ok) {
+                                  setObsNote("");
+                                  setObsDomains([]);
+                                  setObsFeedback({
+                                    type: "success",
+                                    message: obsShared
+                                      ? "Observation saved & shared with family."
+                                      : "Draft observation saved (hidden from parents).",
+                                  });
+                                } else {
+                                  setObsFeedback({
+                                    type: "error",
+                                    message: res.error || "Failed to save observation.",
+                                  });
+                                }
+                              }}
+                              className="px-4 py-1.5 rounded-full bg-primary-container text-on-primary text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {obsSubmitting ? "Saving..." : "Save Observation"}
+                            </button>
+                          </div>
+
+                          {obsFeedback && (
+                            <div
+                              className={`p-2 rounded-xl text-xs font-bold ${
+                                obsFeedback.type === "error"
+                                  ? "bg-error-container text-error"
+                                  : "bg-mint/20 text-green-800"
+                              }`}
+                            >
+                              {obsFeedback.message}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Existing Observations */}
+                        <div className="space-y-2">
+                          {(data.learningObservationsByStudent?.[drawerToddler.studentId] ?? []).map((obs) => (
+                            <div
+                              key={obs.observationId}
+                              className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/20 space-y-1.5"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-on-surface text-[11px]">
+                                  {obs.framework} • {obs.domains.join(", ")}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      obs.sharedWithFamily
+                                        ? "bg-mint/20 text-green-800"
+                                        : "bg-surface-container text-on-surface-variant"
+                                    }`}
+                                  >
+                                    {obs.sharedWithFamily ? "Shared with Family" : "Draft"}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={isDrawerCareLocked}
+                                    onClick={() => {
+                                      if (isDrawerCareLocked) return;
+                                      onDeleteLearningObservation?.(
+                                        obs.observationId,
+                                        drawerToddler.studentId,
+                                      );
+                                    }}
+                                    className="px-2 py-0.5 rounded-full bg-error-container text-error text-[10px] font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-on-surface-variant">{obs.note}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                    {/* Authorized Pickup Verification (US-CG-02) */}
+                    <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
-                          Developmental Summary
+                          Authorized Pickup Verification
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-mint/20 text-green-800 font-bold text-[10px]">
-                          {data.developmentalSummaryByStudent?.[selectedDrawerToddler.studentId]?.totalObservations ?? 0} Logged
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {Object.entries(
-                          data.developmentalSummaryByStudent?.[selectedDrawerToddler.studentId]?.domainCounts ?? {},
-                        ).map(([dom, cnt]) => (
-                          <span
-                            key={dom}
-                            className="px-2.5 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/20 text-[11px] font-bold text-on-surface"
-                          >
-                            {dom}: {cnt}
-                          </span>
-                        ))}
-                        {Object.keys(
-                          data.developmentalSummaryByStudent?.[selectedDrawerToddler.studentId]?.domainCounts ?? {},
-                        ).length === 0 && (
-                          <span className="text-on-surface-variant text-[11px]">
-                            No domain milestones logged yet.
+                        {data.pickupVerifiedByStudent?.[
+                          drawerToddler.studentId
+                        ] && (
+                          <span className="px-2 py-0.5 rounded-full bg-mint/20 text-green-800 font-bold text-[10px]">
+                            Verified:{" "}
+                            {
+                              data.pickupVerifiedByStudent[
+                                drawerToddler.studentId
+                              ].contactName
+                            }
                           </span>
                         )}
                       </div>
-                    </div>
 
-                    {/* New Learning Observation Form */}
-                    <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-3">
-                      <span className="font-bold text-on-surface uppercase tracking-wider text-[10px] block">
-                        New Learning Observation
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <label className="text-[11px] font-semibold text-on-surface-variant">
-                          Framework:
-                        </label>
-                        <select
-                          aria-label="Learning Framework"
-                          value={obsFramework}
-                          onChange={(e) => {
-                            setObsFramework(e.target.value);
-                            setObsDomains([]);
-                          }}
-                          className="px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/30 text-xs font-bold text-on-surface"
-                        >
-                          {(data.learningFrameworks && data.learningFrameworks.length > 0
-                            ? data.learningFrameworks
-                            : [
-                                { code: "ELECT", domains: ["Fine Motor", "Gross Motor", "Language", "Social-Emotional", "Cognitive", "Sensory"] },
-                                { code: "HDLH", domains: ["Belonging", "Well-Being", "Engagement", "Expression"] },
-                                { code: "EYFS", domains: ["Communication & Language", "Physical Development", "Personal, Social & Emotional", "Literacy", "Mathematics"] },
-                              ]
-                          ).map((fw) => (
-                            <option key={fw.code} value={fw.code}>
-                              {fw.code}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {(
-                          (data.learningFrameworks?.find((f) => f.code === obsFramework)?.domains) ??
-                          (obsFramework === "HDLH"
-                            ? ["Belonging", "Well-Being", "Engagement", "Expression"]
-                            : obsFramework === "EYFS"
-                              ? ["Communication & Language", "Physical Development", "Personal, Social & Emotional", "Literacy", "Mathematics"]
-                              : ["Fine Motor", "Gross Motor", "Language", "Social-Emotional", "Cognitive", "Sensory"])
-                        ).map((dom) => {
-                          const active = obsDomains.includes(dom);
-                          return (
-                            <button
-                              key={dom}
-                              type="button"
-                              onClick={() =>
-                                setObsDomains((prev) =>
-                                  prev.includes(dom)
-                                    ? prev.filter((d) => d !== dom)
-                                    : [...prev, dom],
-                                )
-                              }
-                              className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${
-                                active
-                                  ? "bg-terracotta text-on-primary"
-                                  : "bg-surface-container text-on-surface-variant"
-                              }`}
-                            >
-                              {dom}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <textarea
-                        rows={3}
-                        value={obsNote}
-                        onChange={(e) => setObsNote(e.target.value)}
-                        placeholder="Describe observed play, skills, and developmental milestone..."
-                        className="w-full rounded-xl bg-surface-container-lowest border border-outline-variant/30 p-2.5 text-xs text-on-surface"
-                      />
-
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="flex items-center gap-1.5 text-[11px] font-semibold text-on-surface">
-                          <input
-                            type="checkbox"
-                            checked={obsShared}
-                            onChange={(e) => setObsShared(e.target.checked)}
-                          />
-                          <span>Share with family</span>
-                        </label>
-                        <button
-                          type="button"
-                          disabled={obsSubmitting}
-                          onClick={async () => {
-                            if (!onCreateLearningObservation) return;
-                            setObsSubmitting(true);
-                            setObsFeedback(null);
-                            const res = await onCreateLearningObservation({
-                              studentId: selectedDrawerToddler.studentId,
-                              framework: obsFramework,
-                              domains: obsDomains,
-                              note: obsNote,
-                              sharedWithFamily: obsShared,
-                            });
-                            setObsSubmitting(false);
-                            if (res.ok) {
-                              setObsNote("");
-                              setObsDomains([]);
-                              setObsFeedback({
-                                type: "success",
-                                message: obsShared
-                                  ? "Observation saved & shared with family."
-                                  : "Draft observation saved (hidden from parents).",
-                              });
-                            } else {
-                              setObsFeedback({
-                                type: "error",
-                                message: res.error || "Failed to save observation.",
-                              });
-                            }
-                          }}
-                          className="px-4 py-1.5 rounded-full bg-primary-container text-on-primary text-xs font-bold disabled:opacity-50"
-                        >
-                          {obsSubmitting ? "Saving..." : "Save Observation"}
-                        </button>
-                      </div>
-
-                      {obsFeedback && (
+                      {pickupFeedback && (
                         <div
-                          className={`p-2 rounded-xl text-xs font-bold ${
-                            obsFeedback.type === "error"
+                          className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                            pickupFeedback.type === "error"
                               ? "bg-error-container text-error"
                               : "bg-mint/20 text-green-800"
                           }`}
                         >
-                          {obsFeedback.message}
+                          <ShieldAlert className="w-4 h-4 shrink-0" />
+                          <span>{pickupFeedback.message}</span>
+                        </div>
+                      )}
+
+                      {(
+                        data.pickupContactsByStudent?.[
+                          drawerToddler.studentId
+                        ] ?? []
+                      ).length > 0 ? (
+                        <div className="space-y-2.5">
+                          {(
+                            data.pickupContactsByStudent?.[
+                              drawerToddler.studentId
+                            ] ?? []
+                          ).map((contact) => (
+                            <div
+                              key={contact.contactId}
+                              className={`p-3 rounded-xl border flex flex-col gap-2 ${
+                                contact.custodyRestricted
+                                  ? "bg-error-container/60 border-error/40"
+                                  : "bg-surface-container-lowest border-outline-variant/30"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                {contact.photoUrl ? (
+                                  <img
+                                    src={contact.photoUrl}
+                                    alt={contact.name}
+                                    className="w-9 h-9 rounded-full object-cover shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-pastel-butter flex items-center justify-center shrink-0">
+                                    <svg
+                                      viewBox="0 0 24 24"
+                                      className="w-5 h-5 text-secondary"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      aria-hidden="true"
+                                    >
+                                      <circle cx="12" cy="8" r="4" />
+                                      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                                    </svg>
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-bold text-on-surface truncate">
+                                    {contact.name}
+                                  </div>
+                                  <div className="text-[11px] text-on-surface-variant">
+                                    {contact.relationship} • {contact.phone}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {contact.custodyRestricted ? (
+                                <div className="p-2 rounded-lg bg-error-container text-error font-bold text-[11px] flex items-center justify-between gap-2">
+                                  <span>
+                                    Custody Restriction:{" "}
+                                    {contact.restrictionNote ||
+                                      "Release blocked without Admin sign-off."}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant opacity-60 cursor-not-allowed shrink-0"
+                                  >
+                                    Blocked
+                                  </button>
+                                </div>
+                              ) : contact.isLocked ? (
+                                <div className="p-2 rounded-lg bg-error-container text-error font-bold text-[11px]">
+                                  Verification locked for 30 mins after 3 failed PIN
+                                  attempts. Admin override required.
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {contact.hasPin && (
+                                    <input
+                                      type="password"
+                                      inputMode="numeric"
+                                      maxLength={6}
+                                      placeholder="Enter 4-digit PIN"
+                                      aria-label={`Pickup PIN for ${contact.name}`}
+                                      value={pinInputs[contact.contactId] ?? ""}
+                                      onChange={(e) =>
+                                        setPinInputs((prev) => ({
+                                          ...prev,
+                                          [contact.contactId]: e.target.value,
+                                        }))
+                                      }
+                                      className="flex-1 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/40 text-xs text-on-surface focus:outline-none"
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    disabled={verifyingContactId === contact.contactId}
+                                    onClick={async () => {
+                                      if (!onVerifyPickup) return;
+                                      setVerifyingContactId(contact.contactId);
+                                      setPickupFeedback(null);
+                                      const res = await onVerifyPickup(
+                                        drawerToddler.studentId,
+                                        contact.contactId,
+                                        pinInputs[contact.contactId],
+                                        contact.idCheckRequired,
+                                      );
+                                      setVerifyingContactId(null);
+                                      if (res.ok) {
+                                        setPickupFeedback({
+                                          type: "success",
+                                          message: `Verified pickup by ${contact.name}. Check-out unlocked.`,
+                                        });
+                                        setPinInputs((prev) => ({
+                                          ...prev,
+                                          [contact.contactId]: "",
+                                        }));
+                                      } else {
+                                        setPickupFeedback({
+                                          type: "error",
+                                          message:
+                                            res.error ||
+                                            "Pickup verification failed.",
+                                        });
+                                      }
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-full bg-terracotta text-on-primary text-xs font-bold hover:opacity-90 transition-all shrink-0"
+                                  >
+                                    {verifyingContactId === contact.contactId
+                                      ? "Verifying..."
+                                      : "Verify Pickup"}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-on-surface">
+                              {drawerToddler.guardian.name}
+                            </span>
+                            <span className="text-green-800 font-bold bg-mint/20 px-2 py-0.5 rounded-full text-[11px]">
+                              {drawerToddler.guardian.authType} (#
+                              {drawerToddler.guardian.authCode})
+                            </span>
+                          </div>
+                          <span className="text-on-surface-variant">
+                            Relationship: {drawerToddler.guardian.relation}
+                          </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Existing Observations */}
-                    <div className="space-y-2">
-                      {(data.learningObservationsByStudent?.[selectedDrawerToddler.studentId] ?? []).map((obs) => (
-                        <div
-                          key={obs.observationId}
-                          className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/20 space-y-1.5"
+                    {/* Routine Card & Quick Micro-Logs */}
+                    <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
+                          Today&apos;s Routine &amp; Quick Care Micro-Logs
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isDrawerCareLocked}
+                          onClick={async () => {
+                            if (isDrawerCareLocked || !onLogCareEvent) return;
+                            setCareFeedback(null);
+                            const nextType = drawerToddler.isSleeping ? "nap_end" : "nap_start";
+                            const res = await onLogCareEvent(
+                              drawerToddler.studentId,
+                              nextType,
+                              { note: nextType === "nap_start" ? "Cot rest" : "Woke up refreshed" },
+                              true,
+                              getOverrideForStudent(drawerToddler.studentId),
+                            );
+                            setCareFeedback(
+                              res.ok
+                                ? {
+                                    type: "success",
+                                    message: nextType === "nap_start" ? "Nap started." : "Nap ended.",
+                                  }
+                                : { type: "error", message: res.error || "Failed to log nap." },
+                            );
+                          }}
+                          className="px-3 py-1 rounded-full bg-cerulean/20 text-blue-800 hover:bg-cerulean/30 font-bold text-[11px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-bold text-on-surface text-[11px]">
-                              {obs.framework} • {obs.domains.join(", ")}
+                          {drawerToddler.isSleeping ? "End Nap" : "Start Nap"}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 rounded-xl bg-surface-container-lowest flex items-center justify-between gap-2">
+                          <div>
+                            <span className="text-on-surface-variant block text-[10px]">
+                              Hydration
                             </span>
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  obs.sharedWithFamily
-                                    ? "bg-mint/20 text-green-800"
-                                    : "bg-surface-container text-on-surface-variant"
-                                }`}
-                              >
-                                {obs.sharedWithFamily ? "Shared with Family" : "Draft"}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  onDeleteLearningObservation?.(
-                                    obs.observationId,
-                                    selectedDrawerToddler.studentId,
-                                  )
-                                }
-                                className="px-2 py-0.5 rounded-full bg-error-container text-error text-[10px] font-bold"
-                              >
-                                Delete
-                              </button>
-                            </div>
+                            <span className="font-bold text-on-surface text-sm">
+                              {drawerToddler.hydration.currentMl} /{" "}
+                              {drawerToddler.hydration.targetMl} mL
+                            </span>
                           </div>
-                          <p className="text-xs text-on-surface-variant">{obs.note}</p>
+                          <button
+                            type="button"
+                            disabled={isDrawerCareLocked}
+                            onClick={() => {
+                              if (isDrawerCareLocked) return;
+                              onLogHydration?.(
+                                drawerToddler.studentId,
+                                120,
+                                getOverrideForStudent(drawerToddler.studentId),
+                              );
+                            }}
+                            className="px-2.5 py-1 rounded-full bg-cerulean/20 text-blue-800 hover:bg-cerulean/30 font-bold text-[10px] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            +120 mL
+                          </button>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                {/* Authorized Pickup Verification (US-CG-02) */}
-                <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
-                      Authorized Pickup Verification
-                    </span>
-                    {data.pickupVerifiedByStudent?.[
-                      selectedDrawerToddler.studentId
-                    ] && (
-                      <span className="px-2 py-0.5 rounded-full bg-mint/20 text-green-800 font-bold text-[10px]">
-                        Verified:{" "}
-                        {
-                          data.pickupVerifiedByStudent[
-                            selectedDrawerToddler.studentId
-                          ].contactName
-                        }
-                      </span>
-                    )}
-                  </div>
+                        <div className="p-2.5 rounded-xl bg-surface-container-lowest">
+                          <span className="text-on-surface-variant block text-[10px]">
+                            Nap / Sleep
+                          </span>
+                          <span className="font-bold text-on-surface text-sm">
+                            {drawerToddler.napStatus || "Resting 1:00 PM"}
+                          </span>
+                        </div>
+                      </div>
 
-                  {pickupFeedback && (
-                    <div
-                      className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                        pickupFeedback.type === "error"
-                          ? "bg-error-container text-error"
-                          : "bg-mint/20 text-green-800"
-                      }`}
-                    >
-                      <ShieldAlert className="w-4 h-4 shrink-0" />
-                      <span>{pickupFeedback.message}</span>
-                    </div>
-                  )}
-
-                  {(
-                    data.pickupContactsByStudent?.[
-                      selectedDrawerToddler.studentId
-                    ] ?? []
-                  ).length > 0 ? (
-                    <div className="space-y-2.5">
-                      {(
-                        data.pickupContactsByStudent?.[
-                          selectedDrawerToddler.studentId
-                        ] ?? []
-                      ).map((contact) => (
-                        <div
-                          key={contact.contactId}
-                          className={`p-3 rounded-xl border flex flex-col gap-2 ${
-                            contact.custodyRestricted
-                              ? "bg-error-container/60 border-error/40"
-                              : "bg-surface-container-lowest border-outline-variant/30"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            {contact.photoUrl ? (
-                              <img
-                                src={contact.photoUrl}
-                                alt={contact.name}
-                                className="w-9 h-9 rounded-full object-cover shrink-0"
-                              />
-                            ) : (
-                              <div className="w-9 h-9 rounded-full bg-pastel-butter flex items-center justify-center shrink-0">
-                                <svg
-                                  viewBox="0 0 24 24"
-                                  className="w-5 h-5 text-secondary"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  aria-hidden="true"
+                      {/* Mood Micro-Log */}
+                      <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold text-on-surface">
+                          Mood
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {(["Sunny", "Playful", "Sleepy"] as CaregiverMood[]).map(
+                            (moodOption) => {
+                              const currentDrawerMood =
+                                toddlerMoods[drawerToddler.studentId] ||
+                                drawerToddler.mood;
+                              return (
+                                <button
+                                  key={moodOption}
+                                  type="button"
+                                  disabled={isDrawerCareLocked}
+                                  onClick={() =>
+                                    handleMoodSelect(drawerToddler, moodOption)
+                                  }
+                                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    currentDrawerMood === moodOption
+                                      ? "bg-pastel-butter text-on-secondary-container"
+                                      : "bg-surface-container text-on-surface-variant"
+                                  }`}
                                 >
-                                  <circle cx="12" cy="8" r="4" />
-                                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                                </svg>
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-bold text-on-surface truncate">
-                                {contact.name}
-                              </div>
-                              <div className="text-[11px] text-on-surface-variant">
-                                {contact.relationship} • {contact.phone}
-                              </div>
-                            </div>
-                          </div>
-
-                          {contact.custodyRestricted ? (
-                            <div className="p-2 rounded-lg bg-error-container text-error font-bold text-[11px] flex items-center justify-between gap-2">
-                              <span>
-                                Custody Restriction:{" "}
-                                {contact.restrictionNote ||
-                                  "Release blocked without Admin sign-off."}
-                              </span>
-                              <button
-                                type="button"
-                                disabled
-                                className="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant opacity-60 cursor-not-allowed shrink-0"
-                              >
-                                Blocked
-                              </button>
-                            </div>
-                          ) : contact.isLocked ? (
-                            <div className="p-2 rounded-lg bg-error-container text-error font-bold text-[11px]">
-                              Verification locked for 30 mins after 3 failed PIN
-                              attempts. Admin override required.
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              {contact.hasPin && (
-                                <input
-                                  type="password"
-                                  inputMode="numeric"
-                                  maxLength={6}
-                                  placeholder="Enter 4-digit PIN"
-                                  aria-label={`Pickup PIN for ${contact.name}`}
-                                  value={pinInputs[contact.contactId] ?? ""}
-                                  onChange={(e) =>
-                                    setPinInputs((prev) => ({
-                                      ...prev,
-                                      [contact.contactId]: e.target.value,
-                                    }))
-                                  }
-                                  className="flex-1 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/40 text-xs text-on-surface focus:outline-none"
-                                />
-                              )}
-                              <button
-                                type="button"
-                                disabled={verifyingContactId === contact.contactId}
-                                onClick={async () => {
-                                  if (!onVerifyPickup) return;
-                                  setVerifyingContactId(contact.contactId);
-                                  setPickupFeedback(null);
-                                  const res = await onVerifyPickup(
-                                    selectedDrawerToddler.studentId,
-                                    contact.contactId,
-                                    pinInputs[contact.contactId],
-                                    contact.idCheckRequired,
-                                  );
-                                  setVerifyingContactId(null);
-                                  if (res.ok) {
-                                    setPickupFeedback({
-                                      type: "success",
-                                      message: `Verified pickup by ${contact.name}. Check-out unlocked.`,
-                                    });
-                                    setPinInputs((prev) => ({
-                                      ...prev,
-                                      [contact.contactId]: "",
-                                    }));
-                                  } else {
-                                    setPickupFeedback({
-                                      type: "error",
-                                      message:
-                                        res.error ||
-                                        "Pickup verification failed.",
-                                    });
-                                  }
-                                }}
-                                className="px-3.5 py-1.5 rounded-full bg-terracotta text-on-primary text-xs font-bold hover:opacity-90 transition-all shrink-0"
-                              >
-                                {verifyingContactId === contact.contactId
-                                  ? "Verifying..."
-                                  : "Verify Pickup"}
-                              </button>
-                            </div>
+                                  {moodOption}
+                                </button>
+                              );
+                            },
                           )}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-on-surface">
-                          {selectedDrawerToddler.guardian.name}
+                      </div>
+
+                      {/* Diaper / Potty Micro-Log */}
+                      <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/20 flex flex-col gap-2">
+                        <span className="text-[11px] font-bold text-on-surface">
+                          Log Diaper / Potty
                         </span>
-                        <span className="text-green-800 font-bold bg-mint/20 px-2 py-0.5 rounded-full text-[11px]">
-                          {selectedDrawerToddler.guardian.authType} (#
-                          {selectedDrawerToddler.guardian.authCode})
+                        <div className="flex flex-wrap gap-1.5">
+                          {["Wet", "BM", "Both", "Dry", "Potty"].map((dt) => (
+                            <button
+                              key={dt}
+                              type="button"
+                              disabled={isDrawerCareLocked}
+                              onClick={() => setDiaperType(dt)}
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                diaperType === dt
+                                  ? "bg-terracotta text-on-primary"
+                                  : "bg-surface-container text-on-surface-variant"
+                              }`}
+                            >
+                              {dt}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+                            <input
+                              type="checkbox"
+                              checked={applyBarrierCream}
+                              disabled={isDrawerCareLocked || !drawerToddler.topicalConsent}
+                              onChange={(e) => setApplyBarrierCream(e.target.checked)}
+                              aria-label="Barrier Cream / Sunscreen"
+                            />
+                            <span>
+                              Barrier Cream / Sunscreen
+                              {!drawerToddler.topicalConsent && " (No topical consent)"}
+                            </span>
+                          </label>
+                          <button
+                            type="button"
+                            disabled={isDrawerCareLocked}
+                            onClick={async () => {
+                              if (isDrawerCareLocked || !onLogCareEvent) return;
+                              setCareFeedback(null);
+                              const res = await onLogCareEvent(
+                                drawerToddler.studentId,
+                                "diaper",
+                                {
+                                  type: diaperType,
+                                  note: diaperNote,
+                                  barrier_cream: applyBarrierCream,
+                                },
+                                true,
+                                getOverrideForStudent(drawerToddler.studentId),
+                              );
+                              setCareFeedback(
+                                res.ok
+                                  ? { type: "success", message: `Logged ${diaperType} diaper.` }
+                                  : { type: "error", message: res.error || "Failed to log diaper." },
+                              );
+                            }}
+                            className="px-3 py-1 rounded-full bg-primary-container text-on-primary text-[11px] font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Log Diaper
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Meal / Bottle Micro-Log */}
+                      <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/20 flex flex-col gap-2">
+                        <span className="text-[11px] font-bold text-on-surface">
+                          Log Meal / Snack
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {["All (100%)", "Most", "Half", "Some", "None"].map((portion) => (
+                            <button
+                              key={portion}
+                              type="button"
+                              disabled={isDrawerCareLocked}
+                              onClick={() => setMealPortion(portion)}
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                mealPortion === portion
+                                  ? "bg-mint/40 text-green-900"
+                                  : "bg-surface-container text-on-surface-variant"
+                              }`}
+                            >
+                              {portion}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            disabled={isDrawerCareLocked}
+                            onClick={async () => {
+                              if (isDrawerCareLocked || !onLogCareEvent) return;
+                              setCareFeedback(null);
+                              const res = await onLogCareEvent(
+                                drawerToddler.studentId,
+                                "meal",
+                                { meal_type: "Lunch / Snack", portion: mealPortion },
+                                true,
+                                getOverrideForStudent(drawerToddler.studentId),
+                              );
+                              setCareFeedback(
+                                res.ok
+                                  ? { type: "success", message: `Logged meal (${mealPortion}).` }
+                                  : { type: "error", message: res.error || "Failed to log meal." },
+                              );
+                            }}
+                            className="px-3 py-1 rounded-full bg-primary-container text-on-primary text-[11px] font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Log Meal
+                          </button>
+                        </div>
+                      </div>
+
+                      {careFeedback && (
+                        <div
+                          className={`p-2 rounded-xl text-xs font-bold ${
+                            careFeedback.type === "error"
+                              ? "bg-error-container text-error"
+                              : "bg-mint/20 text-green-800"
+                          }`}
+                        >
+                          {careFeedback.message}
+                        </div>
+                      )}
+
+                      {/* Recent Care Events with 5-min Hide / Undo */}
+                      {(drawerToddler.recentEvents ?? []).length > 0 && (
+                        <div className="flex flex-col gap-1.5 pt-1">
+                          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                            Recent Care Events (5-min Undo)
+                          </span>
+                          {(drawerToddler.recentEvents ?? [])
+                            .slice(-4)
+                            .reverse()
+                            .map((ev) => (
+                              <div
+                                key={ev.eventId}
+                                className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-surface-container-lowest text-[11px]"
+                              >
+                                <span className="font-semibold text-on-surface truncate">
+                                  {ev.eventType.replace("_", " ")} •{" "}
+                                  {new Date(ev.occurredAt).toLocaleTimeString("en-US", {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                <button
+                                  type="button"
+                                  disabled={isDrawerCareLocked}
+                                  onClick={async () => {
+                                    if (isDrawerCareLocked || !onUndoCareEvent) return;
+                                    const res = await onUndoCareEvent(ev.eventId);
+                                    setCareFeedback(
+                                      res.ok
+                                        ? { type: "success", message: "Event hidden / undone." }
+                                        : { type: "error", message: res.error || "Undo failed." },
+                                    );
+                                  }}
+                                  className="px-2 py-0.5 rounded-full bg-surface-container hover:bg-error-container hover:text-error text-on-surface-variant font-bold text-[10px] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Hide / Undo
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Attach Photo / Moment (US-CG-08) */}
+                    <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
+                          Attach Photo / Moment
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            drawerToddler.photoConsent
+                              ? "bg-mint/20 text-green-800"
+                              : "bg-error-container text-error"
+                          }`}
+                        >
+                          {drawerToddler.photoConsent
+                            ? "Photo Consent Verified"
+                            : "Photo Consent Not On File"}
                         </span>
                       </div>
-                      <span className="text-on-surface-variant">
-                        Relationship: {selectedDrawerToddler.guardian.relation}
-                      </span>
-                    </div>
-                  )}
-                </div>
 
-                {/* Routine Card & Quick Micro-Logs */}
-                <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
-                      Today&apos;s Routine &amp; Quick Care Micro-Logs
-                    </span>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!activeDrawerToddler || !onLogCareEvent) return;
-                        setCareFeedback(null);
-                        const nextType = activeDrawerToddler.isSleeping ? "nap_end" : "nap_start";
-                        const res = await onLogCareEvent(
-                          activeDrawerToddler.studentId,
-                          nextType,
-                          { note: nextType === "nap_start" ? "Cot rest" : "Woke up refreshed" },
-                        );
-                        setCareFeedback(
-                          res.ok
-                            ? {
-                                type: "success",
-                                message: nextType === "nap_start" ? "Nap started." : "Nap ended.",
+                      {!drawerToddler.photoConsent ? (
+                        <p className="text-[11px] text-error font-semibold">
+                          Photo tagging is blocked for {drawerToddler.name} because photo consent is not on file.
+                        </p>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,video/mp4"
+                            aria-label="Select photo or video moment"
+                            disabled={isDrawerCareLocked}
+                            onChange={(e) => setMediaFile(e.target.files?.[0] ?? null)}
+                            className="text-xs text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <input
+                            type="text"
+                            disabled={isDrawerCareLocked}
+                            value={mediaCaption}
+                            onChange={(e) => setMediaCaption(e.target.value)}
+                            placeholder="Caption (e.g., Finger painting fun!)"
+                            className="px-3 py-1.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-xs text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <button
+                            type="button"
+                            disabled={!mediaFile || mediaUploading || isDrawerCareLocked}
+                            onClick={async () => {
+                              if (isDrawerCareLocked || !mediaFile || !onUploadCareMedia) return;
+                              setMediaUploading(true);
+                              setMediaFeedback(null);
+                              const res = await onUploadCareMedia(
+                                [drawerToddler.studentId],
+                                mediaFile,
+                                mediaCaption,
+                              );
+                              setMediaUploading(false);
+                              if (res.ok) {
+                                setMediaFile(null);
+                                setMediaCaption("");
+                                setMediaFeedback({
+                                  type: "success",
+                                  message: "Moment uploaded & EXIF stripped!",
+                                });
+                              } else {
+                                setMediaFeedback({
+                                  type: "error",
+                                  message: res.error || "Upload failed.",
+                                });
                               }
-                            : { type: "error", message: res.error || "Failed to log nap." },
-                        );
-                      }}
-                      className="px-3 py-1 rounded-full bg-cerulean/20 text-blue-800 hover:bg-cerulean/30 font-bold text-[11px] transition-colors"
-                    >
-                      {activeDrawerToddler?.isSleeping ? "End Nap" : "Start Nap"}
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="p-2.5 rounded-xl bg-surface-container-lowest">
-                      <span className="text-on-surface-variant block text-[10px]">
-                        Hydration
-                      </span>
-                      <span className="font-bold text-on-surface text-sm">
-                        {activeDrawerToddler?.hydration.currentMl ?? selectedDrawerToddler.hydration.currentMl} /{" "}
-                        {activeDrawerToddler?.hydration.targetMl ?? selectedDrawerToddler.hydration.targetMl} mL
-                      </span>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-surface-container-lowest">
-                      <span className="text-on-surface-variant block text-[10px]">
-                        Nap / Sleep
-                      </span>
-                      <span className="font-bold text-on-surface text-sm">
-                        {activeDrawerToddler?.napStatus || selectedDrawerToddler.napStatus || "Resting 1:00 PM"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Diaper / Potty Micro-Log */}
-                  <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/20 flex flex-col gap-2">
-                    <span className="text-[11px] font-bold text-on-surface">
-                      Log Diaper / Potty
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {["Wet", "BM", "Both", "Dry", "Potty"].map((dt) => (
-                        <button
-                          key={dt}
-                          type="button"
-                          onClick={() => setDiaperType(dt)}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${
-                            diaperType === dt
-                              ? "bg-terracotta text-on-primary"
-                              : "bg-surface-container text-on-surface-variant"
-                          }`}
-                        >
-                          {dt}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
-                        <input
-                          type="checkbox"
-                          checked={applyBarrierCream}
-                          disabled={!activeDrawerToddler?.topicalConsent}
-                          onChange={(e) => setApplyBarrierCream(e.target.checked)}
-                          aria-label="Barrier Cream / Sunscreen"
-                        />
-                        <span>
-                          Barrier Cream / Sunscreen
-                          {!activeDrawerToddler?.topicalConsent && " (No topical consent)"}
-                        </span>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!activeDrawerToddler || !onLogCareEvent) return;
-                          setCareFeedback(null);
-                          const res = await onLogCareEvent(
-                            activeDrawerToddler.studentId,
-                            "diaper",
-                            {
-                              type: diaperType,
-                              note: diaperNote,
-                              barrier_cream: applyBarrierCream,
-                            },
-                          );
-                          setCareFeedback(
-                            res.ok
-                              ? { type: "success", message: `Logged ${diaperType} diaper.` }
-                              : { type: "error", message: res.error || "Failed to log diaper." },
-                          );
-                        }}
-                        className="px-3 py-1 rounded-full bg-primary-container text-on-primary text-[11px] font-bold"
-                      >
-                        Log Diaper
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Meal / Bottle Micro-Log */}
-                  <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/20 flex flex-col gap-2">
-                    <span className="text-[11px] font-bold text-on-surface">
-                      Log Meal / Snack
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {["All (100%)", "Most", "Half", "Some", "None"].map((portion) => (
-                        <button
-                          key={portion}
-                          type="button"
-                          onClick={() => setMealPortion(portion)}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${
-                            mealPortion === portion
-                              ? "bg-mint/40 text-green-900"
-                              : "bg-surface-container text-on-surface-variant"
-                          }`}
-                        >
-                          {portion}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!activeDrawerToddler || !onLogCareEvent) return;
-                          setCareFeedback(null);
-                          const res = await onLogCareEvent(
-                            activeDrawerToddler.studentId,
-                            "meal",
-                            { meal_type: "Lunch / Snack", portion: mealPortion },
-                          );
-                          setCareFeedback(
-                            res.ok
-                              ? { type: "success", message: `Logged meal (${mealPortion}).` }
-                              : { type: "error", message: res.error || "Failed to log meal." },
-                          );
-                        }}
-                        className="px-3 py-1 rounded-full bg-primary-container text-on-primary text-[11px] font-bold"
-                      >
-                        Log Meal
-                      </button>
-                    </div>
-                  </div>
-
-                  {careFeedback && (
-                    <div
-                      className={`p-2 rounded-xl text-xs font-bold ${
-                        careFeedback.type === "error"
-                          ? "bg-error-container text-error"
-                          : "bg-mint/20 text-green-800"
-                      }`}
-                    >
-                      {careFeedback.message}
-                    </div>
-                  )}
-
-                  {/* Recent Care Events with 5-min Hide / Undo */}
-                  {(activeDrawerToddler?.recentEvents ?? []).length > 0 && (
-                    <div className="flex flex-col gap-1.5 pt-1">
-                      <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                        Recent Care Events (5-min Undo)
-                      </span>
-                      {(activeDrawerToddler?.recentEvents ?? [])
-                        .slice(-4)
-                        .reverse()
-                        .map((ev) => (
-                          <div
-                            key={ev.eventId}
-                            className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-surface-container-lowest text-[11px]"
+                            }}
+                            className="px-3.5 py-1.5 rounded-full bg-terracotta text-on-primary text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed self-start"
                           >
-                            <span className="font-semibold text-on-surface truncate">
-                              {ev.eventType.replace("_", " ")} •{" "}
-                              {new Date(ev.occurredAt).toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
-                            </span>
+                            {mediaUploading ? "Uploading..." : "Upload Moment"}
+                          </button>
+                        </div>
+                      )}
+
+                      {mediaFeedback && (
+                        <div
+                          className={`p-2 rounded-xl text-xs font-bold ${
+                            mediaFeedback.type === "error"
+                              ? "bg-error-container text-error"
+                              : "bg-mint/20 text-green-800"
+                          }`}
+                        >
+                          {mediaFeedback.message}
+                        </div>
+                      )}
+
+                      {(data.uploadedMedia ?? [])
+                        .filter((m) =>
+                          m.studentIds.includes(drawerToddler.studentId),
+                        )
+                        .map((m) => (
+                          <div
+                            key={m.mediaId}
+                            className="p-2 rounded-xl bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-between gap-2"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <img
+                                src={m.signedUrl}
+                                alt={m.caption || "Classroom moment"}
+                                className="w-10 h-10 rounded-lg object-cover shrink-0"
+                              />
+                              <span className="text-xs font-medium text-on-surface truncate">
+                                {m.caption || "Classroom Moment"}
+                              </span>
+                            </div>
                             <button
                               type="button"
-                              onClick={async () => {
-                                if (!onUndoCareEvent) return;
-                                const res = await onUndoCareEvent(ev.eventId);
-                                setCareFeedback(
-                                  res.ok
-                                    ? { type: "success", message: "Event hidden / undone." }
-                                    : { type: "error", message: res.error || "Undo failed." },
-                                );
+                              disabled={isDrawerCareLocked}
+                              onClick={() => {
+                                if (isDrawerCareLocked) return;
+                                onDeleteCareMedia?.(m.mediaId);
                               }}
-                              className="px-2 py-0.5 rounded-full bg-surface-container hover:bg-error-container hover:text-error text-on-surface-variant font-bold text-[10px] shrink-0"
+                              className="px-2.5 py-1 rounded-full bg-error-container text-error text-[10px] font-bold shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Hide / Undo
+                              Delete
                             </button>
                           </div>
                         ))}
                     </div>
-                  )}
-                </div>
 
-                {/* Attach Photo / Moment (US-CG-08) */}
-                <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
-                      Attach Photo / Moment
+                    {/* Health & Dietary */}
+                    <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-2">
+                      <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
+                        Health &amp; Dietary Protocol
+                      </span>
+                      {drawerToddler.healthAlert ? (
+                        <div className="p-3 rounded-xl bg-pastel-peach text-terracotta font-bold text-xs flex items-center gap-2">
+                          <ShieldAlert className="w-4 h-4" />
+                          <span>{drawerToddler.healthAlert.badge}</span>
+                        </div>
+                      ) : (
+                        <span className="text-on-surface-variant">
+                          No acute allergies or medication restrictions registered.
+                        </span>
+                      )}
+                    </div>
+                    </>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-6 py-4 bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between gap-2 shrink-0">
+                    <span className="text-xs text-on-surface-variant font-medium flex items-center gap-1.5">
+                      {drawerToddler.checkOutAt ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-pastel-mint-deep shrink-0" />
+                          <span className="text-pastel-mint-deep font-bold">
+                            Checked out at {formatTimeLabel(drawerToddler.checkOutAt)} • Cloud Ledger Saved
+                          </span>
+                        </>
+                      ) : drawerToddler.checkInAt ? (
+                        `Checked in at ${formatTimeLabel(drawerToddler.checkInAt)}`
+                      ) : (
+                        "Auto-saved to cloud ledger"
+                      )}
                     </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        activeDrawerToddler?.photoConsent
-                          ? "bg-mint/20 text-green-800"
-                          : "bg-error-container text-error"
-                      }`}
+                    <div className="flex items-center gap-2">
+                      {capabilities.canMarkAttendance &&
+                        !isHistoricalReadOnly &&
+                        !drawerToddler.checkOutAt &&
+                        (drawerToddler.status === "Present" ||
+                          drawerToddler.status === "Late") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCheckoutError(null);
+                              setCheckoutConfirmToddler(drawerToddler);
+                            }}
+                            className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all"
+                          >
+                            Check-Out
+                          </button>
+                        )}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDrawerToddler(null)}
+                        className="px-5 py-2 rounded-full bg-terracotta text-on-primary text-xs font-bold hover:opacity-90 transition-all"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })(),
+          document.body,
+        )}
+
+      {/* DEF-031: Portaled Check-Out Confirmation Dialog (z-[80], backdrop z-[75]) */}
+      {isClient &&
+        checkoutConfirmToddler &&
+        createPortal(
+          (() => {
+            const verifiedGuardian =
+              data.pickupVerifiedByStudent?.[checkoutConfirmToddler.studentId];
+            return (
+              <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+                <div
+                  className="fixed inset-0 z-[75] bg-charcoal/50 backdrop-blur-xs"
+                  onClick={() => {
+                    if (!checkoutSubmitting) setCheckoutConfirmToddler(null);
+                  }}
+                  aria-hidden="true"
+                />
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="checkout-confirm-title"
+                  className="relative z-[80] w-full max-w-md rounded-3xl bg-surface-container-lowest border border-outline-variant/40 shadow-2xl p-6 space-y-4 text-xs"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3
+                        id="checkout-confirm-title"
+                        className="text-base font-bold text-on-surface"
+                      >
+                        Confirm Child Departure
+                      </h3>
+                      <p className="text-on-surface-variant mt-0.5">
+                        {checkoutConfirmToddler.name} • {checkoutConfirmToddler.cubbyLabel}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={checkoutSubmitting}
+                      onClick={() => setCheckoutConfirmToddler(null)}
+                      aria-label="Close confirmation"
+                      className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant"
                     >
-                      {activeDrawerToddler?.photoConsent
-                        ? "Photo Consent Verified"
-                        : "Photo Consent Not On File"}
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
+                      Authorized Pickup Guardian
+                    </span>
+                    <span className="text-xs font-bold text-on-surface block">
+                      {verifiedGuardian
+                        ? `${verifiedGuardian.contactName} (Verified)`
+                        : `${checkoutConfirmToddler.guardian.name} (${checkoutConfirmToddler.guardian.relation})`}
                     </span>
                   </div>
 
-                  {!activeDrawerToddler?.photoConsent ? (
-                    <p className="text-[11px] text-error font-semibold">
-                      Photo tagging is blocked for {activeDrawerToddler?.name} because photo consent is not on file.
-                    </p>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,video/mp4"
-                        aria-label="Select photo or video moment"
-                        onChange={(e) => setMediaFile(e.target.files?.[0] ?? null)}
-                        className="text-xs text-on-surface"
-                      />
-                      <input
-                        type="text"
-                        value={mediaCaption}
-                        onChange={(e) => setMediaCaption(e.target.value)}
-                        placeholder="Caption (e.g., Finger painting fun!)"
-                        className="px-3 py-1.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-xs text-on-surface"
-                      />
-                      <button
-                        type="button"
-                        disabled={!mediaFile || mediaUploading}
-                        onClick={async () => {
-                          if (!activeDrawerToddler || !mediaFile || !onUploadCareMedia) return;
-                          setMediaUploading(true);
-                          setMediaFeedback(null);
-                          const res = await onUploadCareMedia(
-                            [activeDrawerToddler.studentId],
-                            mediaFile,
-                            mediaCaption,
-                          );
-                          setMediaUploading(false);
-                          if (res.ok) {
-                            setMediaFile(null);
-                            setMediaCaption("");
-                            setMediaFeedback({
-                              type: "success",
-                              message: "Moment uploaded & EXIF stripped!",
-                            });
-                          } else {
-                            setMediaFeedback({
-                              type: "error",
-                              message: res.error || "Upload failed.",
-                            });
-                          }
-                        }}
-                        className="px-3.5 py-1.5 rounded-full bg-terracotta text-on-primary text-xs font-bold disabled:opacity-50 self-start"
-                      >
-                        {mediaUploading ? "Uploading..." : "Upload Moment"}
-                      </button>
-                    </div>
-                  )}
-
-                  {mediaFeedback && (
-                    <div
-                      className={`p-2 rounded-xl text-xs font-bold ${
-                        mediaFeedback.type === "error"
-                          ? "bg-error-container text-error"
-                          : "bg-mint/20 text-green-800"
-                      }`}
-                    >
-                      {mediaFeedback.message}
-                    </div>
-                  )}
-
-                  {(data.uploadedMedia ?? [])
-                    .filter((m) =>
-                      m.studentIds.includes(activeDrawerToddler?.studentId ?? ""),
-                    )
-                    .map((m) => (
-                      <div
-                        key={m.mediaId}
-                        className="p-2 rounded-xl bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-between gap-2"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img
-                            src={m.signedUrl}
-                            alt={m.caption || "Classroom moment"}
-                            className="w-10 h-10 rounded-lg object-cover shrink-0"
-                          />
-                          <span className="text-xs font-medium text-on-surface truncate">
-                            {m.caption || "Classroom Moment"}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteCareMedia?.(m.mediaId)}
-                          className="px-2.5 py-1 rounded-full bg-error-container text-error text-[10px] font-bold shrink-0"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    ))}
-                </div>
-
-                {/* Health & Dietary */}
-                <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-2">
-                  <span className="font-bold text-on-surface uppercase tracking-wider text-[10px]">
-                    Health &amp; Dietary Protocol
-                  </span>
-                  {selectedDrawerToddler.healthAlert ? (
-                    <div className="p-3 rounded-xl bg-pastel-peach text-terracotta font-bold text-xs flex items-center gap-2">
-                      <ShieldAlert className="w-4 h-4" />
-                      <span>{selectedDrawerToddler.healthAlert.badge}</span>
-                    </div>
-                  ) : (
-                    <span className="text-on-surface-variant">
-                      No acute allergies or medication restrictions registered.
+                  <div className="p-3 rounded-2xl bg-pastel-peach/35 border border-terracotta/30 text-on-surface font-medium flex items-start gap-2">
+                    <ShieldAlert className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
+                    <span>
+                      Confirm departure for {checkoutConfirmToddler.name}? This will record departure in the school cloud ledger and lock daily care micro-logging.
                     </span>
+                  </div>
+
+                  {checkoutError && (
+                    <div className="p-2.5 rounded-xl bg-error-container text-error font-bold">
+                      {checkoutError}
+                    </div>
                   )}
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={checkoutSubmitting}
+                      onClick={() => setCheckoutConfirmToddler(null)}
+                      className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-bold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={checkoutSubmitting}
+                      onClick={async () => {
+                        const target = checkoutConfirmToddler;
+                        setCheckoutSubmitting(true);
+                        setCheckoutError(null);
+                        const res = await onCheckOut?.(
+                          target.studentId,
+                          target.name,
+                        );
+                        setCheckoutSubmitting(false);
+                        if (res && !res.ok) {
+                          setCheckoutError(
+                            res.error || "Unable to complete check-out.",
+                          );
+                          return;
+                        }
+                        const tsIso = res?.checkOutAt || new Date().toISOString();
+                        const timeLabel = formatTimeLabel(tsIso) || "Just now";
+                        setSelectedDrawerToddler((prev) =>
+                          prev && prev.studentId === target.studentId
+                            ? { ...prev, checkOutAt: tsIso }
+                            : prev,
+                        );
+                        setCheckoutConfirmToddler(null);
+                        setCheckoutToast(
+                          `Successfully checked out ${target.name} at ${timeLabel}`,
+                        );
+                        setTimeout(() => {
+                          setCheckoutToast((cur) =>
+                            cur?.includes(target.name) ? null : cur,
+                          );
+                        }, 6000);
+                      }}
+                      className="px-4 py-2 rounded-full bg-terracotta text-on-primary font-bold hover:opacity-90 disabled:opacity-50"
+                    >
+                      {checkoutSubmitting ? "Recording..." : "Confirm Departure"}
+                    </button>
+                  </div>
                 </div>
-                </>
-                )}
+              </div>
+            );
+          })(),
+          document.body,
+        )}
+
+      {/* DEF-033: Portaled Supervisor PIN Unlock Dialog (z-[80], backdrop z-[75]) */}
+      {isClient &&
+        supervisorUnlockToddler &&
+        createPortal(
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 z-[75] bg-charcoal/50 backdrop-blur-xs"
+              onClick={() => {
+                if (!supervisorUnlockSubmitting) setSupervisorUnlockToddler(null);
+              }}
+              aria-hidden="true"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="supervisor-unlock-title"
+              className="relative z-[80] w-full max-w-md rounded-3xl bg-surface-container-lowest border border-outline-variant/40 shadow-2xl p-6 space-y-4 text-xs"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-pastel-peach text-terracotta flex items-center justify-center">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3
+                      id="supervisor-unlock-title"
+                      className="text-base font-bold text-on-surface"
+                    >
+                      Supervisor Post-Checkout Override
+                    </h3>
+                    <p className="text-on-surface-variant">
+                      {supervisorUnlockToddler.name} • Departed{" "}
+                      {formatTimeLabel(supervisorUnlockToddler.checkOutAt)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={supervisorUnlockSubmitting}
+                  onClick={() => setSupervisorUnlockToddler(null)}
+                  className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Footer */}
-              <div className="px-6 py-4 bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between gap-2 shrink-0">
-                <span className="text-xs text-on-surface-variant">
-                  {selectedDrawerToddler.checkOutAt
-                    ? `Checked out at ${new Date(
-                        selectedDrawerToddler.checkOutAt,
-                      ).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}`
-                    : selectedDrawerToddler.checkInAt
-                      ? `Checked in at ${new Date(
-                          selectedDrawerToddler.checkInAt,
-                        ).toLocaleTimeString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}`
-                      : "Auto-saved to cloud ledger"}
-                </span>
-                <div className="flex items-center gap-2">
-                  {capabilities.canMarkAttendance &&
-                    !isHistoricalReadOnly &&
-                    !selectedDrawerToddler.checkOutAt &&
-                    (selectedDrawerToddler.status === "Present" ||
-                      selectedDrawerToddler.status === "Late") && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onCheckOut?.(
-                            selectedDrawerToddler.studentId,
-                            selectedDrawerToddler.name,
-                          )
-                        }
-                        className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all"
-                      >
-                        Check-Out
-                      </button>
-                    )}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDrawerToddler(null)}
-                    className="px-5 py-2 rounded-full bg-terracotta text-on-primary text-xs font-bold hover:opacity-90 transition-all"
+              <div className="space-y-3">
+                <div>
+                  <label
+                    htmlFor="supervisor-pin-input"
+                    className="block font-bold text-on-surface mb-1"
                   >
-                    Done
-                  </button>
+                    Supervisor PIN
+                  </label>
+                  <input
+                    id="supervisor-pin-input"
+                    aria-label="Supervisor PIN"
+                    type="password"
+                    inputMode="numeric"
+                    value={supervisorPinInput}
+                    onChange={(e) => setSupervisorPinInput(e.target.value)}
+                    placeholder="Enter Supervisor override PIN"
+                    className="w-full px-3.5 py-2 rounded-xl bg-surface-container-low border border-outline-variant/40 text-xs text-on-surface"
+                  />
                 </div>
+                <div>
+                  <label
+                    htmlFor="supervisor-override-reason"
+                    className="block font-bold text-on-surface mb-1"
+                  >
+                    Override Justification Reason
+                  </label>
+                  <textarea
+                    id="supervisor-override-reason"
+                    aria-label="Override Reason"
+                    rows={2}
+                    value={supervisorReasonInput}
+                    onChange={(e) => setSupervisorReasonInput(e.target.value)}
+                    placeholder="Explain why post-checkout daily care records need updating..."
+                    className="w-full px-3.5 py-2 rounded-xl bg-surface-container-low border border-outline-variant/40 text-xs text-on-surface resize-none"
+                  />
+                </div>
+              </div>
+
+              {supervisorUnlockError && (
+                <div className="p-2.5 rounded-xl bg-error-container text-error font-bold">
+                  {supervisorUnlockError}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={supervisorUnlockSubmitting}
+                  onClick={() => setSupervisorUnlockToddler(null)}
+                  className="px-4 py-2 rounded-full bg-surface-container text-on-surface font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={supervisorUnlockSubmitting}
+                  onClick={async () => {
+                    const target = supervisorUnlockToddler;
+                    const trimmedPin = supervisorPinInput.trim();
+                    const trimmedReason = supervisorReasonInput.trim();
+                    if (!trimmedPin) {
+                      setSupervisorUnlockError("Supervisor PIN is required.");
+                      return;
+                    }
+                    if (trimmedReason.length < 3) {
+                      setSupervisorUnlockError(
+                        "Please enter a brief justification reason (min 3 characters).",
+                      );
+                      return;
+                    }
+                    if (!onVerifySupervisorPin) {
+                      setSupervisorUnlockError(
+                        "Supervisor verification handler is unavailable.",
+                      );
+                      return;
+                    }
+                    setSupervisorUnlockSubmitting(true);
+                    setSupervisorUnlockError(null);
+                    const res = await onVerifySupervisorPin(
+                      target.studentId,
+                      trimmedPin,
+                      trimmedReason,
+                    );
+                    setSupervisorUnlockSubmitting(false);
+                    if (res.ok) {
+                      setUnlockedCheckoutByStudent((prev) => ({
+                        ...prev,
+                        [target.studentId]: {
+                          supervisorPin: trimmedPin,
+                          overrideReason: trimmedReason,
+                        },
+                      }));
+                      setSupervisorUnlockToddler(null);
+                      setCareFeedback({
+                        type: "success",
+                        message: `Supervisor override unlocked for ${target.name}. Updates will be audited.`,
+                      });
+                    } else {
+                      setSupervisorUnlockError(
+                        res.error || "Invalid Supervisor PIN.",
+                      );
+                    }
+                  }}
+                  className="px-4 py-2 rounded-full bg-primary-container text-on-primary font-bold disabled:opacity-50"
+                >
+                  {supervisorUnlockSubmitting
+                    ? "Verifying..."
+                    : "Unlock Care Editing"}
+                </button>
               </div>
             </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* DEF-031: Portaled Departure Toast Notification (z-[80]) */}
+      {isClient &&
+        checkoutToast &&
+        createPortal(
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-6 right-6 z-[80] max-w-sm px-4 py-3 rounded-2xl bg-pastel-mint text-on-tertiary-fixed border border-pastel-mint-deep/30 shadow-xl flex items-center gap-2.5 text-xs font-bold"
+          >
+            <CheckCircle2 className="w-4 h-4 text-pastel-mint-deep shrink-0" />
+            <span>{checkoutToast}</span>
+            <button
+              type="button"
+              onClick={() => setCheckoutToast(null)}
+              aria-label="Dismiss notification"
+              className="ml-1 w-6 h-6 rounded-full hover:bg-surface-container-lowest/50 flex items-center justify-center shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>,
           document.body,
         )}

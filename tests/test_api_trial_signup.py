@@ -78,3 +78,31 @@ class TestTrialSignupAPI:
         assert response.status_code == 409
         assert response.json()["errors"][0]["code"] == "ACCOUNT_EXISTS"
         assert Tenant.objects.count() == 0
+
+    def test_trial_signup_allows_marketing_app_cors_preflight_and_rejects_invalid_role(
+        self,
+    ):
+        preflight = self.client.options(
+            "/api/v1/auth/trial-signup",
+            HTTP_ORIGIN="http://localhost:5173",
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS="Content-Type",
+        )
+        assert preflight.status_code == 200
+        assert preflight["Access-Control-Allow-Origin"] == "http://localhost:5173"
+
+        invalid_role = self.client.post(
+            "/api/v1/auth/trial-signup",
+            data={
+                "daycare_name": "Sunshine Daycare",
+                "email": "parent@sunshine.example",
+                "role": "Parent",
+                "password": "Vx!7qT2#pL9z",
+                "confirm_password": "Vx!7qT2#pL9z",
+            },
+            content_type="application/json",
+            HTTP_ORIGIN="http://localhost:5173",
+        )
+        assert invalid_role.status_code == 422
+        assert invalid_role["Access-Control-Allow-Origin"] == "http://localhost:5173"
+        assert Tenant.objects.count() == 0

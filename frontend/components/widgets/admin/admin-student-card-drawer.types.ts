@@ -59,6 +59,8 @@ export interface StudentCardProfileData {
       dosage?: string;
       scheduled_time?: string;
       consent?: string;
+      start_date?: string | null;
+      end_date?: string | null;
     }>;
     doctor_name: string;
     doctor_phone: string;
@@ -263,6 +265,8 @@ export interface AdminStudentCardDrawerProps {
         dosage: string;
         scheduled_time?: string;
         consent?: string;
+        start_date?: string | null;
+        end_date?: string | null;
       }>;
       doctor_name: string;
       doctor_phone: string;

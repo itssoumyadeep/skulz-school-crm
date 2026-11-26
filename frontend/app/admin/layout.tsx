@@ -34,7 +34,11 @@ import {
   setCachedViewMode,
   usePortalViewMode,
 } from "@/components/pc/view-mode-preference";
-import { fetchMyProfile, updateMyProfilePicture } from "@/app/lib/api";
+import {
+  fetchMyProfile,
+  updateMyProfilePicture,
+  type TrialStatusSummary,
+} from "@/app/lib/api";
 import { getClientSession, type SessionClaims } from "@/app/lib/session";
 
 const PRIMARY_DESKTOP_NAV_ITEMS = [
@@ -68,6 +72,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const [trialInfo, setTrialInfo] = useState<TrialStatusSummary | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>(() =>
     getCachedProfilePicture(userKey, "admin"),
   );
@@ -108,6 +113,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         if (!cancelled) {
           const remoteUrl = res.data?.avatar_url || null;
           setAvatarUrl(setCachedProfilePicture(userKey, "admin", remoteUrl));
+          if (res.data?.trial) {
+            setTrialInfo(res.data.trial);
+          }
         }
       } catch {
         // Fallback to cached SVG avatar
@@ -345,6 +353,28 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content Stage (z-10) */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 pb-12 pt-22 sm:px-6">
+        {trialInfo?.is_trial && (
+          <div
+            data-testid="admin-trial-banner"
+            className={`mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-2.5 text-xs font-bold ${
+              trialInfo.is_expired
+                ? "border-error bg-error-container text-on-error-container"
+                : "border-pastel-butter bg-pastel-butter/50 text-crayon-charcoal"
+            }`}
+          >
+            <span>
+              {trialInfo.is_expired
+                ? `Your ${trialInfo.trial_duration_days ?? 14}-day free trial has expired. Operational changes are paused until subscription activation.`
+                : `${trialInfo.days_remaining ?? trialInfo.trial_duration_days ?? 14} day(s) remaining in your ${trialInfo.trial_duration_days ?? 14}-day free trial.`}
+            </span>
+            <Link
+              href="/admin/billing"
+              className="underline font-extrabold hover:opacity-80"
+            >
+              {trialInfo.is_expired ? "Activate Subscription" : "Manage Plan"}
+            </Link>
+          </div>
+        )}
         {children}
       </main>
 

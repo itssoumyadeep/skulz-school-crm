@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
@@ -214,6 +215,7 @@ class SchoolSetupImportBO:
         with transaction.atomic():
             for row_number, row in enumerate(records, start=1):
                 try:
+                    cls._validate_csv_formula_safety(row)
                     results.append(
                         cls._import_record(tenant, dataset, row, actor_id, actor_role)
                     )
@@ -225,6 +227,25 @@ class SchoolSetupImportBO:
             'imported_count': len(results),
             'records': results,
         }
+
+    SAFE_PHONE_OR_SIGNED_NUM_RE = re.compile(r"^[+-]?(?:\d[\d\s().-]*)$")
+
+    @classmethod
+    def _validate_csv_formula_safety(cls, value: Any, *, field_path: str = "row") -> None:
+        if isinstance(value, dict):
+            for k, v in value.items():
+                cls._validate_csv_formula_safety(v, field_path=str(k))
+            return
+        if isinstance(value, list):
+            for idx, item in enumerate(value):
+                cls._validate_csv_formula_safety(item, field_path=f"{field_path}[{idx}]")
+            return
+        if isinstance(value, str) and value:
+            first_char = value[0]
+            if first_char in ("=", "@", "\t", "\r"):
+                raise ValueError(f"Unsafe spreadsheet formula prefix rejected in field '{field_path}'.")
+            if first_char in ("+", "-") and not cls.SAFE_PHONE_OR_SIGNED_NUM_RE.fullmatch(value.strip()):
+                raise ValueError(f"Unsafe spreadsheet formula prefix rejected in field '{field_path}'.")
 
     @staticmethod
     def _date(value: Any) -> Optional[date]:

@@ -52,7 +52,7 @@ function normalizeHealthProfile(
     medications: Array.isArray(raw.medications)
       ? (raw.medications as Array<Record<string, unknown>>).map((m) =>
           typeof m === "string"
-            ? { name: m, dosage: "" }
+            ? { name: m, dosage: "", start_date: null, end_date: null }
             : {
                 name: String(m.name ?? ""),
                 dosage: String(m.dosage ?? ""),
@@ -60,6 +60,8 @@ function normalizeHealthProfile(
                   ? String(m.scheduled_time)
                   : "",
                 consent: m.consent ? String(m.consent) : "",
+                start_date: m.start_date ? String(m.start_date) : null,
+                end_date: m.end_date ? String(m.end_date) : null,
               },
         )
       : [],
@@ -188,6 +190,8 @@ export default function AdminHealthMedicationsPage() {
         dosage: string;
         scheduled_time?: string;
         consent?: string;
+        start_date?: string | null;
+        end_date?: string | null;
       }>;
       doctor_name: string;
       doctor_phone: string;

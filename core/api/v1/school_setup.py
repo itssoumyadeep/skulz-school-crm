@@ -14,12 +14,14 @@ from core.business_objects.school_setup import (
     SchoolSetupImportBO,
     SchoolSetupImportError,
 )
+from core.business_objects.trial import TrialSignupBO, TrialSignupError
 from core.models import Tenant
 from core.schemas.base import build_error, build_response
 from core.schemas.school_setup import (
     SchoolSetupImportSchema,
     TenantConfigUpdateInput,
     TenantDeactivateInput,
+    TrialWindowUpdateInput,
 )
 
 router = Router(tags=["School Setup"])
@@ -41,6 +43,7 @@ def get_school_setup_config(request):
                     "type": tenant.type,
                     "subscription_tier": tenant.subscription_tier,
                     "config": tenant.config or {},
+                    "trial": TrialSignupBO.evaluate_trial_status(tenant),
                 },
                 "datasets": DATASET_TEMPLATES,
             },
@@ -81,6 +84,34 @@ def deactivate_school_tenant(request, payload: TenantDeactivateInput):
     )
     return JsonResponse(
         build_response(data=data, tenant_id=request.tenant_id, role="Owner"),
+        status=200,
+    )
+
+
+@router.patch("/school-setup/trial", auth=JWTAuthBearer())
+@require_roles("Owner")
+def update_school_trial_window(request, payload: TrialWindowUpdateInput):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, "user_id", None) else None
+    try:
+        trial_data = TrialSignupBO.update_trial_window(
+            tenant=tenant,
+            extend_days=payload.extend_days,
+            convert_to_paid=payload.convert_to_paid,
+            reason=payload.reason,
+            actor_id=actor_id,
+        )
+    except TrialSignupError as exc:
+        return JsonResponse(
+            build_error(
+                errors=[{"code": exc.code, "field": "trial", "message": exc.message}],
+                tenant_id=request.tenant_id,
+                role="Owner",
+            ),
+            status=exc.status,
+        )
+    return JsonResponse(
+        build_response(data={"trial": trial_data}, tenant_id=request.tenant_id, role="Owner"),
         status=200,
     )
 

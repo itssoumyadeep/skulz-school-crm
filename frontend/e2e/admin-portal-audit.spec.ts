@@ -748,4 +748,333 @@ test.describe("US-P2-01A — Admin Operational Console E2E Audit", () => {
 
     expect(pageErrors).toEqual([]);
   });
+
+  test("US-AD-12: Scheduled Dose Start/End Date Tenure validation, Student Card persistence & Caregiver daily reminders", async ({
+    page,
+  }) => {
+    test.setTimeout(90000);
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    const adminToken = await loginAs(page, "admin1_demo-school");
+    const adminHeaders = { Authorization: `Bearer ${adminToken}` };
+    const mayaId = "00000000-0000-0000-0000-000000007101";
+
+    const origHealthRes = await page.request.get(
+      `${API_BASE}/students/${mayaId}/health-record`,
+      { headers: adminHeaders },
+    );
+    expect(origHealthRes.ok()).toBeTruthy();
+    const origHealthJson = (await origHealthRes.json()) as {
+      data?: Record<string, unknown>;
+    };
+    const origHealth = origHealthJson.data ?? {};
+
+    const toIso = (d: Date) => {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    };
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const plusTwo = new Date(today);
+    plusTwo.setDate(today.getDate() + 2);
+    const plusThree = new Date(today);
+    plusThree.setDate(today.getDate() + 3);
+    const prevTwo = new Date(today);
+    prevTwo.setDate(today.getDate() - 2);
+
+    const pickCalendarDate = async (triggerName: string, target: Date) => {
+      await page.getByRole("button", { name: triggerName }).click();
+      const calendar = page.locator('[data-slot="calendar"]').last();
+      await expect(calendar).toBeVisible();
+      const monthDiff =
+        (target.getFullYear() - today.getFullYear()) * 12 +
+        (target.getMonth() - today.getMonth());
+      for (let i = 0; i < Math.abs(monthDiff); i++) {
+        await calendar
+          .locator(monthDiff > 0 ? "button.rdp-button_next" : "button.rdp-button_previous")
+          .click();
+      }
+      await calendar
+        .locator("button[data-day]")
+        .filter({ hasText: new RegExp(`^${target.getDate()}$`) })
+        .first()
+        .click();
+    };
+
+    const origMedsRaw = Array.isArray(origHealth.medications)
+      ? (origHealth.medications as Array<Record<string, unknown>>)
+      : [];
+    const testMedNames = new Set([
+      "Vitamin D Drops",
+      "Expired Syrup",
+      "Future Drops",
+      "Invalid Tenure Med",
+    ]);
+    const cleanOrigMeds = origMedsRaw.filter(
+      (m) => typeof m === "object" && m !== null && !testMedNames.has(String(m.name ?? "")),
+    );
+
+    const cleanupVitaminDLogs = async () => {
+      const logsRes = await page.request.get(
+        `${API_BASE}/health/medication-logs`,
+        { headers: adminHeaders },
+      );
+      if (logsRes.ok()) {
+        const logsBody = (await logsRes.json()) as {
+          data?: Array<{ med_log_id: string; student_id: string; medicine_name: string }>;
+        };
+        for (const row of logsBody.data ?? []) {
+          if (row.student_id === mayaId && row.medicine_name === "Vitamin D Drops") {
+            await page.request.delete(
+              `${API_BASE}/health/medication-log/${row.med_log_id}`,
+              { headers: adminHeaders },
+            );
+          }
+        }
+      }
+    };
+
+    const restoreOrigHealth = async () => {
+      await page.request.put(`${API_BASE}/students/${mayaId}/health-record`, {
+        headers: adminHeaders,
+        data: {
+          allergies: Array.isArray(origHealth.allergies) ? origHealth.allergies : [],
+          conditions: Array.isArray(origHealth.conditions) ? origHealth.conditions : [],
+          medications: cleanOrigMeds,
+          doctor_name: String(origHealth.doctor_name ?? ""),
+          doctor_phone: String(origHealth.doctor_phone ?? ""),
+          consent_flag: origHealth.consent_flag ?? true,
+          photo_consent: origHealth.photo_consent ?? true,
+          topical_consent: origHealth.topical_consent ?? true,
+        },
+      });
+    };
+
+    await cleanupVitaminDLogs();
+    if (cleanOrigMeds.length !== origMedsRaw.length) {
+      await restoreOrigHealth();
+    }
+
+    try {
+      await page.goto(`${APP_BASE}/admin/health-medications`);
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("button", { name: /^Maya Lin/i }).first().click();
+      await expect(
+        page.getByRole("heading", { name: /Maya Lin — Health & Consents/i }),
+      ).toBeVisible();
+
+      // Ensure consent is checked for positive flow
+      const consentBox = page.getByLabel(
+        /Parent Consent: Share Health Info with Care Provider/i,
+      );
+      if (!(await consentBox.isChecked())) {
+        await consentBox.check();
+      }
+
+      // 1. Negative: end_date < start_date triggers HTTP 422 RULE_VIOLATION inline alert
+      await page.getByLabel("Medication Name").fill("Invalid Tenure Med");
+      await page.getByLabel("Medication Dosage").fill("2mL");
+      await page.getByLabel("Medication Scheduled Time").fill("09:00 AM");
+      await pickCalendarDate("Medication Start Date", plusTwo);
+      await pickCalendarDate("Medication End Date", today);
+      await expect(
+        page.getByText(/cannot be earlier than start date/i),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Add Med" }).click();
+
+      const invalidSavePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes(`/api/v1/students/${mayaId}/health-record`) &&
+          res.request().method() === "PUT" &&
+          res.status() === 422,
+      );
+      await page.getByRole("button", { name: "Save Health & Consents" }).click();
+      await invalidSavePromise;
+      await expect(page.getByRole("alert").first()).toContainText(
+        /cannot be earlier than start_date/i,
+      );
+
+      // Remove invalid med and add valid active tenure Vitamin D Drops
+      await page.getByRole("button", { name: "Remove Invalid Tenure Med" }).click();
+      await page.getByLabel("Medication Name").fill("Vitamin D Drops");
+      await page.getByLabel("Medication Dosage").fill("2 drops");
+      await page.getByLabel("Medication Scheduled Time").fill("10:00 AM");
+      await pickCalendarDate("Medication Start Date", today);
+      await pickCalendarDate("Medication End Date", plusThree);
+      await page.getByRole("button", { name: "Add Med" }).click();
+
+      const validSavePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes(`/api/v1/students/${mayaId}/health-record`) &&
+          res.request().method() === "PUT" &&
+          res.status() === 200,
+      );
+      await page.getByRole("button", { name: "Save Health & Consents" }).click();
+      await validSavePromise;
+
+      const startIso = toIso(today);
+      const endIso = toIso(plusThree);
+      await expect(
+        page.getByText(`${startIso} – ${endIso}`).first(),
+      ).toBeVisible();
+
+      // Reload & confirm persistence on /admin/health-medications
+      await page.reload();
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("button", { name: /^Maya Lin/i }).first().click();
+      await expect(
+        page.getByText(`${startIso} – ${endIso}`).first(),
+      ).toBeVisible();
+
+      // 2. Verify persistence and DatePicker z-[80] popup inside 360 Student Card (/admin/students)
+      await page.goto(`${APP_BASE}/admin/students`);
+      await page.waitForLoadState("networkidle");
+      const mayaStudentRow = page.locator("tr", { hasText: "Maya Lin" }).first();
+      await mayaStudentRow.click();
+
+      const cardDialog = page.getByRole("dialog", {
+        name: /Student Card: Maya Lin/i,
+      });
+      await expect(cardDialog).toBeVisible({ timeout: 15000 });
+      await cardDialog.getByRole("button", { name: "Health & Medications" }).click();
+      await expect(cardDialog.getByText("Vitamin D Drops").first()).toBeVisible();
+      await expect(
+        cardDialog.getByText(`${startIso} – ${endIso}`).first(),
+      ).toBeVisible();
+
+      await cardDialog
+        .getByRole("button", { name: "Card Prescription Start Date" })
+        .click();
+      await expect(page.locator('[data-slot="calendar"]').last()).toBeVisible();
+      await page.keyboard.press("Escape");
+      await cardDialog.getByRole("button", { name: "Close Student Card" }).click();
+
+      // 3. Add Expired & Future meds to verify Caregiver filtering + daily reminder completion
+      const curRes = await page.request.get(
+        `${API_BASE}/students/${mayaId}/health-record`,
+        { headers: adminHeaders },
+      );
+      const curHealth = ((await curRes.json()) as { data: { medications?: unknown[] } }).data;
+      const curMeds = Array.isArray(curHealth?.medications) ? curHealth.medications : [];
+      const withBoundaryRes = await page.request.put(
+        `${API_BASE}/students/${mayaId}/health-record`,
+        {
+          headers: adminHeaders,
+          data: {
+            consent_flag: true,
+            medications: [
+              ...curMeds,
+              {
+                name: "Expired Syrup",
+                dosage: "5mL",
+                scheduled_time: "08:00 AM",
+                start_date: toIso(prevTwo),
+                end_date: toIso(yesterday),
+              },
+              {
+                name: "Future Drops",
+                dosage: "3 drops",
+                scheduled_time: "02:00 PM",
+                start_date: toIso(tomorrow),
+                end_date: toIso(plusThree),
+              },
+            ],
+          },
+        },
+      );
+      expect(withBoundaryRes.ok()).toBeTruthy();
+
+      const cgToken = await loginAs(page, "caregiver1_demo-school");
+      const medsFetchPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/health/classroom-medications") &&
+          res.status() === 200,
+      );
+      await page.goto(`${APP_BASE}/caregiver`);
+      await medsFetchPromise;
+      await page.waitForLoadState("networkidle");
+
+      await expect(page.getByText("Vitamin D Drops").first()).toBeVisible();
+      await expect(page.getByText(`${startIso} – ${endIso}`).first()).toBeVisible();
+      await expect(page.getByText("Expired Syrup")).toHaveCount(0);
+      await expect(page.getByText("Future Drops")).toHaveCount(0);
+
+      const dueTextBefore = await page
+        .getByText(/\d+\s+due/)
+        .first()
+        .textContent();
+      const dueBefore = parseInt((dueTextBefore ?? "0").match(/\d+/)?.[0] ?? "0", 10);
+      expect(dueBefore).toBeGreaterThanOrEqual(1);
+
+      const vitDCard = page
+        .locator("#medications-section div.rounded-2xl")
+        .filter({ hasText: "Vitamin D Drops" })
+        .first();
+      const logPostPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/health/medication-log") &&
+          res.request().method() === "POST" &&
+          res.status() === 201,
+      );
+      await vitDCard
+        .getByRole("button", { name: "Log Administered Dose" })
+        .click();
+      await logPostPromise;
+
+      await expect(vitDCard.getByRole("button", { name: "Completed" })).toBeVisible();
+      const dueTextAfter = await page
+        .getByText(/\d+\s+due/)
+        .first()
+        .textContent();
+      const dueAfter = parseInt((dueTextAfter ?? "0").match(/\d+/)?.[0] ?? "0", 10);
+      expect(dueAfter).toBe(dueBefore - 1);
+
+      // 4. Negative BR-07-01: unchecking consent masks active prescription & returns 422 on log
+      const revokeConsentRes = await page.request.put(
+        `${API_BASE}/students/${mayaId}/health-record`,
+        {
+          headers: adminHeaders,
+          data: { consent_flag: false },
+        },
+      );
+      expect(revokeConsentRes.ok()).toBeTruthy();
+
+      const blockedMedsPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/health/classroom-medications") &&
+          res.status() === 200,
+      );
+      await page.reload();
+      await blockedMedsPromise;
+      await expect(
+        page
+          .locator("#medications-section div.rounded-2xl")
+          .filter({ hasText: "Vitamin D Drops" })
+          .first()
+          .getByText(/Consent Missing — Blocked \(BR-07-01\)/i),
+      ).toBeVisible();
+
+      const blockedPostRes = await page.request.post(
+        `${API_BASE}/health/medication-log`,
+        {
+          headers: { Authorization: `Bearer ${cgToken}` },
+          data: {
+            student_id: mayaId,
+            medicine_name: "Vitamin D Drops",
+            dose: "2 drops",
+          },
+        },
+      );
+      expect(blockedPostRes.status()).toBe(422);
+      await assertFivePointVisualHealth(page);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await restoreOrigHealth();
+      await cleanupVitaminDLogs();
+    }
+  });
 });

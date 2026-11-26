@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import localFont from "next/font/local";
 import { ServiceWorkerRegister } from "./sw-register";
+import { TelemetryProvider } from "./components/telemetry-provider";
 import "./globals.css";
 
 const inter = localFont({
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         {children}
+        <TelemetryProvider />
         <ServiceWorkerRegister />
       </body>
     </html>

@@ -173,6 +173,15 @@ class RosterUpdateInput(BaseModel):
     window_end: Optional[str] = None
 
 
+class ScheduledMedicationItemSchema(BaseModel):
+    name: str
+    dosage: Optional[str] = ""
+    scheduled_time: Optional[str] = ""
+    consent: Optional[str] = ""
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+
 class StudentHealthUpsertInput(BaseModel):
     allergies: Optional[List[Any]] = None
     conditions: Optional[List[Any]] = None

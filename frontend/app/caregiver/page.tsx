@@ -26,6 +26,7 @@ import {
   fetchLearningObservations,
   createLearningObservation,
   deleteLearningObservation,
+  verifySupervisorOverridePin,
   type AttendanceRollAuditResponse,
   type IncidentRecord,
   type CareRoomSummary,
@@ -34,8 +35,10 @@ import {
   CaregiverOverviewWidget,
   type CaregiverOverviewData,
   type CaregiverToddler,
+  type IncidentSeverity,
   type MedicationDoseItem,
   type BooBooIncident,
+  type SupervisorOverrideContext,
 } from "@/components/widgets/caregiver";
 
 function toLocalIsoDate(d: Date): string {
@@ -487,9 +490,9 @@ export default function CaregiverPortalPage() {
           fetchStudentAttendanceRoster(targetDate),
           fetchAttendanceConfig(),
           fetchIncidents(),
-          isHistorical
+          isHistoricalReadOnly
             ? fetchClassroomMedicationLogs(targetDate)
-            : fetchClassroomMedications(),
+            : fetchClassroomMedications(targetDate),
           fetchCareEvents(targetDate),
           fetchLearningFrameworks(),
           fetchAttendanceRollAudit(targetDate),
@@ -699,9 +702,11 @@ export default function CaregiverPortalPage() {
             );
 
             const presentCount = mappedToddlers.filter(
-              (t) => t.status === "Present" || t.status === "Late",
+              (t) => !t.checkOutAt && (t.status === "Present" || t.status === "Late"),
             ).length;
-            const unconfirmedAbsencesCount = mappedToddlers.length - presentCount;
+            const unconfirmedAbsencesCount = mappedToddlers.filter(
+              (t) => !t.checkOutAt && (t.status === "Absent" || t.status === "Expected"),
+            ).length;
             const completionPercent = Math.round(
               (presentCount / mappedToddlers.length) * 100,
             );
@@ -729,9 +734,9 @@ export default function CaregiverPortalPage() {
           }
         }
 
-        // 2. Process classroom medications from database (DEF-023 / US-CG-17)
+        // 2. Process classroom medications from database (DEF-023 / US-CG-17 / US-AD-12)
         if (medsRes.status === "fulfilled" && Array.isArray(medsRes.value?.data)) {
-          if (isHistorical) {
+          if (isHistoricalReadOnly) {
             const histLogs = medsRes.value.data as Array<{
               med_log_id: string;
               student_id: string;
@@ -751,6 +756,8 @@ export default function CaregiverPortalPage() {
               medicineName: m.medicine_name,
               dosage: m.dose || "Administered",
               scheduledTime: targetDate,
+              startDate: null,
+              endDate: null,
               instructions: m.notes || m.dose || "Historical dose record",
               consentVerifiedBy: m.parent_notified
                 ? "Verified · Parent Notified"
@@ -778,6 +785,8 @@ export default function CaregiverPortalPage() {
               medicine_name: string;
               dosage: string;
               scheduled_time: string;
+              start_date?: string | null;
+              end_date?: string | null;
               consent_flag: boolean;
               consent_note?: string;
               status:
@@ -795,6 +804,8 @@ export default function CaregiverPortalPage() {
               medicineName: m.medicine_name,
               dosage: m.dosage || "Per prescription",
               scheduledTime: m.scheduled_time || "Today",
+              startDate: m.start_date ?? null,
+              endDate: m.end_date ?? null,
               instructions: m.dosage || "Administer per room medical plan",
               consentVerifiedBy: m.consent_flag
                 ? m.consent_note || "Verified Parental Consent on File"
@@ -837,6 +848,8 @@ export default function CaregiverPortalPage() {
                 id: item.incident_id || `inc-db-${idx}`,
                 studentName: item.students?.[0] || "Classroom Incident",
                 incidentType: item.incident_type || "Minor Tumble",
+                severity: (item.severity as IncidentSeverity) || "Low",
+                escalatedToPrincipal: Boolean(item.escalated_to_principal),
                 location: item.location || "Room 1A Playroom",
                 bodyPart: item.body_part || "Unspecified",
                 parentStatus: item.parent_notified
@@ -908,11 +921,11 @@ export default function CaregiverPortalPage() {
     _studentName?: string,
     lateReason?: string,
   ) => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const activeDate = selectedDate;
     try {
       const res = await checkInStudent({
         student_id: studentId,
-        date: todayStr,
+        date: activeDate,
         late_reason: lateReason,
       });
       const checkInIso = res?.data?.check_in_at || new Date().toISOString();
@@ -936,7 +949,10 @@ export default function CaregiverPortalPage() {
             : t,
         );
         const presentCount = updatedToddlers.filter(
-          (t) => t.status === "Present" || t.status === "Late",
+          (t) => !t.checkOutAt && (t.status === "Present" || t.status === "Late"),
+        ).length;
+        const unconfirmedAbsencesCount = updatedToddlers.filter(
+          (t) => !t.checkOutAt && (t.status === "Absent" || t.status === "Expected"),
         ).length;
         return {
           ...prev,
@@ -946,7 +962,7 @@ export default function CaregiverPortalPage() {
             completionPercent: Math.round(
               (presentCount / Math.max(updatedToddlers.length, 1)) * 100,
             ),
-            unconfirmedAbsencesCount: updatedToddlers.length - presentCount,
+            unconfirmedAbsencesCount,
           },
         };
       });
@@ -955,19 +971,43 @@ export default function CaregiverPortalPage() {
     }
   };
 
-  const handleCheckOut = async (studentId: string) => {
-    const todayStr = new Date().toISOString().split("T")[0];
+  const handleCheckOut = async (
+    studentId: string,
+  ): Promise<{ ok: boolean; checkOutAt?: string; error?: string }> => {
+    const activeDate = selectedDate;
     try {
-      const res = await checkOutStudent({ student_id: studentId, date: todayStr });
+      const res = await checkOutStudent({
+        student_id: studentId,
+        date: activeDate,
+      });
       const checkOutIso = res?.data?.check_out_at || new Date().toISOString();
-      setCaregiverData((prev) => ({
-        ...prev,
-        toddlers: prev.toddlers.map((t) =>
+      setCaregiverData((prev) => {
+        const updatedToddlers = prev.toddlers.map((t) =>
           t.studentId === studentId ? { ...t, checkOutAt: checkOutIso } : t,
-        ),
-      }));
-    } catch {
-      // Keep UI responsive
+        );
+        const presentCount = updatedToddlers.filter(
+          (t) => !t.checkOutAt && (t.status === "Present" || t.status === "Late"),
+        ).length;
+        const unconfirmedAbsencesCount = updatedToddlers.filter(
+          (t) => !t.checkOutAt && (t.status === "Absent" || t.status === "Expected"),
+        ).length;
+        return {
+          ...prev,
+          toddlers: updatedToddlers,
+          rollLock: {
+            ...prev.rollLock,
+            completionPercent: Math.round(
+              (presentCount / Math.max(updatedToddlers.length, 1)) * 100,
+            ),
+            unconfirmedAbsencesCount,
+          },
+        };
+      });
+      return { ok: true, checkOutAt: checkOutIso };
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to complete check-out.";
+      return { ok: false, error: msg };
     }
   };
 
@@ -1109,33 +1149,83 @@ export default function CaregiverPortalPage() {
     alert("Calling emergency guardian contacts for Noah Parker & Charlotte Taylor...");
   };
 
-  const handleOpenBooBooModal = (studentId?: string) => {
-    // When saved through modal
-    if (studentId) {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const selectedStudent = caregiverData.toddlers.find(
-        (t) => t.studentId === studentId,
-      );
-      const studentName = selectedStudent?.name || "Toddler";
+  const handleOpenBooBooModal = () => {
+    // Modal opening is handled locally inside CaregiverOverviewWidget; submission routes to handleSubmitIncident.
+  };
 
-      submitIncident({
-        incident_type: "Injury",
-        severity: "Low",
-        date: todayStr,
+  const handleSubmitIncident = async (incidentData: {
+    studentId: string;
+    studentName: string;
+    incidentType: string;
+    severity: IncidentSeverity;
+    description: string;
+    actionsTaken: string;
+  }) => {
+    const nowTime = new Date().toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    const isHighOrCritical =
+      incidentData.severity === "High" || incidentData.severity === "Critical";
+    try {
+      const res = await submitIncident({
+        incident_type: incidentData.incidentType,
+        severity: incidentData.severity,
+        date: selectedDate,
         location: "Room 1A Toddler Garden Playroom",
-        description: `Minor tumble recorded for ${studentName}. Treated with sterile saline and plaster by Nurse Clara.`,
-        actions_taken:
-          "Saline rinse, dino plaster applied, parent notification queued with 1h SLA.",
-        students: [studentName],
+        description: incidentData.description,
+        actions_taken: incidentData.actionsTaken,
+        students: [incidentData.studentId || incidentData.studentName],
         staff: ["Clara Gomez"],
-      }).catch(() => {});
+      });
+      const created = res?.data as
+        | {
+            incident_id?: string;
+            escalated_to_principal?: boolean;
+            parent_notified?: boolean;
+            severity?: string;
+          }
+        | undefined;
+      const escalated =
+        created?.escalated_to_principal ?? isHighOrCritical;
+      const parentNotified =
+        created?.parent_notified ?? isHighOrCritical;
+      setCaregiverData((prev) => ({
+        ...prev,
+        incidents: [
+          {
+            id: created?.incident_id || `inc-live-${Date.now()}`,
+            studentName: incidentData.studentName,
+            incidentType: incidentData.incidentType,
+            severity:
+              (created?.severity as IncidentSeverity) || incidentData.severity,
+            escalatedToPrincipal: Boolean(escalated),
+            location: "Room 1A Toddler Garden Playroom",
+            bodyPart: "Playroom Observation",
+            parentStatus: parentNotified ? "Acknowledged" : "SLA_Pending",
+            slaRemainingLabel: parentNotified ? undefined : "1h SLA",
+            description: incidentData.description,
+            loggedTime: nowTime,
+            staffStamp: "Nurse Clara Gomez",
+            slaNote: parentNotified
+              ? "Notice Delivered (BR-07-03 Auto-Escalation)"
+              : "Parent Notice Pending (1h SLA)",
+          },
+          ...prev.incidents,
+        ],
+      }));
+    } catch {
+      // Keep UI responsive
     }
   };
 
   const refreshCareEvents = async () => {
     try {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const res = await fetchCareEvents(todayStr);
+      const targetDate =
+        selectedDate === todayLocalIso
+          ? new Date().toISOString().split("T")[0]
+          : selectedDate;
+      const res = await fetchCareEvents(targetDate);
       const summary = res.data?.summary;
       if (!summary) return;
       setCaregiverData((prev) => ({
@@ -1189,6 +1279,7 @@ export default function CaregiverPortalPage() {
   const handleUpdateMood = async (
     studentId: string,
     mood: CaregiverToddler["mood"],
+    override?: SupervisorOverrideContext,
   ) => {
     try {
       await createCareEvents({
@@ -1196,14 +1287,26 @@ export default function CaregiverPortalPage() {
         event_type: "mood",
         payload: { mood },
         parent_visible: true,
+        supervisor_override: Boolean(override?.supervisorOverride),
+        override_reason: override?.overrideReason,
+        supervisor_pin: override?.supervisorPin,
+        attendance_date: selectedDate,
       });
       await refreshCareEvents();
     } catch {
-      // Optimistic fallback
+      // Revert/ignore on rejected post-checkout writes
     }
   };
 
-  const handleLogHydration = async (studentId: string, amountMl: number) => {
+  const handleLogHydration = async (
+    studentId: string,
+    amountMl: number,
+    override?: SupervisorOverrideContext,
+  ) => {
+    const target = caregiverData.toddlers.find((t) => t.studentId === studentId);
+    if (target?.checkOutAt && !override?.supervisorOverride) {
+      return;
+    }
     setCaregiverData((prev) => ({
       ...prev,
       toddlers: prev.toddlers.map((t) =>
@@ -1224,10 +1327,27 @@ export default function CaregiverPortalPage() {
         event_type: "water",
         payload: { amount_ml: amountMl },
         parent_visible: true,
+        supervisor_override: Boolean(override?.supervisorOverride),
+        override_reason: override?.overrideReason,
+        supervisor_pin: override?.supervisorPin,
+        attendance_date: selectedDate,
       });
       await refreshCareEvents();
     } catch {
-      // Keep optimistic UI
+      setCaregiverData((prev) => ({
+        ...prev,
+        toddlers: prev.toddlers.map((t) =>
+          t.studentId === studentId
+            ? {
+                ...t,
+                hydration: {
+                  ...t.hydration,
+                  currentMl: Math.max(0, t.hydration.currentMl - amountMl),
+                },
+              }
+            : t,
+        ),
+      }));
     }
   };
 
@@ -1236,6 +1356,7 @@ export default function CaregiverPortalPage() {
     eventType: string,
     payload: Record<string, unknown>,
     parentVisible = true,
+    override?: SupervisorOverrideContext,
   ): Promise<{ ok: boolean; error?: string }> => {
     try {
       await createCareEvents({
@@ -1243,6 +1364,10 @@ export default function CaregiverPortalPage() {
         event_type: eventType,
         payload,
         parent_visible: parentVisible,
+        supervisor_override: Boolean(override?.supervisorOverride),
+        override_reason: override?.overrideReason,
+        supervisor_pin: override?.supervisorPin,
+        attendance_date: selectedDate,
       });
       await refreshCareEvents();
       return { ok: true };
@@ -1269,7 +1394,10 @@ export default function CaregiverPortalPage() {
 
   const handleQuickBatchMealLog = async () => {
     const presentIds = caregiverData.toddlers
-      .filter((t) => t.status === "Present" || t.status === "Late")
+      .filter(
+        (t) =>
+          !t.checkOutAt && (t.status === "Present" || t.status === "Late"),
+      )
       .map((t) => t.studentId);
     if (presentIds.length === 0) return;
     try {
@@ -1278,6 +1406,7 @@ export default function CaregiverPortalPage() {
         event_type: "meal",
         payload: { meal_type: "Morning Snack / Meal", portion: "All (100%)" },
         parent_visible: true,
+        attendance_date: selectedDate,
       });
       await refreshCareEvents();
     } catch {
@@ -1287,7 +1416,10 @@ export default function CaregiverPortalPage() {
 
   const handleMarkAllAsleep = async () => {
     const presentIds = caregiverData.toddlers
-      .filter((t) => t.status === "Present" || t.status === "Late")
+      .filter(
+        (t) =>
+          !t.checkOutAt && (t.status === "Present" || t.status === "Late"),
+      )
       .map((t) => t.studentId);
     if (presentIds.length === 0) return;
     try {
@@ -1296,10 +1428,32 @@ export default function CaregiverPortalPage() {
         event_type: "nap_start",
         payload: { note: "Room 1A Nap Window" },
         parent_visible: true,
+        attendance_date: selectedDate,
       });
       await refreshCareEvents();
     } catch {
       // ignore
+    }
+  };
+
+  const handleVerifySupervisorPin = async (
+    studentId: string,
+    supervisorPin: string,
+    overrideReason: string,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      await verifySupervisorOverridePin({
+        student_id: studentId,
+        supervisor_pin: supervisorPin,
+        override_reason: overrideReason,
+      });
+      return { ok: true };
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Invalid Supervisor PIN. Care records remain locked.";
+      return { ok: false, error: msg };
     }
   };
 
@@ -1407,10 +1561,10 @@ export default function CaregiverPortalPage() {
     },
   ): Promise<{ ok: boolean; error?: string }> => {
     try {
-      const todayStr = new Date().toISOString().split("T")[0];
+      const activeDate = selectedDate;
       const res = await checkInStudent({
         student_id: studentId,
-        date: todayStr,
+        date: activeDate,
         symptoms: screening.symptoms,
         temperature_c: screening.temperature_c,
         supervisor_override: screening.supervisor_override,
@@ -1489,6 +1643,7 @@ export default function CaregiverPortalPage() {
     domains: string[];
     note: string;
     sharedWithFamily: boolean;
+    override?: SupervisorOverrideContext;
   }): Promise<{ ok: boolean; error?: string }> => {
     try {
       await createLearningObservation({
@@ -1497,6 +1652,10 @@ export default function CaregiverPortalPage() {
         domains: payload.domains,
         note: payload.note,
         shared_with_family: payload.sharedWithFamily,
+        supervisor_override: Boolean(payload.override?.supervisorOverride),
+        override_reason: payload.override?.overrideReason,
+        supervisor_pin: payload.override?.supervisorPin,
+        attendance_date: selectedDate,
       });
       await handleLoadLearningPortfolio(payload.studentId);
       return { ok: true };
@@ -1544,6 +1703,7 @@ export default function CaregiverPortalPage() {
       onTriggerRollAudit={handleTriggerRollAudit}
       onCallUnchecked={handleCallUnchecked}
       onOpenBooBooModal={handleOpenBooBooModal}
+      onSubmitIncident={handleSubmitIncident}
       onSendCaregiverNote={handleSendCaregiverNote}
       onUpdateMood={handleUpdateMood}
       onLogHydration={handleLogHydration}
@@ -1556,6 +1716,7 @@ export default function CaregiverPortalPage() {
       onLoadLearningPortfolio={handleLoadLearningPortfolio}
       onCreateLearningObservation={handleCreateLearningObservation}
       onDeleteLearningObservation={handleDeleteLearningObservation}
+      onVerifySupervisorPin={handleVerifySupervisorPin}
       onSelectDate={(nextDate) => setSelectedDate(nextDate)}
       onLoadChildHistory={handleLoadChildHistory}
       rollAuditModal={{

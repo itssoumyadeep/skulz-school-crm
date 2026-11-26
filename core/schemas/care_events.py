@@ -37,6 +37,16 @@ class CareEventCreateSchema(BaseModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
     parent_visible: bool = True
     events: Optional[List[CareEventItemSchema]] = None
+    supervisor_override: bool = False
+    override_reason: Optional[str] = None
+    supervisor_pin: Optional[str] = None
+    attendance_date: Optional[date] = None
+
+
+class SupervisorPinVerifySchema(BaseModel):
+    student_id: UUID
+    supervisor_pin: str
+    override_reason: str = ""
 
 
 class CareEventUpdateSchema(BaseModel):
@@ -55,6 +65,10 @@ class LearningObservationCreateSchema(BaseModel):
     shared_with_family: bool = False
     observed_on: Optional[date] = None
     activity_plan_id: Optional[UUID] = None
+    supervisor_override: bool = False
+    override_reason: Optional[str] = None
+    supervisor_pin: Optional[str] = None
+    attendance_date: Optional[date] = None
 
 
 class LearningObservationUpdateSchema(BaseModel):

@@ -400,7 +400,7 @@ class TestCaregiverMVP1API:
         )
         assert ci_cross.status_code == 403
 
-        # 4. Check-in is idempotent and persists check_in_at
+        # 4. Check-in is idempotent and persists check_in_at (DEF-029: Present with null late_reason)
         ci_res = self.client.post(
             "/api/v1/attendance/check-in",
             data={"student_id": str(toddler.student_id), "date": today_str},
@@ -408,6 +408,8 @@ class TestCaregiverMVP1API:
             HTTP_AUTHORIZATION=f"Bearer {token}",
         )
         assert ci_res.status_code == 200
+        assert ci_res.json()["data"]["status"] == "Present"
+        assert ci_res.json()["data"]["late_reason"] is None
         first_ts = ci_res.json()["data"]["check_in_at"]
         assert first_ts is not None
 
@@ -420,7 +422,7 @@ class TestCaregiverMVP1API:
         assert ci_again.status_code == 200
         assert ci_again.json()["data"]["check_in_at"] == first_ts
 
-        # 5. Check-out persists check_out_at
+        # 5. Check-out persists check_out_at and sets is_checked_out=True on roster (DEF-032)
         co_res = self.client.post(
             "/api/v1/attendance/check-out",
             data={"student_id": str(toddler.student_id), "date": today_str},
@@ -429,6 +431,43 @@ class TestCaregiverMVP1API:
         )
         assert co_res.status_code == 200
         assert co_res.json()["data"]["check_out_at"] is not None
+        assert co_res.json()["data"]["is_checked_out"] is True
+
+        roster_after = self.client.get(
+            f"/api/v1/attendance/students/{today_str}",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        assert roster_after.status_code == 200
+        matched = [r for r in roster_after.json()["data"] if r["student_id"] == str(toddler.student_id)][0]
+        assert matched["check_out_at"] is not None
+        assert matched["is_checked_out"] is True
+
+        # 6. Soft-deleting attendance and re-checking in reactivates without uq_student_attendance_record IntegrityError
+        admin_token = jwt.encode(
+            {
+                "sub": str(uuid.uuid4()),
+                "user_id": str(uuid.uuid4()),
+                "tenant_id": str(tenant_a.tenant_id),
+                "role": "Admin",
+            },
+            settings.JWT_SECRET_KEY,
+            algorithm="HS256",
+        )
+        del_res = self.client.delete(
+            f"/api/v1/attendance/{matched['attendance_id']}",
+            HTTP_AUTHORIZATION=f"Bearer {admin_token}",
+        )
+        assert del_res.status_code == 200
+
+        recheck_res = self.client.post(
+            "/api/v1/attendance/check-in",
+            data={"student_id": str(toddler.student_id), "date": today_str},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        assert recheck_res.status_code == 200
+        assert recheck_res.json()["data"]["status"] == "Present"
+        assert recheck_res.json()["data"]["check_out_at"] is None
 
     def test_us_cg_02_pickup_verification_pin_lock_and_custody_block(self, tenant_a):
         room_1a = uuid.uuid4()
@@ -1028,3 +1067,213 @@ class TestCaregiverMVP1API:
         assert AuditLog.objects.filter(
             tenant=tenant_a, entity="AttendanceRoll", action="CREATE"
         ).exists()
+
+    def test_us_ad_12_medication_tenure_validation_filtering_and_daily_reminder(
+        self, tenant_a, tenant_b, admin_token_tenant_a
+    ):
+        room1a_id = uuid.uuid4()
+        other_room_id = uuid.uuid4()
+
+        maya = Student.objects.create(
+            tenant=tenant_a,
+            student_number="SUN-AD12-1",
+            name="Maya Tenure",
+            grade="Toddler & Pre-K",
+            class_id=room1a_id,
+            status="Active",
+        )
+        outside_room = Student.objects.create(
+            tenant=tenant_a,
+            student_number="GR4-AD12-1",
+            name="Outside Room",
+            grade="Grade 4",
+            class_id=other_room_id,
+            status="Active",
+        )
+        other_tenant_student = Student.objects.create(
+            tenant=tenant_b,
+            student_number="TB-AD12-1",
+            name="Other Tenant Kid",
+            grade="Toddler & Pre-K",
+            class_id=room1a_id,
+            status="Active",
+        )
+        StudentHealth.objects.create(
+            tenant=tenant_b,
+            student=other_tenant_student,
+            consent_flag=True,
+            medications=[{"name": "Tenant B Syrup", "dosage": "5mL", "start_date": None, "end_date": None}],
+        )
+        StudentHealth.objects.create(
+            tenant=tenant_a,
+            student=outside_room,
+            consent_flag=True,
+            medications=[{"name": "Outside Room Drops", "dosage": "1mL"}],
+        )
+
+        cg_token = jwt.encode(
+            {
+                "sub": str(uuid.uuid4()),
+                "user_id": str(uuid.uuid4()),
+                "tenant_id": str(tenant_a.tenant_id),
+                "role": "CareGiver",
+                "assigned_class_ids": [str(room1a_id)],
+            },
+            settings.JWT_SECRET_KEY,
+            algorithm="HS256",
+        )
+
+        today = timezone.localdate()
+        yesterday = today - timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
+        plus_two = today + timedelta(days=2)
+        plus_three = today + timedelta(days=3)
+        plus_four = today + timedelta(days=4)
+
+        # 1. Invalid tenure (end_date < start_date) returns HTTP 422 RULE_VIOLATION
+        bad_res = self.client.put(
+            f"/api/v1/students/{maya.student_id}/health-record",
+            data={
+                "consent_flag": True,
+                "medications": [
+                    {
+                        "name": "Invalid Tenure Med",
+                        "dosage": "5mL",
+                        "start_date": tomorrow.isoformat(),
+                        "end_date": yesterday.isoformat(),
+                    }
+                ],
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {admin_token_tenant_a}",
+        )
+        assert bad_res.status_code == 422
+        assert bad_res.json()["errors"][0]["code"] == "RULE_VIOLATION"
+
+        # 2. Save active, future, expired, and undated legacy medications -> HTTP 200
+        ok_res = self.client.put(
+            f"/api/v1/students/{maya.student_id}/health-record",
+            data={
+                "consent_flag": True,
+                "medications": [
+                    {
+                        "name": "Vitamin D Drops",
+                        "dosage": "2 drops",
+                        "scheduled_time": "10:00 AM",
+                        "start_date": today.isoformat(),
+                        "end_date": plus_three.isoformat(),
+                    },
+                    {
+                        "name": "Future Allergy Tabs",
+                        "dosage": "1 tab",
+                        "scheduled_time": "09:00 AM",
+                        "start_date": plus_two.isoformat(),
+                        "end_date": plus_four.isoformat(),
+                    },
+                    {
+                        "name": "Expired Antibiotic",
+                        "dosage": "5mL",
+                        "scheduled_time": "11:00 AM",
+                        "start_date": (today - timedelta(days=5)).isoformat(),
+                        "end_date": yesterday.isoformat(),
+                    },
+                    {
+                        "name": "Legacy EpiPen",
+                        "dosage": "As needed",
+                        "scheduled_time": "PRN",
+                    },
+                ],
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {admin_token_tenant_a}",
+        )
+        assert ok_res.status_code == 200
+
+        # 3. GET classroom medications for today omits future & expired, retains active + legacy, and scopes Room 1A
+        sched_today = self.client.get(
+            f"/api/v1/health/classroom-medications?target_date={today.isoformat()}",
+            HTTP_AUTHORIZATION=f"Bearer {cg_token}",
+        )
+        assert sched_today.status_code == 200
+        items_today = sched_today.json()["data"]
+        names_today = [i["medicine_name"] for i in items_today]
+        assert "Vitamin D Drops" in names_today
+        assert "Legacy EpiPen" in names_today
+        assert "Future Allergy Tabs" not in names_today
+        assert "Expired Antibiotic" not in names_today
+        assert "Outside Room Drops" not in names_today
+        assert "Tenant B Syrup" not in names_today
+        vit_d = next(i for i in items_today if i["medicine_name"] == "Vitamin D Drops")
+        assert vit_d["start_date"] == today.isoformat()
+        assert vit_d["end_date"] == plus_three.isoformat()
+        assert vit_d["status"] == "Pending"
+
+        # 4. Log Vitamin D Drops for today -> today Administered, tomorrow still Pending, post-end omitted
+        log_res = self.client.post(
+            "/api/v1/health/medication-log",
+            data={
+                "student_id": str(maya.student_id),
+                "medicine_name": "Vitamin D Drops",
+                "dose": "2 drops",
+                "notes": "Day 1 dose administered",
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {cg_token}",
+        )
+        assert log_res.status_code == 201
+
+        sched_today_after = self.client.get(
+            f"/api/v1/health/classroom-medications?target_date={today.isoformat()}",
+            HTTP_AUTHORIZATION=f"Bearer {cg_token}",
+        )
+        vit_d_done = next(
+            i for i in sched_today_after.json()["data"] if i["medicine_name"] == "Vitamin D Drops"
+        )
+        assert vit_d_done["status"] == "Administered"
+
+        sched_day2 = self.client.get(
+            f"/api/v1/health/classroom-medications?target_date={tomorrow.isoformat()}",
+            HTTP_AUTHORIZATION=f"Bearer {cg_token}",
+        )
+        vit_d_day2 = next(
+            i for i in sched_day2.json()["data"] if i["medicine_name"] == "Vitamin D Drops"
+        )
+        assert vit_d_day2["status"] == "Pending"
+
+        sched_after_end = self.client.get(
+            f"/api/v1/health/classroom-medications?target_date={plus_four.isoformat()}",
+            HTTP_AUTHORIZATION=f"Bearer {cg_token}",
+        )
+        assert "Vitamin D Drops" not in [i["medicine_name"] for i in sched_after_end.json()["data"]]
+
+        # 5. Revoking consent_flag on active-tenure prescription masks & blocks HTTP 422 (BR-07-01)
+        revoke_res = self.client.put(
+            f"/api/v1/students/{maya.student_id}/health-record",
+            data={"consent_flag": False},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {admin_token_tenant_a}",
+        )
+        assert revoke_res.status_code == 200
+
+        sched_blocked = self.client.get(
+            f"/api/v1/health/classroom-medications?target_date={tomorrow.isoformat()}",
+            HTTP_AUTHORIZATION=f"Bearer {cg_token}",
+        )
+        blocked_item = next(
+            i for i in sched_blocked.json()["data"] if i["medicine_name"] == "Vitamin D Drops"
+        )
+        assert blocked_item["status"] == "Blocked (Consent Missing)"
+        assert blocked_item["consent_flag"] is False
+
+        blocked_log = self.client.post(
+            "/api/v1/health/medication-log",
+            data={
+                "student_id": str(maya.student_id),
+                "medicine_name": "Vitamin D Drops",
+                "dose": "2 drops",
+                "time_administered": tomorrow.isoformat() + "T10:00:00",
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {cg_token}",
+        )
+        assert blocked_log.status_code == 422

@@ -132,12 +132,13 @@ def get_classroom_health_alerts(request):
 
 @router.get("/health/classroom-medications", auth=JWTAuthBearer())
 @require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Owner')
-def get_classroom_medications(request):
+def get_classroom_medications(request, target_date: Optional[date] = None):
     """
-    US-CG-04 / DEF-023: Returns today's room medication schedule from StudentHealth,
-    cross-referenced with today's MedicationLog and StudentAttendance.
+    US-CG-04 / DEF-023 / US-AD-12: Returns active classroom medication reminders for target_date
+    from StudentHealth (filtered by optional start_date..end_date tenure), cross-referenced
+    with that day's MedicationLog and StudentAttendance.
     """
-    today = timezone.localdate()
+    effective_date = target_date or timezone.localdate()
     students = list(
         get_student_queryset(request).filter(
             status='Active',
@@ -145,14 +146,14 @@ def get_classroom_medications(request):
     )
     student_ids = [s.student_id for s in students]
 
-    today_logs = MedicationLog.objects.filter(
+    day_logs = MedicationLog.objects.filter(
         tenant_id=request.tenant_id,
         student_id__in=student_ids,
-        time_administered__date=today,
+        time_administered__date=effective_date,
         is_deleted=False,
     ).order_by('-time_administered')
     logs_by_key = {}
-    for log in today_logs:
+    for log in day_logs:
         key = (log.student_id, (log.medicine_name or '').strip().lower())
         if key not in logs_by_key:
             logs_by_key[key] = log
@@ -161,7 +162,7 @@ def get_classroom_medications(request):
         StudentAttendance.objects.filter(
             tenant_id=request.tenant_id,
             student_id__in=student_ids,
-            date=today,
+            date=effective_date,
             status='Absent',
             is_deleted=False,
         ).values_list('student_id', flat=True)
@@ -174,16 +175,22 @@ def get_classroom_medications(request):
             continue
         meds = h.medications if isinstance(h.medications, list) else []
         for idx, med in enumerate(meds):
+            if not HealthRecordBO.is_medication_active_on_date(med, effective_date):
+                continue
             if isinstance(med, dict):
                 med_name = med.get('name', 'Medication')
                 dosage = med.get('dosage', '')
                 scheduled_time = med.get('scheduled_time', '')
                 consent_note = med.get('consent', '')
+                start_date = (str(med.get('start_date')).strip() or None) if med.get('start_date') is not None else None
+                end_date = (str(med.get('end_date')).strip() or None) if med.get('end_date') is not None else None
             else:
                 med_name = str(med)
                 dosage = ''
                 scheduled_time = ''
                 consent_note = ''
+                start_date = None
+                end_date = None
 
             log = logs_by_key.get((s.student_id, med_name.strip().lower()))
             actor_role = getattr(request, 'user_role', 'CareGiver')
@@ -214,6 +221,8 @@ def get_classroom_medications(request):
                 "medicine_name": med_name,
                 "dosage": dosage,
                 "scheduled_time": scheduled_time,
+                "start_date": start_date,
+                "end_date": end_date,
                 "consent_flag": bool(h.consent_flag),
                 "consent_date": h.consent_date.isoformat() if h.consent_date else None,
                 "consent_note": consent_note,

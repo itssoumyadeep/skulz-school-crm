@@ -181,16 +181,38 @@ class AttendanceSheetBO(BaseBusinessObject):
                 existing.save()
                 record = existing
             else:
-                record = StudentAttendance.objects.create(
+                deleted_existing = StudentAttendance.objects.filter(
                     tenant=tenant,
                     student=student,
                     class_id=class_id,
                     date=att_date,
                     period=period,
-                    status=status,
-                    method=method,
-                    marked_by=marked_by
-                )
+                    is_deleted=True,
+                ).first()
+                if deleted_existing:
+                    deleted_existing.is_deleted = False
+                    deleted_existing.status = status
+                    deleted_existing.method = method
+                    deleted_existing.marked_by = marked_by
+                    deleted_existing.notified_parent = False
+                    deleted_existing.locked = False
+                    deleted_existing.locked_at = None
+                    deleted_existing.check_in_at = None
+                    deleted_existing.check_out_at = None
+                    deleted_existing.late_reason = None
+                    deleted_existing.save()
+                    record = deleted_existing
+                else:
+                    record = StudentAttendance.objects.create(
+                        tenant=tenant,
+                        student=student,
+                        class_id=class_id,
+                        date=att_date,
+                        period=period,
+                        status=status,
+                        method=method,
+                        marked_by=marked_by
+                    )
 
             cls._apply_absence_notification(record)
 
@@ -316,6 +338,29 @@ class AttendanceSheetBO(BaseBusinessObject):
                 ])
 
             next_status = 'Late' if (is_past_cutoff or cleaned_reason) else 'Present'
+            deleted_existing = StudentAttendance.objects.filter(
+                tenant=tenant,
+                student=student,
+                class_id=resolved_class_id,
+                date=att_date,
+                period='Full_Day',
+                is_deleted=True,
+            ).first()
+            if deleted_existing:
+                deleted_existing.is_deleted = False
+                deleted_existing.status = next_status
+                deleted_existing.method = 'Web'
+                deleted_existing.marked_by = actor_id
+                deleted_existing.notified_parent = False
+                deleted_existing.locked = False
+                deleted_existing.locked_at = None
+                deleted_existing.check_in_at = timezone.now()
+                deleted_existing.check_out_at = None
+                deleted_existing.late_reason = cleaned_reason
+                deleted_existing.save()
+                cls._apply_absence_notification(deleted_existing)
+                return deleted_existing
+
             record = StudentAttendance.objects.create(
                 tenant=tenant,
                 student=student,
@@ -1162,6 +1207,88 @@ class HealthRecordBO(BaseBusinessObject):
         return None
 
     @staticmethod
+    def _parse_optional_iso_date(raw: Any, field_name: str) -> Optional[date]:
+        if raw is None:
+            return None
+        if isinstance(raw, date) and not isinstance(raw, datetime):
+            return raw
+        text = str(raw).strip()
+        if not text:
+            return None
+        if len(text) != 10:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id="INVALID_MEDICATION_TENURE",
+                    message=f"Medication {field_name} must use YYYY-MM-DD format.",
+                    field="medications",
+                )
+            ])
+        try:
+            return date.fromisoformat(text)
+        except ValueError:
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id="INVALID_MEDICATION_TENURE",
+                    message=f"Medication {field_name} must use YYYY-MM-DD format.",
+                    field="medications",
+                )
+            ])
+
+    @classmethod
+    def _normalize_and_validate_medications(cls, medications: Any) -> List[Any]:
+        if not isinstance(medications, list):
+            return []
+        normalized: List[Any] = []
+        for item in medications:
+            if isinstance(item, dict):
+                start_d = cls._parse_optional_iso_date(item.get("start_date"), "start_date")
+                end_d = cls._parse_optional_iso_date(item.get("end_date"), "end_date")
+                if start_d is not None and end_d is not None and end_d < start_d:
+                    med_label = item.get("name") or "Prescription"
+                    raise BusinessRuleError([
+                        RuleViolation(
+                            rule_id="INVALID_MEDICATION_TENURE",
+                            message=(
+                                f"Medication '{med_label}' end_date ({end_d.isoformat()}) "
+                                f"cannot be earlier than start_date ({start_d.isoformat()})."
+                            ),
+                            field="medications",
+                        )
+                    ])
+                clean_item = dict(item)
+                clean_item["start_date"] = start_d.isoformat() if start_d else None
+                clean_item["end_date"] = end_d.isoformat() if end_d else None
+                normalized.append(clean_item)
+            else:
+                normalized.append(item)
+        return normalized
+
+    @classmethod
+    def is_medication_active_on_date(cls, med: Any, target_date: date) -> bool:
+        """Return True if med has no bounded tenure or target_date falls within start_date..end_date."""
+        if not isinstance(med, dict):
+            return True
+        start_raw = med.get("start_date")
+        end_raw = med.get("end_date")
+        start_d: Optional[date] = None
+        end_d: Optional[date] = None
+        if start_raw is not None and str(start_raw).strip():
+            try:
+                start_d = date.fromisoformat(str(start_raw).strip()[:10])
+            except ValueError:
+                start_d = None
+        if end_raw is not None and str(end_raw).strip():
+            try:
+                end_d = date.fromisoformat(str(end_raw).strip()[:10])
+            except ValueError:
+                end_d = None
+        if start_d is not None and target_date < start_d:
+            return False
+        if end_d is not None and target_date > end_d:
+            return False
+        return True
+
+    @staticmethod
     def _parse_admin_timestamp(raw_value: Optional[Any]) -> Optional[datetime]:
         if raw_value is None:
             return None
@@ -1357,6 +1484,8 @@ class HealthRecordBO(BaseBusinessObject):
             ):
                 if field in data and data[field] is not None:
                     defaults[field] = data[field]
+            if 'medications' in defaults:
+                defaults['medications'] = self._normalize_and_validate_medications(defaults['medications'])
             if data.get('consent_flag') is True:
                 defaults['consent_date'] = timezone.now()
             elif 'consent_flag' in data and data.get('consent_flag') is False:
@@ -1379,6 +1508,15 @@ class HealthRecordBO(BaseBusinessObject):
                     'photo_consent': profile.photo_consent,
                     'topical_consent': profile.topical_consent,
                     'doctor_name': profile.doctor_name,
+                    'medications': [
+                        {
+                            'name': m.get('name'),
+                            'start_date': m.get('start_date'),
+                            'end_date': m.get('end_date'),
+                        }
+                        for m in (profile.medications or [])
+                        if isinstance(m, dict)
+                    ],
                 },
             )
         return profile

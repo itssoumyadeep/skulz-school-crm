@@ -20,6 +20,7 @@ import type {
   MedicationConsentSetupWidgetProps,
   MedicationLogAuditRow,
 } from "./medication-consent-setup-widget.types";
+import { DatePicker } from "@/components/pc/date-picker";
 
 function formatLocalDateTimeInput(iso?: string | null): string {
   const date = iso ? new Date(iso) : new Date();
@@ -49,7 +50,7 @@ export function MedicationConsentSetupWidget({
   const [searchQuery, setSearchQuery] = useState("");
   const [loadedKey, setLoadedKey] = useState(
     healthProfile
-      ? `${healthProfile.student_id}-${healthProfile.consent_flag}-${healthProfile.consent_date ?? ""}-${healthProfile.photo_consent}-${healthProfile.topical_consent}-${healthProfile.medications.length}-${healthProfile.allergies.length}`
+      ? `${healthProfile.student_id}-${healthProfile.consent_flag}-${healthProfile.consent_date ?? ""}-${healthProfile.photo_consent}-${healthProfile.topical_consent}-${JSON.stringify(healthProfile.medications)}-${healthProfile.allergies.length}`
       : "",
   );
 
@@ -62,7 +63,14 @@ export function MedicationConsentSetupWidget({
     (healthProfile?.conditions ?? []).join(", "),
   );
   const [medications, setMedications] = useState<
-    Array<{ name: string; dosage: string; scheduled_time?: string; consent?: string }>
+    Array<{
+      name: string;
+      dosage: string;
+      scheduled_time?: string;
+      consent?: string;
+      start_date?: string | null;
+      end_date?: string | null;
+    }>
   >(healthProfile?.medications ?? []);
   const [doctorName, setDoctorName] = useState(healthProfile?.doctor_name ?? "");
   const [doctorPhone, setDoctorPhone] = useState(
@@ -81,12 +89,16 @@ export function MedicationConsentSetupWidget({
   const [newMedName, setNewMedName] = useState("");
   const [newMedDose, setNewMedDose] = useState("");
   const [newMedTime, setNewMedTime] = useState("12:00");
+  const [newMedStartDate, setNewMedStartDate] = useState("");
+  const [newMedEndDate, setNewMedEndDate] = useState("");
 
   // Scheduled prescription inline editing
   const [editingRxIndex, setEditingRxIndex] = useState<number | null>(null);
   const [editingRxName, setEditingRxName] = useState("");
   const [editingRxDose, setEditingRxDose] = useState("");
   const [editingRxTime, setEditingRxTime] = useState("");
+  const [editingRxStartDate, setEditingRxStartDate] = useState("");
+  const [editingRxEndDate, setEditingRxEndDate] = useState("");
 
   // Portaled Medication Administration Create/Edit & Delete modals (US-AD-09)
   const [medLogModalOpen, setMedLogModalOpen] = useState(false);
@@ -104,7 +116,7 @@ export function MedicationConsentSetupWidget({
     useState<MedicationLogAuditRow | null>(null);
 
   const nextLoadedKey = healthProfile
-    ? `${healthProfile.student_id}-${healthProfile.consent_flag}-${healthProfile.consent_date ?? ""}-${healthProfile.photo_consent}-${healthProfile.topical_consent}-${healthProfile.medications.length}-${healthProfile.allergies.length}`
+    ? `${healthProfile.student_id}-${healthProfile.consent_flag}-${healthProfile.consent_date ?? ""}-${healthProfile.photo_consent}-${healthProfile.topical_consent}-${JSON.stringify(healthProfile.medications)}-${healthProfile.allergies.length}`
     : "";
   if (nextLoadedKey !== loadedKey) {
     setLoadedKey(nextLoadedKey);
@@ -221,10 +233,14 @@ export function MedicationConsentSetupWidget({
         dosage: newMedDose.trim() || "As prescribed",
         scheduled_time: newMedTime.trim() || "12:00",
         consent: consentFlag ? "On file" : "Pending parental signature",
+        start_date: newMedStartDate || null,
+        end_date: newMedEndDate || null,
       },
     ]);
     setNewMedName("");
     setNewMedDose("");
+    setNewMedStartDate("");
+    setNewMedEndDate("");
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -507,16 +523,18 @@ export function MedicationConsentSetupWidget({
             <p className="text-xs font-extrabold uppercase tracking-wider text-crayon-muted">
               Authorized Medications
             </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-6">
               <input
                 type="text"
+                aria-label="Medication Name"
                 placeholder="Medicine name"
                 value={newMedName}
                 onChange={(e) => setNewMedName(e.target.value)}
-                className="rounded-2xl border border-border bg-paper-tint px-3 py-2 text-xs font-semibold text-crayon-charcoal focus:outline-none"
+                className="sm:col-span-2 rounded-2xl border border-border bg-paper-tint px-3 py-2 text-xs font-semibold text-crayon-charcoal focus:outline-none"
               />
               <input
                 type="text"
+                aria-label="Medication Dosage"
                 placeholder="Dosage (e.g. 5mL)"
                 value={newMedDose}
                 onChange={(e) => setNewMedDose(e.target.value)}
@@ -524,15 +542,43 @@ export function MedicationConsentSetupWidget({
               />
               <input
                 type="text"
+                aria-label="Medication Scheduled Time"
                 placeholder="Time (e.g. 12:30)"
                 value={newMedTime}
                 onChange={(e) => setNewMedTime(e.target.value)}
                 className="rounded-2xl border border-border bg-paper-tint px-3 py-2 text-xs font-semibold text-crayon-charcoal focus:outline-none"
               />
+              <DatePicker
+                id="new-med-start-date"
+                aria-label="Medication Start Date"
+                placeholder="Start Date"
+                value={newMedStartDate}
+                onChange={setNewMedStartDate}
+                className="rounded-2xl border border-border bg-paper-tint px-3 py-2 text-xs font-semibold text-crayon-charcoal"
+              />
+              <DatePicker
+                id="new-med-end-date"
+                aria-label="Medication End Date"
+                placeholder="End Date"
+                value={newMedEndDate}
+                onChange={setNewMedEndDate}
+                className="rounded-2xl border border-border bg-paper-tint px-3 py-2 text-xs font-semibold text-crayon-charcoal"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {newMedStartDate && newMedEndDate && newMedEndDate < newMedStartDate ? (
+                <p className="text-xs font-semibold text-error">
+                  End date ({newMedEndDate}) cannot be earlier than start date ({newMedStartDate}).
+                </p>
+              ) : (
+                <p className="text-[11px] text-crayon-muted">
+                  Optional Start/End Dates restrict Caregiver daily reminders to that scheduled tenure.
+                </p>
+              )}
               <button
                 type="button"
                 onClick={handleAddMed}
-                className="inline-flex items-center justify-center gap-1 rounded-full border border-pastel-butter bg-pastel-butter/60 px-3 py-2 text-xs font-bold text-crayon-charcoal hover:bg-pastel-butter cursor-pointer"
+                className="inline-flex items-center justify-center gap-1 rounded-full border border-pastel-butter bg-pastel-butter/60 px-4 py-2 text-xs font-bold text-crayon-charcoal hover:bg-pastel-butter cursor-pointer"
               >
                 <Plus className="size-3.5" aria-hidden="true" />
                 Add Med
@@ -540,97 +586,146 @@ export function MedicationConsentSetupWidget({
             </div>
             {medications.length > 0 && (
               <div className="space-y-1.5">
-                {medications.map((med, idx) => (
-                  <div
-                    key={`${med.name}-${idx}`}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-paper-tint px-4 py-2 text-xs"
-                  >
-                    {editingRxIndex === idx ? (
-                      <div className="flex flex-1 flex-wrap items-center gap-2">
-                        <input
-                          type="text"
-                          aria-label="Edit prescription name"
-                          value={editingRxName}
-                          onChange={(e) => setEditingRxName(e.target.value)}
-                          className="min-w-28 flex-1 rounded-xl border border-border bg-paper-card px-2.5 py-1 text-xs font-bold text-crayon-charcoal"
-                        />
-                        <input
-                          type="text"
-                          aria-label="Edit prescription dosage"
-                          value={editingRxDose}
-                          onChange={(e) => setEditingRxDose(e.target.value)}
-                          className="w-28 rounded-xl border border-border bg-paper-card px-2.5 py-1 text-xs font-semibold text-crayon-charcoal"
-                        />
-                        <input
-                          type="text"
-                          aria-label="Edit prescription schedule"
-                          value={editingRxTime}
-                          onChange={(e) => setEditingRxTime(e.target.value)}
-                          className="w-24 rounded-xl border border-border bg-paper-card px-2.5 py-1 text-xs font-semibold text-crayon-charcoal"
-                        />
+                {medications.map((med, idx) => {
+                  const invalidRowRange = Boolean(
+                    med.start_date &&
+                      med.end_date &&
+                      med.end_date < med.start_date,
+                  );
+                  return (
+                    <div
+                      key={`${med.name}-${idx}`}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-paper-tint px-4 py-2 text-xs"
+                    >
+                      {editingRxIndex === idx ? (
+                        <div className="flex flex-1 flex-wrap items-center gap-2">
+                          <input
+                            type="text"
+                            aria-label="Edit prescription name"
+                            value={editingRxName}
+                            onChange={(e) => setEditingRxName(e.target.value)}
+                            className="min-w-28 flex-1 rounded-xl border border-border bg-paper-card px-2.5 py-1 text-xs font-bold text-crayon-charcoal"
+                          />
+                          <input
+                            type="text"
+                            aria-label="Edit prescription dosage"
+                            value={editingRxDose}
+                            onChange={(e) => setEditingRxDose(e.target.value)}
+                            className="w-28 rounded-xl border border-border bg-paper-card px-2.5 py-1 text-xs font-semibold text-crayon-charcoal"
+                          />
+                          <input
+                            type="text"
+                            aria-label="Edit prescription schedule"
+                            value={editingRxTime}
+                            onChange={(e) => setEditingRxTime(e.target.value)}
+                            className="w-24 rounded-xl border border-border bg-paper-card px-2.5 py-1 text-xs font-semibold text-crayon-charcoal"
+                          />
+                          <DatePicker
+                            aria-label="Edit prescription start date"
+                            placeholder="Start Date"
+                            value={editingRxStartDate}
+                            onChange={setEditingRxStartDate}
+                            className="w-36 rounded-xl border border-border bg-paper-card px-2.5 py-1 text-xs font-semibold text-crayon-charcoal"
+                          />
+                          <DatePicker
+                            aria-label="Edit prescription end date"
+                            placeholder="End Date"
+                            value={editingRxEndDate}
+                            onChange={setEditingRxEndDate}
+                            className="w-36 rounded-xl border border-border bg-paper-card px-2.5 py-1 text-xs font-semibold text-crayon-charcoal"
+                          />
+                          {editingRxStartDate &&
+                            editingRxEndDate &&
+                            editingRxEndDate < editingRxStartDate && (
+                              <span className="text-[11px] font-bold text-error">
+                                End date must be on or after start date
+                              </span>
+                            )}
+                          <button
+                            type="button"
+                            aria-label={`Save edited prescription ${med.name}`}
+                            onClick={() => {
+                              if (!editingRxName.trim()) return;
+                              setMedications((prev) =>
+                                prev.map((item, i) =>
+                                  i === idx
+                                    ? {
+                                        ...item,
+                                        name: editingRxName.trim(),
+                                        dosage: editingRxDose.trim() || "As prescribed",
+                                        scheduled_time: editingRxTime.trim() || "12:00",
+                                        start_date: editingRxStartDate || null,
+                                        end_date: editingRxEndDate || null,
+                                      }
+                                    : item,
+                                ),
+                              );
+                              setEditingRxIndex(null);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full bg-pastel-mint/80 px-2.5 py-1 text-[11px] font-bold text-pastel-mint-deep cursor-pointer"
+                          >
+                            <Check className="size-3" aria-hidden="true" />
+                            Apply
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div>
+                            <span className="font-extrabold text-crayon-charcoal">
+                              {med.name}
+                            </span>{" "}
+                            <span className="text-crayon-espresso">
+                              · {med.dosage}{" "}
+                              {med.scheduled_time ? `@ ${med.scheduled_time}` : ""}
+                            </span>
+                          </div>
+                          {med.start_date || med.end_date ? (
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                invalidRowRange
+                                  ? "bg-error-container text-on-error-container"
+                                  : "bg-pastel-butter/70 text-on-secondary-container"
+                              }`}
+                            >
+                              {med.start_date || "Open"} – {med.end_date || "Ongoing"}
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-surface-container px-2.5 py-0.5 text-[10px] font-semibold text-on-surface-variant">
+                              Open-ended
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          aria-label={`Save edited prescription ${med.name}`}
+                          aria-label={`Edit ${med.name}`}
                           onClick={() => {
-                            if (!editingRxName.trim()) return;
-                            setMedications((prev) =>
-                              prev.map((item, i) =>
-                                i === idx
-                                  ? {
-                                      ...item,
-                                      name: editingRxName.trim(),
-                                      dosage: editingRxDose.trim() || "As prescribed",
-                                      scheduled_time: editingRxTime.trim() || "12:00",
-                                    }
-                                  : item,
-                              ),
-                            );
-                            setEditingRxIndex(null);
+                            setEditingRxIndex(idx);
+                            setEditingRxName(med.name);
+                            setEditingRxDose(med.dosage);
+                            setEditingRxTime(med.scheduled_time ?? "");
+                            setEditingRxStartDate(med.start_date ?? "");
+                            setEditingRxEndDate(med.end_date ?? "");
                           }}
-                          className="inline-flex items-center gap-1 rounded-full bg-pastel-mint/80 px-2.5 py-1 text-[11px] font-bold text-pastel-mint-deep cursor-pointer"
+                          className="rounded-full p-1 text-crayon-espresso hover:bg-pastel-butter/60 cursor-pointer"
                         >
-                          <Check className="size-3" aria-hidden="true" />
-                          Apply
+                          <Pencil className="size-3.5" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${med.name}`}
+                          onClick={() =>
+                            setMedications((prev) => prev.filter((_, i) => i !== idx))
+                          }
+                          className="rounded-full p-1 text-terracotta hover:bg-error-container cursor-pointer"
+                        >
+                          <Trash2 className="size-3.5" aria-hidden="true" />
                         </button>
                       </div>
-                    ) : (
-                      <div>
-                        <span className="font-extrabold text-crayon-charcoal">
-                          {med.name}
-                        </span>{" "}
-                        <span className="text-crayon-espresso">
-                          · {med.dosage}{" "}
-                          {med.scheduled_time ? `@ ${med.scheduled_time}` : ""}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        aria-label={`Edit ${med.name}`}
-                        onClick={() => {
-                          setEditingRxIndex(idx);
-                          setEditingRxName(med.name);
-                          setEditingRxDose(med.dosage);
-                          setEditingRxTime(med.scheduled_time ?? "");
-                        }}
-                        className="rounded-full p-1 text-crayon-espresso hover:bg-pastel-butter/60 cursor-pointer"
-                      >
-                        <Pencil className="size-3.5" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Remove ${med.name}`}
-                        onClick={() =>
-                          setMedications((prev) => prev.filter((_, i) => i !== idx))
-                        }
-                        className="rounded-full p-1 text-terracotta hover:bg-error-container cursor-pointer"
-                      >
-                        <Trash2 className="size-3.5" aria-hidden="true" />
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

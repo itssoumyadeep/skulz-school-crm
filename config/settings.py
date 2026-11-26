@@ -28,7 +28,28 @@ def env_bool(name: str, default: bool = False) -> bool:
     return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _int_env(name: str, default: int, *, min_value: int = 1, max_value: int = 365) -> int:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        parsed = int(raw)
+    except ValueError as exc:
+        raise ImproperlyConfigured(f"{name} must be an integer between {min_value} and {max_value}.") from exc
+    if parsed < min_value or parsed > max_value:
+        raise ImproperlyConfigured(f"{name} must be between {min_value} and {max_value}.")
+    return parsed
+
+
 DEBUG = env_bool("DJANGO_DEBUG", False)
+DEFAULT_FREE_TRIAL_DAYS = _int_env("DEFAULT_FREE_TRIAL_DAYS", 14, min_value=1, max_value=365)
+REQUIRE_JWT_EXP = env_bool("REQUIRE_JWT_EXP", not DEBUG)
+RATE_LIMIT_ENABLED = env_bool("RATE_LIMIT_ENABLED", True)
+RATE_LIMIT_AUTH_PER_MIN = _int_env("RATE_LIMIT_AUTH_PER_MIN", 60, min_value=1, max_value=10000)
+RATE_LIMIT_TRIAL_PER_MIN = _int_env("RATE_LIMIT_TRIAL_PER_MIN", 20, min_value=1, max_value=10000)
+RATE_LIMIT_TELEMETRY_PER_MIN = _int_env("RATE_LIMIT_TELEMETRY_PER_MIN", 240, min_value=1, max_value=100000)
+TELEMETRY_ENABLED = env_bool("TELEMETRY_ENABLED", True)
+TELEMETRY_OTLP_ENDPOINT = os.environ.get("TELEMETRY_OTLP_ENDPOINT", "").strip()
 
 
 def _required_secret(name: str, minimum_length: int = 50) -> str:
@@ -83,7 +104,9 @@ CORS_ALLOWED_ORIGINS = {
     origin.strip().rstrip("/")
     for origin in os.environ.get(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000" if DEBUG else "",
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+        if DEBUG
+        else "",
     ).split(",")
     if origin.strip()
 }
@@ -91,10 +114,18 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip().rstrip("/")
     for origin in os.environ.get(
         "CSRF_TRUSTED_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000" if DEBUG else "",
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+        if DEBUG
+        else "",
     ).split(",")
     if origin.strip()
 ]
+
+if DEBUG:
+    CORS_ALLOWED_ORIGINS.update({"http://localhost:5173", "http://127.0.0.1:5173"})
+    for dev_origin in ("http://localhost:5173", "http://127.0.0.1:5173"):
+        if dev_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(dev_origin)
 
 # Disabled by default, including development. Enable only for an isolated local
 # demo where the frontend session emulator is intentionally being used.
@@ -168,8 +199,11 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'core.middleware.CorsMiddleware',
+    'core.middleware.RequestTelemetryMiddleware',
+    'core.middleware.SecurityHeadersMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'core.middleware.TenantSecurityMiddleware',
+    'core.middleware.RateLimitMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -177,6 +211,30 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'skool-crm-default',
+    }
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'skool_crm.telemetry': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 ROOT_URLCONF = 'config.urls'
 

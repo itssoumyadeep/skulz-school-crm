@@ -26,6 +26,7 @@ import type {
   StudentCardEmergencyContactItem,
   StudentCardParentItem,
 } from "./admin-student-card-drawer.types";
+import { DatePicker } from "@/components/pc/date-picker";
 
 type DrawerTab = "profile" | "guardians" | "health" | "care" | "academics";
 
@@ -95,7 +96,7 @@ export function AdminStudentCardDrawer({
   // Sync key when selected student changes
   const [syncKey, setSyncKey] = useState("");
   const currentSyncKey = profile
-    ? `${profile.student_id}:${profile.name}:${profile.section}:${profile.grade}:${profile.status}:${profile.class_teacher ?? ""}:${profile.dob ?? ""}:${profile.health_record.consent_flag}:${profile.health_record.medications.length}`
+    ? `${profile.student_id}:${profile.name}:${profile.section}:${profile.grade}:${profile.status}:${profile.class_teacher ?? ""}:${profile.dob ?? ""}:${profile.health_record.consent_flag}:${JSON.stringify(profile.health_record.medications)}`
     : "";
 
   // Tab 1: Student Core & Docs
@@ -136,6 +137,8 @@ export function AdminStudentCardDrawer({
       dosage: string;
       scheduled_time?: string;
       consent?: string;
+      start_date?: string | null;
+      end_date?: string | null;
     }>
   >([]);
   const [doctorName, setDoctorName] = useState("");
@@ -146,6 +149,8 @@ export function AdminStudentCardDrawer({
   const [rxName, setRxName] = useState("");
   const [rxDose, setRxDose] = useState("");
   const [rxTime, setRxTime] = useState("12:00");
+  const [rxStartDate, setRxStartDate] = useState("");
+  const [rxEndDate, setRxEndDate] = useState("");
 
   const [medLogName, setMedLogName] = useState("");
   const [medLogDose, setMedLogDose] = useState("");
@@ -219,6 +224,8 @@ export function AdminStudentCardDrawer({
         dosage: m.dosage ?? "",
         scheduled_time: m.scheduled_time ?? "",
         consent: m.consent ?? "",
+        start_date: m.start_date ?? null,
+        end_date: m.end_date ?? null,
       })),
     );
     setDoctorName(profile.health_record.doctor_name ?? "");
@@ -1049,13 +1056,13 @@ export function AdminStudentCardDrawer({
                     </div>
 
                     <div className="space-y-2">
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 text-xs">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-6 text-xs">
                         <input
                           type="text"
                           value={rxName}
                           onChange={(e) => setRxName(e.target.value)}
                           placeholder="Prescription name"
-                          className="rounded-2xl border border-border bg-paper-card px-3 py-2 font-semibold"
+                          className="sm:col-span-2 rounded-2xl border border-border bg-paper-card px-3 py-2 font-semibold"
                         />
                         <input
                           type="text"
@@ -1071,6 +1078,33 @@ export function AdminStudentCardDrawer({
                           placeholder="Scheduled time"
                           className="rounded-2xl border border-border bg-paper-card px-3 py-2 font-semibold"
                         />
+                        <DatePicker
+                          id="card-rx-start-date"
+                          aria-label="Card Prescription Start Date"
+                          placeholder="Start Date"
+                          value={rxStartDate}
+                          onChange={setRxStartDate}
+                          className="rounded-2xl border border-border bg-paper-card px-3 py-2 font-semibold"
+                        />
+                        <DatePicker
+                          id="card-rx-end-date"
+                          aria-label="Card Prescription End Date"
+                          placeholder="End Date"
+                          value={rxEndDate}
+                          onChange={setRxEndDate}
+                          className="rounded-2xl border border-border bg-paper-card px-3 py-2 font-semibold"
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                        {rxStartDate && rxEndDate && rxEndDate < rxStartDate ? (
+                          <span className="font-semibold text-error">
+                            End date ({rxEndDate}) cannot be earlier than start date ({rxStartDate}).
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-crayon-muted">
+                            Start/End Dates scope active Caregiver daily reminders.
+                          </span>
+                        )}
                         <button
                           type="button"
                           onClick={() => {
@@ -1081,12 +1115,16 @@ export function AdminStudentCardDrawer({
                                 name: rxName.trim(),
                                 dosage: rxDose.trim() || "As prescribed",
                                 scheduled_time: rxTime.trim() || "12:00",
+                                start_date: rxStartDate || null,
+                                end_date: rxEndDate || null,
                               },
                             ]);
                             setRxName("");
                             setRxDose("");
+                            setRxStartDate("");
+                            setRxEndDate("");
                           }}
-                          className="rounded-full bg-pastel-butter px-3 py-2 font-bold text-crayon-charcoal cursor-pointer"
+                          className="rounded-full bg-pastel-butter px-3.5 py-2 font-bold text-crayon-charcoal cursor-pointer"
                         >
                           + Add Prescription
                         </button>
@@ -1094,11 +1132,28 @@ export function AdminStudentCardDrawer({
                       {medicationsList.map((m, idx) => (
                         <div
                           key={`${m.name}-${idx}`}
-                          className="flex items-center justify-between rounded-2xl bg-paper-card px-3.5 py-2 text-xs"
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-paper-card px-3.5 py-2 text-xs"
                         >
-                          <span className="font-bold">
-                            {m.name} · {m.dosage} {m.scheduled_time ? `@ ${m.scheduled_time}` : ""}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold">
+                              {m.name} · {m.dosage} {m.scheduled_time ? `@ ${m.scheduled_time}` : ""}
+                            </span>
+                            {m.start_date || m.end_date ? (
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                  m.start_date && m.end_date && m.end_date < m.start_date
+                                    ? "bg-error-container text-on-error-container"
+                                    : "bg-pastel-butter/70 text-on-secondary-container"
+                                }`}
+                              >
+                                {m.start_date || "Open"} – {m.end_date || "Ongoing"}
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-surface-container px-2.5 py-0.5 text-[10px] font-semibold text-on-surface-variant">
+                                Open-ended
+                              </span>
+                            )}
+                          </div>
                           <button
                             type="button"
                             onClick={() =>

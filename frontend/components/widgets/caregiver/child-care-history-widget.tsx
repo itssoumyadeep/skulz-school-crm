@@ -124,9 +124,9 @@ export function ChildCareHistoryWidget({
     } catch (err: unknown) {
       const msg =
         typeof err === "object" &&
-        err !== null &&
-        "message" in err &&
-        typeof (err as { message?: unknown }).message === "string"
+          err !== null &&
+          "message" in err &&
+          typeof (err as { message?: unknown }).message === "string"
           ? (err as { message: string }).message
           : "Unable to record supervisor override.";
       setOverrideError(msg);
@@ -245,7 +245,7 @@ export function ChildCareHistoryWidget({
       )}
 
       {/* Attendance & Summary Pills */}
-      {history && (
+      {/*{history && (
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-6">
           <div className="col-span-2 sm:col-span-2 rounded-3xl border-2 border-pastel-mint bg-paper-card p-4 text-xs">
             <p className="font-bold uppercase tracking-wider text-crayon-muted">
@@ -288,7 +288,7 @@ export function ChildCareHistoryWidget({
             </div>
           ))}
         </section>
-      )}
+      )}*/}
 
       {/* Kind Filter & Chronological Timeline */}
       <section className="rounded-3xl border-2 border-pastel-butter bg-paper-card p-6 shadow-pastel-warm space-y-4">
@@ -316,11 +316,10 @@ export function ChildCareHistoryWidget({
                 key={k}
                 type="button"
                 onClick={() => setKindFilter(k)}
-                className={`rounded-full px-3 py-1 cursor-pointer ${
-                  kindFilter === k
-                    ? "bg-terracotta text-on-primary"
-                    : "bg-paper-tint text-crayon-espresso hover:bg-pastel-butter/40"
-                }`}
+                className={`rounded-full px-3 py-1 cursor-pointer ${kindFilter === k
+                  ? "bg-terracotta text-on-primary"
+                  : "bg-paper-tint text-crayon-espresso hover:bg-pastel-butter/40"
+                  }`}
               >
                 {label}
               </button>
@@ -491,10 +490,10 @@ export function ChildCareHistoryWidget({
                     onChange={(e) =>
                       setOverrideStatus(
                         e.target.value as
-                          | "Present"
-                          | "Absent"
-                          | "Late"
-                          | "Excused",
+                        | "Present"
+                        | "Absent"
+                        | "Late"
+                        | "Excused",
                       )
                     }
                     className="w-full rounded-2xl border border-border bg-paper-tint px-3.5 py-2 font-bold"

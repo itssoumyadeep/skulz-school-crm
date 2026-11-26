@@ -347,4 +347,340 @@ test.describe("Caregiver Daily Care Portal Deep Browser Audit", () => {
     expect(dialogFired).toBe(false);
     expect(pageErrors).toEqual([]);
   });
+
+  test("DEF-029, DEF-031..034: On-time Check-In (Cards & Compact), Check-Out Confirmation/Toast, Checked Out Status, Post-Checkout Care Lock + Supervisor PIN, & Incident Severity BR-07-03", async ({
+    page,
+  }) => {
+    test.setTimeout(90000);
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const now = new Date();
+    const todayLocal = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    const adminToken = signTestJwt({
+      sub: "00000000-0000-0000-0000-00000000a001",
+      user_id: "00000000-0000-0000-0000-00000000a001",
+      email: "admin1@demo-school.example.com",
+      user_name: "Demo Admin",
+      role: "Admin",
+      tenant_id: "b256609a-3157-4ed8-9822-ea797d2c6a4b",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+    });
+    const adminHeaders = { Authorization: `Bearer ${adminToken}` };
+
+    const cleanupTestAttendance = async () => {
+      const r = await page.request.get(
+        `http://127.0.0.1:8000/api/v1/attendance/students/${todayLocal}`,
+        { headers: adminHeaders },
+      );
+      if (!r.ok()) return;
+      const body = (await r.json()) as {
+        data?: Array<{ name: string; attendance_id: string | null }>;
+      };
+      for (const row of body.data ?? []) {
+        if (
+          (row.name === "Ava Johnson" || row.name === "Ethan Brown") &&
+          row.attendance_id
+        ) {
+          await page.request.delete(
+            `http://127.0.0.1:8000/api/v1/attendance/${row.attendance_id}`,
+            { headers: adminHeaders },
+          );
+        }
+      }
+    };
+
+    // Ensure cutoff is before midnight (23:59) so on-time Check-In button state is active (DEF-029)
+    await page.request.put("http://127.0.0.1:8000/api/v1/attendance/config", {
+      headers: adminHeaders,
+      data: {
+        expected_start_time: "23:44",
+        grace_period_minutes: 15,
+        late_check_in_cutoff: "23:59",
+      },
+    });
+    await cleanupTestAttendance();
+
+    let createdIncidentId: string | null = null;
+
+    try {
+      const rosterPromise = page.waitForResponse(
+        (res) => res.url().includes("/api/v1/attendance/students/") && res.status() === 200,
+      );
+      const configPromise = page.waitForResponse(
+        (res) => res.url().includes("/api/v1/attendance/config") && res.status() === 200,
+      );
+      await page.goto("http://127.0.0.1:3000/caregiver");
+      await Promise.all([rosterPromise, configPromise]);
+
+      // 1. DEF-029 (Cards View): Ava Johnson shows dedicated "Check-In" button before cutoff
+      const avaCard = page
+        .locator("section div.rounded-3xl")
+        .filter({ has: page.getByRole("heading", { name: "Ava Johnson" }) })
+        .first();
+      const avaCheckInBtn = avaCard.getByRole("button", { name: "Check-In", exact: true });
+      await expect(avaCheckInBtn).toBeVisible();
+      await avaCheckInBtn.click();
+
+      await expect(page.locator("#screener-title")).toBeVisible();
+      const avaCheckInResPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/attendance/check-in") &&
+          res.request().method() === "POST" &&
+          res.status() === 200,
+      );
+      await page.getByRole("button", { name: "Confirm Screen & Check-In" }).click();
+      const avaCheckInRes = await avaCheckInResPromise;
+      const avaCheckInJson = (await avaCheckInRes.json()) as {
+        data?: { status?: string; late_reason?: string | null };
+      };
+      expect(avaCheckInJson.data?.status).toBe("Present");
+      expect(avaCheckInJson.data?.late_reason).toBeNull();
+      await expect(avaCard.getByText("Present", { exact: true })).toBeVisible();
+
+      // 2. DEF-029 (Compact View): Ethan Brown shows "Check-In" button in Action column
+      await page.getByRole("tab", { name: /compact list/i }).click();
+      const ethanRow = page.locator("tr", { hasText: "Ethan Brown" });
+      const ethanCheckInBtn = ethanRow.getByRole("button", {
+        name: "Check-In",
+        exact: true,
+      });
+      await expect(ethanCheckInBtn).toBeVisible();
+      await ethanCheckInBtn.click();
+
+      await expect(page.locator("#screener-title")).toBeVisible();
+      const ethanCheckInResPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/attendance/check-in") &&
+          res.request().method() === "POST" &&
+          res.status() === 200,
+      );
+      await page.getByRole("button", { name: "Confirm Screen & Check-In" }).click();
+      await ethanCheckInResPromise;
+      await expect(ethanRow.getByRole("button", { name: "Add Note" })).toBeVisible();
+
+      // Switch back to Cards view and open Ava Johnson's drawer
+      await page.getByRole("tab", { name: /cards/i }).click();
+      await avaCard.getByRole("button", { name: "Add Meal / Diaper Note" }).click();
+
+      const drawerDialog = page.getByRole("dialog").filter({
+        has: page.locator("#drawer-toddler-title"),
+      });
+      await expect(drawerDialog).toBeVisible();
+      await expect(drawerDialog.getByTestId("drawer-status-badge")).toHaveText(
+        "Present",
+      );
+
+      // 3. DEF-031: Click Check-Out -> Confirmation dialog at z-[80] -> Cancel keeps Present
+      await drawerDialog.getByRole("button", { name: "Check-Out" }).click();
+      const confirmDialog = page.getByRole("dialog", {
+        name: /Confirm Child Departure/i,
+      });
+      await expect(confirmDialog).toBeVisible();
+      await expect(confirmDialog).toContainText(/Confirm departure for Ava Johnson/i);
+      await confirmDialog.getByRole("button", { name: "Cancel" }).click();
+      await expect(confirmDialog).toBeHidden();
+      await expect(drawerDialog.getByTestId("drawer-status-badge")).toHaveText(
+        "Present",
+      );
+
+      // 4. DEF-031 & DEF-032: Confirm Departure -> toast, footer badge, header badge = Checked Out
+      await drawerDialog.getByRole("button", { name: "Check-Out" }).click();
+      await expect(confirmDialog).toBeVisible();
+      const checkOutResPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/attendance/check-out") &&
+          res.request().method() === "POST" &&
+          res.status() === 200,
+      );
+      await confirmDialog.getByRole("button", { name: "Confirm Departure" }).click();
+      await checkOutResPromise;
+
+      await expect(page.getByRole("status")).toContainText(
+        /Successfully checked out Ava Johnson at/i,
+      );
+      await expect(drawerDialog.getByTestId("drawer-status-badge")).toHaveText(
+        "Checked Out",
+      );
+      await expect(drawerDialog).toContainText(
+        /Checked out at .* • Cloud Ledger Saved/i,
+      );
+      await expect(drawerDialog.getByRole("button", { name: "Check-Out" })).toHaveCount(
+        0,
+      );
+
+      // 5. DEF-033: Care micro-logging locked after Check-Out, zero API requests when disabled
+      await expect(
+        drawerDialog.getByText(/Child departed at .* Daily care records are locked\./i),
+      ).toBeVisible();
+      const drawerHydrationBtn = drawerDialog.getByRole("button", {
+        name: "+120 mL",
+      });
+      const drawerMealBtn = drawerDialog.getByRole("button", {
+        name: "Log Meal",
+      });
+      const drawerDiaperBtn = drawerDialog.getByRole("button", {
+        name: "Log Diaper",
+      });
+      await expect(drawerHydrationBtn).toBeDisabled();
+      await expect(drawerMealBtn).toBeDisabled();
+      await expect(drawerDiaperBtn).toBeDisabled();
+
+      let postCareEventsWhileLocked = 0;
+      const trackLockedRequests = (req: { url: () => string; method: () => string }) => {
+        if (
+          req.url().endsWith("/api/v1/care-events") &&
+          req.method() === "POST"
+        ) {
+          postCareEventsWhileLocked += 1;
+        }
+      };
+      page.on("request", trackLockedRequests);
+      await drawerHydrationBtn.click({ force: true });
+      await page.waitForTimeout(200);
+      expect(postCareEventsWhileLocked).toBe(0);
+      page.off("request", trackLockedRequests);
+
+      // Close drawer, check Ava card badge & reload persistence (DEF-032)
+      await drawerDialog.getByRole("button", { name: "Done" }).click();
+      await expect(avaCard.getByText("Checked Out", { exact: true })).toBeVisible();
+
+      const reloadRosterPromise = page.waitForResponse(
+        (res) => res.url().includes("/api/v1/attendance/students/") && res.status() === 200,
+      );
+      await page.reload();
+      await reloadRosterPromise;
+
+      const avaCardAfterReload = page
+        .locator("section div.rounded-3xl")
+        .filter({ has: page.getByRole("heading", { name: "Ava Johnson" }) })
+        .first();
+      await expect(
+        avaCardAfterReload.getByText("Checked Out", { exact: true }),
+      ).toBeVisible();
+
+      // Re-open Ava's drawer & unlock with Supervisor PIN 2468 (DEF-033)
+      await avaCardAfterReload
+        .getByRole("button", { name: "View Locked Care Record" })
+        .click();
+      await expect(drawerDialog).toBeVisible();
+      await drawerDialog
+        .getByRole("button", { name: "Unlock with Supervisor PIN" })
+        .click();
+
+      const unlockDialog = page.getByRole("dialog", {
+        name: /Supervisor Post-Checkout Override/i,
+      });
+      await expect(unlockDialog).toBeVisible();
+      await unlockDialog.getByLabel("Supervisor PIN").fill("0000");
+      await unlockDialog.getByLabel("Override Reason").fill("Testing invalid PIN");
+      const badPinPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/care-events/verify-supervisor-pin") &&
+          res.status() === 422,
+      );
+      await unlockDialog.getByRole("button", { name: "Unlock Care Editing" }).click();
+      await badPinPromise;
+      await expect(unlockDialog).toContainText(/Invalid supervisor PIN/i);
+
+      await unlockDialog.getByLabel("Supervisor PIN").fill("2468");
+      await unlockDialog
+        .getByLabel("Override Reason")
+        .fill("Late parent-requested snack log");
+      const goodPinPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/care-events/verify-supervisor-pin") &&
+          res.status() === 200,
+      );
+      await unlockDialog.getByRole("button", { name: "Unlock Care Editing" }).click();
+      await goodPinPromise;
+      await expect(unlockDialog).toBeHidden();
+      await expect(drawerDialog.getByText(/Supervisor Override Active/i)).toBeVisible();
+
+      await expect(drawerMealBtn).toBeEnabled();
+      const overrideEventPromise = page.waitForResponse(
+        (res) =>
+          res.url().endsWith("/api/v1/care-events") &&
+          res.request().method() === "POST" &&
+          res.status() === 201,
+      );
+      await drawerMealBtn.click();
+      const overrideEventRes = await overrideEventPromise;
+      const overrideReqBody = overrideEventRes.request().postDataJSON() as {
+        supervisor_override?: boolean;
+        supervisor_pin?: string;
+      };
+      expect(overrideReqBody.supervisor_override).toBe(true);
+      await expect(drawerDialog.getByText(/Logged meal/i)).toBeVisible();
+      await drawerDialog.getByRole("button", { name: "Done" }).click();
+
+      // 6. DEF-034: BooBooModal severity pills + BR-07-03 auto-escalation + API payload check
+      await page.getByRole("button", { name: /log boo-boo/i }).click();
+      const booBooDialog = page.getByRole("dialog", {
+        name: /Log Minor Tumble or Boo-Boo/i,
+      });
+      await expect(booBooDialog).toBeVisible();
+      const severityGroup = booBooDialog.getByRole("group", {
+        name: "Severity Level",
+      });
+      for (const lvl of ["Low", "Medium", "High", "Critical"]) {
+        await expect(
+          severityGroup.getByRole("button", { name: lvl, exact: true }),
+        ).toBeVisible();
+      }
+      await severityGroup.getByRole("button", { name: "Critical", exact: true }).click();
+      await expect(booBooDialog.getByRole("alert")).toContainText(/Rule BR-07-03/i);
+
+      await booBooDialog
+        .locator("#incident-notes")
+        .fill("Critical playroom fall requiring immediate Principal notice.");
+
+      const incidentResPromise = page.waitForResponse(
+        (res) =>
+          res.url().endsWith("/api/v1/incidents") &&
+          res.request().method() === "POST" &&
+          res.status() === 201,
+      );
+      await booBooDialog
+        .getByRole("button", { name: /save & notify guardian/i })
+        .click();
+      const incidentRes = await incidentResPromise;
+      const incReqPayload = incidentRes.request().postDataJSON() as {
+        severity?: string;
+      };
+      const incResBody = (await incidentRes.json()) as {
+        data?: {
+          incident_id?: string;
+          severity?: string;
+          escalated_to_principal?: boolean;
+        };
+      };
+      expect(incReqPayload.severity).toBe("Critical");
+      expect(incResBody.data?.severity).toBe("Critical");
+      expect(incResBody.data?.escalated_to_principal).toBe(true);
+      createdIncidentId = incResBody.data?.incident_id ?? null;
+
+      await expect(page.getByText("Incident Recorded & Dispatched!")).toBeVisible();
+      await expect(booBooDialog).toBeHidden();
+      await expect(
+        page
+          .locator("section")
+          .filter({ hasText: "Minor Boo-Boo & Tumble Log" })
+          .getByText("Principal Escalated")
+          .first(),
+      ).toBeVisible();
+
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await cleanupTestAttendance();
+      if (createdIncidentId) {
+        await page.request.delete(
+          `http://127.0.0.1:8000/api/v1/incidents/${createdIncidentId}`,
+          { headers: adminHeaders },
+        );
+      }
+    }
+  });
 });

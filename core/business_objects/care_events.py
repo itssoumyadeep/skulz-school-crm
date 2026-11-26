@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -161,6 +162,39 @@ def verify_media_signature(media_id: UUID, tenant_id: UUID, exp: int, sig: str) 
 
 
 class CareEventBO:
+    SUPERVISOR_ROLES = {"admin", "administrator", "principal", "vice_principal", "owner", "supervisor"}
+
+    @classmethod
+    def verify_supervisor_override(
+        cls,
+        tenant: Tenant,
+        actor_role: str,
+        supervisor_pin: Optional[str] = None,
+    ) -> bool:
+        """Verify supervisor authority via elevated role or hashed tenant/env supervisor PIN."""
+        if (actor_role or "").strip().lower() in cls.SUPERVISOR_ROLES:
+            return True
+        pin = (supervisor_pin or "").strip()
+        if not pin:
+            return False
+        pin_hash = (tenant.config or {}).get("supervisor_override_pin_hash")
+        if isinstance(pin_hash, str) and pin_hash:
+            return check_password(pin, pin_hash)
+        env_pin = getattr(settings, "SUPERVISOR_OVERRIDE_PIN", None) or os.getenv("SUPERVISOR_OVERRIDE_PIN")
+        if env_pin:
+            return hmac.compare_digest(pin, str(env_pin))
+        return False
+
+    @staticmethod
+    def _is_student_checked_out(tenant: Tenant, student_id: UUID, check_dates: set[date]) -> bool:
+        return StudentAttendance.objects.filter(
+            tenant=tenant,
+            student_id=student_id,
+            date__in=check_dates,
+            check_out_at__isnull=False,
+            is_deleted=False,
+        ).exists()
+
     @staticmethod
     def _requires_topical_consent(payload: Dict[str, Any]) -> bool:
         if not isinstance(payload, dict):
@@ -194,6 +228,11 @@ class CareEventBO:
         actor_id: UUID,
         items: List[Dict[str, Any]],
         students_by_id: Dict[UUID, Student],
+        actor_role: str = "CareGiver",
+        supervisor_override: bool = False,
+        override_reason: Optional[str] = None,
+        supervisor_pin: Optional[str] = None,
+        attendance_date: Optional[date] = None,
     ) -> List[Dict[str, Any]]:
         student_ids = list(students_by_id.keys())
         health_map = {
@@ -206,10 +245,34 @@ class CareEventBO:
         }
 
         created: List[CareEvent] = []
+        overridden_by_student: Dict[UUID, List[CareEvent]] = {}
         now = timezone.now()
         for item in items:
             sid = item["student_id"]
             student = students_by_id[sid]
+            occurred_at = item.get("occurred_at") or now
+            check_dates = {occurred_at.date(), timezone.localtime(occurred_at).date()}
+            if attendance_date is not None:
+                check_dates.add(attendance_date)
+
+            if cls._is_student_checked_out(tenant, sid, check_dates):
+                if not supervisor_override:
+                    raise BusinessRuleError([
+                        RuleViolation(
+                            "STUDENT_CHECKED_OUT",
+                            "Child has already departed; supervisor override required to modify care records.",
+                            field="student_id",
+                        )
+                    ])
+                if not cls.verify_supervisor_override(tenant, actor_role, supervisor_pin):
+                    raise BusinessRuleError([
+                        RuleViolation(
+                            "SUPERVISOR_OVERRIDE_REQUIRED",
+                            "Valid supervisor role or supervisor PIN is required to override post-checkout care lock.",
+                            field="supervisor_pin",
+                        )
+                    ])
+
             payload = item.get("payload") or {}
             if cls._requires_topical_consent(payload):
                 hp = health_map.get(sid)
@@ -226,13 +289,34 @@ class CareEventBO:
                 tenant=tenant,
                 student=student,
                 event_type=item["event_type"],
-                occurred_at=item.get("occurred_at") or now,
+                occurred_at=occurred_at,
                 payload=payload,
                 logged_by=actor_id,
                 parent_visible=item.get("parent_visible", True),
                 created_by=actor_id,
             )
             created.append(ev)
+            if cls._is_student_checked_out(tenant, sid, check_dates) and supervisor_override:
+                overridden_by_student.setdefault(sid, []).append(ev)
+
+        for sid, evs in overridden_by_student.items():
+            st = students_by_id[sid]
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action="OVERRIDE_POST_CHECKOUT_CARE_EVENT",
+                entity="CareEvent",
+                entity_id=str(st.student_id),
+                old_values={"checked_out": True},
+                new_values={
+                    "student_id": str(st.student_id),
+                    "student_name": st.name,
+                    "actor_role": actor_role,
+                    "override_reason": (override_reason or "Supervisor post-checkout override").strip(),
+                    "modified_event_ids": [str(e.event_id) for e in evs],
+                    "event_types": [e.event_type for e in evs],
+                },
+            )
 
         return [cls._serialize(ev) for ev in created]
 
@@ -812,13 +896,42 @@ class LearningObservationBO:
         }
 
     @classmethod
+    @transaction.atomic
     def create_observation(
         cls,
         tenant: Tenant,
         student: Student,
         actor_id: UUID,
         data: Dict[str, Any],
+        actor_role: str = "CareGiver",
+        supervisor_override: bool = False,
+        override_reason: Optional[str] = None,
+        supervisor_pin: Optional[str] = None,
+        attendance_date: Optional[date] = None,
     ) -> Dict[str, Any]:
+        observed_on = data.get("observed_on") or timezone.localdate()
+        check_dates = {observed_on}
+        if attendance_date is not None:
+            check_dates.add(attendance_date)
+        is_checked_out = CareEventBO._is_student_checked_out(tenant, student.student_id, check_dates)
+        if is_checked_out:
+            if not supervisor_override:
+                raise BusinessRuleError([
+                    RuleViolation(
+                        "STUDENT_CHECKED_OUT",
+                        "Child has already departed; supervisor override required to modify care records.",
+                        field="student_id",
+                    )
+                ])
+            if not CareEventBO.verify_supervisor_override(tenant, actor_role, supervisor_pin):
+                raise BusinessRuleError([
+                    RuleViolation(
+                        "SUPERVISOR_OVERRIDE_REQUIRED",
+                        "Valid supervisor role or supervisor PIN is required to override post-checkout care lock.",
+                        field="supervisor_pin",
+                    )
+                ])
+
         note = str(data.get("note") or "").strip()
         domains = [str(d).strip() for d in (data.get("domains") or []) if str(d).strip()]
         if not note:
@@ -837,11 +950,27 @@ class LearningObservationBO:
             note=note,
             media_ids=[str(mid) for mid in (data.get("media_ids") or [])],
             shared_with_family=bool(data.get("shared_with_family", False)),
-            observed_on=data.get("observed_on") or timezone.localdate(),
+            observed_on=observed_on,
             logged_by=actor_id,
             activity_plan_id=data.get("activity_plan_id"),
             created_by=actor_id,
         )
+        if is_checked_out and supervisor_override:
+            AuditLog.objects.create(
+                tenant=tenant,
+                actor_id=actor_id,
+                action="OVERRIDE_POST_CHECKOUT_CARE_EVENT",
+                entity="LearningObservation",
+                entity_id=str(obs.observation_id),
+                old_values={"checked_out": True},
+                new_values={
+                    "student_id": str(student.student_id),
+                    "student_name": student.name,
+                    "actor_role": actor_role,
+                    "override_reason": (override_reason or "Supervisor post-checkout override").strip(),
+                    "observation_id": str(obs.observation_id),
+                },
+            )
         return cls.serialize(obs)
 
     @classmethod

@@ -17,6 +17,8 @@ export interface EditableStudentHealthProfile {
     dosage: string;
     scheduled_time?: string;
     consent?: string;
+    start_date?: string | null;
+    end_date?: string | null;
   }>;
   doctor_name: string;
   doctor_phone: string;
@@ -34,6 +36,8 @@ export interface ClassroomMedicationScheduleItem {
   medicine_name: string;
   dosage: string;
   scheduled_time: string;
+  start_date?: string | null;
+  end_date?: string | null;
   consent_flag: boolean;
   consent_note: string;
   status: string;
@@ -88,6 +92,8 @@ export interface MedicationConsentSetupWidgetProps {
         dosage: string;
         scheduled_time?: string;
         consent?: string;
+        start_date?: string | null;
+        end_date?: string | null;
       }>;
       doctor_name: string;
       doctor_phone: string;
