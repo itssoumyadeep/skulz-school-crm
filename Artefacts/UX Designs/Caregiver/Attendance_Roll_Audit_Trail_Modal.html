@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance Roll Lock — Live Audit Trail Modal (US-CG-19)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: "#fef8f1",
+            surface: "#fef8f1",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f9f3ec",
+            "surface-container": "#f3ede6",
+            "surface-container-high": "#ede7e0",
+            "surface-container-highest": "#e7e2db",
+            "on-surface": "#1d1b17",
+            "on-surface-variant": "#55423e",
+            outline: "#88726d",
+            "outline-variant": "#dbc1ba",
+            primary: "#9a442d",
+            "on-primary": "#ffffff",
+            "primary-container": "#e07a5f",
+            "primary-fixed": "#ffdbd2",
+            "on-primary-fixed-variant": "#7c2e19",
+            "terracotta-crayon": "#E07A5F",
+            secondary: "#785a00",
+            "secondary-container": "#fdcb52",
+            "secondary-fixed": "#ffdf9c",
+            "butter-yellow": "#F9C74F",
+            tertiary: "#406922",
+            "tertiary-container": "#76a355",
+            "tertiary-fixed": "#c0f19a",
+            "mint-sage": "#90BE6D",
+            "cerulean-sky": "#64B5F6",
+            "peach-apricot": "#F4A261",
+            "lavender-lilac": "#B39DDB",
+            "charcoal-slate": "#2B2D42",
+            error: "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a",
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
+          },
+          borderRadius: {
+            "2xl": "1.25rem",
+            "3xl": "1.75rem",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body {
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+      background-color: #fef8f1;
+      color: #1d1b17;
+      margin: 0;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #dbc1ba;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-background text-on-surface relative overflow-x-hidden">
+  <!-- Ambient Oil Pastel Background Blobs (z-0) -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+    <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-butter-yellow/25 blur-3xl"></div>
+    <div class="absolute top-1/3 -right-24 w-96 h-96 rounded-full bg-terracotta-crayon/15 blur-3xl"></div>
+    <div class="absolute -bottom-24 left-1/3 w-96 h-96 rounded-full bg-mint-sage/20 blur-3xl"></div>
+  </div>
+
+  <!-- Simulated Caregiver Portal Background Stage (z-10) -->
+  <div class="relative z-10 max-w-6xl mx-auto px-6 py-8">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6 bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40 rounded-3xl px-6 py-4 shadow-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-extrabold text-sm shadow-sm">CG</div>
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-primary">UX Prototype Preview · US-CG-19</p>
+          <h1 class="text-lg font-bold text-on-surface">Caregiver Portal — Attendance Roll Lock Audit Trail</h1>
+        </div>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <button id="toggle-lock-mode" type="button" class="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-xs font-bold text-on-surface transition-all border border-outline-variant/40">
+          Preview State: <span id="lock-mode-label" class="text-tertiary">Open Window (&lt;24h)</span>
+        </button>
+        <button id="open-modal-btn" type="button" class="px-4 py-2 rounded-full bg-terracotta-crayon text-on-primary text-xs font-bold shadow-sm hover:brightness-95 transition-all">
+          Open Audit Trail Modal
+        </button>
+      </div>
+    </div>
+
+    <!-- Trigger Card Preview (Attendance Roll Lock Card on /caregiver) -->
+    <div class="max-w-md bg-surface-container-lowest rounded-3xl p-6 shadow-[0px_8px_24px_rgba(224,122,95,0.08)] border border-outline-variant/30 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-butter-yellow/30 text-secondary flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-on-surface">Attendance Roll Lock</h2>
+            <p class="text-xs text-on-surface-variant">Policy BR-03-01 Verification</p>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-error-container text-on-error-container text-[11px] font-bold">Locks in 14h 22m</span>
+      </div>
+      <div class="p-4 rounded-2xl bg-surface-container-low space-y-2.5">
+        <div class="flex justify-between text-xs">
+          <span class="text-on-surface-variant font-medium">Room 1A Morning Roll</span>
+          <span class="font-bold text-on-surface">14 / 16 Accounted (88%)</span>
+        </div>
+        <div class="w-full h-2.5 rounded-full bg-surface-container overflow-hidden">
+          <div class="h-full rounded-full bg-butter-yellow" style="width: 88%"></div>
+        </div>
+        <p class="text-xs text-on-surface-variant">2 unconfirmed absences flagged for guardian outreach (BR-03-02).</p>
+      </div>
+      <button onclick="openAuditModal()" type="button" class="w-full py-2.5 px-4 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all flex items-center justify-center gap-2">
+        <svg class="w-4 h-4 text-tertiary" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+        <span>Verify Audit Trail</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PORTALED MODAL LAYER (Backdrop z-[60], Dialog z-[70]) -->
+  <div id="audit-modal-root" class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="audit-modal-title">
+    <!-- Backdrop (z-[60]) -->
+    <div id="audit-backdrop" onclick="closeAuditModal()" class="fixed inset-0 z-[60] bg-charcoal-slate/50 backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Modal Surface (z-[70]) -->
+    <div class="relative z-[70] w-full max-w-5xl max-h-[92vh] rounded-3xl bg-surface-container-lowest shadow-2xl border border-outline-variant/40 border-t-[6px] border-t-butter-yellow flex flex-col overflow-hidden">
+
+      <!-- Modal Header -->
+      <div class="px-6 py-5 bg-surface-container-low/80 border-b border-outline-variant/30 flex flex-wrap items-start justify-between gap-4">
+        <div class="flex items-start gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-butter-yellow/35 text-secondary flex items-center justify-center shrink-0 shadow-sm">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 id="audit-modal-title" class="text-xl font-extrabold text-on-surface tracking-tight">
+                Attendance Roll Lock &amp; Audit Trail
+              </h2>
+              <span id="modal-lock-badge" class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-tertiary-fixed text-tertiary text-[11px] font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                Open Window · Locks in 14h 22m
+              </span>
+            </div>
+            <p class="text-xs font-medium text-on-surface-variant mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span class="font-bold text-on-surface">Sunflowers Toddler · Room 1A</span>
+              <span>•</span>
+              <span>PostgreSQL Live Ledger (<code class="text-[11px] bg-surface-container px-1.5 py-0.5 rounded-md">core_student_attendance</code> + <code class="text-[11px] bg-surface-container px-1.5 py-0.5 rounded-md">core_audit_log</code>)</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Scoped Date Switcher (z-[80] popover pattern) -->
+          <label class="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant/50 rounded-full px-3.5 py-1.5 text-xs font-bold text-on-surface shadow-sm">
+            <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <input id="audit-date-input" type="date" value="2026-11-22" class="bg-transparent text-xs font-bold text-on-surface focus:outline-none cursor-pointer" />
+          </label>
+          <button onclick="closeAuditModal()" type="button" aria-label="Close Audit Trail" class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant flex items-center justify-center transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Scrollable Content -->
+      <div class="flex-1 overflow-y-auto custom-scroll px-6 py-5 space-y-5">
+
+        <!-- Policy BR-03-01 Lock Status Banner -->
+        <div id="policy-banner" class="rounded-2xl bg-surface-container-low border border-outline-variant/40 px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-start gap-3">
+            <div id="policy-banner-icon" class="w-9 h-9 rounded-xl bg-tertiary-fixed/70 text-tertiary flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <p id="policy-banner-title" class="text-xs font-extrabold text-on-surface">
+                Policy BR-03-01 Active · Edits Allowed Within 24-Hour Compliance Window
+              </p>
+              <p id="policy-banner-desc" class="text-xs text-on-surface-variant mt-0.5">
+                Planned check-in cutoff: <strong>09:00 AM</strong>. Standard roll edits close automatically on <strong>2026-11-23 at 09:00 AM</strong>. Post-lock or post-checkout edits require a <strong>Principal / Owner Override</strong> logged to <code class="text-[11px]">core_audit_log</code>.
+              </p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-[11px] font-bold text-on-surface-variant">
+            Room Scope: Room 1A Only
+          </span>
+        </div>
+
+        <!-- Live DB Roll Breakdown KPI Strip -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div class="rounded-2xl bg-tertiary-fixed/35 border border-mint-sage/40 p-3.5">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-tertiary">Present (On-Time)</p>
+            <p class="text-2xl font-extrabold text-on-surface mt-1">10</p>
+            <p class="text-[11px] text-on-surface-variant mt-0.5">Before 09:00 AM cutoff</p>
+          </div>
+          <div class="rounded-2xl bg-secondary-fixed/50 border border-butter-yellow/60 p-3.5">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-secondary">Late Arrivals</p>
+            <p class="text-2xl font-extrabold text-on-surface mt-1">2</p>
+            <p class="text-[11px] text-on-surface-variant mt-0.5">Reason logged (US-P1-03B)</p>
+          </div>
+          <div class="rounded-2xl bg-cerulean-sky/15 border border-cerulean-sky/40 p-3.5">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-charcoal-slate">Checked Out</p>
+            <p class="text-2xl font-extrabold text-on-surface mt-1">2</p>
+            <p class="text-[11px] text-on-surface-variant mt-0.5">PIN verified · Locked</p>
+          </div>
+          <div class="rounded-2xl bg-error-container/60 border border-error/25 p-3.5">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-error">Unexcused Absent</p>
+            <p class="text-2xl font-extrabold text-on-error-container mt-1">2</p>
+            <p class="text-[11px] text-on-error-container/80 mt-0.5">BR-03-02 parent notified</p>
+          </div>
+          <div class="rounded-2xl bg-lavender-lilac/20 border border-lavender-lilac/50 p-3.5 col-span-2 sm:col-span-1">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-charcoal-slate">Overrides</p>
+            <p class="text-2xl font-extrabold text-on-surface mt-1">1</p>
+            <p class="text-[11px] text-on-surface-variant mt-0.5">Principal signed audit</p>
+          </div>
+        </div>
+
+        <!-- Filter Bar + Search -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div id="filter-pills" class="flex items-center gap-1.5 flex-wrap">
+            <button data-filter="all" type="button" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-primary text-on-primary shadow-sm transition-all">All Events (7)</button>
+            <button data-filter="checkin" type="button" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Check-Ins (2)</button>
+            <button data-filter="late" type="button" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Late Arrivals (1)</button>
+            <button data-filter="checkout" type="button" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Check-Outs (1)</button>
+            <button data-filter="absent" type="button" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Absences &amp; BR-03-02 (2)</button>
+            <button data-filter="override" type="button" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Overrides (1)</button>
+          </div>
+
+          <div class="relative w-full sm:w-60">
+            <svg class="w-4 h-4 text-on-surface-variant absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input id="audit-search" type="search" placeholder="Search child or staff..." class="w-full pl-9 pr-4 py-2 rounded-full bg-surface-container-low border border-outline-variant/40 text-xs font-medium text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          </div>
+        </div>
+
+        <!-- Chronological Audit Trail Table -->
+        <div class="rounded-2xl border border-outline-variant/40 overflow-hidden bg-surface-container-lowest">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-surface-container-low text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant border-b border-outline-variant/30">
+                  <th class="py-3 px-4">Timestamp</th>
+                  <th class="py-3 px-4">Child &amp; Cubby</th>
+                  <th class="py-3 px-4">Event / Status</th>
+                  <th class="py-3 px-4">Recorded By</th>
+                  <th class="py-3 px-4">Policy, Reason &amp; Parent Alert</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody" class="divide-y divide-outline-variant/25 text-xs">
+                <!-- Populated by JS below -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 bg-surface-container-low/90 border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2 text-xs text-on-surface-variant">
+          <span id="verify-status-dot" class="w-2.5 h-2.5 rounded-full bg-mint-sage"></span>
+          <span id="verify-status-text" class="font-semibold">Synced with PostgreSQL · Last refreshed 20:22:14 EST</span>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <button id="export-csv-btn" type="button" class="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all flex items-center gap-1.5 border border-outline-variant/40">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Export CSV</span>
+          </button>
+          <button id="mark-verified-btn" type="button" class="px-5 py-2 rounded-full bg-tertiary text-on-primary text-xs font-bold shadow-sm hover:opacity-95 transition-all flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Confirm Roll Audit</span>
+          </button>
+          <button onclick="closeAuditModal()" type="button" class="px-4 py-2 rounded-full bg-terracotta-crayon text-on-primary text-xs font-bold hover:opacity-95 transition-all">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const AUDIT_ROWS = [
+      {
+        time: "04:12 PM",
+        date: "2026-11-22",
+        child: "Maya Lin",
+        initials: "ML",
+        cubby: "Cubby #01",
+        category: "checkout",
+        statusLabel: "Checked Out",
+        statusClass: "bg-cerulean-sky/20 text-charcoal-slate",
+        actor: "Nurse Clara Gomez",
+        actorRole: "CareGiver",
+        policyBadge: "Pickup PIN #8841 Verified",
+        policyClass: "bg-tertiary-fixed/70 text-tertiary",
+        detail: "Released to Grandmother Maria R. · Drawer locked for day (DEF-033)",
+      },
+      {
+        time: "11:05 AM",
+        date: "2026-11-22",
+        child: "Zoe Zhao",
+        initials: "ZZ",
+        cubby: "Cubby #03",
+        category: "override",
+        statusLabel: "Principal Override",
+        statusClass: "bg-lavender-lilac/30 text-charcoal-slate",
+        actor: "Dr. Evelyn Harper",
+        actorRole: "Principal",
+        policyBadge: "BR-03-01 Audit Signed",
+        policyClass: "bg-lavender-lilac/30 text-charcoal-slate",
+        detail: "Corrected prior day (2026-11-20) Absent → Excused · Reason: Pediatrician note verified",
+      },
+      {
+        time: "09:24 AM",
+        date: "2026-11-22",
+        child: "Noah Parker",
+        initials: "NP",
+        cubby: "Cubby #04",
+        category: "absent",
+        statusLabel: "Unexcused Absent",
+        statusClass: "bg-error-container text-on-error-container",
+        actor: "System / Morning Roll",
+        actorRole: "BR-03-02",
+        policyBadge: "notified_parent = True",
+        policyClass: "bg-error-container text-on-error-container",
+        detail: "No approved LeaveRequest on file · Parent outreach SMS & call queued",
+      },
+      {
+        time: "09:24 AM",
+        date: "2026-11-22",
+        child: "Charlotte Taylor",
+        initials: "CT",
+        cubby: "Cubby #09",
+        category: "absent",
+        statusLabel: "Unexcused Absent",
+        statusClass: "bg-error-container text-on-error-container",
+        actor: "System / Morning Roll",
+        actorRole: "BR-03-02",
+        policyBadge: "notified_parent = True",
+        policyClass: "bg-error-container text-on-error-container",
+        detail: "Guardian outreach pending · Follow-up logged to Room 1A roll",
+      },
+      {
+        time: "09:14 AM",
+        date: "2026-11-22",
+        child: "Liam Scott",
+        initials: "LS",
+        cubby: "Cubby #05",
+        category: "late",
+        statusLabel: "Late Check-In",
+        statusClass: "bg-secondary-fixed text-secondary",
+        actor: "Nurse Clara Gomez",
+        actorRole: "CareGiver",
+        policyBadge: "Traffic / Transit Delay",
+        policyClass: "bg-secondary-fixed/80 text-secondary",
+        detail: "Arrived 14m past 09:00 AM cutoff · Health screen passed (36.6°C, no symptoms)",
+      },
+      {
+        time: "08:42 AM",
+        date: "2026-11-22",
+        child: "Leo Vance",
+        initials: "LV",
+        cubby: "Cubby #02",
+        category: "checkin",
+        statusLabel: "Checked In",
+        statusClass: "bg-tertiary-fixed/70 text-tertiary",
+        actor: "Nurse Clara Gomez",
+        actorRole: "CareGiver",
+        policyBadge: "On-Time · Screen Clear",
+        policyClass: "bg-tertiary-fixed/60 text-tertiary",
+        detail: "Dropped off by Father (Marcus V.) · Temp 36.7°C · Salbutamol inhaler verified",
+      },
+      {
+        time: "08:31 AM",
+        date: "2026-11-22",
+        child: "Maya Lin",
+        initials: "ML",
+        cubby: "Cubby #01",
+        category: "checkin",
+        statusLabel: "Checked In",
+        statusClass: "bg-tertiary-fixed/70 text-tertiary",
+        actor: "Nurse Clara Gomez",
+        actorRole: "CareGiver",
+        policyBadge: "On-Time · Screen Clear",
+        policyClass: "bg-tertiary-fixed/60 text-tertiary",
+        detail: "Dropped off by Mother (Elena R.) · Temp 36.5°C · Consent active",
+      },
+    ];
+
+    let activeFilter = "all";
+    let searchTerm = "";
+    let isLockedPreview = false;
+
+    function renderRows() {
+      const tbody = document.getElementById("audit-tbody");
+      const filtered = AUDIT_ROWS.filter((r) => {
+        const matchesFilter = activeFilter === "all" || r.category === activeFilter;
+        const q = searchTerm.trim().toLowerCase();
+        const matchesSearch =
+          !q ||
+          r.child.toLowerCase().includes(q) ||
+          r.actor.toLowerCase().includes(q) ||
+          r.detail.toLowerCase().includes(q) ||
+          r.statusLabel.toLowerCase().includes(q);
+        return matchesFilter && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-on-surface-variant font-medium">No Room 1A audit records match this filter.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered
+        .map(
+          (r) => `
+        <tr class="hover:bg-surface-container-low/60 transition-colors">
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <span class="font-bold text-on-surface block">${r.time}</span>
+            <span class="text-[10px] text-on-surface-variant">${r.date}</span>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-extrabold flex items-center justify-center shrink-0">${r.initials}</span>
+              <div>
+                <span class="font-bold text-on-surface block">${r.child}</span>
+                <span class="text-[10px] text-on-surface-variant">${r.cubby}</span>
+              </div>
+            </div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${r.statusClass}">${r.statusLabel}</span>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <span class="font-semibold text-on-surface block">${r.actor}</span>
+            <span class="text-[10px] text-on-surface-variant">${r.actorRole}</span>
+          </td>
+          <td class="py-3.5 px-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold mb-1 ${r.policyClass}">${r.policyBadge}</span>
+            <p class="text-[11px] text-on-surface-variant leading-snug">${r.detail}</p>
+          </td>
+        </tr>`
+        )
+        .join("");
+    }
+
+    function openAuditModal() {
+      document.getElementById("audit-modal-root").classList.remove("hidden");
+    }
+
+    function closeAuditModal() {
+      document.getElementById("audit-modal-root").classList.add("hidden");
+    }
+
+    document.getElementById("open-modal-btn").addEventListener("click", openAuditModal);
+
+    document.getElementById("filter-pills").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-filter]");
+      if (!btn) return;
+      activeFilter = btn.dataset.filter;
+      document.querySelectorAll(".filter-pill").forEach((el) => {
+        el.className =
+          "filter-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all";
+      });
+      btn.className =
+        "filter-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-primary text-on-primary shadow-sm transition-all";
+      renderRows();
+    });
+
+    document.getElementById("audit-search").addEventListener("input", (e) => {
+      searchTerm = e.target.value;
+      renderRows();
+    });
+
+    document.getElementById("toggle-lock-mode").addEventListener("click", () => {
+      isLockedPreview = !isLockedPreview;
+      const label = document.getElementById("lock-mode-label");
+      const badge = document.getElementById("modal-lock-badge");
+      const bannerTitle = document.getElementById("policy-banner-title");
+      const bannerDesc = document.getElementById("policy-banner-desc");
+      const bannerIcon = document.getElementById("policy-banner-icon");
+
+      if (isLockedPreview) {
+        label.textContent = "Locked (>24h · Override Only)";
+        label.className = "text-error";
+        badge.className = "inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-error-container text-on-error-container text-[11px] font-bold";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-error"></span>Locked (&gt;24h) · Principal Override Required`;
+        bannerIcon.className = "w-9 h-9 rounded-xl bg-error-container text-error flex items-center justify-center shrink-0 mt-0.5";
+        bannerTitle.textContent = "Policy BR-03-01 Locked · Standard Caregiver Edits Blocked (HTTP 422)";
+        bannerDesc.innerHTML = `This attendance roll is older than 24 hours and is now <strong>read-only for Caregivers</strong>. Only a <strong>Principal or Owner</strong> may submit an audited override with a mandatory reason.`;
+      } else {
+        label.textContent = "Open Window (<24h)";
+        label.className = "text-tertiary";
+        badge.className = "inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-tertiary-fixed text-tertiary text-[11px] font-bold";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>Open Window · Locks in 14h 22m`;
+        bannerIcon.className = "w-9 h-9 rounded-xl bg-tertiary-fixed/70 text-tertiary flex items-center justify-center shrink-0 mt-0.5";
+        bannerTitle.textContent = "Policy BR-03-01 Active · Edits Allowed Within 24-Hour Compliance Window";
+        bannerDesc.innerHTML = `Planned check-in cutoff: <strong>09:00 AM</strong>. Standard roll edits close automatically on <strong>2026-11-23 at 09:00 AM</strong>. Post-lock or post-checkout edits require a <strong>Principal / Owner Override</strong> logged to <code class="text-[11px]">core_audit_log</code>.`;
+      }
+    });
+
+    document.getElementById("mark-verified-btn").addEventListener("click", () => {
+      document.getElementById("verify-status-text").textContent =
+        "Roll audit verified by Nurse Clara Gomez · Recorded to core_audit_log";
+      document.getElementById("mark-verified-btn").textContent = "Audit Verified ✓";
+    });
+
+    document.getElementById("export-csv-btn").addEventListener("click", () => {
+      const header = "Date,Time,Child,Cubby,Status,Actor,Role,Policy,Details\n";
+      const body = AUDIT_ROWS.map(
+        (r) => `"${r.date}","${r.time}","${r.child}","${r.cubby}","${r.statusLabel}","${r.actor}","${r.actorRole}","${r.policyBadge}","${r.detail.replace(/"/g, '""')}"`
+      ).join("\n");
+      const blob = new Blob([header + body], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "room-1a-attendance-audit-trail.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    renderRows();
+  </script>
+</body>
+</html>

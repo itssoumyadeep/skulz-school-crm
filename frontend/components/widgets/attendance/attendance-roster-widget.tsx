@@ -53,24 +53,26 @@ const QUICK_TOGGLE_ITEMS: ReadonlyArray<{
   {
     code: "P",
     status: "Present",
-    activeClassName: "bg-pastel-mint text-pastel-mint-deep font-semibold shadow-sm",
+    activeClassName:
+      "bg-pastel-mint text-pastel-mint-deep font-extrabold ring-2 ring-pastel-mint-deep shadow-xs",
   },
   {
     code: "A",
     status: "Absent",
     activeClassName:
-      "bg-error-container text-on-error-container font-semibold shadow-sm",
+      "bg-pastel-peach text-pastel-peach-deep font-extrabold ring-2 ring-pastel-coral shadow-xs",
   },
   {
     code: "L",
     status: "Late",
     activeClassName:
-      "bg-pastel-butter text-crayon-charcoal font-semibold shadow-sm",
+      "bg-pastel-sun text-crayon-charcoal font-extrabold ring-2 ring-pastel-sun-deep shadow-xs",
   },
   {
     code: "E",
     status: "Excused",
-    activeClassName: "bg-pastel-sky text-pastel-sky-deep font-semibold shadow-sm",
+    activeClassName:
+      "bg-pastel-sky text-pastel-sky-deep font-extrabold ring-2 ring-pastel-sky-deep shadow-xs",
   },
 ];
 
@@ -282,7 +284,7 @@ export function AttendanceRosterWidget({
               <div
                 role="group"
                 aria-label={`Quick attendance status for ${item.name}`}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-container-low p-1"
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-pastel-butter/80 bg-paper-tint p-1 shadow-xs"
               >
                 {QUICK_TOGGLE_ITEMS.map((option) => {
                   const isActive = item.status === option.status;
@@ -297,10 +299,10 @@ export function AttendanceRosterWidget({
                         event.stopPropagation();
                         onQuickStatusChange?.(item.studentId, option.status);
                       }}
-                      className={`min-w-7 rounded-full px-2 py-0.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`size-7 rounded-full text-xs font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pastel-sun disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center cursor-pointer ${
                         isActive
                           ? option.activeClassName
-                          : "text-muted-foreground hover:bg-surface-container hover:text-foreground"
+                          : "text-crayon-muted hover:bg-pastel-butter/40 hover:text-crayon-charcoal"
                       }`}
                     >
                       {option.code}
@@ -311,7 +313,7 @@ export function AttendanceRosterWidget({
               {item.locked && (
                 <span
                   title="Row locked"
-                  className="inline-flex items-center text-muted-foreground"
+                  className="inline-flex items-center text-crayon-muted"
                 >
                   <Lock aria-hidden="true" className="size-3.5" />
                 </span>
@@ -342,8 +344,9 @@ export function AttendanceRosterWidget({
                   event.stopPropagation();
                   onOpenEditMarkModal?.(item);
                 }}
+                className="rounded-full border border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-pastel-butter/50 text-xs font-bold shadow-xs cursor-pointer"
               >
-                <Edit3 aria-hidden="true" />
+                <Edit3 aria-hidden="true" className="size-3.5" />
                 Edit Mark
               </Button>
               <Button
@@ -354,8 +357,9 @@ export function AttendanceRosterWidget({
                   event.stopPropagation();
                   onOpenStudentProfile?.(item.studentId);
                 }}
+                className="rounded-full hover:bg-paper-tint text-crayon-espresso text-xs font-bold cursor-pointer"
               >
-                <UserRound aria-hidden="true" />
+                <UserRound aria-hidden="true" className="size-3.5" />
                 360 Profile
               </Button>
             </div>
@@ -408,18 +412,26 @@ export function AttendanceRosterWidget({
           label="Total Roster"
           value={metrics.total}
           delta={`${metrics.marked} marked • ${metrics.unmarked} pending`}
+          accentBorder="border-pastel-butter"
           icon={<Users aria-hidden="true" />}
         />
         <KpiCard
           label="Present"
           value={metrics.present}
           delta={`${metrics.presentRate}% daily attendance rate`}
+          accentBorder="border-pastel-mint"
+          badge={
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-pastel-mint text-pastel-mint-deep border border-pastel-mint-deep/20">
+              +{metrics.presentRate > 90 ? "2.4%" : "0.5%"}
+            </span>
+          }
           icon={<CheckCircle2 aria-hidden="true" />}
         />
         <KpiCard
           label="Late / Excused"
           value={metrics.lateExcusedTotal}
           delta={`${metrics.late} late • ${metrics.excused} excused`}
+          accentBorder="border-pastel-sky"
           icon={<Clock aria-hidden="true" />}
         />
         <KpiCard
@@ -430,6 +442,7 @@ export function AttendanceRosterWidget({
               ? `${metrics.absentNotified}/${metrics.absent} parent alerts sent (BR-03-02)`
               : "Auto parent alert enabled (BR-03-02)"
           }
+          accentBorder="border-pastel-peach"
           icon={<BellRing aria-hidden="true" />}
         />
       </div>
@@ -438,7 +451,7 @@ export function AttendanceRosterWidget({
       {isWindowLocked ? (
         <div
           role="status"
-          className="flex flex-col justify-between gap-3 rounded-md border border-outline-variant bg-pastel-butter/40 px-4 py-3 sm:flex-row sm:items-center"
+          className="flex flex-col justify-between gap-3 rounded-2xl border-2 border-pastel-sun/80 bg-pastel-butter/40 p-4 sm:flex-row sm:items-center shadow-pastel"
         >
           <div className="flex items-start gap-2.5">
             <Lock
@@ -446,10 +459,10 @@ export function AttendanceRosterWidget({
               className="mt-0.5 size-4 shrink-0 text-crayon-charcoal"
             />
             <div className="space-y-0.5">
-              <p className="text-sm font-semibold text-crayon-charcoal">
+              <p className="text-sm font-extrabold text-crayon-charcoal">
                 24-Hour Attendance Window Locked (Rule BR-03-01)
               </p>
-              <p className="text-xs text-crayon-espresso">
+              <p className="text-xs font-medium text-crayon-espresso">
                 {data.lockReason ||
                   "Historical attendance records older than 24 hours are read-only for classroom staff and require administrative override."}
               </p>
@@ -460,17 +473,17 @@ export function AttendanceRosterWidget({
           </StatusPill>
         </div>
       ) : (
-        <div className="flex flex-col justify-between gap-2 rounded-md border border-border bg-paper-card px-4 py-2.5 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex flex-col justify-between gap-2 rounded-2xl border-2 border-pastel-mint/80 bg-paper-card p-4 sm:flex-row sm:items-center shadow-pastel">
+          <div className="flex items-center gap-2 text-xs font-bold text-crayon-espresso">
             <ShieldCheck
               aria-hidden="true"
               className="size-4 shrink-0 text-pastel-mint-deep"
             />
             <span>
               Compliance Active: 24-hour teacher edit window open (
-              <span className="font-semibold text-foreground">BR-03-01</span>) •
+              <span className="font-extrabold text-crayon-charcoal">BR-03-01</span>) •
               Unexcused absences dispatch parent alerts (
-              <span className="font-semibold text-foreground">BR-03-02</span>).
+              <span className="font-extrabold text-crayon-charcoal">BR-03-02</span>).
             </span>
           </div>
           <StatusPill variant="info" dot>
@@ -480,7 +493,7 @@ export function AttendanceRosterWidget({
       )}
 
       {/* Controls Bar */}
-      <div className="rounded-md border border-border bg-surface p-4 shadow-sm">
+      <div className="rounded-3xl border-2 border-pastel-butter/80 bg-paper-card p-5 shadow-pastel">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:flex lg:flex-wrap lg:items-center">
             <div className="w-full sm:w-44">
@@ -491,6 +504,7 @@ export function AttendanceRosterWidget({
                 placeholder="Select date"
                 clearable={false}
                 disabled={Boolean(readOnly)}
+                className="rounded-full border-2 border-pastel-butter bg-paper-card text-xs font-bold text-crayon-charcoal shadow-xs"
               />
             </div>
 
@@ -502,7 +516,7 @@ export function AttendanceRosterWidget({
               >
                 <SelectTrigger
                   aria-label="Select class section"
-                  className="w-full bg-surface-container-lowest"
+                  className="w-full rounded-full border-2 border-pastel-butter bg-paper-card text-xs font-bold text-crayon-charcoal shadow-xs"
                 >
                   <SelectValue placeholder="Select class" />
                 </SelectTrigger>
@@ -519,15 +533,15 @@ export function AttendanceRosterWidget({
             <label className="relative block w-full sm:w-60">
               <Search
                 aria-hidden="true"
-                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-crayon-muted"
               />
               <Input
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.currentTarget.value)}
-                placeholder="Filter student, ID, or alert..."
+                placeholder="Filter student or alert..."
                 aria-label="Filter roster students"
-                className="pl-9"
+                className="rounded-full border-2 border-pastel-butter bg-paper-card pl-9.5 pr-4 py-2 text-xs font-semibold text-crayon-charcoal placeholder:text-crayon-muted focus:border-pastel-sun shadow-xs"
               />
             </label>
           </div>
@@ -545,8 +559,9 @@ export function AttendanceRosterWidget({
                   data.students.length === 0
                 }
                 onClick={() => onMarkAllPresent?.()}
+                className="rounded-full border border-pastel-mint-deep/30 bg-pastel-mint/80 hover:bg-pastel-mint text-pastel-mint-deep font-extrabold text-xs shadow-pastel transition-all cursor-pointer"
               >
-                <UserCheck aria-hidden="true" />
+                <UserCheck aria-hidden="true" className="size-4" />
                 Mark All Present
               </Button>
             )}
@@ -563,8 +578,9 @@ export function AttendanceRosterWidget({
                   data.students.length === 0
                 }
                 onClick={() => onCommitBulkRoll?.()}
+                className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun font-extrabold text-xs shadow-pastel transition-all cursor-pointer"
               >
-                <CheckCheck aria-hidden="true" />
+                <CheckCheck aria-hidden="true" className="size-4" />
                 {isCommittingBulk ? "Committing Roll..." : "Commit Morning Roll"}
               </Button>
             )}
@@ -576,9 +592,10 @@ export function AttendanceRosterWidget({
                 size="sm"
                 disabled={Boolean(readOnly)}
                 onClick={() => onOpenLeaveModal?.()}
+                className="rounded-full border-2 border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-paper-tint font-bold text-xs shadow-pastel transition-all cursor-pointer"
               >
-                <CalendarOff aria-hidden="true" />
-                Request Staff Leave
+                <CalendarOff aria-hidden="true" className="size-4" />
+                Request Cover
               </Button>
             )}
 
@@ -588,8 +605,9 @@ export function AttendanceRosterWidget({
                 variant="outline"
                 size="sm"
                 onClick={() => onExportCsv?.()}
+                className="rounded-full border-2 border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-paper-tint font-bold text-xs shadow-pastel transition-all cursor-pointer"
               >
-                <Download aria-hidden="true" />
+                <Download aria-hidden="true" className="size-4" />
                 Export CSV
               </Button>
             )}

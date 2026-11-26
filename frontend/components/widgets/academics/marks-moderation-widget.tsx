@@ -320,8 +320,8 @@ export function MarksModerationWidget({
       {
         band: "F",
         range: "Below 40%",
-        barClass: "bg-error-container",
-        badgeClass: "bg-error-container text-on-error-container",
+        barClass: "bg-pastel-coral",
+        badgeClass: "bg-pastel-peach/60 text-pastel-peach-deep font-bold",
       },
     ];
 
@@ -489,7 +489,7 @@ export function MarksModerationWidget({
       )}
 
       {/* Exam Switcher & Action Bar */}
-      <div className="space-y-3 rounded-xl border border-border bg-paper-card p-4 shadow-pastel">
+      <div className="space-y-4 rounded-3xl border-2 border-pastel-butter/80 bg-paper-card p-5 shadow-pastel">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-64">
@@ -500,7 +500,7 @@ export function MarksModerationWidget({
               >
                 <SelectTrigger
                   aria-label="Select exam assessment"
-                  className="w-full bg-surface-container-lowest"
+                  className="w-full rounded-full border-2 border-pastel-butter bg-paper-card text-xs font-bold text-crayon-charcoal shadow-xs"
                 >
                   <SelectValue placeholder="Select an exam assessment" />
                 </SelectTrigger>
@@ -519,7 +519,7 @@ export function MarksModerationWidget({
             </StatusPill>
 
             {selectedExam && (
-              <span className="inline-flex items-center rounded-full border border-border bg-surface-container-low px-3 py-1 text-xs font-medium text-crayon-espresso">
+              <span className="inline-flex items-center rounded-full border border-pastel-butter bg-paper-tint px-3 py-1 text-xs font-bold text-crayon-espresso">
                 {selectedExam.date} • Max {selectedExam.maxMarks} pts
               </span>
             )}
@@ -533,8 +533,9 @@ export function MarksModerationWidget({
                 size="sm"
                 disabled={dirtyDrafts.length === 0 || isSavingMarks}
                 onClick={handleSaveAll}
+                className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun font-extrabold text-xs shadow-pastel transition-all cursor-pointer"
               >
-                <Save aria-hidden="true" />
+                <Save aria-hidden="true" className="size-4" />
                 {isSavingMarks
                   ? "Saving Marks..."
                   : dirtyDrafts.length > 0
@@ -546,10 +547,10 @@ export function MarksModerationWidget({
         </div>
 
         {/* RBAC Academic Governance Callout */}
-        <div className="flex items-start gap-2.5 rounded-lg border border-pastel-mint-deep/25 bg-pastel-mint/20 px-3 py-2.5 text-xs text-crayon-charcoal">
+        <div className="flex items-start gap-2.5 rounded-2xl border-2 border-pastel-mint-deep/30 bg-pastel-mint/35 p-3.5 text-xs text-crayon-charcoal font-medium shadow-xs">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-pastel-mint-deep" />
           <div>
-            <span className="font-semibold text-pastel-mint-deep">
+            <span className="font-extrabold text-pastel-mint-deep">
               Academic Moderation & Immutability Governance (BR-04-04 / BR-04-07):{" "}
             </span>
             <span>
@@ -567,24 +568,28 @@ export function MarksModerationWidget({
           label="Class Average %"
           value={cohortStats.avgPctLabel}
           delta={`${cohortStats.gradedCount} of ${data.markRows.length} students graded`}
+          accentBorder="border-pastel-lilac"
           icon={<TrendingUp aria-hidden="true" />}
         />
         <KpiCard
           label="Median %"
           value={cohortStats.medianPctLabel}
           delta="Live cohort midpoint (includes unsaved edits)"
+          accentBorder="border-pastel-mint"
           icon={<BarChart3 aria-hidden="true" />}
         />
         <KpiCard
           label="Highest Score"
           value={cohortStats.highestLabel}
           delta="Top recorded exam achievement"
+          accentBorder="border-pastel-butter"
           icon={<Award aria-hidden="true" />}
         />
         <KpiCard
           label="Recorded / Locked Count"
           value={`${cohortStats.gradedCount} / ${cohortStats.lockedCount} Locked`}
           delta={`${cohortStats.moderatedCount} moderated (BR-04-04)`}
+          accentBorder="border-pastel-sky"
           icon={<Lock aria-hidden="true" />}
         />
       </div>
@@ -592,8 +597,9 @@ export function MarksModerationWidget({
       {/* Bell-Curve Grade Distribution Bar Panel */}
       <SectionPanel
         title="Bell-Curve Grade Distribution"
+        borderClass="border-pastel-lilac"
         action={
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-xs font-semibold text-crayon-muted">
             Live distribution across {cohortStats.gradedCount} graded student(s)
           </span>
         }
@@ -602,29 +608,29 @@ export function MarksModerationWidget({
           {distributionItems.map((item) => (
             <div
               key={item.band}
-              className="flex flex-col justify-between rounded-xl border border-border bg-paper-card p-3.5 shadow-xs"
+              className="flex flex-col justify-between rounded-2xl border-2 border-pastel-butter/80 bg-paper-tint/60 p-4 shadow-xs"
             >
               <div className="flex items-center justify-between gap-2">
                 <span
-                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold ${item.badgeClass}`}
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-black ${item.badgeClass}`}
                 >
                   Grade {item.band}
                 </span>
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-xs font-bold text-crayon-muted">
                   {item.range}
                 </span>
               </div>
 
               <div className="my-3 flex items-baseline justify-between tabular-nums">
-                <span className="text-xl font-bold text-foreground">
+                <span className="text-2xl font-black text-crayon-charcoal">
                   {item.count}
                 </span>
-                <span className="text-xs font-semibold text-crayon-espresso">
+                <span className="text-xs font-bold text-crayon-espresso">
                   {item.pct}%
                 </span>
               </div>
 
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-container-high">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-paper-card border border-pastel-butter/60">
                 <div
                   className={`h-full rounded-full transition-all ${item.barClass}`}
                   style={{ width: `${item.pct}%` }}
@@ -661,31 +667,31 @@ export function MarksModerationWidget({
             }
           />
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-3xl border-2 border-pastel-butter bg-paper-card shadow-pastel">
             <table className="w-full min-w-max border-collapse text-left text-sm">
-              <thead className="border-b border-border bg-background text-xs font-medium text-muted-foreground">
+              <thead className="bg-paper-tint border-b-2 border-pastel-butter text-[11px] font-black uppercase tracking-wider text-crayon-muted">
                 <tr>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-5 py-3.5 font-extrabold text-crayon-espresso">
                     Student
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-5 py-3.5 font-extrabold text-crayon-espresso">
                     Attendance
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-5 py-3.5 font-extrabold text-crayon-espresso">
                     Raw Marks
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-5 py-3.5 font-extrabold text-crayon-espresso">
                     Live % & Grade
                   </th>
-                  <th scope="col" className="px-4 py-3">
+                  <th scope="col" className="px-5 py-3.5 font-extrabold text-crayon-espresso">
                     Moderation & Lock
                   </th>
-                  <th scope="col" className="px-4 py-3 text-right">
+                  <th scope="col" className="px-5 py-3.5 text-right font-extrabold text-crayon-espresso">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-pastel-butter/40">
                 {computedRows.map((item) => {
                   const { row } = item;
                   const inputDisabled =
@@ -696,23 +702,23 @@ export function MarksModerationWidget({
                   return (
                     <tr
                       key={row.studentId}
-                      className={`transition-colors ${
+                      className={`transition-colors text-xs font-semibold text-crayon-charcoal ${
                         item.isDirtyValid
-                          ? "bg-pastel-butter/20"
-                          : "hover:bg-surface-container-low/60"
+                          ? "bg-pastel-butter/25"
+                          : "hover:bg-pastel-butter/15"
                       }`}
                     >
                       {/* Student Avatar + Number */}
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pastel-sky/45 text-xs font-bold text-pastel-sky-deep">
+                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pastel-sky/50 text-xs font-bold text-pastel-sky-deep border border-pastel-sky-deep/20">
                             {getStudentInitials(row.studentName) || "ST"}
                           </span>
                           <div>
-                            <p className="font-semibold text-foreground">
+                            <p className="font-extrabold text-crayon-charcoal">
                               {row.studentName}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-[11px] font-medium text-crayon-muted">
                               ID: {row.studentNumber}
                             </p>
                           </div>
@@ -720,18 +726,18 @@ export function MarksModerationWidget({
                       </td>
 
                       {/* Attendance % */}
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         {typeof row.attendancePct === "number" ? (
                           <AttendancePercentCell value={row.attendancePct} />
                         ) : (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-crayon-muted">
                             —
                           </span>
                         )}
                       </td>
 
                       {/* Editable Raw Marks Input */}
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <Input
@@ -750,14 +756,14 @@ export function MarksModerationWidget({
                                 )
                               }
                               placeholder="—"
-                              className="h-8 w-24 bg-surface-container-lowest tabular-nums"
+                              className="h-8 w-24 rounded-full border-2 border-pastel-butter bg-paper-card text-center text-xs font-black text-crayon-charcoal tabular-nums shadow-xs focus:border-pastel-sun"
                             />
-                            <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                            <span className="text-xs font-bold tabular-nums text-crayon-muted">
                               / {row.maxMarks}
                             </span>
                           </div>
                           {item.isOutOfRange && (
-                            <p className="text-xs text-danger">
+                            <p className="text-xs text-danger font-bold">
                               Enter 0 to {row.maxMarks}
                             </p>
                           )}
@@ -765,9 +771,9 @@ export function MarksModerationWidget({
                       </td>
 
                       {/* Live Percentage & Letter Grade */}
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2 tabular-nums">
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="text-sm font-extrabold text-crayon-charcoal">
                             {item.effectivePct !== null
                               ? `${item.effectivePct.toFixed(1)}%`
                               : "—"}
@@ -781,7 +787,7 @@ export function MarksModerationWidget({
                       </td>
 
                       {/* Moderation & Lock Governance */}
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         <div className="flex flex-wrap items-center gap-2">
                           {row.locked && (
                             <StatusPill variant="neutral">
@@ -809,8 +815,9 @@ export function MarksModerationWidget({
                                     : undefined
                               }
                               onClick={() => handleToggleModeration(row)}
+                              className="rounded-full border border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-pastel-butter/50 text-xs font-bold shadow-xs cursor-pointer"
                             >
-                              <CheckCircle2 aria-hidden="true" />
+                              <CheckCircle2 aria-hidden="true" className="size-3.5" />
                               {isRowModerating
                                 ? "Updating..."
                                 : row.moderated
@@ -831,7 +838,7 @@ export function MarksModerationWidget({
                       </td>
 
                       {/* Row Actions */}
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-5 py-3.5 text-right">
                         <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
                           {canEnterMarks && !row.locked && (
                             <Button
@@ -847,8 +854,9 @@ export function MarksModerationWidget({
                                 isSavingMarks
                               }
                               onClick={() => handleSaveSingle(item)}
+                              className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun text-xs font-bold shadow-xs cursor-pointer"
                             >
-                              <Save aria-hidden="true" />
+                              <Save aria-hidden="true" className="size-3.5" />
                               {isRowSaving ? "Saving..." : "Save"}
                             </Button>
                           )}
@@ -859,8 +867,9 @@ export function MarksModerationWidget({
                               variant="ghost"
                               size="xs"
                               onClick={() => onOpenReportCard?.(row)}
+                              className="rounded-full hover:bg-paper-tint text-crayon-espresso text-xs font-bold cursor-pointer"
                             >
-                              <FileText aria-hidden="true" />
+                              <FileText aria-hidden="true" className="size-3.5" />
                               Report Card
                             </Button>
                           )}

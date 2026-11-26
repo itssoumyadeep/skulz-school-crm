@@ -60,6 +60,7 @@ export type DataTableProps<TData extends RowData> = {
   loading?: boolean;
   onRowClick?: (row: TData) => void;
   pageSize?: number;
+  variant?: "default" | "pastel";
 };
 
 type AvatarNameRow = RowData & {
@@ -182,6 +183,7 @@ export function DataTable<TData extends RowData>({
   loading = false,
   onRowClick,
   pageSize = 20,
+  variant = "pastel",
 }: DataTableProps<TData>) {
   const resolvedPageSize =
     Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : 20;
@@ -252,13 +254,15 @@ export function DataTable<TData extends RowData>({
     );
   }
 
+  const isPastel = variant === "pastel";
+
   return (
     <section className="space-y-3" aria-busy={loading}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <label className="relative block w-full sm:max-w-xs">
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-crayon-muted"
           />
           <Input
             type="search"
@@ -266,22 +270,48 @@ export function DataTable<TData extends RowData>({
             onChange={(event) => setGlobalFilter(event.currentTarget.value)}
             placeholder="Search rows"
             aria-label="Search table rows"
-            className="pl-9"
+            className={
+              isPastel
+                ? "rounded-full border-2 border-pastel-butter bg-paper-card pl-9.5 pr-4 py-2 text-xs font-semibold text-crayon-charcoal placeholder:text-crayon-muted focus:border-pastel-sun shadow-xs"
+                : "pl-9"
+            }
           />
         </label>
         {!loading && totalRows > 0 && (
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {firstRow}-{lastRow} of {totalRows}
+          <p
+            className={`text-xs font-bold ${
+              isPastel ? "text-crayon-muted" : "text-muted-foreground"
+            }`}
+            aria-live="polite"
+          >
+            {firstRow}-{lastRow} of {totalRows} records
           </p>
         )}
       </div>
 
       {emptyState ?? (
-        <div className="overflow-x-auto rounded-md border border-border bg-surface">
+        <div
+          className={
+            isPastel
+              ? "overflow-x-auto rounded-3xl border-2 border-pastel-butter bg-paper-card shadow-pastel"
+              : "overflow-x-auto rounded-md border border-border bg-surface"
+          }
+        >
           <table className="w-full min-w-max border-collapse text-left text-sm">
-            <thead className="bg-background text-xs font-medium text-muted-foreground">
+            <thead
+              className={
+                isPastel
+                  ? "bg-paper-tint border-b-2 border-pastel-butter text-[11px] font-black uppercase tracking-wider text-crayon-muted"
+                  : "bg-background text-xs font-medium text-muted-foreground"
+              }
+            >
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-border">
+                <tr
+                  key={headerGroup.id}
+                  className={
+                    isPastel ? "border-b border-pastel-butter/80" : "border-b border-border"
+                  }
+                >
                   {headerGroup.headers.map((header) => {
                     const direction = header.column.getIsSorted();
                     const content = header.isPlaceholder ? null : (
@@ -300,13 +330,17 @@ export function DataTable<TData extends RowData>({
                               ? "descending"
                               : "none"
                         }
-                        className="px-4 py-3 font-medium"
+                        className={
+                          isPastel
+                            ? "px-5 py-3.5 font-extrabold text-crayon-espresso"
+                            : "px-4 py-3 font-medium"
+                        }
                       >
                         {header.column.getCanSort() && !header.isPlaceholder ? (
                           <button
                             type="button"
                             onClick={header.column.getToggleSortingHandler()}
-                            className="inline-flex items-center gap-1.5 text-left transition-colors hover:text-primary focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="inline-flex items-center gap-1.5 text-left transition-colors hover:text-crayon-charcoal focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             {content}
                             <SortIndicator direction={direction} />
@@ -336,14 +370,27 @@ export function DataTable<TData extends RowData>({
                         : undefined
                     }
                     tabIndex={onRowClick ? 0 : undefined}
-                    className={`border-b border-border last:border-0 ${
-                      onRowClick
-                        ? "cursor-pointer transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                        : ""
-                    }`}
+                    className={
+                      isPastel
+                        ? `border-b border-pastel-butter/40 hover:bg-pastel-butter/15 transition-colors text-xs font-semibold text-crayon-charcoal last:border-0 ${
+                            onRowClick ? "cursor-pointer" : ""
+                          }`
+                        : `border-b border-border last:border-0 ${
+                            onRowClick
+                              ? "cursor-pointer transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                              : ""
+                          }`
+                    }
                   >
                     {row.getAllCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-3 text-foreground">
+                      <td
+                        key={cell.id}
+                        className={
+                          isPastel
+                            ? "px-5 py-3.5 text-crayon-charcoal"
+                            : "px-4 py-3 text-foreground"
+                        }
+                      >
                         <table.FlexRender cell={cell} />
                       </td>
                     ))}
@@ -356,7 +403,7 @@ export function DataTable<TData extends RowData>({
       )}
 
       {!loading && totalRows > 0 && (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 pt-1">
           <Button
             type="button"
             variant="outline"
@@ -364,10 +411,15 @@ export function DataTable<TData extends RowData>({
             aria-label="Previous page"
             disabled={!table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
+            className={
+              isPastel
+                ? "rounded-full border border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-pastel-butter/50 shadow-xs"
+                : ""
+            }
           >
             <ChevronLeft aria-hidden="true" />
           </Button>
-          <span className="min-w-16 text-center text-sm tabular-nums text-muted-foreground">
+          <span className="min-w-16 text-center text-xs font-bold tabular-nums text-crayon-espresso">
             {currentPagination.pageIndex + 1} /{" "}
             {Math.max(table.getPageCount(), 1)}
           </span>
@@ -378,6 +430,11 @@ export function DataTable<TData extends RowData>({
             aria-label="Next page"
             disabled={!table.getCanNextPage()}
             onClick={() => table.nextPage()}
+            className={
+              isPastel
+                ? "rounded-full border border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-pastel-butter/50 shadow-xs"
+                : ""
+            }
           >
             <ChevronRight aria-hidden="true" />
           </Button>

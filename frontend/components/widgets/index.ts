@@ -32,6 +32,7 @@ export interface WidgetBaseProps<
 
 export * from "./parent";
 export * from "./teacher";
+export * from "./caregiver";
 export * from "./attendance";
 export * from "./academics";
 export * from "./admissions";

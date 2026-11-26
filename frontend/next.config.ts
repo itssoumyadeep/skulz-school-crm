@@ -1,21 +1,73 @@
 import type { NextConfig } from "next";
 
+const isProduction = process.env.NODE_ENV === "production";
+const publicApiOrigin = (() => {
+  const raw = process.env.NEXT_PUBLIC_API_BASE?.trim();
+  if (!raw || !raw.startsWith("http")) {
+    return null;
+  }
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+})();
+
+const connectSources = isProduction
+  ? ["'self'", ...(publicApiOrigin ? [publicApiOrigin] : []), "https:"]
+  : ["'self'", "http://127.0.0.1:8000", "http://localhost:8000", "ws:", "wss:"];
+
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "form-action 'self'",
+  isProduction
+    ? "script-src 'self' 'unsafe-inline'"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' http://127.0.0.1:8000 http://192.168.10.101:8000 ws: wss:",
+  `connect-src ${connectSources.join(" ")}`,
   "worker-src 'self' blob:",
   "manifest-src 'self'",
 ].join("; ");
 
+const securityHeaders = [
+  {
+    key: "Content-Security-Policy",
+    value: csp,
+  },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(self), microphone=(), geolocation=()",
+  },
+  ...(isProduction
+    ? [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=31536000; includeSubDomains",
+        },
+      ]
+    : []),
+];
+
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["10.0.0.156", "192.168.10.101", "localhost"],
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
+  poweredByHeader: false,
   async rewrites() {
     return [
       {
@@ -28,20 +80,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: csp,
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-        ],
+        headers: securityHeaders,
       },
     ];
   },

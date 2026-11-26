@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Child Medication Schedule &amp; Parental Consent Setup | The Purple Cubby CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: "#fef8f1",
+            surface: "#fef8f1",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f9f3ec",
+            "surface-container": "#f3ede6",
+            "surface-container-high": "#ede7e0",
+            "on-surface": "#1d1b17",
+            "on-surface-variant": "#55423e",
+            "outline-variant": "#dbc1ba",
+            primary: "#9a442d",
+            "on-primary": "#ffffff",
+            "terracotta-crayon": "#E07A5F",
+            "mint-sage": "#90BE6D",
+            "butter-yellow": "#F9C74F",
+            "cerulean-sky": "#64B5F6",
+            "peach-apricot": "#F4A261",
+            "lavender-lilac": "#B39DDB",
+            "charcoal-slate": "#2B2D42",
+            tertiary: "#406922",
+            secondary: "#785a00",
+            error: "#ba1a1a",
+            "error-container": "#ffdad6"
+          },
+          fontFamily: { sans: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"] }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background: #fef8f1; color: #1d1b17; font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif; }
+    .ambient-blob { position: fixed; border-radius: 9999px; filter: blur(90px); opacity: 0.26; pointer-events: none; z-index: 0; }
+  </style>
+</head>
+<body class="min-h-screen antialiased relative overflow-x-hidden">
+  <div class="ambient-blob w-96 h-96 bg-mint-sage -top-20 -left-20"></div>
+  <div class="ambient-blob w-96 h-96 bg-peach-apricot top-1/4 -right-24"></div>
+  <div class="ambient-blob w-80 h-80 bg-butter-yellow bottom-0 left-1/3"></div>
+
+  <!-- Fixed Header (z-40) -->
+  <header class="fixed top-0 inset-x-0 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/40 z-40 px-6 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="Admin_Operational_Console.html" class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/></svg>
+        </div>
+        <div>
+          <span class="font-bold text-primary text-base tracking-tight block leading-none">ThePurpleCubby</span>
+          <span class="text-[11px] font-semibold text-on-surface-variant">Admin Operational Console</span>
+        </div>
+      </a>
+      <nav class="hidden lg:flex items-center gap-1 bg-surface-container-low p-1 rounded-full border border-outline-variant/40 text-xs font-semibold">
+        <a href="Admin_Operational_Console.html" class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition">Overview</a>
+        <a href="../new set up/School_Setup_Wizard.html" class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition">Setup &amp; CSV</a>
+        <a href="Admin_Attendance_Timer_Config.html" class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition">Attendance Timer</a>
+        <a href="Admin_Medication_Consent_Setup.html" class="px-3.5 py-1.5 rounded-full bg-surface-container-lowest text-primary shadow-sm font-bold">Health &amp; Meds</a>
+        <a href="Admin_Child_History_Audit.html" class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition">Child History</a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint-sage/20 text-tertiary text-xs font-bold">BR-07-01 Consent Guard Active</span>
+      <div class="w-9 h-9 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shadow-sm">AM</div>
+    </div>
+  </header>
+
+  <main class="relative z-10 max-w-7xl mx-auto pt-24 pb-16 px-6 space-y-6">
+    <!-- Hero -->
+    <section class="bg-surface-container-lowest rounded-3xl p-6 sm:p-7 border-2 border-mint-sage/60 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div class="space-y-1.5">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-mint-sage/25 text-tertiary text-xs font-bold">US-AD-05 • US-P1-05A • US-CG-04 • BR-07-01</span>
+        <h1 class="text-2xl sm:text-3xl font-bold text-charcoal-slate tracking-tight">Child Medication Schedules, Allergies &amp; Parental Consent</h1>
+        <p class="text-sm text-on-surface-variant max-w-2xl">
+          Configure prescriptions (`core_student_health.medications`), allergies, photo/topical consents, and verify parental medication consent (`consent_flag`). Changes sync live to Caregiver &amp; Teacher portals and feed the administered dose audit ledger (`core_medication_log`).
+        </p>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <button onclick="openPrescriptionModal()" class="px-5 py-2.5 rounded-full bg-terracotta-crayon hover:bg-primary text-on-primary text-xs font-bold shadow-md flex items-center gap-2 transition active:scale-95">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add / Configure Prescription
+        </button>
+      </div>
+    </section>
+
+    <!-- KPI Row -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-mint-sage/50 shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Scheduled Prescriptions</span>
+        <div class="text-3xl font-bold text-charcoal-slate mt-1">4 Active</div>
+        <span class="text-xs text-tertiary font-semibold mt-1 block">Room 1A &amp; Grade 4B</span>
+      </div>
+      <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-cerulean-sky/40 shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Consents Verified</span>
+        <div class="text-3xl font-bold text-tertiary mt-1">3 / 4</div>
+        <span class="text-xs text-on-surface-variant mt-1 block">`consent_flag=True`</span>
+      </div>
+      <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-error/30 shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Blocked (Missing Consent)</span>
+        <div class="text-3xl font-bold text-error mt-1">1 Child</div>
+        <span class="text-xs text-error font-semibold mt-1 block">HTTP 422 gate (BR-07-01)</span>
+      </div>
+      <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-butter-yellow/60 shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Doses Logged Today</span>
+        <div class="text-3xl font-bold text-charcoal-slate mt-1">2 / 2</div>
+        <span class="text-xs text-on-surface-variant mt-1 block">Persisted in `core_medication_log`</span>
+      </div>
+    </section>
+
+    <!-- Scheduled Prescriptions & Consent Table -->
+    <section class="bg-surface-container-lowest rounded-3xl p-6 border-2 border-outline-variant/40 shadow-sm space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-bold text-charcoal-slate">Student Health &amp; Prescription Configuration (`core_student_health`)</h2>
+          <p class="text-xs text-on-surface-variant">Writes directly to `PUT /api/v1/students/{student_id}/health-record`.</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <input id="med-search" type="text" oninput="filterMedRows()" placeholder="Search child or medication..." class="rounded-full bg-surface-container-low border border-outline-variant/50 px-4 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-crayon/40" />
+          <select id="med-room-filter" onchange="filterMedRows()" class="rounded-full bg-surface-container-low border border-outline-variant/50 px-3.5 py-2 text-xs font-semibold text-charcoal-slate">
+            <option value="all">All Rooms &amp; Grades</option>
+            <option value="Room 1A">Room 1A (Toddlers)</option>
+            <option value="Grade 4B">Grade 4B</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-surface-container-low text-[11px] uppercase tracking-wider text-on-surface-variant">
+              <th class="py-3 px-4 rounded-l-2xl">Student &amp; Room</th>
+              <th class="py-3 px-4">Medication &amp; Dosage</th>
+              <th class="py-3 px-4">Schedule</th>
+              <th class="py-3 px-4">Allergies / Flags</th>
+              <th class="py-3 px-4">Parental Consent (BR-07-01)</th>
+              <th class="py-3 px-4">Today's Dose</th>
+              <th class="py-3 px-4 rounded-r-2xl text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="med-tbody" class="divide-y divide-outline-variant/30">
+            <tr data-room="Room 1A" data-search="maya lin amoxicillin" class="hover:bg-surface-container-low/50">
+              <td class="py-3.5 px-4"><span class="font-bold text-charcoal-slate block">Maya Lin</span><span class="text-[11px] text-on-surface-variant">Room 1A • STU-2026-0101</span></td>
+              <td class="py-3.5 px-4"><span class="font-bold text-charcoal-slate block">Amoxicillin 125mg/5mL</span><span class="text-[11px] text-on-surface-variant">5.0 mL with almond milk</span></td>
+              <td class="py-3.5 px-4 font-bold text-charcoal-slate">11:30 AM</td>
+              <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full bg-butter-yellow/35 text-secondary font-bold">Dairy (Moderate)</span></td>
+              <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold">Verified • Elena R.</span></td>
+              <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold">Completed (7:39 PM)</span></td>
+              <td class="py-3.5 px-4 text-right">
+                <button onclick="openPrescriptionModal('Maya Lin', 'Amoxicillin 125mg/5mL', '5.0 mL with almond milk', '11:30', true)" class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high font-bold text-charcoal-slate transition">Configure</button>
+              </td>
+            </tr>
+            <tr data-room="Room 1A" data-search="leo vance salbutamol inhaler" class="hover:bg-surface-container-low/50">
+              <td class="py-3.5 px-4"><span class="font-bold text-charcoal-slate block">Leo Vance</span><span class="text-[11px] text-on-surface-variant">Room 1A • STU-2026-0102</span></td>
+              <td class="py-3.5 px-4"><span class="font-bold text-charcoal-slate block">Salbutamol Inhaler (100mcg)</span><span class="text-[11px] text-on-surface-variant">2 puffs via spacer before nap</span></td>
+              <td class="py-3.5 px-4 font-bold text-charcoal-slate">01:00 PM</td>
+              <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full bg-peach-apricot/25 text-primary font-bold">Asthma (High)</span></td>
+              <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold">Verified • David V.</span></td>
+              <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold">Completed (7:39 PM)</span></td>
+              <td class="py-3.5 px-4 text-right">
+                <button onclick="openPrescriptionModal('Leo Vance', 'Salbutamol Inhaler (100mcg)', '2 puffs via spacer before nap', '13:00', true)" class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high font-bold text-charcoal-slate transition">Configure</button>
+              </td>
+            </tr>
+            <tr data-room="Room 1A" data-search="noah parker cetirizine allergy" class="hover:bg-surface-container-low/50 bg-error-container/25">
+              <td class="py-3.5 px-4"><span class="font-bold text-charcoal-slate block">Noah Parker</span><span class="text-[11px] text-on-surface-variant">Room 1A • STU-2026-0104</span></td>
+              <td class="py-3.5 px-4"><span class="font-bold text-charcoal-slate block">Cetirizine Oral Solution</span><span class="text-[11px] text-on-surface-variant">2.5 mL as needed</span></td>
+              <td class="py-3.5 px-4 font-bold text-charcoal-slate">PRN / 12:00 PM</td>
+              <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-bold">No Photo Consent</span></td>
+              <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full bg-error-container text-error font-bold">Missing Consent (Blocked)</span></td>
+              <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-bold">Blocked (422)</span></td>
+              <td class="py-3.5 px-4 text-right">
+                <button onclick="openPrescriptionModal('Noah Parker', 'Cetirizine Oral Solution', '2.5 mL as needed', '12:00', false)" class="px-3 py-1.5 rounded-full bg-terracotta-crayon text-on-primary font-bold hover:bg-primary transition">Verify Consent</button>
+              </td>
+            </tr>
+            <tr data-room="Grade 4B" data-search="lucas vance epipen peanut" class="hover:bg-surface-container-low/50">
+              <td class="py-3.5 px-4"><span class="font-bold text-charcoal-slate block">Lucas Vance</span><span class="text-[11px] text-on-surface-variant">Grade 4B • STU-2026-0001</span></td>
+              <td class="py-3.5 px-4"><span class="font-bold text-charcoal-slate block">EpiPen Jr (0.15mg)</span><span class="text-[11px] text-on-surface-variant">Sabrina's Law Emergency Plan</span></td>
+              <td class="py-3.5 px-4 font-bold text-charcoal-slate">Emergency PRN</td>
+              <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full bg-error-container text-error font-bold">Peanuts (Critical)</span></td>
+              <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold">Verified • On File</span></td>
+              <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-bold">Standby</span></td>
+              <td class="py-3.5 px-4 text-right">
+                <button onclick="openPrescriptionModal('Lucas Vance', 'EpiPen Jr (0.15mg)', 'Sabrina Law Emergency Plan', '09:00', true)" class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high font-bold text-charcoal-slate transition">Configure</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Administered Dose Audit Log -->
+    <section class="bg-surface-container-lowest rounded-3xl p-6 border-2 border-outline-variant/40 shadow-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-charcoal-slate">Administered Dose Audit Ledger (`core_medication_log`)</h2>
+          <p class="text-xs text-on-surface-variant">Hydrated from `GET /api/v1/students/{student_id}/medication-logs` • Admin corrections via `PATCH /api/v1/health/medication-log/{med_log_id}`.</p>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-surface-container-low text-xs font-bold text-on-surface-variant">6 Logged Doses</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/40 flex items-start justify-between gap-3">
+          <div class="space-y-1">
+            <div class="font-bold text-charcoal-slate">Maya Lin — Amoxicillin 125mg/5mL Suspension</div>
+            <div class="text-on-surface-variant">Dose: <strong>5.0 mL with almond milk</strong> • By: Nurse Clara Gomez</div>
+            <div class="text-[11px] text-tertiary font-semibold">Administered: 2026-11-22 19:39 • Parent Notified: True</div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold whitespace-nowrap">Audited</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/40 flex items-start justify-between gap-3">
+          <div class="space-y-1">
+            <div class="font-bold text-charcoal-slate">Leo Vance — Salbutamol Inhaler (100mcg)</div>
+            <div class="text-on-surface-variant">Dose: <strong>2 puffs via spacer before nap</strong> • By: Nurse Clara Gomez</div>
+            <div class="text-[11px] text-tertiary font-semibold">Administered: 2026-11-22 19:39 • Parent Notified: True</div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold whitespace-nowrap">Audited</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Portaled Prescription & Consent Modal (Backdrop z-[60], Modal z-[70]) -->
+  <div id="rx-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div onclick="closePrescriptionModal()" class="fixed inset-0 bg-charcoal-slate/50 backdrop-blur-sm z-[60]"></div>
+    <div class="relative z-[70] w-full max-w-lg rounded-3xl bg-surface-container-lowest p-6 border-t-8 border-mint-sage shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 id="rx-title" class="text-lg font-bold text-charcoal-slate">Configure Prescription &amp; Consent</h3>
+          <p class="text-xs text-on-surface-variant">Updates `PUT /api/v1/students/{student_id}/health-record`</p>
+        </div>
+        <button onclick="closePrescriptionModal()" class="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-on-surface-variant uppercase tracking-wider mb-1">Student</label>
+          <input id="rx-student" type="text" value="Maya Lin" class="w-full rounded-2xl bg-surface-container-low border border-outline-variant/60 px-3.5 py-2.5 font-semibold" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-on-surface-variant uppercase tracking-wider mb-1">Medicine Name</label>
+            <input id="rx-name" type="text" placeholder="e.g., Amoxicillin 125mg/5mL" class="w-full rounded-2xl bg-surface-container-low border border-outline-variant/60 px-3.5 py-2.5 font-semibold" />
+          </div>
+          <div>
+            <label class="block font-bold text-on-surface-variant uppercase tracking-wider mb-1">Scheduled Time</label>
+            <input id="rx-time" type="time" value="11:30" class="w-full rounded-2xl bg-surface-container-low border border-outline-variant/60 px-3.5 py-2.5 font-semibold" />
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-on-surface-variant uppercase tracking-wider mb-1">Dosage &amp; Administration Instructions</label>
+          <input id="rx-dose" type="text" placeholder="e.g., 5.0 mL with food" class="w-full rounded-2xl bg-surface-container-low border border-outline-variant/60 px-3.5 py-2.5 font-semibold" />
+        </div>
+        <div class="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/50 space-y-2">
+          <label class="flex items-center gap-2.5 cursor-pointer">
+            <input id="rx-consent" type="checkbox" checked class="w-4 h-4 accent-primary rounded" />
+            <span class="font-bold text-charcoal-slate">Parental Medication Consent Verified (`consent_flag=True`, BR-07-01)</span>
+          </label>
+          <div class="flex items-center gap-4 pt-1 text-[11px] text-on-surface-variant">
+            <label class="flex items-center gap-1.5"><input type="checkbox" checked class="accent-primary" /> Photo Consent</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" checked class="accent-primary" /> Topical / Sunscreen Consent</label>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closePrescriptionModal()" class="px-4 py-2 rounded-full bg-surface-container text-xs font-bold text-charcoal-slate">Cancel</button>
+        <button onclick="savePrescription()" class="px-5 py-2 rounded-full bg-terracotta-crayon hover:bg-primary text-on-primary text-xs font-bold shadow-sm">Save to Health Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden fixed bottom-6 right-6 z-[80] bg-charcoal-slate text-surface px-5 py-3.5 rounded-2xl shadow-xl text-xs font-semibold">Saved!</div>
+
+  <script>
+    function filterMedRows() {
+      const q = document.getElementById("med-search").value.toLowerCase();
+      const room = document.getElementById("med-room-filter").value;
+      document.querySelectorAll("#med-tbody tr").forEach((tr) => {
+        const matchQ = !q || tr.dataset.search.includes(q);
+        const matchR = room === "all" || tr.dataset.room === room;
+        tr.style.display = matchQ && matchR ? "" : "none";
+      });
+    }
+    function openPrescriptionModal(student = "Maya Lin", name = "", dose = "", time = "11:30", consent = true) {
+      document.getElementById("rx-student").value = student;
+      document.getElementById("rx-name").value = name;
+      document.getElementById("rx-dose").value = dose;
+      document.getElementById("rx-time").value = time;
+      document.getElementById("rx-consent").checked = consent;
+      document.getElementById("rx-modal").classList.remove("hidden");
+    }
+    function closePrescriptionModal() {
+      document.getElementById("rx-modal").classList.add("hidden");
+    }
+    function savePrescription() {
+      const student = document.getElementById("rx-student").value;
+      closePrescriptionModal();
+      const t = document.getElementById("toast");
+      t.textContent = `Updated ${student}'s health profile & prescription schedule (PUT /api/v1/students/{id}/health-record).`;
+      t.classList.remove("hidden");
+      setTimeout(() => t.classList.add("hidden"), 3200);
+    }
+  </script>
+</body>
+</html>

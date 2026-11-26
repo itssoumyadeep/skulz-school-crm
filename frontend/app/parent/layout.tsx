@@ -96,8 +96,9 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
     setAvatarUrl(resolved);
     try {
       await updateMyProfilePicture(nextUrl);
-    } catch {
-      // Cached locally when backend is in unsigned demo mode
+    } catch (err: unknown) {
+      console.warn("Backend profile picture save warning:", err);
+      throw err;
     }
   };
 
@@ -145,6 +146,7 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
+                suppressHydrationWarning
                 src={avatarUrl || DEFAULT_PARENT_AVATAR}
                 alt={displayParentName}
                 className="w-12 h-12 rounded-2xl object-cover border-2 border-pastel-sun shadow-xs"

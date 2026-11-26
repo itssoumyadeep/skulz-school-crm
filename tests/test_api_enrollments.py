@@ -994,3 +994,88 @@ class TestEnrollmentsAPI:
         )
         assert blocked_vp_decision.status_code == 403
 
+    def test_us_ad_11_student_360_card_pickup_pin_hashing_and_soft_delete(
+        self, tenant_a, tenant_b, admin_token_tenant_a, teacher_token_tenant_a
+    ):
+        student = Student.objects.create(
+            tenant=tenant_a,
+            student_number="OAK-360-001",
+            name="Aria Chen",
+            dob=date(2019, 4, 12),
+            grade="Grade 4B",
+            section="A",
+            status="Active",
+        )
+        Parent.objects.create(
+            tenant=tenant_a,
+            student=student,
+            name="Lin Chen",
+            relationship="Mother",
+            phone="+1-416-555-0190",
+            email="lin.chen@example.com",
+        )
+
+        ec_res = self.client.post(
+            f"/api/v1/students/{student.student_id}/emergency-contacts",
+            data={
+                "name": "Uncle Ben",
+                "phone": "+1-416-555-0191",
+                "relationship": "Uncle",
+                "medical_consent": True,
+                "is_authorized_pickup": True,
+                "pickup_pin": "8841",
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {admin_token_tenant_a}",
+        )
+        assert ec_res.status_code == 201
+        ec_data = ec_res.json()["data"]
+        assert ec_data["has_pickup_pin"] is True
+        assert "pickup_pin" not in ec_data
+        assert "pickup_pin_hash" not in ec_data
+        assert "8841" not in str(ec_data)
+
+        card_res = self.client.get(
+            f"/api/v1/students/{student.student_id}/profile",
+            HTTP_AUTHORIZATION=f"Bearer {admin_token_tenant_a}",
+        )
+        assert card_res.status_code == 200
+        card = card_res.json()["data"]
+        assert "documents" in card
+        assert "health_record" in card
+        assert "medication_logs" in card
+        assert "care_events" in card
+        assert "marks_records" in card
+        assert "invoices" in card
+        assert card["emergency_contacts"][0]["has_pickup_pin"] is True
+        assert "pickup_pin_hash" not in card["emergency_contacts"][0]
+
+        teacher_del = self.client.delete(
+            f"/api/v1/students/{student.student_id}",
+            HTTP_AUTHORIZATION=f"Bearer {teacher_token_tenant_a}",
+        )
+        assert teacher_del.status_code == 403
+
+        admin_del = self.client.delete(
+            f"/api/v1/students/{student.student_id}",
+            HTTP_AUTHORIZATION=f"Bearer {admin_token_tenant_a}",
+        )
+        assert admin_del.status_code == 200
+        assert Student.objects.get(student_id=student.student_id).is_deleted is True
+        assert AuditLog.objects.filter(
+            tenant=tenant_a, entity="Student", entity_id=str(student.student_id), action="DELETE"
+        ).exists()
+
+        other_student = Student.objects.create(
+            tenant=tenant_b,
+            student_number="MAPLE-360-999",
+            name="Cross Tenant Student",
+            grade="Grade 4",
+            status="Active",
+        )
+        cross_tenant_card = self.client.get(
+            f"/api/v1/students/{other_student.student_id}/profile",
+            HTTP_AUTHORIZATION=f"Bearer {admin_token_tenant_a}",
+        )
+        assert cross_tenant_card.status_code == 404
+

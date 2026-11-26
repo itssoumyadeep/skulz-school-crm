@@ -6,6 +6,7 @@ from datetime import date
 from typing import List, Dict, Any
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+from django.utils import timezone
 from ninja import Router
 
 from core.models import (
@@ -14,7 +15,7 @@ from core.models import (
 )
 from core.auth.bearer import JWTAuthBearer
 from core.auth.decorators import require_roles
-from core.auth.scoping import verify_student_access
+from core.auth.scoping import verify_student_access, get_student_queryset
 from core.schemas.base import build_response, build_error
 from core.schemas.attendance_health import (
     AttendanceMarkSchema,
@@ -26,7 +27,11 @@ from core.schemas.attendance_health import (
     StaffAttendanceUpdateInput,
     LeaveRequestCreateSchema,
     LeaveRequestApproveSchema,
-    StaffSubstitutionSchema
+    StaffSubstitutionSchema,
+    CheckInOutSchema,
+    AttendanceConfigUpdateSchema,
+    SupervisorAttendanceOverrideSchema,
+    AttendanceRollAuditConfirmSchema,
 )
 from core.business_objects.attendance_health import (
     AttendanceSheetBO,
@@ -38,13 +43,131 @@ from core.business_objects.academic import AcademicCalendarBO
 router = Router(tags=["Attendance (P03)"])
 
 
+@router.get("/attendance/config", auth=JWTAuthBearer())
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Vice_Principal', 'Owner')
+def get_attendance_config(request):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = AttendanceSheetBO.get_attendance_config(tenant)
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.put("/attendance/config", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def update_attendance_config(request, payload: AttendanceConfigUpdateSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = AttendanceSheetBO.update_attendance_config(
+        tenant=tenant,
+        expected_start_time=payload.expected_start_time,
+        grace_period_minutes=payload.grace_period_minutes,
+        late_check_in_cutoff=payload.late_check_in_cutoff,
+        actor_id=actor_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/attendance/supervisor-override", auth=JWTAuthBearer())
+@require_roles('Admin', 'Principal', 'Owner')
+def supervisor_override_attendance(request, payload: SupervisorAttendanceOverrideSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    student = get_object_or_404(
+        Student,
+        student_id=payload.student_id,
+        tenant_id=request.tenant_id,
+        is_deleted=False,
+    )
+    actor_id = UUID(str(request.user_id)) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    record = AttendanceSheetBO.supervisor_override_attendance(
+        tenant=tenant,
+        student=student,
+        att_date=payload.date,
+        status=payload.status,
+        override_reason=payload.override_reason,
+        actor_id=actor_id,
+        actor_role=actor_role,
+        late_reason=payload.late_reason,
+    )
+    return JsonResponse(
+        build_response(
+            data={
+                "attendance_id": str(record.att_id),
+                "student_id": str(student.student_id),
+                "date": record.date.isoformat(),
+                "status": record.status,
+                "notified_parent": record.notified_parent,
+            },
+            tenant_id=request.tenant_id,
+            role=actor_role,
+        ),
+        status=200,
+    )
+
+
+@router.get("/attendance/roll-audit/{att_date}", auth=JWTAuthBearer())
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Vice_Principal', 'Owner')
+def get_attendance_roll_audit(request, att_date: date, class_id: UUID = None):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, 'user_role', 'CareGiver')
+    scoped_qs = get_student_queryset(request).filter(status='Active')
+    if class_id is not None:
+        class_qs = scoped_qs.filter(class_id=class_id)
+        if actor_role in ('CareGiver', 'Caregiver', 'Teacher') and not class_qs.exists():
+            return JsonResponse(
+                build_error(
+                    errors=[{"code": "FORBIDDEN", "message": "Access denied to attendance roll audit for another room."}],
+                    tenant_id=request.tenant_id,
+                    role=actor_role,
+                ),
+                status=403,
+            )
+        scoped_qs = class_qs
+
+    data = AttendanceSheetBO.build_roll_audit_trail(
+        tenant=tenant,
+        students_qs=scoped_qs,
+        att_date=att_date,
+        actor_role=actor_role,
+        class_id=class_id,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
+@router.post("/attendance/roll-audit/{att_date}/confirm", auth=JWTAuthBearer())
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Vice_Principal', 'Owner')
+def confirm_attendance_roll_audit(request, att_date: date, payload: AttendanceRollAuditConfirmSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    actor_role = getattr(request, 'user_role', 'CareGiver')
+    actor_id = UUID(str(request.user_id)) if getattr(request, 'user_id', None) else None
+    if payload.class_id is not None and actor_role in ('CareGiver', 'Caregiver', 'Teacher'):
+        if not get_student_queryset(request).filter(status='Active', class_id=payload.class_id).exists():
+            return JsonResponse(
+                build_error(
+                    errors=[{"code": "FORBIDDEN", "message": "Access denied to confirm roll audit for another room."}],
+                    tenant_id=request.tenant_id,
+                    role=actor_role,
+                ),
+                status=403,
+            )
+
+    data = AttendanceSheetBO.confirm_roll_audit(
+        tenant=tenant,
+        att_date=att_date,
+        actor_id=actor_id,
+        actor_role=actor_role,
+        class_id=payload.class_id,
+        note=payload.note,
+    )
+    return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
+
+
 @router.get("/attendance/students/{att_date}", auth=JWTAuthBearer())
-@require_roles('Teacher', 'Owner', 'Admin', 'Principal')
+@require_roles('Teacher', 'Owner', 'Admin', 'Principal', 'CareGiver', 'Caregiver')
 def get_student_attendance_roster(request, att_date: date):
     students = list(
-        Student.objects.filter(
-            tenant_id=request.tenant_id,
-            is_deleted=False,
+        get_student_queryset(request).filter(
             status='Active',
         ).order_by('grade', 'name')
     )
@@ -65,31 +188,68 @@ def get_student_attendance_roster(request, att_date: date):
         if class_ids.get(record.student_id) == record.class_id
     }
 
-    data = [
-        {
+    from core.models import StudentHealth
+    health_records = StudentHealth.objects.filter(
+        tenant_id=request.tenant_id,
+        student_id__in=[s.student_id for s in students],
+        is_deleted=False,
+    )
+    health_by_student = {h.student_id: h for h in health_records}
+
+    _sev_rank = {'Critical': 4, 'High': 3, 'Medium': 2, 'Moderate': 2, 'Low': 1}
+
+    def _extract_medical_info(student_id):
+        h = health_by_student.get(student_id)
+        if not h:
+            return None, None
+        allergies = h.allergies if isinstance(h.allergies, list) else []
+        conditions = h.conditions if isinstance(h.conditions, list) else []
+        if allergies:
+            top_item = None
+            top_rank = -1
+            top_sev = "High"
+            for item in allergies:
+                if isinstance(item, dict):
+                    sev = item.get("severity", "High")
+                    name = item.get("name", "Allergy")
+                else:
+                    sev = "High"
+                    name = str(item)
+                rank = _sev_rank.get(sev, 2)
+                if rank > top_rank:
+                    top_rank = rank
+                    top_sev = sev
+                    top_item = name
+            extra = f" (+{len(allergies) - 1} more)" if len(allergies) > 1 else ""
+            badge = f"{top_item} ({top_sev}){extra}"
+            return badge, top_sev
+        if conditions:
+            return str(conditions[0]), "High"
+        return None, None
+
+    data = []
+    for student in students:
+        med_badge, med_sev = _extract_medical_info(student.student_id)
+        h_rec = health_by_student.get(student.student_id)
+        rec = records_by_student.get(student.student_id)
+        data.append({
             'student_id': str(student.student_id),
             'student_number': student.student_number,
             'name': student.name,
             'grade': student.grade,
             'class_id': str(class_ids[student.student_id]),
-            'attendance_id': (
-                str(records_by_student[student.student_id].att_id)
-                if student.student_id in records_by_student
-                else None
-            ),
-            'status': (
-                records_by_student[student.student_id].status
-                if student.student_id in records_by_student
-                else None
-            ),
-            'notified_parent': (
-                records_by_student[student.student_id].notified_parent
-                if student.student_id in records_by_student
-                else False
-            ),
-        }
-        for student in students
-    ]
+            'attendance_id': str(rec.att_id) if rec else None,
+            'status': rec.status if rec else None,
+            'notified_parent': rec.notified_parent if rec else False,
+            'check_in_at': rec.check_in_at.isoformat() if rec and rec.check_in_at else None,
+            'check_out_at': rec.check_out_at.isoformat() if rec and rec.check_out_at else None,
+            'is_checked_out': bool(rec and rec.check_out_at),
+            'late_reason': rec.late_reason if rec else None,
+            'medical_badge': med_badge,
+            'medical_severity': med_sev,
+            'photo_consent': bool(h_rec.photo_consent) if h_rec else False,
+            'topical_consent': bool(h_rec.topical_consent) if h_rec else False,
+        })
     return JsonResponse(
         build_response(
             data=data,
@@ -100,8 +260,102 @@ def get_student_attendance_roster(request, att_date: date):
     )
 
 
+@router.post("/attendance/check-in", auth=JWTAuthBearer())
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Owner')
+def check_in_student(request, payload: CheckInOutSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    student = get_object_or_404(Student, tenant_id=request.tenant_id, student_id=payload.student_id, is_deleted=False)
+    if not verify_student_access(request, student):
+        return JsonResponse(
+            build_error(errors=[{"code": "FORBIDDEN", "message": "Access denied to this student's room"}], tenant_id=request.tenant_id, role=request.user_role),
+            status=403,
+        )
+    att_date = payload.date or timezone.localdate()
+    actor_id = UUID(str(request.user_id)) if getattr(request, 'user_id', None) else uuid.uuid4()
+    actor_role = getattr(request, 'user_role', 'CareGiver')
+
+    health_screen_result = None
+    if payload.symptoms is not None or payload.temperature_c is not None:
+        from core.business_objects.care_events import HealthScreenBO
+        health_screen_result = HealthScreenBO.process_screen(
+            tenant=tenant,
+            student=student,
+            actor_id=actor_id,
+            actor_role=actor_role,
+            symptoms=payload.symptoms,
+            temperature_c=payload.temperature_c,
+            supervisor_override=payload.supervisor_override,
+            override_reason=payload.override_reason,
+        )
+
+    record = AttendanceSheetBO.check_in(
+        tenant=tenant,
+        student=student,
+        class_id=payload.class_id,
+        att_date=att_date,
+        actor_id=actor_id,
+        actor_role=actor_role,
+        late_reason=payload.late_reason,
+    )
+    return JsonResponse(
+        build_response(
+            data={
+                "attendance_id": str(record.att_id),
+                "student_id": str(student.student_id),
+                "date": record.date.isoformat(),
+                "status": record.status,
+                "check_in_at": record.check_in_at.isoformat() if record.check_in_at else None,
+                "check_out_at": record.check_out_at.isoformat() if record.check_out_at else None,
+                "late_reason": record.late_reason,
+                "health_screen": health_screen_result,
+            },
+            tenant_id=request.tenant_id,
+            role=actor_role,
+        ),
+        status=200,
+    )
+
+
+@router.post("/attendance/check-out", auth=JWTAuthBearer())
+@require_roles('CareGiver', 'Caregiver', 'Teacher', 'Admin', 'Principal', 'Owner')
+def check_out_student(request, payload: CheckInOutSchema):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    student = get_object_or_404(Student, tenant_id=request.tenant_id, student_id=payload.student_id, is_deleted=False)
+    if not verify_student_access(request, student):
+        return JsonResponse(
+            build_error(errors=[{"code": "FORBIDDEN", "message": "Access denied to this student's room"}], tenant_id=request.tenant_id, role=request.user_role),
+            status=403,
+        )
+    att_date = payload.date or timezone.localdate()
+    actor_id = UUID(str(request.user_id)) if getattr(request, 'user_id', None) else uuid.uuid4()
+    record = AttendanceSheetBO.check_out(
+        tenant=tenant,
+        student=student,
+        class_id=payload.class_id,
+        att_date=att_date,
+        actor_id=actor_id,
+        actor_role=getattr(request, 'user_role', 'CareGiver'),
+    )
+    return JsonResponse(
+        build_response(
+            data={
+                "attendance_id": str(record.att_id),
+                "student_id": str(student.student_id),
+                "date": record.date.isoformat(),
+                "status": record.status,
+                "check_in_at": record.check_in_at.isoformat() if record.check_in_at else None,
+                "check_out_at": record.check_out_at.isoformat() if record.check_out_at else None,
+                "is_checked_out": bool(record.check_out_at),
+            },
+            tenant_id=request.tenant_id,
+            role=request.user_role,
+        ),
+        status=200,
+    )
+
+
 @router.post("/attendance/bulk-mark", auth=JWTAuthBearer())
-@require_roles('Teacher', 'Owner', 'Admin', 'Principal')
+@require_roles('Teacher', 'Owner', 'Admin', 'Principal', 'CareGiver', 'Caregiver')
 def mark_attendance_roster(request, payload: AttendanceRosterBulkMarkSchema):
     student_ids = [record.student_id for record in payload.records]
     if len(student_ids) != len(set(student_ids)):
@@ -392,7 +646,7 @@ def get_attendance_reports(request, report_type: str):
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')), status=200)
 
 
-@router.delete("/attendance/{uuid:att_id}", auth=JWTAuthBearer())
+@router.delete("/attendance/{att_id}", auth=JWTAuthBearer())
 @require_roles('Teacher', 'Admin', 'Principal', 'Owner')
 def delete_attendance_record(request, att_id: UUID):
     record = get_object_or_404(
@@ -401,8 +655,17 @@ def delete_attendance_record(request, att_id: UUID):
         tenant_id=request.tenant_id,
         is_deleted=False,
     )
-    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     actor_role = getattr(request, 'user_role', 'Teacher')
+    if not verify_student_access(request, record.student):
+        return JsonResponse(
+            build_error(
+                errors=[{"code": "ACCESS_DENIED", "message": "Access denied to delete this student's attendance."}],
+                tenant_id=request.tenant_id,
+                role=actor_role,
+            ),
+            status=403,
+        )
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     data = AttendanceSheetBO.delete_attendance(record=record, actor_role=actor_role, actor_id=actor_id)
     return JsonResponse(build_response(data=data, tenant_id=request.tenant_id, role=actor_role), status=200)
 

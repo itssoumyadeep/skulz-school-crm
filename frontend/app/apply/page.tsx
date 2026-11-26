@@ -54,17 +54,25 @@ export default function PublicApplyPage() {
         throw new Error(res.errors?.[0]?.message || "Failed to submit application");
       }
     } catch (err: unknown) {
-      console.warn("Application fallback mode activated:", err);
-      // Fallback demo mode: Create client mock parent session
-      const fallbackToken = buildMockJwt("parent", "ten_central_academy", [], {
-        userName: formData.parent_name,
-        email: formData.parent_email,
-      });
-      document.cookie = `pc_session=${encodeURIComponent(fallbackToken)}; path=/; max-age=86400; SameSite=Lax`;
-      setSubmittedStudent({
-        name: `${formData.first_name} ${formData.last_name}`,
-        studentNumber: `STU-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      });
+      if (process.env.NODE_ENV === "production") {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to submit your application. Please try again.",
+        );
+      } else {
+        console.warn("Application fallback mode activated:", err);
+        // Local dev fallback only when backend is intentionally offline
+        const fallbackToken = buildMockJwt("parent", "ten_central_academy", [], {
+          userName: formData.parent_name,
+          email: formData.parent_email,
+        });
+        document.cookie = `pc_session=${encodeURIComponent(fallbackToken)}; path=/; max-age=86400; SameSite=Lax`;
+        setSubmittedStudent({
+          name: `${formData.first_name} ${formData.last_name}`,
+          studentNumber: `STU-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

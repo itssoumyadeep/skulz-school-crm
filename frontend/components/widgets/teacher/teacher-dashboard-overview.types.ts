@@ -21,7 +21,7 @@ export interface TeacherRollStudent {
   status: TeacherRollStatus | null;
   notifiedParent: boolean;
   medicalBadge?: string | null;
-  medicalSeverity?: "Critical" | "High" | "Moderate" | null;
+  medicalSeverity?: "Critical" | "High" | "Moderate" | "Low" | null;
   arrivalNote?: string | null;
 }
 
@@ -87,6 +87,7 @@ export interface TeacherDashboardOverviewData {
   termLabel: string;
   selectedClassId: string;
   classes: TeacherClassOption[];
+  assignedClassesLabel?: string;
   roster: TeacherRollStudent[];
   isRollLocked?: boolean;
   schedule: TeacherSchedulePeriod[];

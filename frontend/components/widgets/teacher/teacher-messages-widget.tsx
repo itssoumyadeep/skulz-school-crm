@@ -172,24 +172,33 @@ export function TeacherMessagesWidget({
           label="Classroom Outbox"
           value={data.messages.length}
           delta={`${data.homeroomLabel} guardian thread log`}
+          accentBorder="border-pastel-sky"
           icon={<Mail />}
         />
         <KpiCard
           label="Guardian Read Rate"
           value={`${data.parentAckRatePct}%`}
           delta="Within 24 hours of dispatch"
+          accentBorder="border-pastel-mint"
+          badge={
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-pastel-mint text-pastel-mint-deep border border-pastel-mint-deep/20">
+              High Sync
+            </span>
+          }
           icon={<CheckCircle2 />}
         />
         <KpiCard
           label="Pending Excursion Slips"
           value={pendingWaiversTotal}
           delta={`${data.excursions.length} active classroom events`}
+          accentBorder="border-pastel-peach"
           icon={<Calendar />}
         />
         <KpiCard
           label="Emergency All-Channel"
           value="Principal Gate"
           delta="Standard parent notes enabled"
+          accentBorder="border-pastel-butter"
           icon={<Users />}
         />
       </div>
@@ -197,13 +206,14 @@ export function TeacherMessagesWidget({
       {/* Excursion & Field Trip Permission Slip Tracker */}
       <SectionPanel
         title="Excursion & Field Trip Permission Waivers"
-        className="rounded-2xl bg-paper-card shadow-pastel"
+        borderClass="border-pastel-sky"
         action={
           canCompose ? (
             <Button
               type="button"
               size="sm"
               onClick={() => onOpenComposeModal?.()}
+              className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun font-extrabold text-xs shadow-pastel cursor-pointer"
             >
               <Send className="size-4" />
               Compose Parent Message
@@ -230,14 +240,14 @@ export function TeacherMessagesWidget({
               return (
                 <div
                   key={exc.eventId}
-                  className="rounded-xl border border-border bg-surface-container-lowest p-4"
+                  className="rounded-3xl border-2 border-pastel-butter/80 bg-paper-tint/60 p-6 shadow-xs flex flex-col justify-between"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-sm font-bold text-crayon-charcoal">
+                      <h3 className="text-sm font-extrabold text-crayon-charcoal">
                         {exc.title}
                       </h3>
-                      <p className="mt-0.5 text-xs text-crayon-muted">
+                      <p className="mt-1 text-xs font-semibold text-crayon-muted">
                         Event: {exc.eventDate} · Deadline:{" "}
                         {exc.registrationDeadline} · {exc.location}
                       </p>
@@ -250,15 +260,15 @@ export function TeacherMessagesWidget({
                     </StatusPill>
                   </div>
 
-                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-paper-tint">
+                  <div className="my-4 h-2.5 w-full overflow-hidden rounded-full bg-paper-card border border-pastel-butter/60">
                     <div
                       className="h-full rounded-full bg-pastel-mint-deep transition-all"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-xs text-crayon-muted">
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-pastel-butter/60">
+                    <span className="text-xs font-bold text-crayon-espresso">
                       {exc.feeAmount > 0
                         ? `Activity fee: CAD ${exc.feeAmount.toFixed(2)}`
                         : "No activity fee"}
@@ -269,6 +279,7 @@ export function TeacherMessagesWidget({
                         variant="outline"
                         size="xs"
                         onClick={() => onSendExcursionReminder?.(exc)}
+                        className="rounded-full border border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-pastel-butter/50 text-xs font-bold shadow-xs cursor-pointer"
                       >
                         <Send className="size-3.5" />
                         Remind {pending} Families
@@ -285,7 +296,7 @@ export function TeacherMessagesWidget({
       {/* Sent Messages & Guardian Communications Ledger */}
       <SectionPanel
         title="Guardian & Classroom Communication Log"
-        className="rounded-2xl bg-paper-card shadow-pastel"
+        borderClass="border-pastel-butter"
         action={
           <div className="flex flex-wrap items-center gap-2">
             <Input
@@ -293,11 +304,11 @@ export function TeacherMessagesWidget({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search subject or guardian..."
               aria-label="Search messages"
-              className="h-8 w-48 text-xs"
+              className="rounded-full border-2 border-pastel-butter bg-paper-card pl-4 pr-4 py-1 h-8 w-48 text-xs font-semibold text-crayon-charcoal placeholder:text-crayon-muted focus:border-pastel-sun shadow-xs"
             />
             <div className="w-36">
               <Select value={channelFilter} onValueChange={setChannelFilter}>
-                <SelectTrigger aria-label="Filter channel" className="h-8 text-xs">
+                <SelectTrigger aria-label="Filter channel" className="rounded-full border-2 border-pastel-butter bg-paper-card h-8 text-xs font-bold text-crayon-charcoal shadow-xs">
                   <SelectValue placeholder="Channel" />
                 </SelectTrigger>
                 <SelectContent>

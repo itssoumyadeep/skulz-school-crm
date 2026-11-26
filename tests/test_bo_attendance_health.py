@@ -7,7 +7,7 @@ from django.utils import timezone
 from core.models import (
     Tenant, Student, StudentAttendance, StaffAttendance, LeaveRequest,
     AttendanceRoster, StudentHealth, HealthObservation, MedicationLog,
-    Incident, SafetyDrill, AcademicCalendar
+    Incident, SafetyDrill, AcademicCalendar, AuditLog
 )
 from core.business_objects.attendance_health import (
     AttendanceSheetBO,
@@ -222,6 +222,95 @@ class TestHealthRecordBO:
         )
         assert log.medicine_name == "Inhaler"
         assert log.parent_notified is True
+
+    def test_us_ad_12_medication_tenure_validation_and_date_matching(self, tenant_a, active_student):
+        today = timezone.localdate()
+        yesterday = today - timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
+        next_week = today + timedelta(days=7)
+
+        bo = HealthRecordBO(student=active_student, actor_role="Admin")
+        actor_id = uuid.uuid4()
+
+        # 1. end_date < start_date raises BusinessRuleError
+        with pytest.raises(BusinessRuleError) as exc_range:
+            bo.upsert_health_record(
+                {
+                    "consent_flag": True,
+                    "medications": [
+                        {
+                            "name": "Vitamin D Drops",
+                            "dosage": "2 drops",
+                            "scheduled_time": "10:00",
+                            "start_date": tomorrow.isoformat(),
+                            "end_date": yesterday.isoformat(),
+                        }
+                    ],
+                },
+                actor_id=actor_id,
+            )
+        assert any(v.rule_id == "INVALID_MEDICATION_TENURE" for v in exc_range.value.violations)
+
+        # 2. Malformed date string raises BusinessRuleError
+        with pytest.raises(BusinessRuleError) as exc_fmt:
+            bo.upsert_health_record(
+                {
+                    "consent_flag": True,
+                    "medications": [
+                        {
+                            "name": "Vitamin D Drops",
+                            "dosage": "2 drops",
+                            "start_date": "2026/11/25",
+                            "end_date": "",
+                        }
+                    ],
+                },
+                actor_id=actor_id,
+            )
+        assert any(v.rule_id == "INVALID_MEDICATION_TENURE" for v in exc_fmt.value.violations)
+
+        # 3. Valid start_date..end_date persists & writes AuditLog (blank strings normalized to None)
+        profile = bo.upsert_health_record(
+            {
+                "consent_flag": True,
+                "medications": [
+                    {
+                        "name": "Vitamin D Drops",
+                        "dosage": "2 drops",
+                        "scheduled_time": "10:00",
+                        "start_date": today.isoformat(),
+                        "end_date": next_week.isoformat(),
+                    },
+                    {
+                        "name": "Legacy Open-Ended",
+                        "dosage": "1 tablet",
+                        "start_date": "",
+                        "end_date": None,
+                    },
+                ],
+            },
+            actor_id=actor_id,
+        )
+        assert profile.medications[0]["start_date"] == today.isoformat()
+        assert profile.medications[0]["end_date"] == next_week.isoformat()
+        assert profile.medications[1]["start_date"] is None
+        assert profile.medications[1]["end_date"] is None
+        assert AuditLog.objects.filter(
+            tenant=tenant_a,
+            entity="StudentHealth",
+            entity_id=str(profile.health_id),
+            action="UPDATE",
+        ).exists()
+
+        # 4. Date activity checks across boundaries and undated legacy entries
+        bounded = profile.medications[0]
+        assert HealthRecordBO.is_medication_active_on_date(bounded, today) is True
+        assert HealthRecordBO.is_medication_active_on_date(bounded, next_week) is True
+        assert HealthRecordBO.is_medication_active_on_date(bounded, today + timedelta(days=3)) is True
+        assert HealthRecordBO.is_medication_active_on_date(bounded, yesterday) is False
+        assert HealthRecordBO.is_medication_active_on_date(bounded, next_week + timedelta(days=1)) is False
+        assert HealthRecordBO.is_medication_active_on_date(profile.medications[1], yesterday) is True
+        assert HealthRecordBO.is_medication_active_on_date("Plain String Med", today) is True
 
 
 @pytest.mark.django_db

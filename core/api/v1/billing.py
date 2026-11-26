@@ -663,6 +663,20 @@ def update_invoice(request, invoice_id: UUID, payload: InvoiceUpdateSchema):
     )
 
 
+@router.delete("/invoices/{invoice_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Owner')
+def delete_invoice(request, invoice_id: UUID):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    invoice = get_object_or_404(Invoice, invoice_id=invoice_id, tenant=tenant, is_deleted=False)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = FeeAccountBO.delete_invoice(invoice=invoice, actor_id=actor_id)
+    return JsonResponse(
+        build_response(data, tenant_id=request.tenant_id, role=actor_role),
+        status=200,
+    )
+
+
 @router.post("/invoices/{invoice_id}/late-fee", auth=JWTAuthBearer())
 @require_roles('Admin', 'Principal', 'Owner')
 def apply_late_fee(request, invoice_id: UUID, payload: LateFeeApplySchema = None):
@@ -731,6 +745,20 @@ def get_discount(request, discount_id: UUID):
     discount = get_object_or_404(DiscountWaiver, discount_id=discount_id, tenant=tenant, is_deleted=False)
     return JsonResponse(
         build_response(_discount_to_dict(discount), tenant_id=request.tenant_id, role=getattr(request, 'user_role', 'Admin')),
+        status=200,
+    )
+
+
+@router.delete("/discounts/{discount_id}", auth=JWTAuthBearer())
+@require_roles('Admin', 'Owner')
+def delete_discount(request, discount_id: UUID):
+    tenant = get_object_or_404(Tenant, tenant_id=request.tenant_id)
+    discount = get_object_or_404(DiscountWaiver, discount_id=discount_id, tenant=tenant, is_deleted=False)
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
+    actor_role = getattr(request, 'user_role', 'Admin')
+    data = FeeAccountBO.delete_discount_waiver(discount=discount, actor_id=actor_id)
+    return JsonResponse(
+        build_response(data, tenant_id=request.tenant_id, role=actor_role),
         status=200,
     )
 

@@ -477,42 +477,51 @@ export function HealthProfileWidget({
           label="Active Action Plans (Sabrina's Law)"
           value={data.medicalAlerts.length}
           delta={`${criticalAlertsCount} critical life-safety protocol(s)`}
+          accentBorder="border-pastel-coral"
           icon={<HeartPulse aria-hidden="true" />}
         />
         <KpiCard
           label="Parental Med Consents (BR-07-01)"
           value={`${consentedAlertsCount} / ${data.medicalAlerts.length}`}
           delta="Signed medical authorizations on file"
+          accentBorder="border-pastel-mint"
+          badge={
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-pastel-mint text-pastel-mint-deep border border-pastel-mint-deep/20">
+              100% Consent
+            </span>
+          }
           icon={<FileCheck2 aria-hidden="true" />}
         />
         <KpiCard
           label="Medication Logs Today"
           value={data.medicationLogs.length}
           delta={`${notifiedMedLogsCount} guardian confirmation(s) sent`}
+          accentBorder="border-pastel-butter"
           icon={<Pill aria-hidden="true" />}
         />
         <KpiCard
           label="Escalated Incidents"
           value={escalatedIncidentsCount}
           delta="1h SLA & Principal review (BR-07-02 / BR-07-03)"
+          accentBorder="border-pastel-peach"
           icon={<ShieldAlert aria-hidden="true" />}
         />
       </div>
 
       {/* Sabrina's Law Anaphylaxis & Asthma Action Plan Cards */}
-      <section className="space-y-3" aria-label="Sabrina's Law Individual Medical Action Plans">
+      <section className="space-y-4" aria-label="Sabrina's Law Individual Medical Action Plans">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="text-base font-bold text-crayon-charcoal">
+            <h3 className="text-base font-extrabold text-crayon-charcoal">
               Sabrina&apos;s Law Anaphylaxis &amp; Asthma Action Plans
             </h3>
-            <p className="text-xs text-crayon-muted">
+            <p className="text-xs font-semibold text-crayon-muted">
               Individualized emergency triggers, rescue medication storage locations, and step-by-step response protocols.
             </p>
           </div>
           <Badge
             variant="outline"
-            className="border-border bg-paper-card text-crayon-espresso"
+            className="rounded-full border-2 border-pastel-coral/60 bg-pastel-peach/30 px-3 py-1 text-xs font-bold text-pastel-peach-deep"
           >
             {data.medicalAlerts.length} Active Plan(s)
           </Badge>
@@ -529,33 +538,33 @@ export function HealthProfileWidget({
             {data.medicalAlerts.map((alert) => {
               const isCritical = alert.severity === "Critical";
               const cardSurfaceClass = isCritical
-                ? "bg-error-container/40 border-danger/30"
-                : "bg-pastel-peach/40 border-border";
+                ? "border-2 border-pastel-coral bg-paper-card shadow-pastel hover:shadow-pastel-hover"
+                : "border-2 border-pastel-peach bg-paper-card shadow-pastel hover:shadow-pastel-hover";
 
               return (
                 <article
                   key={alert.studentId}
-                  className={`flex flex-col justify-between rounded-2xl border p-5 shadow-pastel transition-shadow hover:shadow-pastel-hover ${cardSurfaceClass}`}
+                  className={`flex flex-col justify-between rounded-3xl p-6 transition-all ${cardSurfaceClass}`}
                 >
                   <div className="space-y-4">
                     {/* Student & Severity Header */}
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="text-base font-bold text-crayon-charcoal">
+                          <h4 className="text-base font-extrabold text-crayon-charcoal">
                             {alert.studentName}
                           </h4>
                           <Badge
                             variant="outline"
-                            className="border-outline-variant bg-paper-card text-xs text-crayon-espresso"
+                            className="rounded-full border border-pastel-butter bg-paper-tint text-xs font-bold text-crayon-espresso"
                           >
                             {alert.grade}
                           </Badge>
                         </div>
                         <p
-                          className={`mt-1 text-sm font-semibold ${
+                          className={`mt-1 text-sm font-extrabold ${
                             isCritical
-                              ? "text-on-error-container"
+                              ? "text-pastel-peach-deep"
                               : "text-pastel-peach-deep"
                           }`}
                         >
@@ -583,14 +592,14 @@ export function HealthProfileWidget({
 
                     {/* Known Triggers */}
                     <div className="space-y-1.5">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-crayon-espresso">
+                      <p className="text-[11px] font-black uppercase tracking-wider text-crayon-espresso">
                         Known Allergens &amp; Triggers
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {alert.triggers.map((trigger) => (
                           <span
                             key={trigger}
-                            className="inline-flex items-center rounded-full border border-border bg-paper-card px-2.5 py-0.5 text-xs font-medium text-crayon-charcoal"
+                            className="inline-flex items-center rounded-full border border-pastel-butter bg-paper-tint px-3 py-1 text-xs font-bold text-crayon-charcoal shadow-xs"
                           >
                             {trigger}
                           </span>
@@ -599,20 +608,20 @@ export function HealthProfileWidget({
                     </div>
 
                     {/* Emergency Medication & Storage Location */}
-                    <div className="grid grid-cols-1 gap-2.5 rounded-xl border border-border bg-paper-card p-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-2.5 rounded-2xl border-2 border-pastel-butter/80 bg-paper-tint/60 p-4 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-medium text-crayon-muted">
+                        <p className="text-xs font-bold text-crayon-muted">
                           Rescue Medication
                         </p>
-                        <p className="mt-0.5 text-xs font-bold text-crayon-charcoal">
+                        <p className="mt-0.5 text-xs font-extrabold text-crayon-charcoal">
                           {alert.emergencyMedication}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-crayon-muted">
+                        <p className="text-xs font-bold text-crayon-muted">
                           Unlocked Storage Location
                         </p>
-                        <p className="mt-0.5 text-xs font-bold text-pastel-peach-deep">
+                        <p className="mt-0.5 text-xs font-extrabold text-pastel-peach-deep">
                           {alert.storageLocation}
                         </p>
                       </div>
@@ -620,16 +629,16 @@ export function HealthProfileWidget({
 
                     {/* Numbered Emergency Protocol Steps */}
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-crayon-espresso">
+                      <p className="text-[11px] font-black uppercase tracking-wider text-crayon-espresso">
                         Emergency Response Protocol
                       </p>
                       <ol className="space-y-1.5">
                         {alert.protocolSteps.map((step, index) => (
                           <li
                             key={`${alert.studentId}-step-${index + 1}`}
-                            className="flex items-start gap-2.5 text-xs text-crayon-charcoal"
+                            className="flex items-start gap-2.5 text-xs text-crayon-charcoal font-medium"
                           >
-                            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-primary">
+                            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-crayon-charcoal text-[11px] font-black text-paper shadow-xs">
                               {index + 1}
                             </span>
                             <span className="pt-0.5 leading-relaxed">{step}</span>
@@ -640,8 +649,8 @@ export function HealthProfileWidget({
                   </div>
 
                   {/* Card Footer: Guardian Phone + Quick Actions */}
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-3.5">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-crayon-espresso">
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-pastel-butter/70 pt-3.5">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-crayon-espresso">
                       <Phone className="size-3.5 text-pastel-mint-deep" aria-hidden="true" />
                       Guardian: {alert.guardianPhone}
                     </span>
@@ -653,7 +662,7 @@ export function HealthProfileWidget({
                           size="sm"
                           variant="outline"
                           onClick={() => onOpenStudentProfile?.(alert.studentId)}
-                          className="border-border bg-paper-card text-crayon-charcoal hover:bg-surface-container-low"
+                          className="rounded-full border border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-pastel-butter/50 text-xs font-bold shadow-xs cursor-pointer"
                         >
                           <UserRound className="size-3.5" aria-hidden="true" />
                           360 Profile
@@ -664,7 +673,7 @@ export function HealthProfileWidget({
                           type="button"
                           size="sm"
                           onClick={() => onOpenMedicationModal?.(alert.studentId)}
-                          className="bg-primary text-on-primary hover:bg-primary/90"
+                          className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun font-extrabold text-xs shadow-pastel cursor-pointer"
                         >
                           <Pill className="size-3.5" aria-hidden="true" />
                           Administer Med
@@ -682,6 +691,7 @@ export function HealthProfileWidget({
       {/* SectionPanel 1: Medication Administration & Caregiver Observations Log */}
       <SectionPanel
         title="Medication Administration & Caregiver Observations Log"
+        borderClass="border-pastel-butter"
         action={
           canAdministerMedication ? (
             <Button
@@ -689,6 +699,7 @@ export function HealthProfileWidget({
               size="sm"
               variant="outline"
               onClick={() => onOpenMedicationModal?.()}
+              className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun font-extrabold text-xs shadow-pastel cursor-pointer"
             >
               <Pill className="size-3.5" aria-hidden="true" />
               Log Dose
@@ -701,18 +712,18 @@ export function HealthProfileWidget({
           {canLogObservation && (
             <form
               onSubmit={handleObservationSubmit}
-              className="space-y-4 rounded-xl border border-border bg-paper p-4"
+              className="space-y-4 rounded-3xl border-2 border-pastel-butter/80 bg-paper-tint/60 p-5 shadow-xs"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="flex size-7 items-center justify-center rounded-lg bg-pastel-lilac text-pastel-lilac-deep">
+                  <span className="flex size-7 items-center justify-center rounded-xl bg-pastel-lilac text-pastel-lilac-deep border border-pastel-lilac-deep/30">
                     <Sparkles className="size-4" aria-hidden="true" />
                   </span>
                   <div>
-                    <h3 className="text-sm font-semibold text-crayon-charcoal">
+                    <h3 className="text-sm font-extrabold text-crayon-charcoal">
                       Quick Caregiver &amp; Wellbeing Observation
                     </h3>
-                    <p className="text-xs text-crayon-muted">
+                    <p className="text-xs font-semibold text-crayon-muted">
                       Record daily mood, meal intake, or post-medication classroom monitoring notes.
                     </p>
                   </div>
@@ -767,7 +778,7 @@ export function HealthProfileWidget({
                 <Button
                   type="submit"
                   disabled={isLoggingObs || !onLogQuickObservation}
-                  className="bg-primary text-on-primary hover:bg-primary/90"
+                  className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun font-extrabold text-xs shadow-pastel cursor-pointer"
                 >
                   <ClipboardCheck className="size-4" aria-hidden="true" />
                   {isLoggingObs ? "Saving..." : "Save Observation"}
@@ -833,6 +844,7 @@ export function HealthProfileWidget({
       {/* SectionPanel 2: Classroom Safeguarding & Incident Register */}
       <SectionPanel
         title="Classroom Safeguarding & Incident Register"
+        borderClass="border-pastel-peach"
         action={
           canReportIncident ? (
             <Button
@@ -840,6 +852,7 @@ export function HealthProfileWidget({
               size="sm"
               variant="outline"
               onClick={() => onOpenIncidentModal?.()}
+              className="rounded-full bg-pastel-peach hover:bg-pastel-coral text-pastel-peach-deep border border-pastel-coral font-extrabold text-xs shadow-pastel cursor-pointer"
             >
               <ShieldAlert className="size-3.5" aria-hidden="true" />
               New Incident Report

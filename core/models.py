@@ -241,6 +241,14 @@ class EmergencyContact(TenantScopedModel):
     relationship = models.CharField(max_length=100)
     medical_consent = models.BooleanField(default=False)
     consent_date = models.DateTimeField(null=True, blank=True)
+    is_authorized_pickup = models.BooleanField(default=True)
+    photo_url = models.CharField(max_length=512, blank=True)
+    pickup_pin_hash = models.CharField(max_length=255, blank=True)
+    id_check_required = models.BooleanField(default=False)
+    custody_restricted = models.BooleanField(default=False)
+    restriction_note = models.TextField(blank=True)
+    failed_pin_attempts = models.PositiveSmallIntegerField(default=0)
+    pickup_locked_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'core_emergency_contact'
@@ -502,6 +510,9 @@ class StudentAttendance(TenantScopedModel):
     notified_parent = models.BooleanField(default=False)
     locked = models.BooleanField(default=False)
     locked_at = models.DateTimeField(null=True, blank=True)
+    check_in_at = models.DateTimeField(null=True, blank=True)
+    check_out_at = models.DateTimeField(null=True, blank=True)
+    late_reason = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
         db_table = 'core_student_attendance'
@@ -624,6 +635,8 @@ class StudentHealth(TenantScopedModel):
     doctor_phone = models.CharField(max_length=50, blank=True)
     consent_flag = models.BooleanField(default=False)
     consent_date = models.DateTimeField(null=True, blank=True)
+    photo_consent = models.BooleanField(default=False)
+    topical_consent = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'core_student_health'
@@ -681,6 +694,7 @@ class Incident(TenantScopedModel):
     date = models.DateField()
     time = models.CharField(max_length=10, default="12:00")
     location = models.CharField(max_length=255)
+    body_part = models.CharField(max_length=100, blank=True)
     students = models.JSONField(default=list, blank=True)
     staff = models.JSONField(default=list, blank=True)
     description = models.TextField()
@@ -715,6 +729,90 @@ class SafetyDrill(TenantScopedModel):
 
     def __str__(self):
         return f"Safety Drill: {self.drill_type} on {self.scheduled_date} (Signed off: {self.signed_off})"
+
+
+class CareEvent(TenantScopedModel):
+    EVENT_TYPE_CHOICES = [
+        ('diaper', 'Diaper / Potty'),
+        ('meal', 'Meal'),
+        ('bottle', 'Bottle'),
+        ('nap_start', 'Nap Start'),
+        ('nap_end', 'Nap End'),
+        ('water', 'Water / Hydration'),
+        ('mood', 'Mood'),
+        ('note', 'Note'),
+        ('health_screen', 'Health Screen'),
+        ('sleep_check', 'Sleep Check'),
+    ]
+
+    event_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='care_events')
+    event_type = models.CharField(max_length=50, choices=EVENT_TYPE_CHOICES)
+    occurred_at = models.DateTimeField(default=timezone.now)
+    payload = models.JSONField(default=dict, blank=True)
+    logged_by = models.UUIDField()
+    parent_visible = models.BooleanField(default=True)
+    is_hidden = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'core_care_event'
+        ordering = ['-occurred_at', '-created_at']
+
+    def __str__(self):
+        return f"CareEvent [{self.event_type}] {self.student.name} @ {self.occurred_at}"
+
+
+class CareMedia(TenantScopedModel):
+    media_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    students = models.ManyToManyField(Student, related_name='care_media', blank=True)
+    file_ref = models.CharField(max_length=512)
+    mime = models.CharField(max_length=100)
+    caption = models.TextField(blank=True)
+    consent_checked = models.BooleanField(default=False)
+    captured_by = models.UUIDField()
+    captured_at = models.DateTimeField(default=timezone.now)
+    parent_visible = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'core_care_media'
+        ordering = ['-captured_at', '-created_at']
+
+    def __str__(self):
+        return f"CareMedia {self.media_id} ({self.mime})"
+
+
+class LearningFramework(TenantScopedModel):
+    framework_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
+    domains = models.JSONField(default=list, blank=True)
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'core_learning_framework'
+
+    def __str__(self):
+        return f"{self.code}: {self.name}"
+
+
+class LearningObservation(TenantScopedModel):
+    observation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='learning_observations')
+    framework = models.CharField(max_length=50, default='ELECT')
+    domains = models.JSONField(default=list, blank=True)
+    note = models.TextField()
+    media_ids = models.JSONField(default=list, blank=True)
+    shared_with_family = models.BooleanField(default=False)
+    observed_on = models.DateField(default=timezone.localdate)
+    logged_by = models.UUIDField()
+    activity_plan_id = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'core_learning_observation'
+        ordering = ['-observed_on', '-created_at']
+
+    def __str__(self):
+        return f"Observation [{self.framework}] {self.student.name} ({self.observed_on})"
 
 
 # =====================================================================

@@ -992,6 +992,60 @@ class AcademicRecordBO(BaseBusinessObject):
             )
         return self.report_card
 
+    @staticmethod
+    def delete_marks_record(
+        record: MarksRecord,
+        actor_role: str = 'Admin',
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        if record.locked and actor_role not in ('Principal', 'Owner'):
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-04-07',
+                    message="Marks record is locked after moderation. Deletion requires Principal or Owner authorization.",
+                    field='locked',
+                )
+            ])
+        with transaction.atomic():
+            record.is_deleted = True
+            record.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=record.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='MarksRecord',
+                entity_id=str(record.marks_id),
+                new_values={'is_deleted': True, 'subject': record.subject},
+            )
+        return {'marks_id': str(record.marks_id), 'is_deleted': True}
+
+    def delete_report_card(
+        self,
+        actor_id: Optional[uuid.UUID] = None,
+    ) -> Dict[str, Any]:
+        if not self.report_card:
+            raise ValueError("No report card to delete.")
+        if self.report_card.is_published and self.actor_role not in ('Principal', 'Owner'):
+            raise BusinessRuleError([
+                RuleViolation(
+                    rule_id='BR-04-04',
+                    message="Published report cards can only be deleted by Principal or Owner.",
+                    field='is_published',
+                )
+            ])
+        with transaction.atomic():
+            self.report_card.is_deleted = True
+            self.report_card.save(update_fields=['is_deleted', 'updated_at'])
+            AuditLog.objects.create(
+                tenant=self.student.tenant,
+                actor_id=actor_id,
+                action='DELETE',
+                entity='ReportCard',
+                entity_id=str(self.report_card.report_id),
+                new_values={'is_deleted': True, 'term': self.report_card.term},
+            )
+        return {'report_id': str(self.report_card.report_id), 'is_deleted': True}
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "bo": "AcademicRecord",

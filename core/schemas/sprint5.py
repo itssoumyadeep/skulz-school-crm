@@ -3,6 +3,7 @@
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, UUID4, field_validator, model_validator
 
@@ -129,7 +130,7 @@ class MessageCreateSchema(BaseModel):
     channel: Literal['SMS', 'Email', 'Push', 'In_App']
     subject: str = ''
     body: str
-    recipient_id: Optional[UUID4] = None
+    recipient_id: Optional[UUID] = None
     recipient_role: str = ''
     trigger_event: str = ''
     payload: Dict[str, Any] = Field(default_factory=dict)

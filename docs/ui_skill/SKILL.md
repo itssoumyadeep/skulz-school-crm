@@ -11,7 +11,7 @@ To build powerful frontend claude.ai artifacts, follow these steps:
 2. Develop your artifact by editing the generated code
 3. Bundle all code into a single HTML file using `scripts/bundle-artifact.sh`
 4. Display artifact to user
-5. (Optional) Test the artifact
+5. Test the artifact
 
 **Stack**: React 18 + TypeScript + Vite + Parcel (bundling) + Tailwind CSS + shadcn/ui
 
@@ -22,8 +22,7 @@ VERY IMPORTANT: To avoid what is often referred to as "AI slop", avoid using exc
 ## Quick Start
 
 ### Step 1: Initialize Project
-
-Run the initialization script to create a new React project:
+if it's not already initialized, Run the initialization script to create a new React project:
 ```bash
 bash scripts/init-artifact.sh <project-name>
 cd <project-name>

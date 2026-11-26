@@ -952,18 +952,17 @@ def upload_student_document(request, student_id: UUID, payload: DocumentUploadSc
         is_deleted=False
     )
 
+    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     application = student.applications.filter(tenant_id=request.tenant_id, is_deleted=False).order_by('-applied_date').first()
     if not application:
-        return JsonResponse(
-            build_error(
-                errors=[{"code": "NOT_FOUND", "message": "No application record exists for this student."}],
-                tenant_id=request.tenant_id,
-                role=role,
-            ),
-            status=404,
+        application = Application.objects.create(
+            tenant=student.tenant,
+            student=student,
+            status='Active' if student.status == 'Active' else 'Pending',
+            payment_confirmed=(student.status == 'Active'),
+            created_by=actor_id,
         )
 
-    actor_id = UUID(request.user_id) if getattr(request, 'user_id', None) else None
     doc = EnrollmentCaseBO.upload_document(
         application=application,
         doc_type=payload.doc_type,
@@ -1037,7 +1036,7 @@ def create_direct_student(request, payload: StudentCreateInput):
     return JsonResponse(bo.to_response(tenant_id=request.tenant_id, role=actor_role), status=201)
 
 
-@router.delete("/students/{uuid:student_id}", auth=JWTAuthBearer())
+@router.delete("/students/{student_id}", auth=JWTAuthBearer())
 @require_roles('Admin', 'Owner')
 def delete_student(request, student_id: UUID):
     student = get_object_or_404(

@@ -7,11 +7,14 @@ from typing import Dict, Any, List, Optional
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Sum
+from django.contrib.auth.hashers import make_password
 
 from .base import BaseBusinessObject, RuleViolation, BusinessRuleError
 from core.models import (
     Tenant, Student, Application, Parent, EmergencyContact,
-    Document, AuditLog, Invoice, Payment, FeeStructure, generate_student_number
+    Document, AuditLog, Invoice, Payment, FeeStructure, DiscountWaiver,
+    HealthObservation, MedicationLog, Incident, CareEvent, CareMedia,
+    LearningObservation, MarksRecord, ReportCard, generate_student_number
 )
 
 
@@ -172,15 +175,8 @@ class StudentProfileBO(BaseBusinessObject):
         ]
 
         emergency_contacts = [
-            {
-                "contact_id": str(c.contact_id),
-                "name": c.name,
-                "phone": c.phone,
-                "relationship": c.relationship,
-                "medical_consent": c.medical_consent,
-                "consent_date": c.consent_date.isoformat() if c.consent_date else None
-            }
-            for c in self.student.emergency_contacts.filter(is_deleted=False)
+            self._serialize_emergency_contact(c)
+            for c in self.student.emergency_contacts.filter(is_deleted=False).order_by('created_at')
         ]
 
         applications = [
@@ -197,27 +193,66 @@ class StudentProfileBO(BaseBusinessObject):
             for a in self.student.applications.filter(is_deleted=False)
         ]
 
+        documents = [
+            {
+                "document_id": str(d.document_id),
+                "application_id": str(d.application_id),
+                "doc_type": d.doc_type,
+                "file_path": d.file_path,
+                "verified": d.verified,
+                "verified_at": d.verified_at.isoformat() if d.verified_at else None,
+            }
+            for d in Document.objects.filter(
+                tenant=self.student.tenant,
+                application__student=self.student,
+                application__is_deleted=False,
+                is_deleted=False,
+            ).order_by('-created_at')
+        ]
+
         primary_parent = parents[0] if parents else None
         primary_contact = f"{primary_parent['name']} ({primary_parent['phone'] or primary_parent['email']})" if primary_parent else "—"
         primary_ec = emergency_contacts[0] if emergency_contacts else None
         emergency_contact_str = f"{primary_ec['name']} ({primary_ec['phone']})" if primary_ec else "—"
 
-        # Attendance calculation
+        # Attendance calculation & full records
         attendances = getattr(self.student, 'attendances', None)
-        att_records = attendances.filter(is_deleted=False) if attendances else []
-        att_total = att_records.count() if attendances else 0
-        att_present = att_records.filter(status__in=['Present', 'Late']).count() if attendances else 0
+        att_records = attendances.filter(is_deleted=False) if attendances else None
+        att_total = att_records.count() if att_records is not None else 0
+        att_present = att_records.filter(status__in=['Present', 'Late']).count() if att_records is not None else 0
         attendance_pct = round((att_present / att_total) * 100, 2) if att_total else None
-        latest_att = att_records.order_by('-date').first() if attendances else None
+        latest_att = att_records.order_by('-date').first() if att_records is not None else None
         attendance_status = latest_att.status if latest_att else None
         attendance_summary = (
             f"{attendance_pct}% attendance ({att_present}/{att_total} sessions)"
             if att_total
             else None
         )
+        attendance_records = (
+            [
+                {
+                    "att_id": str(r.att_id),
+                    "class_id": str(r.class_id),
+                    "date": r.date.isoformat(),
+                    "status": r.status,
+                    "method": r.method,
+                    "period": r.period,
+                    "check_in_at": r.check_in_at.isoformat() if r.check_in_at else None,
+                    "check_out_at": r.check_out_at.isoformat() if r.check_out_at else None,
+                    "late_reason": r.late_reason,
+                    "notified_parent": r.notified_parent,
+                    "locked": r.locked,
+                }
+                for r in att_records.order_by('-date', '-created_at')[:30]
+            ]
+            if att_records is not None
+            else []
+        )
 
         # Health info
         health_prof = getattr(self.student, 'health_profile', None)
+        if health_prof and health_prof.is_deleted:
+            health_prof = None
         allergies = list(health_prof.allergies) if health_prof and health_prof.allergies else ["None"]
         conditions = list(health_prof.conditions) if health_prof and health_prof.conditions else []
         health_flags = [a if isinstance(a, str) else a.get('name', 'Allergy') for a in allergies if a != "None"] + conditions
@@ -226,6 +261,124 @@ class StudentProfileBO(BaseBusinessObject):
         medications = [m if isinstance(m, str) else f"{m.get('name', 'Med')} ({m.get('dosage', '')})" for m in (health_prof.medications if health_prof else [])]
         dietary = None
         nap_schedule = None
+        health_record = {
+            "allergies": list(health_prof.allergies) if health_prof and isinstance(health_prof.allergies, list) else [],
+            "conditions": list(health_prof.conditions) if health_prof and isinstance(health_prof.conditions, list) else [],
+            "medications": list(health_prof.medications) if health_prof and isinstance(health_prof.medications, list) else [],
+            "vaccinations": list(health_prof.vaccinations) if health_prof and isinstance(health_prof.vaccinations, list) else [],
+            "doctor_name": health_prof.doctor_name if health_prof else "",
+            "doctor_phone": health_prof.doctor_phone if health_prof else "",
+            "consent_flag": bool(health_prof.consent_flag) if health_prof else False,
+            "consent_date": health_prof.consent_date.isoformat() if (health_prof and health_prof.consent_date) else None,
+            "photo_consent": bool(health_prof.photo_consent) if health_prof else False,
+            "topical_consent": bool(health_prof.topical_consent) if health_prof else False,
+        }
+        health_observations = [
+            {
+                "obs_id": str(o.obs_id),
+                "date": o.date.isoformat(),
+                "mood": o.mood,
+                "appetite": o.appetite,
+                "nap_duration_mins": o.nap_duration_mins,
+                "feeding_notes": o.feeding_notes,
+                "general_notes": o.general_notes,
+            }
+            for o in HealthObservation.objects.filter(
+                tenant=self.student.tenant,
+                student=self.student,
+                is_deleted=False,
+            ).order_by('-date', '-created_at')[:30]
+        ]
+        medication_logs = [
+            {
+                "med_log_id": str(m.med_log_id),
+                "medicine_name": m.medicine_name,
+                "dose": m.dose,
+                "time_administered": m.time_administered.isoformat(),
+                "parent_notified": bool(m.parent_notified),
+                "notes": m.notes,
+            }
+            for m in MedicationLog.objects.filter(
+                tenant=self.student.tenant,
+                student=self.student,
+                is_deleted=False,
+            ).order_by('-time_administered', '-created_at')[:30]
+        ]
+        sid_str = str(self.student.student_id)
+        name_lower = (self.student.name or "").strip().lower()
+        incidents = [
+            {
+                "incident_id": str(inc.incident_id),
+                "incident_type": inc.incident_type,
+                "severity": inc.severity,
+                "date": inc.date.isoformat(),
+                "time": inc.time,
+                "location": inc.location,
+                "body_part": inc.body_part,
+                "description": inc.description,
+                "actions_taken": inc.actions_taken,
+                "escalated_to_principal": bool(inc.escalated_to_principal),
+                "parent_notified": bool(inc.parent_notified),
+                "acknowledged_at": inc.acknowledged_at.isoformat() if inc.acknowledged_at else None,
+            }
+            for inc in Incident.objects.filter(
+                tenant=self.student.tenant,
+                is_deleted=False,
+            ).order_by('-date', '-created_at')[:50]
+            if any(
+                str(ref).strip() == sid_str or (name_lower and str(ref).strip().lower() == name_lower)
+                for ref in (inc.students if isinstance(inc.students, list) else [])
+            )
+        ]
+
+        care_events = [
+            {
+                "event_id": str(ev.event_id),
+                "event_type": ev.event_type,
+                "occurred_at": ev.occurred_at.isoformat(),
+                "payload": ev.payload or {},
+                "parent_visible": bool(ev.parent_visible),
+                "is_hidden": bool(ev.is_hidden),
+            }
+            for ev in CareEvent.objects.filter(
+                tenant=self.student.tenant,
+                student=self.student,
+                is_deleted=False,
+                is_hidden=False,
+            ).order_by('-occurred_at', '-created_at')[:40]
+        ]
+
+        from core.business_objects.care_events import sign_media_url
+        care_media = [
+            {
+                "media_id": str(cm.media_id),
+                "mime": cm.mime,
+                "caption": cm.caption,
+                "captured_at": cm.captured_at.isoformat(),
+                "signed_url": sign_media_url(cm.media_id, self.student.tenant_id),
+            }
+            for cm in CareMedia.objects.filter(
+                tenant=self.student.tenant,
+                students=self.student,
+                is_deleted=False,
+            ).order_by('-captured_at')[:20]
+        ]
+
+        learning_observations = [
+            {
+                "observation_id": str(lo.observation_id),
+                "framework": lo.framework,
+                "domains": lo.domains or [],
+                "note": lo.note,
+                "shared_with_family": bool(lo.shared_with_family),
+                "observed_on": lo.observed_on.isoformat(),
+            }
+            for lo in LearningObservation.objects.filter(
+                tenant=self.student.tenant,
+                student=self.student,
+                is_deleted=False,
+            ).order_by('-observed_on', '-created_at')[:30]
+        ]
 
         # Fee info
         invoices_qs = self.student.invoices.filter(is_deleted=False).order_by('-invoice_date')
@@ -256,16 +409,40 @@ class StudentProfileBO(BaseBusinessObject):
             if has_invoices
             else None
         )
-        invoices = [
-            {
+        invoices = []
+        for invoice in invoices_qs:
+            inv_paid = Payment.objects.filter(
+                tenant=self.student.tenant,
+                invoice=invoice,
+                is_deleted=False,
+                status='Completed',
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            inv_balance = max(invoice.total - inv_paid, Decimal('0.00'))
+            invoices.append({
                 'invoice_id': str(invoice.invoice_id),
                 'invoice_type': invoice.invoice_type,
                 'invoice_date': invoice.invoice_date.isoformat(),
                 'due_date': invoice.due_date.isoformat(),
                 'total': float(invoice.total),
+                'paid_amount': float(inv_paid),
+                'balance': float(inv_balance),
+                'line_items': invoice.line_items or [],
                 'status': invoice.status,
+            })
+        discounts = [
+            {
+                'discount_id': str(d.discount_id),
+                'invoice_id': str(d.invoice_id),
+                'discount_type': d.discount_type,
+                'amount': float(d.amount),
+                'reason': d.reason,
+                'approval_date': d.approval_date.isoformat() if d.approval_date else None,
             }
-            for invoice in invoices_qs
+            for d in DiscountWaiver.objects.filter(
+                tenant=self.student.tenant,
+                student=self.student,
+                is_deleted=False,
+            ).order_by('-approval_date')
         ]
         receipts = [
             {
@@ -305,6 +482,40 @@ class StudentProfileBO(BaseBusinessObject):
             if latest_rc
             else None
         )
+        marks_records = [
+            {
+                'marks_id': str(mr.marks_id),
+                'exam_id': str(mr.exam_id),
+                'exam_name': mr.exam.name if mr.exam_id else '',
+                'subject': mr.subject,
+                'marks': float(mr.marks),
+                'max_marks': float(mr.max_marks),
+                'grade': mr.grade,
+                'locked': bool(mr.locked),
+            }
+            for mr in MarksRecord.objects.filter(
+                tenant=self.student.tenant,
+                student=self.student,
+                is_deleted=False,
+            ).select_related('exam').order_by('-created_at')[:30]
+        ]
+        report_cards = [
+            {
+                'report_id': str(rc.report_id),
+                'term': rc.term,
+                'year': rc.year,
+                'overall_grade': rc.overall_grade,
+                'gpa': float(rc.gpa),
+                'attendance_percentage': float(rc.attendance_percentage),
+                'is_published': bool(rc.is_published),
+                'published_date': rc.published_date.isoformat(),
+            }
+            for rc in ReportCard.objects.filter(
+                tenant=self.student.tenant,
+                student=self.student,
+                is_deleted=False,
+            ).order_by('-year', '-published_date')
+        ]
 
         # Computed completeness
         has_verified_docs = any(app["verified_documents_count"] >= 3 for app in applications) if applications else False
@@ -314,6 +525,7 @@ class StudentProfileBO(BaseBusinessObject):
             "bo": "StudentProfile",
             "student_id": str(self.student.student_id),
             "student_number": self.student.student_number,
+            "class_id": str(self.student.class_id) if self.student.class_id else None,
             "name": self.student.name,
             "dob": self.student.dob.isoformat() if self.student.dob else None,
             "grade": self.student.grade,
@@ -326,24 +538,36 @@ class StudentProfileBO(BaseBusinessObject):
             "attendance_pct": attendance_pct,
             "attendance_status": attendance_status,
             "attendance_summary": attendance_summary,
+            "attendance_records": attendance_records,
             "academic_summary": academic_summary,
             "health_flags": health_flags,
             "allergies": [a for a in allergies if a != "None"],
             "medications": medications,
             "dietary_restrictions": dietary,
             "nap_schedule": nap_schedule,
+            "health_record": health_record,
+            "health_observations": health_observations,
+            "medication_logs": medication_logs,
+            "incidents": incidents,
+            "care_events": care_events,
+            "care_media": care_media,
+            "learning_observations": learning_observations,
             "fee_status": fee_status,
             "fee_account_summary": fee_account_summary,
             "fee_account": fee_account,
             "assignment_submissions": [],
             "marks_own_subject": {},
+            "marks_records": marks_records,
             "report_card": report_card,
+            "report_cards": report_cards,
             "invoices": invoices,
+            "discounts": discounts,
             "receipts": receipts,
             "primary_contact": primary_parent,
             "parents": parents,
             "emergency_contacts": emergency_contacts,
             "applications": applications,
+            "documents": documents,
             "is_profile_complete": is_complete,
             "has_verified_documents": has_verified_docs
         }
@@ -407,6 +631,7 @@ class StudentProfileBO(BaseBusinessObject):
                     created_by=actor_id,
                 )
             if data.get('emergency_contact_name') and data.get('emergency_contact_phone'):
+                raw_ec_pin = (data.get('emergency_contact_pickup_pin') or '').strip()
                 EmergencyContact.objects.create(
                     tenant=tenant,
                     student=student,
@@ -415,6 +640,8 @@ class StudentProfileBO(BaseBusinessObject):
                     relationship=data.get('emergency_contact_relationship', 'Emergency Contact'),
                     medical_consent=bool(data.get('medical_consent', False)),
                     consent_date=timezone.now() if data.get('medical_consent') else None,
+                    is_authorized_pickup=True,
+                    pickup_pin_hash=make_password(raw_ec_pin) if raw_ec_pin else '',
                     created_by=actor_id,
                 )
             AuditLog.objects.create(
@@ -578,6 +805,12 @@ class StudentProfileBO(BaseBusinessObject):
             'relationship': contact.relationship,
             'medical_consent': contact.medical_consent,
             'consent_date': contact.consent_date.isoformat() if contact.consent_date else None,
+            'is_authorized_pickup': bool(contact.is_authorized_pickup),
+            'photo_url': contact.photo_url or '',
+            'has_pickup_pin': bool(contact.pickup_pin_hash),
+            'id_check_required': bool(contact.id_check_required),
+            'custody_restricted': bool(contact.custody_restricted),
+            'restriction_note': contact.restriction_note or '',
         }
 
     @classmethod
@@ -598,6 +831,7 @@ class StudentProfileBO(BaseBusinessObject):
     ) -> Dict[str, Any]:
         with transaction.atomic():
             med_consent = bool(data.get('medical_consent', False))
+            raw_pin = (data.get('pickup_pin') or '').strip()
             contact = EmergencyContact.objects.create(
                 tenant=student.tenant,
                 student=student,
@@ -606,6 +840,12 @@ class StudentProfileBO(BaseBusinessObject):
                 relationship=data['relationship'],
                 medical_consent=med_consent,
                 consent_date=timezone.now() if med_consent else None,
+                is_authorized_pickup=bool(data.get('is_authorized_pickup', True)),
+                photo_url=data.get('photo_url') or '',
+                pickup_pin_hash=make_password(raw_pin) if raw_pin else '',
+                id_check_required=bool(data.get('id_check_required', False)),
+                custody_restricted=bool(data.get('custody_restricted', False)),
+                restriction_note=data.get('restriction_note') or '',
                 created_by=actor_id,
             )
             AuditLog.objects.create(
@@ -627,11 +867,28 @@ class StudentProfileBO(BaseBusinessObject):
     ) -> Dict[str, Any]:
         old_vals = cls._serialize_emergency_contact(contact)
         with transaction.atomic():
-            for field in ('name', 'phone', 'relationship', 'medical_consent'):
+            for field in (
+                'name',
+                'phone',
+                'relationship',
+                'medical_consent',
+                'is_authorized_pickup',
+                'photo_url',
+                'id_check_required',
+                'custody_restricted',
+                'restriction_note',
+            ):
                 if field in data and data[field] is not None:
                     setattr(contact, field, data[field])
+            if 'pickup_pin' in data and data['pickup_pin'] is not None:
+                raw_pin = str(data['pickup_pin']).strip()
+                contact.pickup_pin_hash = make_password(raw_pin) if raw_pin else ''
+                contact.failed_pin_attempts = 0
+                contact.pickup_locked_until = None
             if data.get('medical_consent') is True and not contact.consent_date:
                 contact.consent_date = timezone.now()
+            elif 'medical_consent' in data and data.get('medical_consent') is False:
+                contact.consent_date = None
             contact.save()
             AuditLog.objects.create(
                 tenant=contact.tenant,

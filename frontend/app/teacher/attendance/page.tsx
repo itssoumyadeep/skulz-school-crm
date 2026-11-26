@@ -99,7 +99,7 @@ export default function TeacherAttendancePage() {
   const [leaveRequests, setLeaveRequests] =
     useState<AttendanceLeaveSummaryItem[]>(SEEDED_LEAVE_ITEMS);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isCommittingBulk, setIsCommittingBulk] = useState(false);
   const [bannerNotice, setBannerNotice] = useState<string | null>(null);
 
@@ -148,7 +148,7 @@ export default function TeacherAttendancePage() {
                 attendanceId: row.attendance_id,
                 status: row.status,
                 notifiedParent: row.notified_parent,
-                medicalAlert: seeded?.medicalBadge ?? null,
+                medicalAlert: (row as { medical_badge?: string | null }).medical_badge ?? seeded?.medicalBadge ?? null,
                 arrivalNote: seeded?.arrivalNote ?? null,
                 locked: isWindowLocked,
               };
@@ -344,16 +344,61 @@ export default function TeacherAttendancePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Classroom Attendance & Leave Cover"
+        variant="pastel"
+        icon="co_present"
+        iconBg="bg-pastel-mint border-pastel-mint-deep/30 text-pastel-mint-deep"
+        title="Classroom Attendance & Roll Call"
+        badge="Homeroom 4B · Daily Roll"
+        badgeClass="bg-pastel-mint/70 text-pastel-mint-deep border-pastel-mint"
         subtitle="Mark daily roll within the 24-hour statutory window (BR-03-01), verify parent absence alerts (BR-03-02), and request substitute cover."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                triggerCsvDownload(
+                  `attendance-register-${selectedDate}.csv`,
+                  [
+                    "Student Number",
+                    "Name",
+                    "Grade",
+                    "Status",
+                    "Parent Notified",
+                    "Medical Alert",
+                  ],
+                  students.map((s) => [
+                    s.studentNumber,
+                    s.name,
+                    s.grade,
+                    s.status ?? "Unmarked",
+                    s.notifiedParent ? "Yes" : "No",
+                    s.medicalAlert ?? "None",
+                  ]),
+                );
+                setBannerNotice("Attendance register exported to CSV.");
+              }}
+              className="rounded-full border-2 border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-paper-tint text-xs font-bold shadow-pastel cursor-pointer"
+            >
+              Export CSV
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setLeaveModalOpen(true)}
+              className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun text-xs font-extrabold shadow-pastel cursor-pointer"
+            >
+              Request Cover
+            </Button>
+          </div>
+        }
       />
 
       {bannerNotice && (
         <div
           role="status"
-          className="flex items-center justify-between gap-3 rounded-xl border border-pastel-mint-deep/30 bg-pastel-mint/45 px-4 py-3 text-sm text-crayon-charcoal"
+          className="flex items-center justify-between gap-3 rounded-2xl border-2 border-pastel-mint-deep/30 bg-pastel-mint/45 px-5 py-3 text-xs font-bold text-crayon-charcoal shadow-pastel"
         >
-          <span className="inline-flex items-center gap-2 font-medium">
+          <span className="inline-flex items-center gap-2 font-bold">
             <CheckCircle2 className="size-4 text-pastel-mint-deep" />
             {bannerNotice}
           </span>
@@ -362,6 +407,7 @@ export default function TeacherAttendancePage() {
             variant="ghost"
             size="xs"
             onClick={() => setBannerNotice(null)}
+            className="rounded-full hover:bg-pastel-mint/60 text-xs font-bold cursor-pointer"
           >
             Dismiss
           </Button>

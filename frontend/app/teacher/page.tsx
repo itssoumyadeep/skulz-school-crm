@@ -96,6 +96,10 @@ export default function TeacherOverviewPage() {
   const [selectedClassId, setSelectedClassId] = useState<string>(
     DEFAULT_HOMEROOM_CLASS_ID,
   );
+  const [classes, setClasses] = useState(SEEDED_TEACHER_CLASSES);
+  const [assignedClassesLabel, setAssignedClassesLabel] = useState<string>(
+    "Homeroom 4B & Gr 5 Science",
+  );
   const [roster, setRoster] = useState<TeacherRollStudent[]>(() =>
     SEEDED_ROSTER_STUDENTS.map((s) => ({
       studentId: s.studentId,
@@ -153,16 +157,19 @@ export default function TeacherOverviewPage() {
           ]);
         if (cancelled) return;
 
-        if (
-          profileRes.status === "fulfilled" &&
-          profileRes.value.data?.avatar_url
-        ) {
-          const synced = setCachedProfilePicture(
-            userKey,
-            "teacher",
-            profileRes.value.data.avatar_url,
-          );
+        if (profileRes.status === "fulfilled") {
+          const remoteUrl = profileRes.value.data?.avatar_url || null;
+          const synced = setCachedProfilePicture(userKey, "teacher", remoteUrl);
           setEducatorAvatarUrl(synced);
+          if (profileRes.value.data?.assigned_classes_label) {
+            setAssignedClassesLabel(profileRes.value.data.assigned_classes_label);
+          }
+          if (
+            Array.isArray(profileRes.value.data?.assigned_classes) &&
+            profileRes.value.data.assigned_classes.length > 0
+          ) {
+            setClasses(profileRes.value.data.assigned_classes);
+          }
         }
 
         if (
@@ -192,8 +199,9 @@ export default function TeacherOverviewPage() {
                 attendanceId: row.attendance_id,
                 status: normalizedStatus,
                 notifiedParent: row.notified_parent,
-                medicalBadge: seededMatch?.medicalBadge ?? null,
-                medicalSeverity: seededMatch?.medicalSeverity ?? null,
+                medicalBadge: row.medical_badge ?? seededMatch?.medicalBadge ?? null,
+                medicalSeverity:
+                  row.medical_severity ?? seededMatch?.medicalSeverity ?? null,
               };
             },
           );
@@ -530,7 +538,8 @@ export default function TeacherOverviewPage() {
           dateLabel: formattedDate,
           termLabel: "Term 2 Active",
           selectedClassId,
-          classes: SEEDED_TEACHER_CLASSES,
+          classes,
+          assignedClassesLabel,
           roster,
           isRollLocked: false,
           schedule,

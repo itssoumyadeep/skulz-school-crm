@@ -76,7 +76,7 @@ class TrialSignupSchema(BaseModel):
 
 
 class ProfilePictureUpdateSchema(BaseModel):
-    avatar_url: Optional[str] = Field(default=None, max_length=524288)
+    avatar_url: Optional[str] = Field(default=None, max_length=5242880)
 
     @field_validator("avatar_url")
     @classmethod

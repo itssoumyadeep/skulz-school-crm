@@ -129,6 +129,8 @@ def test_development_requires_explicit_secrets_but_allows_local_http():
 assert settings.DEBUG is True
 assert settings.SESSION_COOKIE_SECURE is False
 assert settings.SECURE_SSL_REDIRECT is False
+assert 'http://localhost:5173' in settings.CORS_ALLOWED_ORIGINS
+assert 'http://localhost:5173' in settings.CSRF_TRUSTED_ORIGINS
 print('settings-ok')""",
     )
 

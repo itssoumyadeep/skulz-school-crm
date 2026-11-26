@@ -134,7 +134,7 @@ export default function TeacherAssessmentsPage() {
   const [applicants, setApplicants] =
     useState<ApplicantAssessmentItem[]>(SEEDED_APPLICANTS);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSavingMarks, setIsSavingMarks] = useState(false);
   const [bannerNotice, setBannerNotice] = useState<string | null>(null);
 
@@ -491,16 +491,55 @@ export default function TeacherAssessmentsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Marks Ledger, Report Cards & Applicant Rubrics"
-        subtitle="Enter student exam scores (BR-04-07), preview draft Term 2 report cards, and score assigned admissions readiness rubrics."
+        variant="pastel"
+        icon="assignment"
+        iconBg="bg-pastel-lilac border-pastel-lilac-deep/30 text-pastel-lilac-deep"
+        title="Assessments & Grade Moderation"
+        badge="Term 2 Marks & Admissions Rubrics"
+        badgeClass="bg-pastel-lilac/70 text-pastel-lilac-deep border-pastel-lilac"
+        subtitle="Enter student exam scores (BR-04-07), review cohort bell curve distribution, and score assigned admissions readiness rubrics."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const sampleStudent = markRows[0];
+                if (sampleStudent) {
+                  handleOpenReportCard(sampleStudent);
+                }
+              }}
+              className="rounded-full border-2 border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-paper-tint text-xs font-bold shadow-pastel cursor-pointer"
+            >
+              Preview Report Card
+            </Button>
+            <Button
+              type="button"
+              disabled={isSavingMarks}
+              onClick={() =>
+                handleSaveAllDraftMarks(
+                  markRows.map((r) => ({
+                    studentId: r.studentId,
+                    marks: r.marks ?? 80,
+                    maxMarks: r.maxMarks,
+                    existingMarksId: r.marksId,
+                  })),
+                )
+              }
+              className="rounded-full bg-pastel-butter hover:bg-pastel-sun text-crayon-charcoal border border-pastel-sun text-xs font-extrabold shadow-pastel cursor-pointer"
+            >
+              {isSavingMarks ? "Saving Marks..." : "Save Draft Marks"}
+            </Button>
+          </div>
+        }
       />
 
       {bannerNotice && (
         <div
           role="status"
-          className="flex items-center justify-between gap-3 rounded-xl border border-pastel-mint-deep/30 bg-pastel-mint/45 px-4 py-3 text-sm text-crayon-charcoal"
+          className="flex items-center justify-between gap-3 rounded-2xl border-2 border-pastel-mint-deep/30 bg-pastel-mint/45 px-5 py-3 text-xs font-bold text-crayon-charcoal shadow-pastel"
         >
-          <span className="inline-flex items-center gap-2 font-medium">
+          <span className="inline-flex items-center gap-2 font-bold">
             <CheckCircle2 className="size-4 text-pastel-mint-deep" />
             {bannerNotice}
           </span>
@@ -509,6 +548,7 @@ export default function TeacherAssessmentsPage() {
             variant="ghost"
             size="xs"
             onClick={() => setBannerNotice(null)}
+            className="rounded-full hover:bg-pastel-mint/60 text-xs font-bold cursor-pointer"
           >
             Dismiss
           </Button>

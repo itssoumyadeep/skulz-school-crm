@@ -44,3 +44,9 @@ SetupDataset = Literal[
 class SchoolSetupImportSchema(BaseModel):
     dataset: SetupDataset
     records: List[Dict[str, Any]] = Field(min_length=1, max_length=500)
+
+
+class TrialWindowUpdateInput(BaseModel):
+    extend_days: Optional[int] = Field(default=None, ge=1, le=365)
+    convert_to_paid: bool = False
+    reason: str = Field(min_length=3, max_length=500)

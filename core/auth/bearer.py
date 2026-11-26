@@ -1,13 +1,16 @@
-"""JWT bearer token authentication handler and validator for Django Ninja API endpoints."""
+"""JWT bearer token authentication handler, algorithm hardening, and trial-expiry enforcement."""
 
 import base64
 import json
 import uuid
 from uuid import UUID
-from ninja.security import HttpBearer
-from jose import jwt, JWTError
+
 from django.conf import settings
 from django.db import connection
+from jose import JWTError, jwt
+from ninja.security import HttpBearer
+
+from core.business_objects.trial import TrialExpiredError, TrialSignupBO
 from core.models import Tenant
 
 ROLE_MAP = {
@@ -24,12 +27,31 @@ ROLE_MAP = {
     'staff': 'Staff',
 }
 
+TRIAL_WRITE_EXEMPT_PREFIXES = (
+    '/api/v1/school-setup/trial',
+    '/api/v1/auth/',
+    '/api/v1/billing/',
+    '/api/v1/parent/billing/',
+    '/api/v1/stripe/',
+    '/api/v1/telemetry/',
+)
+
 
 class JWTAuthBearer(HttpBearer):
     def authenticate(self, request, token):
         used_insecure_dev_token = False
+        require_exp = bool(getattr(settings, 'REQUIRE_JWT_EXP', False))
         try:
-            payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
+            header = jwt.get_unverified_header(token)
+            alg = str(header.get('alg') or '').strip()
+            if alg != 'HS256':
+                raise JWTError('Disallowed JWT algorithm.')
+            payload = jwt.decode(
+                token,
+                settings.JWT_SECRET_KEY,
+                algorithms=['HS256'],
+                options={'require_exp': require_exp},
+            )
         except JWTError:
             if not settings.ALLOW_INSECURE_DEV_TOKENS:
                 return None
@@ -40,6 +62,8 @@ class JWTAuthBearer(HttpBearer):
                     padded = parts[1] + '=' * ((4 - len(parts[1]) % 4) % 4)
                     payload = json.loads(base64.urlsafe_b64decode(padded).decode('utf-8'))
                     used_insecure_dev_token = True
+                else:
+                    return None
             except Exception:
                 return None
 
@@ -79,7 +103,7 @@ class JWTAuthBearer(HttpBearer):
         # A signed token must refer to an existing tenant. The opt-in demo
         # mode can create its isolated local tenant for the session emulator.
         if used_insecure_dev_token:
-            Tenant.objects.get_or_create(
+            tenant, _ = Tenant.objects.get_or_create(
                 tenant_id=tenant_uuid,
                 defaults={
                     'name': 'The Purple Cubby Demo School',
@@ -89,12 +113,24 @@ class JWTAuthBearer(HttpBearer):
                     'region': 'Canada',
                 },
             )
-        elif not Tenant.objects.filter(tenant_id=tenant_uuid).exists():
-            return None
+        else:
+            tenant = Tenant.objects.filter(tenant_id=tenant_uuid).first()
+            if tenant is None:
+                return None
 
         # Immediately inject tenant context into PostgreSQL connection for RLS
-        if request.tenant_id:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT set_config('app.current_tenant_id', %s, FALSE)", [str(request.tenant_id)])
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT set_config('app.current_tenant_id', %s, FALSE)", [str(request.tenant_id)])
+
+        trial_info = TrialSignupBO.evaluate_trial_status(tenant)
+        request.trial_status = trial_info
+        req_path = getattr(request, 'path', '') or ''
+        req_method = getattr(request, 'method', 'GET') or 'GET'
+        if (
+            trial_info['is_expired']
+            and req_method in ('POST', 'PUT', 'PATCH', 'DELETE')
+            and not req_path.startswith(TRIAL_WRITE_EXEMPT_PREFIXES)
+        ):
+            raise TrialExpiredError(trial_ends_at=trial_info.get('trial_ends_at'))
 
         return payload

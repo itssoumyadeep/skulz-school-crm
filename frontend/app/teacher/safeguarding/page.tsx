@@ -20,6 +20,7 @@ import {
   type StudentProfileDrawerData,
 } from "@/components/widgets/students";
 import {
+  fetchClassroomHealthAlerts,
   fetchIncidents,
   submitHealthObservation,
   submitIncident,
@@ -97,13 +98,15 @@ export default function TeacherSafeguardingPage() {
   const isAdminActor = session?.role === "admin";
   const todayIso = useMemo(() => getTodayIsoDate(), []);
 
+  const [medicalAlerts, setMedicalAlerts] =
+    useState<ClassroomMedicalAlertItem[]>(SEEDED_MEDICAL_ALERTS);
   const [medLogs, setMedLogs] =
     useState<MedicationAdministrationItem[]>(SEEDED_MED_LOGS);
   const [incidents, setIncidents] =
     useState<ClassroomIncidentItem[]>(SEEDED_INCIDENTS);
   const [observations, setObservations] =
     useState<CareObservationItem[]>(SEEDED_OBSERVATIONS);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [bannerNotice, setBannerNotice] = useState<string | null>(null);
 
   const [medModalOpen, setMedModalOpen] = useState(false);
@@ -124,31 +127,64 @@ export default function TeacherSafeguardingPage() {
     let cancelled = false;
     async function loadHealthData() {
       try {
-        const incRes = await fetchIncidents();
+        const [incRes, alertRes] = await Promise.allSettled([
+          fetchIncidents(),
+          fetchClassroomHealthAlerts(),
+        ]);
         if (cancelled) return;
-        const raw = incRes.data;
-        const list: IncidentRecord[] = Array.isArray(raw)
-          ? raw
-          : (raw?.incidents ?? raw?.items ?? []);
-        if (list.length > 0) {
-          setIncidents(
-            list.map((inc) => ({
-              incidentId: inc.incident_id,
-              incidentType: inc.incident_type,
+
+        if (
+          alertRes.status === "fulfilled" &&
+          Array.isArray(alertRes.value.data) &&
+          alertRes.value.data.length > 0
+        ) {
+          setMedicalAlerts(
+            alertRes.value.data.map((a) => ({
+              studentId: a.student_id,
+              studentName: a.student_name,
+              grade: a.grade,
+              conditionTitle: a.condition_title,
               severity:
-                inc.severity === "Critical" ||
-                inc.severity === "High" ||
-                inc.severity === "Medium"
-                  ? inc.severity
-                  : "Low",
-              date: inc.date,
-              location: inc.location,
-              description: inc.description || "Classroom incident logged.",
-              actionsTaken: inc.actions_taken || "First-aid protocol completed.",
-              escalatedToPrincipal: Boolean(inc.escalated_to_principal),
-              parentNotified: Boolean(inc.parent_notified),
+                a.severity === "Critical"
+                  ? "Critical"
+                  : a.severity === "High"
+                    ? "High"
+                    : "Moderate",
+              triggers: a.triggers,
+              emergencyMedication: a.emergency_medication,
+              storageLocation: a.storage_location,
+              protocolSteps: a.protocol_steps,
+              parentConsentOnFile: a.parent_consent_on_file,
+              guardianPhone: a.guardian_phone,
             })),
           );
+        }
+
+        if (incRes.status === "fulfilled" && incRes.value.data) {
+          const raw = incRes.value.data;
+          const list: IncidentRecord[] = Array.isArray(raw)
+            ? raw
+            : (raw?.incidents ?? raw?.items ?? []);
+          if (list.length > 0) {
+            setIncidents(
+              list.map((inc) => ({
+                incidentId: inc.incident_id,
+                incidentType: inc.incident_type,
+                severity:
+                  inc.severity === "Critical" ||
+                  inc.severity === "High" ||
+                  inc.severity === "Medium"
+                    ? inc.severity
+                    : "Low",
+                date: inc.date,
+                location: inc.location,
+                description: inc.description || "Classroom incident logged.",
+                actionsTaken: inc.actions_taken || "First-aid protocol completed.",
+                escalatedToPrincipal: Boolean(inc.escalated_to_principal),
+                parentNotified: Boolean(inc.parent_notified),
+              })),
+            );
+          }
         }
       } catch {
         // Keep seeded classroom safeguarding records
@@ -287,7 +323,12 @@ export default function TeacherSafeguardingPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Safeguarding, Sabrina's Law & Classroom Health"
+        variant="pastel"
+        icon="medical_services"
+        iconBg="bg-pastel-peach border-pastel-coral/50 text-pastel-peach-deep"
+        title="Safeguarding, Sabrina's Law & Health"
+        badge="Sabrina's Law Compliant · BR-07-04"
+        badgeClass="bg-pastel-coral/30 text-pastel-peach-deep border-pastel-coral/60"
         subtitle="Review anaphylaxis & asthma emergency action plans, log parental-consented medication (BR-07-01), and escalate classroom incidents within the 1-hour SLA (BR-07-02)."
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -298,17 +339,18 @@ export default function TeacherSafeguardingPage() {
                 setMedDefaultStudentId(undefined);
                 setMedModalOpen(true);
               }}
+              className="rounded-full border-2 border-pastel-butter bg-paper-card text-crayon-charcoal hover:bg-paper-tint text-xs font-bold shadow-pastel cursor-pointer"
             >
-              <HeartPulse className="size-4" />
+              <HeartPulse className="size-4 text-pastel-mint-deep" />
               Log Medication
             </Button>
             <Button
               type="button"
-              variant="destructive"
               onClick={() => {
                 setIncidentDefaultStudentId(undefined);
                 setIncidentModalOpen(true);
               }}
+              className="rounded-full bg-pastel-peach hover:bg-pastel-coral text-pastel-peach-deep border border-pastel-coral text-xs font-extrabold shadow-pastel cursor-pointer"
             >
               <ShieldAlert className="size-4" />
               Report Incident
@@ -320,9 +362,9 @@ export default function TeacherSafeguardingPage() {
       {bannerNotice && (
         <div
           role="status"
-          className="flex items-center justify-between gap-3 rounded-xl border border-pastel-mint-deep/30 bg-pastel-mint/45 px-4 py-3 text-sm text-crayon-charcoal"
+          className="flex items-center justify-between gap-3 rounded-2xl border-2 border-pastel-mint-deep/30 bg-pastel-mint/45 px-5 py-3 text-xs font-bold text-crayon-charcoal shadow-pastel"
         >
-          <span className="inline-flex items-center gap-2 font-medium">
+          <span className="inline-flex items-center gap-2 font-bold">
             <CheckCircle2 className="size-4 text-pastel-mint-deep" />
             {bannerNotice}
           </span>
@@ -331,6 +373,7 @@ export default function TeacherSafeguardingPage() {
             variant="ghost"
             size="xs"
             onClick={() => setBannerNotice(null)}
+            className="rounded-full hover:bg-pastel-mint/60 text-xs font-bold cursor-pointer"
           >
             Dismiss
           </Button>
@@ -340,7 +383,7 @@ export default function TeacherSafeguardingPage() {
       <HealthProfileWidget
         data={{
           homeroomLabel: "Grade 4B · Homeroom",
-          medicalAlerts: SEEDED_MEDICAL_ALERTS,
+          medicalAlerts,
           medicationLogs: medLogs,
           incidents,
           observations,

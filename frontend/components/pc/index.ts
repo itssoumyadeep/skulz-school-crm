@@ -60,3 +60,11 @@ export {
   type ProfilePictureModalProps,
   type PresetAvatarOption,
 } from "./profile-picture-modal";
+export {
+  PORTAL_VIEW_MODE_EVENT,
+  getCachedViewMode,
+  setCachedViewMode,
+  usePortalViewMode,
+  type PortalViewMode,
+  type PortalViewScope,
+} from "./view-mode-preference";

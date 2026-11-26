@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Planned Check-In Timer &amp; Attendance Governance | The Purple Cubby CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: "#fef8f1",
+            surface: "#fef8f1",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f9f3ec",
+            "surface-container": "#f3ede6",
+            "surface-container-high": "#ede7e0",
+            "surface-container-highest": "#e7e2db",
+            "on-surface": "#1d1b17",
+            "on-surface-variant": "#55423e",
+            outline: "#88726d",
+            "outline-variant": "#dbc1ba",
+            primary: "#9a442d",
+            "primary-container": "#e07a5f",
+            "on-primary": "#ffffff",
+            "terracotta-crayon": "#E07A5F",
+            "mint-sage": "#90BE6D",
+            "butter-yellow": "#F9C74F",
+            "cerulean-sky": "#64B5F6",
+            "peach-apricot": "#F4A261",
+            "lavender-lilac": "#B39DDB",
+            "charcoal-slate": "#2B2D42",
+            tertiary: "#406922",
+            "tertiary-fixed": "#c0f19a",
+            secondary: "#785a00",
+            "secondary-fixed": "#ffdf9c",
+            error: "#ba1a1a",
+            "error-container": "#ffdad6"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"]
+          },
+          borderRadius: {
+            "2xl": "1.5rem",
+            "3xl": "2rem"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background: #fef8f1; color: #1d1b17; font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif; }
+    .ambient-blob { position: fixed; border-radius: 9999px; filter: blur(90px); opacity: 0.28; pointer-events: none; z-index: 0; }
+  </style>
+</head>
+<body class="min-h-screen antialiased relative overflow-x-hidden">
+  <!-- Ambient Oil Pastel Background -->
+  <div class="ambient-blob w-96 h-96 bg-butter-yellow -top-24 -left-24"></div>
+  <div class="ambient-blob w-96 h-96 bg-mint-sage top-1/3 -right-24"></div>
+  <div class="ambient-blob w-80 h-80 bg-peach-apricot bottom-0 left-1/3"></div>
+
+  <!-- Fixed Floating Pill Header (z-40) -->
+  <header class="fixed top-0 inset-x-0 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/40 z-40 px-6 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="Admin_Operational_Console.html" class="flex items-center gap-2.5 group">
+        <div class="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>
+        </div>
+        <div>
+          <span class="font-bold text-primary text-base tracking-tight block leading-none">ThePurpleCubby</span>
+          <span class="text-[11px] font-semibold text-on-surface-variant">Admin Operational Console</span>
+        </div>
+      </a>
+      <nav class="hidden lg:flex items-center gap-1 bg-surface-container-low p-1 rounded-full border border-outline-variant/40 text-xs font-semibold">
+        <a href="Admin_Operational_Console.html" class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition">Overview</a>
+        <a href="../new set up/School_Setup_Wizard.html" class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition">Setup &amp; CSV</a>
+        <a href="Admin_Attendance_Timer_Config.html" class="px-3.5 py-1.5 rounded-full bg-surface-container-lowest text-primary shadow-sm font-bold">Attendance Timer</a>
+        <a href="Admin_Medication_Consent_Setup.html" class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition">Health &amp; Meds</a>
+        <a href="Admin_Child_History_Audit.html" class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition">Child History</a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint-sage/20 text-tertiary text-xs font-bold">
+        <span class="w-2 h-2 rounded-full bg-mint-sage"></span>
+        Role: Admin (Tenant-Wide)
+      </span>
+      <div class="w-9 h-9 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shadow-sm">AM</div>
+    </div>
+  </header>
+
+  <main class="relative z-10 max-w-7xl mx-auto pt-24 pb-16 px-6 space-y-6">
+    <!-- Hero Header -->
+    <section class="bg-surface-container-lowest rounded-3xl p-6 sm:p-7 border-2 border-butter-yellow/60 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div class="space-y-1.5">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-butter-yellow/25 text-secondary text-xs font-bold">
+          <span>US-P1-03B • US-AD-04 • DEF-029 • DEF-030 • DEF-033</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-charcoal-slate tracking-tight">Planned Check-In Timer &amp; Attendance Policies</h1>
+        <p class="text-sm text-on-surface-variant max-w-2xl">
+          Configure morning arrival cutoffs per room or school-wide. Unchecked-in learners stay <strong>Expected</strong> before cutoff (replacing premature Absent/12m badges), and check-ins after cutoff automatically mark <strong>Late</strong> with a mandatory 5-option reason.
+        </p>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <button onclick="resetDefaults()" class="px-4 py-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition">
+          Reset Defaults
+        </button>
+        <button onclick="saveAllConfig()" class="px-5 py-2.5 rounded-full bg-terracotta-crayon hover:bg-primary text-on-primary text-xs font-bold shadow-md flex items-center gap-2 transition active:scale-95">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Config (PUT /api/v1/attendance/config)
+        </button>
+      </div>
+    </section>
+
+    <!-- KPI Row -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-cerulean-sky/40 shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Default Morning Cutoff</span>
+        <div id="kpi-cutoff" class="text-3xl font-bold text-charcoal-slate mt-1">09:00 AM</div>
+        <span class="text-xs text-on-surface-variant mt-1 block">Applies unless room override set</span>
+      </div>
+      <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-mint-sage/50 shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Pre-Cutoff Status Rule</span>
+        <div class="text-2xl font-bold text-tertiary mt-1">Expected</div>
+        <span class="text-xs text-on-surface-variant mt-1 block">Fixes DEF-030 premature Absent</span>
+      </div>
+      <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-peach-apricot/50 shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Late Reason Gate</span>
+        <div class="text-2xl font-bold text-primary mt-1">5 Options</div>
+        <span class="text-xs text-on-surface-variant mt-1 block">Required post-cutoff (HTTP 422)</span>
+      </div>
+      <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-lavender-lilac/50 shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Post-Checkout &amp; 24h Lock</span>
+        <div class="text-2xl font-bold text-charcoal-slate mt-1">Active</div>
+        <span class="text-xs text-on-surface-variant mt-1 block">BR-03-01 &amp; DEF-033 Admin Override</span>
+      </div>
+    </section>
+
+    <!-- Main 12-Col Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Left 8 Cols: Room & Tenant Planned Check-In Config -->
+      <section class="lg:col-span-8 bg-surface-container-lowest rounded-3xl p-6 border-2 border-outline-variant/40 shadow-sm space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-4 border-b border-outline-variant/40">
+          <div>
+            <h2 class="text-lg font-bold text-charcoal-slate">Room &amp; Class Planned Check-In Schedules</h2>
+            <p class="text-xs text-on-surface-variant">Only Admin, Principal, and Owner can modify cutoffs (`CareGiver`/`Teacher`/`Parent` receive HTTP 403).</p>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-surface-container-low text-xs font-bold text-on-surface-variant">Timezone: America/Toronto</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-surface-container-low text-[11px] uppercase tracking-wider text-on-surface-variant">
+                <th class="py-3 px-4 rounded-l-2xl">Room / Class Scope</th>
+                <th class="py-3 px-4">Planned Check-In</th>
+                <th class="py-3 px-4">Absence Escalation SLA</th>
+                <th class="py-3 px-4">Pre-Cutoff Label</th>
+                <th class="py-3 px-4 rounded-r-2xl">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/30 text-xs">
+              <tr class="hover:bg-surface-container-low/50">
+                <td class="py-3.5 px-4">
+                  <span class="font-bold text-charcoal-slate block">Tenant Default (All Rooms)</span>
+                  <span class="text-[11px] text-on-surface-variant">demo-school • fallback policy</span>
+                </td>
+                <td class="py-3.5 px-4">
+                  <input id="time-default" type="time" value="09:00" onchange="updatePreview()" class="rounded-xl bg-surface-container-low border border-outline-variant/60 px-3 py-1.5 font-bold text-charcoal-slate focus:outline-none focus:ring-2 focus:ring-terracotta-crayon/40" />
+                </td>
+                <td class="py-3.5 px-4">
+                  <select class="rounded-xl bg-surface-container-low border border-outline-variant/60 px-2.5 py-1.5 font-semibold text-charcoal-slate">
+                    <option value="15">+15 mins after cutoff</option>
+                    <option value="30" selected>+30 mins after cutoff</option>
+                    <option value="60">+60 mins after cutoff</option>
+                  </select>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-cerulean-sky/20 text-charcoal-slate font-bold">Expected</span>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold">Active</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-surface-container-low/50 bg-peach-apricot/5">
+                <td class="py-3.5 px-4">
+                  <span class="font-bold text-charcoal-slate block">Room 1A — Sunflowers Toddler &amp; Pre-K</span>
+                  <span class="text-[11px] text-on-surface-variant">Caregiver Portal (/caregiver) • 18 Enrolled</span>
+                </td>
+                <td class="py-3.5 px-4">
+                  <input id="time-room1a" type="time" value="09:15" onchange="updatePreview()" class="rounded-xl bg-surface-container-low border border-terracotta-crayon/60 px-3 py-1.5 font-bold text-charcoal-slate focus:outline-none focus:ring-2 focus:ring-terracotta-crayon/40" />
+                </td>
+                <td class="py-3.5 px-4">
+                  <select class="rounded-xl bg-surface-container-low border border-outline-variant/60 px-2.5 py-1.5 font-semibold text-charcoal-slate">
+                    <option value="15" selected>+15 mins after cutoff</option>
+                    <option value="30">+30 mins after cutoff</option>
+                    <option value="45">+45 mins after cutoff</option>
+                  </select>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-cerulean-sky/20 text-charcoal-slate font-bold">Expected</span>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold">Room Override</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-surface-container-low/50">
+                <td class="py-3.5 px-4">
+                  <span class="font-bold text-charcoal-slate block">Grade 4B &amp; Grade 5A Homerooms</span>
+                  <span class="text-[11px] text-on-surface-variant">Teacher Portal (/teacher/attendance)</span>
+                </td>
+                <td class="py-3.5 px-4">
+                  <input type="time" value="08:45" class="rounded-xl bg-surface-container-low border border-outline-variant/60 px-3 py-1.5 font-bold text-charcoal-slate" />
+                </td>
+                <td class="py-3.5 px-4">
+                  <select class="rounded-xl bg-surface-container-low border border-outline-variant/60 px-2.5 py-1.5 font-semibold text-charcoal-slate">
+                    <option value="15" selected>+15 mins after cutoff</option>
+                    <option value="30">+30 mins after cutoff</option>
+                  </select>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-cerulean-sky/20 text-charcoal-slate font-bold">Not Marked</span>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-mint-sage/25 text-tertiary font-bold">Room Override</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Post-Checkout & 24h Lock Rules -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/40 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-charcoal-slate">Post-Checkout Drawer Lock (DEF-033)</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-mint-sage/25 text-tertiary text-[11px] font-bold">Enforced</span>
+            </div>
+            <p class="text-[11px] text-on-surface-variant">
+              Once a child is checked out (`check_out_at != null`), Caregiver daily care inputs lock immediately. Edits require an Admin/Supervisor override key + reason logged to `core_audit_log`.
+            </p>
+            <div class="flex items-center gap-2 pt-1">
+              <label class="text-[11px] font-bold text-on-surface-variant">Supervisor Override Mode:</label>
+              <select class="rounded-xl bg-surface-container-lowest border border-outline-variant/60 px-2.5 py-1 text-xs font-semibold text-charcoal-slate">
+                <option selected>Admin/Principal JWT + Reason</option>
+                <option>Supervisor 6-Digit Key + Reason</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/40 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-charcoal-slate">24-Hour Attendance Edit Lock (BR-03-01)</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-butter-yellow/35 text-secondary text-[11px] font-bold">Mandatory Rule</span>
+            </div>
+            <p class="text-[11px] text-on-surface-variant">
+              Records older than 24 hours reject `Teacher`/`CareGiver` edits with HTTP 422 (`BR-03-01`). Only `Principal` or `Owner` may apply audited overrides.
+            </p>
+            <div class="text-[11px] font-semibold text-primary">Unexcused Absent auto-sets `notified_parent=True` (BR-03-02).</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right 4 Cols: Live Caregiver Check-In Behavior Preview -->
+      <aside class="lg:col-span-4 space-y-5">
+        <div class="bg-surface-container-lowest rounded-3xl p-6 border-2 border-peach-apricot/50 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-charcoal-slate">5-Option Late Reason Dropdown</h3>
+            <span class="px-2.5 py-0.5 rounded-full bg-peach-apricot/25 text-primary text-[11px] font-bold">US-P1-03B</span>
+          </div>
+          <p class="text-xs text-on-surface-variant">
+            When a Caregiver taps <strong>Check-In</strong> after Room 1A's cutoff (<strong id="preview-cutoff">09:15 AM</strong>), the check-in modal requires selecting one of these 5 validated reasons:
+          </p>
+          <div class="space-y-2">
+            <label for="preview-reason" class="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Late Check-In Reason (Required)</label>
+            <select id="preview-reason" class="w-full rounded-2xl bg-surface-container-low border border-outline-variant/60 px-3.5 py-2.5 text-xs font-semibold text-charcoal-slate">
+              <option value="">-- Select a late arrival reason --</option>
+              <option>Traffic / Transit Delay</option>
+              <option>Family / Morning Routine</option>
+              <option>Medical / Appointment</option>
+              <option>Weather / Road Conditions</option>
+              <option>Other (Parent Notified)</option>
+            </select>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 text-xs space-y-1.5">
+            <div class="font-bold text-charcoal-slate">Simulated Caregiver Card States</div>
+            <div class="flex items-center justify-between">
+              <span class="text-on-surface-variant">Before cutoff (08:40 AM):</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-cerulean-sky/20 text-charcoal-slate font-bold">Expected • Check-In</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-on-surface-variant">Check-in &le; cutoff:</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-mint-sage/25 text-tertiary font-bold">Present</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-on-surface-variant">Check-in &gt; cutoff:</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-butter-yellow/35 text-secondary font-bold">Late + Reason</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-on-surface-variant">After Check-Out (DEF-032):</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-lavender-lilac/30 text-charcoal-slate font-bold">Checked Out (Locked)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-3xl p-5 border-2 border-outline-variant/40 shadow-sm space-y-2">
+          <div class="text-xs font-bold text-charcoal-slate">API Contract Preview</div>
+          <pre class="text-[11px] bg-charcoal-slate text-surface p-3.5 rounded-2xl overflow-x-auto">PUT /api/v1/attendance/config
+{
+  "planned_check_in_time": "09:15",
+  "class_id": "00000000-...-010a",
+  "sla_escalation_mins": 15,
+  "lock_after_checkout": true
+}</pre>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Toast Feedback -->
+  <div id="toast" class="hidden fixed bottom-6 right-6 z-[80] bg-charcoal-slate text-surface px-5 py-3.5 rounded-2xl shadow-xl text-xs font-semibold flex items-center gap-3">
+    <span class="w-2.5 h-2.5 rounded-full bg-mint-sage"></span>
+    <span id="toast-msg">Configuration saved.</span>
+  </div>
+
+  <script>
+    function fmtTime(val) {
+      if (!val) return "09:00 AM";
+      const [h, m] = val.split(":").map(Number);
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      return `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+    }
+    function updatePreview() {
+      document.getElementById("kpi-cutoff").textContent = fmtTime(document.getElementById("time-default").value);
+      document.getElementById("preview-cutoff").textContent = fmtTime(document.getElementById("time-room1a").value);
+    }
+    function resetDefaults() {
+      document.getElementById("time-default").value = "09:00";
+      document.getElementById("time-room1a").value = "09:15";
+      updatePreview();
+      showToast("Reset to default Planned Check-In times (09:00 / 09:15).");
+    }
+    function saveAllConfig() {
+      updatePreview();
+      showToast("Saved attendance timer config via PUT /api/v1/attendance/config (HTTP 200).");
+    }
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      document.getElementById("toast-msg").textContent = msg;
+      el.classList.remove("hidden");
+      setTimeout(() => el.classList.add("hidden"), 3200);
+    }
+  </script>
+</body>
+</html>
