@@ -24,3 +24,13 @@ local.env
 *.log
 *.tsbuildinfo
 ~$*.docx
+~$*.xlsx
+~$*.xls
+
+# Project documentation & requirement files
+docs/*.md
+docs/*.xlsx
+docs/*.xls
+docs/*.csv
+docs/10_Agent_Prompts
+docs/dbml_er_diagram.dbml

@@ -9,7 +9,7 @@ Read **only** the files required for your current task:
 | Task Type | Read Only These Files Before Editing |
 | :--- | :--- |
 | **Product / Backlog Scope** | [`docs/6_STATUS_UPDATE.xlsx`](docs/6_STATUS_UPDATE.xlsx) (`Requirements` tab) |
-| **Technical Design (TDD)** | [`docs/9_TECHNICAL_DESIGN_DOC.md`](docs/9_TECHNICAL_DESIGN_DOC.md) |
+| **Technical Design (TDD)** | [`docs/9_TECHNICAL_DESIGN_DOC.md`](docs/9_TECHNICAL_DESIGN_DOC.md) — **never read in full**; locate the Requirement/Defect ID line via `grep -n` and read only that 1-line row (see `sdl-tdd-sync` skill) |
 | **Business Rules (BO Layer)** | Target `core/business_objects/<domain>.py` + matching section in [`docs/rule_registry.md`](docs/rule_registry.md) |
 | **API Route / Schema Change** | Target `core/api/v1/<domain>.py` + `core/schemas/<domain>.py` |
 | **Database / Model / Env Change** | `core/models.py` + [`docs/4_DATA_AND_ENV.md`](docs/4_DATA_AND_ENV.md) |
@@ -29,11 +29,11 @@ Read **only** the files required for your current task:
 3. **No Unchecked Schema Changes:** Never add/alter a database table without a migration, RLS policy coverage (`0020_enable_tenant_rls`), and an update to [`docs/4_DATA_AND_ENV.md`](docs/4_DATA_AND_ENV.md).
 4. **No Broad Refactors:** Keep edits minimal, targeted, and consistent with existing naming and patterns.
 5. **No Untested Changes:** Always run the narrowest relevant test/build check before finishing.
-6. **Memory Log Required:** Append a brief dated decision/status entry to [`docs/7_MEMORY_LOG.md`](docs/7_MEMORY_LOG.md) when completing a task.
+6. **Memory Log Required:** Append a brief dated decision/status entry to [`docs/7_MEMORY_LOG.md`](docs/7_MEMORY_LOG.md) (append-only; never read the full file) when completing a task.
 7. **Defect, Requirement & Auto-TDD Sync Required:**
    - Log every defect in [`docs/6_STATUS_UPDATE.xlsx`](docs/6_STATUS_UPDATE.xlsx) (`Defects` tab) using its 7-column table (`Defect Id | Date Raised | Issue Description | Reviewed by Me | Resolution | Status | Fixed Date`) normalized to plain ASCII.
    - [`docs/6_STATUS_UPDATE.xlsx`](docs/6_STATUS_UPDATE.xlsx) (`Requirements` tab, 15-column plain-ASCII format) is the canonical status ledger where all new and updated requirements must be listed going forward (keep [`docs/2_PRD.md`](docs/2_PRD.md) in sync if referenced). Retired files `6_PLAN.md`, `8_PRODUCT_BACKLOG_STORIES.md`, `9_CURRENT_JOB_EXECUTION_PLAN.md`, and `12_CAREGIVER_REQUIREMENTS.md` must not be recreated.
-   - Whenever **any new Requirement or Defect is added**, automatically invoke the `SDL_SB` subagent (via the `sdl-tdd-sync` skill) to append its verified, new-developer-ready 4-layer Technical Implementation Plan and Unit Testing Steps to [`docs/9_TECHNICAL_DESIGN_DOC.md`](docs/9_TECHNICAL_DESIGN_DOC.md) (2 sections, 5-column matrix, zero assumed/unverified symbols).
+   - Whenever **any new Requirement or Defect is added**, automatically invoke a fresh `SDL_SB` subagent per task (via the `sdl-tdd-sync` skill, retiring it once verified) to append its verified, new-developer-ready 4-layer Technical Implementation Plan and Unit Testing Steps to [`docs/9_TECHNICAL_DESIGN_DOC.md`](docs/9_TECHNICAL_DESIGN_DOC.md) (2 sections, 5-column matrix, zero assumed/unverified symbols).
    Don't start the development when the request is to add the requirement. Clarify when to start the development and accordingly proceed with the DEV_SB sub-agent.
 8. **No Unrequested Code Edits During QA / Logging:** When the user asks to explain an issue, inspect state, or log a defect/requirement during manual testing, do **not** modify application code until explicitly asked to fix it.
 
