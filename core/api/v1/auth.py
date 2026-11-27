@@ -1,6 +1,5 @@
 """API v1 endpoints for authentication, login, parent signup, token validation, and password management."""
 
-import hashlib
 import time
 import uuid
 from typing import Optional
@@ -20,6 +19,7 @@ from core.auth.decorators import require_roles
 from core.models import PortalRoleMembership, Student, Tenant
 from core.business_objects.school_setup import RoleMembershipBO
 from core.business_objects.trial import TrialSignupBO, TrialSignupError
+from core.business_objects.username import UsernameGenerationError, UsernameGeneratorBO
 from core.telemetry import emit_telemetry_event
 from core.schemas.auth import (
     LoginSchema,
@@ -280,6 +280,8 @@ def trial_signup(request, payload: TrialSignupSchema):
     try:
         tenant, user, membership = TrialSignupBO.create_trial(
             daycare_name=payload.daycare_name,
+            first_name=payload.first_name,
+            last_name=payload.last_name,
             email=str(payload.email),
             role=payload.role,
             password=payload.password,
@@ -317,6 +319,9 @@ def trial_signup(request, payload: TrialSignupSchema):
                 "user": {
                     "id": str(user.pk),
                     "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "name": user.get_full_name() or user.username,
                     "email": user.email,
                     "role": membership.role,
                 },
@@ -354,16 +359,12 @@ def signup(request, payload: SignupSchema):
 
     user_model = get_user_model()
     email = str(payload.email).strip().lower()
-    username_suffix = f"_{tenant.subdomain}"
-    username_prefix = email
-    if len(username_prefix) + len(username_suffix) > 150:
-        digest = hashlib.sha256(email.encode()).hexdigest()[:8]
-        max_prefix_length = 150 - len(username_suffix) - len(digest) - 1
-        username_prefix = f"{email[:max_prefix_length]}_{digest}"
-    username = f"{username_prefix}{username_suffix}"
-    first_name, _, last_name = payload.full_name.partition(" ")
+    first_name = (payload.first_name or "").strip()
+    last_name = (payload.last_name or "").strip()
+    fi = UsernameGeneratorBO.extract_initial(first_name, "first_name")
+    li = UsernameGeneratorBO.extract_initial(last_name, "last_name")
     candidate = user_model(
-        username=username,
+        username=f"{fi}{li}00000000_{tenant.subdomain}",
         email=email,
         first_name=first_name,
         last_name=last_name,
@@ -382,7 +383,7 @@ def signup(request, payload: SignupSchema):
 
     try:
         with transaction.atomic():
-            if user_model.objects.filter(username__iexact=username).exists() or user_model.objects.filter(email__iexact=email).exists():
+            if user_model.objects.filter(email__iexact=email).exists():
                 return JsonResponse(
                     build_error(
                         errors=[{"code": "ACCOUNT_EXISTS", "field": "email", "message": "An account with this email already exists."}],
@@ -392,14 +393,25 @@ def signup(request, payload: SignupSchema):
                     status=409,
                 )
 
-            user = user_model.objects.create_user(
-                username=username,
-                email=email,
-                password=payload.password,
-                first_name=first_name,
-                last_name=last_name,
-                is_active=False,
-            )
+            try:
+                user = UsernameGeneratorBO.create_user_with_generated_username(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password=payload.password,
+                    school_code=tenant.subdomain,
+                    is_active=False,
+                )
+            except UsernameGenerationError as exc:
+                return JsonResponse(
+                    build_error(
+                        errors=[{"code": exc.code, "field": exc.field, "message": exc.message}],
+                        tenant_id=tenant.tenant_id,
+                        role=None,
+                    ),
+                    status=exc.status,
+                )
+
             parent_group, _ = Group.objects.get_or_create(name="Parent")
             user.groups.add(parent_group)
             with connection.cursor() as cursor:
@@ -428,6 +440,8 @@ def signup(request, payload: SignupSchema):
         build_response(
             data={
                 "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "email": user.email,
                 "name": user.get_full_name() or user.username,
                 "role": "parent",

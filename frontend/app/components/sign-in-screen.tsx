@@ -53,7 +53,8 @@ export function SignInScreen({
     (initialUsername ?? "").trim(),
   );
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -113,7 +114,8 @@ export function SignInScreen({
     setBusy(true);
     try {
       const result = await signupWithPassword({
-        full_name: fullName.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         email: email.trim(),
         password,
         tenant: tenant.trim() || "demo-school",
@@ -123,7 +125,7 @@ export function SignInScreen({
       setConfirmPassword("");
       setMode("signin");
       setStatus(
-        "Your request was sent. Your school administrator must activate your account before you can sign in.",
+        `Account created! Your username is ${result.data.username}. Your school administrator must activate your account before you can sign in.`,
       );
     } catch (error: unknown) {
       setStatus(errorMessage(error));
@@ -300,13 +302,24 @@ export function SignInScreen({
 
                 <form onSubmit={signUp}>
                   <label className="field">
-                    <span>Full name</span>
+                    <span>First name</span>
                     <input
                       type="text"
-                      name="full-name"
-                      autoComplete="name"
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
+                      name="first-name"
+                      autoComplete="given-name"
+                      value={firstName}
+                      onChange={(event) => setFirstName(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Last name</span>
+                    <input
+                      type="text"
+                      name="last-name"
+                      autoComplete="family-name"
+                      value={lastName}
+                      onChange={(event) => setLastName(event.target.value)}
                       required
                     />
                   </label>

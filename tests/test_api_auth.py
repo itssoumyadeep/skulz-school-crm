@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 import uuid
 
 import pytest
@@ -10,7 +11,7 @@ from datetime import date
 import jwt
 from django.conf import settings
 
-from core.models import PortalRoleMembership, Student
+from core.models import PortalRoleMembership, Student, UsernameNumberReservation
 
 
 @pytest.mark.django_db
@@ -45,28 +46,25 @@ class TestLoginAPI:
             content_type="application/json",
         )
 
-    def signup(self, tenant, email="new.parent@example.com"):
+    def signup(
+        self,
+        tenant,
+        email="new.parent@example.com",
+        first_name="New",
+        last_name="Parent",
+        **overrides,
+    ):
+        payload = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "password": "strong-parent-password-2026",
+            "tenant": tenant.subdomain,
+        }
+        payload.update(overrides)
         return self.client.post(
             "/api/v1/auth/signup",
-            data={
-                "full_name": "New Parent",
-                "email": email,
-                "password": "strong-parent-password-2026",
-                "tenant": tenant.subdomain,
-                "role": "Owner",
-            },
-            content_type="application/json",
-        )
-
-    def signup(self, tenant, email="new.parent@example.com"):
-        return self.client.post(
-            "/api/v1/auth/signup",
-            data={
-                "full_name": "New Parent",
-                "email": email,
-                "password": "strong-parent-password-2026",
-                "tenant": tenant.subdomain,
-            },
+            data=payload,
             content_type="application/json",
         )
 
@@ -181,21 +179,87 @@ class TestLoginAPI:
         assert membership.role == "Teacher"
         assert membership.group == teacher_group
 
-    def test_signup_creates_parent_user_with_hashed_password_and_tenant_membership(
+    def test_signup_creates_parent_user_with_generated_username_and_tenant_membership(
         self, tenant_a
     ):
         response = self.signup(tenant_a)
 
         assert response.status_code == 201
         data = response.json()["data"]
-        user = get_user_model().objects.get(username="new.parent@example.com_oakridge")
+        assert re.fullmatch(r"np\d{8}_oakridge", data["username"])
+        assert data["first_name"] == "New"
+        assert data["last_name"] == "Parent"
+        user = get_user_model().objects.get(username=data["username"])
         membership = PortalRoleMembership.objects.get(user=user, tenant=tenant_a)
+        assert user.first_name == "New"
+        assert user.last_name == "Parent"
         assert user.check_password("strong-parent-password-2026")
         assert not user.is_active
         assert data["role"] == "parent"
         assert data["status"] == "pending_activation"
         assert membership.role == "Parent"
         assert membership.group.name == "Parent"
+        assert UsernameNumberReservation.objects.filter(
+            number_code=data["username"][2:10], user=user
+        ).exists()
+
+        # After admin activates account, parent can log in with generated username
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        login_res = self.client.post(
+            "/api/v1/auth/login",
+            data={
+                "username": data["username"],
+                "password": "strong-parent-password-2026",
+            },
+            content_type="application/json",
+        )
+        assert login_res.status_code == 200
+        assert login_res.json()["data"]["role"] == "parent"
+        assert login_res.json()["data"]["user"]["username"] == data["username"]
+
+    def test_signup_supports_backward_compatible_full_name_fallback(self, tenant_a):
+        response = self.client.post(
+            "/api/v1/auth/signup",
+            data={
+                "full_name": "Elena Rostova",
+                "email": "elena.rostova@example.com",
+                "password": "strong-parent-password-2026",
+                "tenant": tenant_a.subdomain,
+            },
+            content_type="application/json",
+        )
+
+        assert response.status_code == 201
+        data = response.json()["data"]
+        assert re.fullmatch(r"er\d{8}_oakridge", data["username"])
+        assert data["first_name"] == "Elena"
+        assert data["last_name"] == "Rostova"
+
+    @pytest.mark.parametrize(
+        "bad_payload",
+        [
+            {"full_name": "Cher"},
+            {"first_name": "123", "last_name": "Parent"},
+            {"first_name": "New", "last_name": "---"},
+            {"first_name": "   ", "last_name": "Parent"},
+        ],
+    )
+    def test_signup_rejects_invalid_or_single_word_names(self, tenant_a, bad_payload):
+        payload = {
+            "email": "invalid.name@example.com",
+            "password": "strong-parent-password-2026",
+            "tenant": tenant_a.subdomain,
+            **bad_payload,
+        }
+        response = self.client.post(
+            "/api/v1/auth/signup",
+            data=payload,
+            content_type="application/json",
+        )
+
+        assert response.status_code == 422
+        assert not get_user_model().objects.filter(email="invalid.name@example.com").exists()
 
     def test_signup_rejects_duplicate_email(self, tenant_a):
         self.signup(tenant_a)
@@ -209,7 +273,8 @@ class TestLoginAPI:
         response = self.client.post(
             "/api/v1/auth/signup",
             data={
-                "full_name": "New Parent",
+                "first_name": "New",
+                "last_name": "Parent",
                 "email": "new.parent@example.com",
                 "password": "strong-parent-password-2026",
                 "tenant": "not-a-school",
@@ -219,24 +284,6 @@ class TestLoginAPI:
 
         assert response.status_code == 400
         assert response.json()["errors"][0]["code"] == "SCHOOL_NOT_FOUND"
-
-    def test_signup_creates_django_user_and_parent_membership(self, tenant_a):
-        response = self.signup(tenant_a)
-
-        assert response.status_code == 201
-        user = get_user_model().objects.get(username="new.parent@example.com_oakridge")
-        membership = PortalRoleMembership.objects.get(user=user, tenant=tenant_a)
-        assert user.check_password("strong-parent-password-2026")
-        assert membership.role == "Parent"
-        assert membership.group.name == "Parent"
-
-    def test_signup_rejects_duplicate_email(self, tenant_a):
-        self.signup(tenant_a)
-
-        response = self.signup(tenant_a)
-
-        assert response.status_code == 409
-        assert response.json()["errors"][0]["code"] == "ACCOUNT_EXISTS"
 
     def test_new_parent_cannot_list_unlinked_students(self, tenant_a):
         self.create_user(tenant_a, with_membership=False)

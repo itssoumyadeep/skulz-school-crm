@@ -269,6 +269,8 @@ export async function loginWithPassword(payload: {
 
 export type SignupResponse = {
   username: string;
+  first_name: string;
+  last_name: string;
   email: string;
   name: string;
   role: "parent";
@@ -276,7 +278,8 @@ export type SignupResponse = {
 };
 
 export async function signupWithPassword(payload: {
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   password: string;
   tenant: string;

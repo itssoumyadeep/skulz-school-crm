@@ -1,6 +1,5 @@
 """Domain business logic for self-service daycare free trial onboarding, configurable duration, and lifecycle enforcement."""
 
-import hashlib
 import math
 import secrets
 import string
@@ -14,6 +13,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 
+from core.business_objects.username import UsernameGenerationError, UsernameGeneratorBO
 from core.models import AuditLog, PortalRoleMembership, Tenant
 
 
@@ -212,21 +212,31 @@ class TrialSignupBO:
             503,
         )
 
-    @staticmethod
-    def _username(email: str, school_code: str) -> str:
-        suffix = f"_{school_code}"
-        if len(email) + len(suffix) <= 150:
-            return f"{email}{suffix}"
-
-        digest = hashlib.sha256(email.encode()).hexdigest()[:8]
-        prefix_length = 150 - len(suffix) - len(digest) - 1
-        return f"{email[:prefix_length]}_{digest}{suffix}"
-
     @classmethod
-    def create_trial(cls, *, daycare_name: str, email: str, role: str, password: str):
+    def create_trial(
+        cls,
+        *,
+        daycare_name: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        role: str,
+        password: str,
+    ):
         normalized_email = email.strip().lower()
+        try:
+            fi = UsernameGeneratorBO.extract_initial(first_name, "first_name")
+            li = UsernameGeneratorBO.extract_initial(last_name, "last_name")
+        except UsernameGenerationError as exc:
+            raise TrialSignupError(exc.code, exc.message, exc.status) from exc
+
         user_model = get_user_model()
-        candidate = user_model(email=normalized_email, username=normalized_email)
+        candidate = user_model(
+            email=normalized_email,
+            username=f"{fi}{li}00000000",
+            first_name=first_name.strip()[:150],
+            last_name=last_name.strip()[:150],
+        )
         try:
             password_validation.validate_password(password, user=candidate)
         except ValidationError as exc:
@@ -242,20 +252,18 @@ class TrialSignupBO:
                     )
 
                 tenant = cls._create_tenant(daycare_name.strip())
-                username = cls._username(normalized_email, tenant.subdomain)
-                if user_model.objects.filter(username__iexact=username).exists():
-                    raise TrialSignupError(
-                        "ACCOUNT_EXISTS",
-                        "An account with this email already exists.",
-                        409,
+                try:
+                    user = UsernameGeneratorBO.create_user_with_generated_username(
+                        first_name=first_name,
+                        last_name=last_name,
+                        email=normalized_email,
+                        password=password,
+                        school_code=tenant.subdomain,
+                        is_active=True,
                     )
+                except UsernameGenerationError as exc:
+                    raise TrialSignupError(exc.code, exc.message, exc.status) from exc
 
-                user = user_model.objects.create_user(
-                    username=username,
-                    email=normalized_email,
-                    password=password,
-                    is_active=True,
-                )
                 group, _ = Group.objects.get_or_create(name=role)
                 user.groups.add(group)
                 with connection.cursor() as cursor:

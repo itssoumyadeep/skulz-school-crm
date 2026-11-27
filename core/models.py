@@ -85,6 +85,24 @@ class PortalRoleMembership(models.Model):
         ]
 
 
+class UsernameNumberReservation(models.Model):
+    """Global non-tenant reservation table guaranteeing system-wide 8-digit username uniqueness."""
+
+    number_code = models.CharField(max_length=8, primary_key=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='username_number_reservation',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'core_username_number_reservation'
+
+    def __str__(self):
+        return f"{self.number_code} -> {self.user_id}"
+
+
 class TenantSequence(TenantScopedModel):
     """
     Atomic sequence generator per tenant and domain type (e.g. STUDENT, INVOICE).

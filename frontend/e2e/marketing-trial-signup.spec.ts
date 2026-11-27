@@ -43,6 +43,8 @@ print("cleaned", len(users), "users,", len(tenant_ids), "tenants")
 
 test.describe("US-MKT-01 — Marketing App Start Free Trial Integration", () => {
   const uniqueTag = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+  const firstName = "Elena";
+  const lastName = "Rostova";
   const testEmail = `e2e.trial.${uniqueTag}@example.com`;
   const daycareName = `E2E Sunny Cubs ${uniqueTag}`;
   const strongPassword = `Vx!7qT2#pL9z@Mk8`;
@@ -87,8 +89,10 @@ test.describe("US-MKT-01 — Marketing App Start Free Trial Integration", () => 
       "days free. No credit card required.",
     );
 
-    // Verify exact 5 CRM API fields and role alignment
+    // Verify CRM API fields and role alignment
     await expect(page.locator('input[name="daycare_name"]')).toBeVisible();
+    await expect(page.locator('input[name="first_name"]')).toBeVisible();
+    await expect(page.locator('input[name="last_name"]')).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
     const roleSelect = page.locator('select[name="role"]');
     await expect(roleSelect).toBeVisible();
@@ -118,8 +122,10 @@ test.describe("US-MKT-01 — Marketing App Start Free Trial Integration", () => 
     expect(brokenImgs).toEqual([]);
     expect(await page.locator("svg").count()).toBeGreaterThan(0);
 
-    // Fill exact 5 fields and submit
+    // Fill required fields and submit
     await page.locator('input[name="daycare_name"]').fill(daycareName);
+    await page.locator('input[name="first_name"]').fill(firstName);
+    await page.locator('input[name="last_name"]').fill(lastName);
     await page.locator('input[name="email"]').fill(testEmail);
     await roleSelect.selectOption("Admin");
     await page.locator('input[name="password"]').fill(strongPassword);
@@ -142,9 +148,11 @@ test.describe("US-MKT-01 — Marketing App Start Free Trial Integration", () => 
     expect(trialJson.data.tenant.code).toMatch(/^SC[A-Z0-9]{7}$/);
     expect(trialJson.data.trial.trial_duration_days).toBeGreaterThanOrEqual(1);
     expect(trialJson.data.trial.is_expired).toBe(false);
-    expect(trialJson.data.user.username).toBe(
-      `${testEmail}_${trialJson.data.tenant.code}`,
+    expect(trialJson.data.user.username).toMatch(
+      /^[a-z]{2}\d{8}_SC[A-Z0-9]{7}$/,
     );
+    expect(trialJson.data.user.first_name).toBe(firstName);
+    expect(trialJson.data.user.last_name).toBe(lastName);
     expect(trialJson.data.access_token).toBeUndefined();
     createdSchoolCode = trialJson.data.tenant.code;
 
@@ -203,6 +211,8 @@ test.describe("US-MKT-01 — Marketing App Start Free Trial Integration", () => 
     // Negative test: duplicate email returns 409 inline error on marketing page
     await page.goto(MARKETING_URL, { waitUntil: "networkidle" });
     await page.locator('input[name="daycare_name"]').fill(daycareName);
+    await page.locator('input[name="first_name"]').fill(firstName);
+    await page.locator('input[name="last_name"]').fill(lastName);
     await page.locator('input[name="email"]').fill(testEmail);
     await page.locator('select[name="role"]').selectOption("Admin");
     await page.locator('input[name="password"]').fill(strongPassword);
@@ -227,6 +237,8 @@ test.describe("US-MKT-01 — Marketing App Start Free Trial Integration", () => 
     // Verify telemetry ingested (HTTP 202) and zero PII leaked in payloads
     expect(telemetryStatuses.some((s) => s === 202)).toBe(true);
     const joinedTelemetry = telemetryBodies.join("\n");
+    expect(joinedTelemetry).not.toContain(firstName);
+    expect(joinedTelemetry).not.toContain(lastName);
     expect(joinedTelemetry).not.toContain(testEmail);
     expect(joinedTelemetry).not.toContain(strongPassword);
     // Ignore benign 409 console resource error from intentional duplicate-email check

@@ -1,11 +1,12 @@
 import re
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.test import Client
 
-from core.models import PortalRoleMembership, Tenant
+from core.business_objects.username import UsernameGeneratorBO
+from core.models import PortalRoleMembership, Tenant, UsernameNumberReservation
 
 
 @pytest.mark.django_db
@@ -16,6 +17,8 @@ class TestTrialSignupAPI:
     def signup(self, **overrides):
         payload = {
             "daycare_name": "Sunshine Daycare",
+            "first_name": "Olivia",
+            "last_name": "Parker",
             "email": "owner@sunshine.example",
             "role": "Owner",
             "password": "Vx!7qT2#pL9z",
@@ -49,7 +52,16 @@ class TestTrialSignupAPI:
 
         assert tenant.name == "Sunshine Daycare"
         assert re.fullmatch(r"SC[A-Z0-9]{7}", data["tenant"]["code"])
-        assert user.username.endswith(f"_{tenant.subdomain}")
+        expected_username_pattern = rf"op\d{{8}}_{tenant.subdomain}"
+        assert re.fullmatch(expected_username_pattern, user.username)
+        assert data["user"]["username"] == user.username
+        assert data["user"]["first_name"] == "Olivia"
+        assert data["user"]["last_name"] == "Parker"
+        assert user.first_name == "Olivia"
+        assert user.last_name == "Parker"
+        assert UsernameNumberReservation.objects.filter(
+            number_code=user.username[2:10], user=user
+        ).exists()
         assert user.is_active
         assert user.check_password("Vx!7qT2#pL9z")
         assert membership.role == role
@@ -58,6 +70,65 @@ class TestTrialSignupAPI:
         assert data["portal_path"] == portal_path
         assert data["user"]["role"] == role
         assert tenant.config["account_type"] == "free_trial"
+
+        # Immediate login works with the generated username
+        login_res = self.client.post(
+            "/api/v1/auth/login",
+            data={
+                "username": data["user"]["username"],
+                "password": "Vx!7qT2#pL9z",
+            },
+            content_type="application/json",
+        )
+        assert login_res.status_code == 200
+        assert login_res.json()["data"]["tenant_id"] == str(tenant.tenant_id)
+        assert login_res.json()["data"]["user"]["username"] == user.username
+
+    def test_trial_signup_enforces_cross_tenant_global_8_digit_uniqueness(self):
+        first_res = self.signup(
+            daycare_name="First Daycare",
+            first_name="Olivia",
+            last_name="Parker",
+            email="first@sunshine.example",
+        )
+        assert first_res.status_code == 201
+        first_username = first_res.json()["data"]["user"]["username"]
+        first_code = first_username[2:10]
+
+        with patch.object(
+            UsernameGeneratorBO,
+            "generate_8_digit_number",
+            side_effect=[first_code, "44556677"],
+        ):
+            second_res = self.signup(
+                daycare_name="Second Daycare",
+                first_name="Liam",
+                last_name="Carter",
+                email="second@sunshine.example",
+            )
+
+        assert second_res.status_code == 201
+        second_username = second_res.json()["data"]["user"]["username"]
+        assert re.fullmatch(r"lc44556677_SC[A-Z0-9]{7}", second_username)
+        assert second_username[2:10] != first_code
+
+    @pytest.mark.parametrize(
+        "bad_overrides",
+        [
+            {"first_name": "123", "last_name": "Parker"},
+            {"first_name": "Olivia", "last_name": "!!!"},
+            {"first_name": "   ", "last_name": "Parker"},
+            {"first_name": "Olivia", "last_name": ""},
+        ],
+    )
+    def test_trial_signup_rejects_invalid_names_with_422_and_zero_orphans(
+        self, bad_overrides
+    ):
+        response = self.signup(**bad_overrides)
+
+        assert response.status_code == 422
+        assert Tenant.objects.count() == 0
+        assert get_user_model().objects.count() == 0
 
     def test_trial_signup_rejects_password_confirmation_mismatch(self):
         response = self.signup(confirm_password="different-password")
@@ -95,6 +166,8 @@ class TestTrialSignupAPI:
             "/api/v1/auth/trial-signup",
             data={
                 "daycare_name": "Sunshine Daycare",
+                "first_name": "Olivia",
+                "last_name": "Parker",
                 "email": "parent@sunshine.example",
                 "role": "Parent",
                 "password": "Vx!7qT2#pL9z",

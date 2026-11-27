@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 import subprocess
 import sys
@@ -67,6 +68,8 @@ class TestUSMkt03ConfigurableTrialLifecycle:
                 "/api/v1/auth/trial-signup",
                 data={
                     "daycare_name": "Cedar Trial Care",
+                    "first_name": "Cedar",
+                    "last_name": "Owner",
                     "email": "cedar.trial@example.com",
                     "role": "Owner",
                     "password": "Vx!7qT2#pL9z@2026",
@@ -77,6 +80,12 @@ class TestUSMkt03ConfigurableTrialLifecycle:
             assert res.status_code == 201
             data = res.json()["data"]
             assert "access_token" not in data
+            assert re.fullmatch(
+                rf"co\d{{8}}_{data['tenant']['code']}",
+                data["user"]["username"],
+            )
+            assert data["user"]["first_name"] == "Cedar"
+            assert data["user"]["last_name"] == "Owner"
             assert data["trial"]["trial_duration_days"] == 21
             assert data["trial"]["is_expired"] is False
             assert data["trial"]["days_remaining"] == 21
