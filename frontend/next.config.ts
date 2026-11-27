@@ -66,15 +66,28 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   poweredByHeader: false,
   async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: "http://127.0.0.1:8000/api/v1/:path*",
-      },
-    ];
+    const internalBackend = process.env.BACKEND_INTERNAL_URL?.trim().replace(/\/$/, "");
+    if (internalBackend) {
+      return [
+        {
+          source: "/api/v1/:path*",
+          destination: `${internalBackend}/api/v1/:path*`,
+        },
+      ];
+    }
+    if (!isProduction) {
+      return [
+        {
+          source: "/api/v1/:path*",
+          destination: "http://127.0.0.1:8000/api/v1/:path*",
+        },
+      ];
+    }
+    return [];
   },
   async headers() {
     return [

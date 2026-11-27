@@ -24,6 +24,7 @@ CONFIG_VARIABLES = {
     "STRIPE_WEBHOOK_SECRET",
     "DJANGO_SECURE_SSL_REDIRECT",
     "DJANGO_SECURE_HSTS_SECONDS",
+    "MEDIA_ROOT",
 }
 
 
@@ -74,6 +75,9 @@ assert settings.SESSION_COOKIE_SECURE is True
 assert settings.CSRF_COOKIE_SECURE is True
 assert settings.SECURE_SSL_REDIRECT is True
 assert settings.SECURE_HSTS_SECONDS > 0
+assert settings.SECURE_PROXY_SSL_HEADER == ('HTTP_X_FORWARDED_PROTO', 'https')
+assert settings.USE_X_FORWARDED_HOST is True
+assert settings.MEDIA_ROOT.endswith('/media')
 print('settings-ok')""",
     )
 
@@ -136,3 +140,19 @@ print('settings-ok')""",
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "settings-ok"
+
+
+def test_media_root_honors_environment_override():
+    environment = {
+        **_production_environment(),
+        "MEDIA_ROOT": "/app/media",
+    }
+    result = _run_settings(
+        environment,
+        """import config.settings as settings
+assert settings.MEDIA_ROOT == '/app/media'
+print('media-ok')""",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "media-ok"
