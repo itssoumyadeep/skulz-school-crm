@@ -7,7 +7,7 @@ from django.test import Client
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
-from jose import jwt
+import jwt
 
 from core.models import (
     Tenant, Student, StudentAttendance, StaffAttendance,

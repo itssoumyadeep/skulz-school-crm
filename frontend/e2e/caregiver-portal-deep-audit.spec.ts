@@ -683,4 +683,253 @@ test.describe("Caregiver Daily Care Portal Deep Browser Audit", () => {
       }
     }
   });
+
+  test("DEF-036: Empty/new tenant shows clean empty states with zero demo data; non-Toddler tenant displays active DB students", async ({
+    context,
+    page,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    // (a)-(f) Empty tenant: Little Super Star (0 students, 0 meds, 0 incidents)
+    const emptyTenantToken = signTestJwt({
+      sub: "00000000-0000-0000-0000-00000000e101",
+      user_id: "00000000-0000-0000-0000-00000000e101",
+      email: "caregiver@littlesuperstar.example",
+      user_name: "New School Caregiver",
+      role: "caregiver",
+      tenant_id: "e54aed15-8719-4b81-a85c-26d5a3086d3b",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+    });
+    await context.clearCookies();
+    await context.addCookies([
+      {
+        name: "pc_session",
+        value: emptyTenantToken,
+        domain: "127.0.0.1",
+        path: "/",
+      },
+    ]);
+
+    const emptyRosterPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/v1/attendance/students/") && res.status() === 200,
+    );
+    const emptyMedsPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/v1/health/classroom-medications") && res.status() === 200,
+    );
+    const emptyIncPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/v1/incidents") && res.status() === 200,
+    );
+
+    await page.goto("http://127.0.0.1:3000/caregiver");
+    await Promise.all([emptyRosterPromise, emptyMedsPromise, emptyIncPromise]);
+    await page.waitForLoadState("networkidle");
+
+    const emptyBodyText = await page.locator("body").innerText();
+    for (const demoName of [
+      "Maya Lin",
+      "Leo Vance",
+      "Zoe Zhao",
+      "Noah Parker",
+      "Charlotte Taylor",
+      "Amoxicillin",
+      "Clara Gomez",
+      "Nurse Clara",
+    ]) {
+      expect(emptyBodyText).not.toContain(demoName);
+    }
+    await expect(page.locator("h1")).toContainText(
+      "Good morning, New School Caregiver",
+    );
+
+    await expect(
+      page.getByText("No students enrolled or assigned to this classroom session"),
+    ).toBeVisible();
+    await page.getByRole("tab", { name: /compact list/i }).click();
+    await expect(
+      page.getByText("No classroom learners found for this session"),
+    ).toBeVisible();
+    await page.getByRole("tab", { name: /cards/i }).click();
+
+    await expect(
+      page.getByText(/No medication administrations scheduled/i),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Zero boo-boos or incidents reported today/i),
+    ).toBeVisible();
+
+    await expect(page.getByTestId("caregiver-alerts-dot")).toHaveCount(0);
+    await page.getByRole("button", { name: "Caregiver Alerts" }).click();
+    await expect(page.getByText(/No pending routine alerts/i)).toBeVisible();
+
+    // (g) Non-Toddler grade tenant: Demo School 1 (Pre-K student "Soumya soumya")
+    const nonToddlerToken = signTestJwt({
+      sub: "00000000-0000-0000-0000-00000000f101",
+      user_id: "00000000-0000-0000-0000-00000000f101",
+      email: "caregiver@demoschool1.example",
+      user_name: "Demo School 1 Caregiver",
+      role: "caregiver",
+      tenant_id: "f5f96b32-705f-5149-8aae-ee210fccc0b9",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+    });
+    await context.clearCookies();
+    await context.addCookies([
+      {
+        name: "pc_session",
+        value: nonToddlerToken,
+        domain: "127.0.0.1",
+        path: "/",
+      },
+    ]);
+
+    const nonToddlerRosterPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/v1/attendance/students/") && res.status() === 200,
+    );
+    await page.goto("http://127.0.0.1:3000/caregiver");
+    await nonToddlerRosterPromise;
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText("Soumya soumya").first()).toBeVisible();
+    const nonToddlerBodyText = await page.locator("body").innerText();
+    for (const demoName of [
+      "Maya Lin",
+      "Leo Vance",
+      "Zoe Zhao",
+      "Clara Gomez",
+      "Nurse Clara",
+    ]) {
+      expect(nonToddlerBodyText).not.toContain(demoName);
+    }
+
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("DEF-035: Dynamic caregiver identity from JWT/profile replaces hardcoded Clara Gomez across banner, header, Puffy, and incident staff stamp", async ({
+    context,
+    page,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    const customCaregiverToken = signTestJwt({
+      sub: "00000000-0000-0000-0000-00000000c999",
+      user_id: "00000000-0000-0000-0000-00000000c999",
+      email: "sarah.connor@purplecubby.example",
+      user_name: "Sarah Connor",
+      role: "caregiver",
+      tenant_id: "b256609a-3157-4ed8-9822-ea797d2c6a4b",
+      assigned_class_ids: ["00000000-0000-0000-0000-0000000001a0"],
+      assigned_grades: ["Toddler & Pre-K"],
+      exp: Math.floor(Date.now() / 1000) + 86400,
+    });
+    const adminToken = signTestJwt({
+      sub: "00000000-0000-0000-0000-00000000a001",
+      user_id: "00000000-0000-0000-0000-00000000a001",
+      email: "admin1@demo-school.example.com",
+      user_name: "Demo Admin",
+      role: "Admin",
+      tenant_id: "b256609a-3157-4ed8-9822-ea797d2c6a4b",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+    });
+
+    await context.clearCookies();
+    await context.addCookies([
+      {
+        name: "pc_session",
+        value: customCaregiverToken,
+        domain: "127.0.0.1",
+        path: "/",
+      },
+    ]);
+
+    let createdIncidentId: string | null = null;
+    try {
+      const rosterPromise = page.waitForResponse(
+        (res) => res.url().includes("/api/v1/attendance/students/") && res.status() === 200,
+      );
+      const profilePromise = page.waitForResponse(
+        (res) => res.url().includes("/api/v1/auth/profile") && res.status() === 200,
+      );
+      await page.goto("http://127.0.0.1:3000/caregiver");
+      await Promise.all([rosterPromise, profilePromise]);
+      await page.waitForLoadState("networkidle");
+
+      // (a) Greeting banner shows authenticated caregiver name
+      await expect(page.locator("h1")).toContainText("Good morning, Sarah Connor");
+      await expect(
+        page.getByText("Sarah Connor & caregiver team").first(),
+      ).toBeVisible();
+
+      // (b) Header, hero banner, and profile menu show Sarah Connor with 0 occurrences of Clara Gomez
+      const headerText = await page.getByRole("banner", { name: "Caregiver Portal Header" }).innerText();
+      expect(headerText).not.toContain("Clara Gomez");
+      const heroText = await page.locator("main section").first().innerText();
+      expect(heroText).not.toContain("Clara Gomez");
+
+      const profileMenuBtn = page.getByRole("button", {
+        name: "Caregiver Profile Menu",
+      });
+      await expect(profileMenuBtn).toHaveAttribute(
+        "title",
+        "Sarah Connor Profile",
+      );
+      await profileMenuBtn.click();
+      await expect(page.getByText("Sarah Connor").first()).toBeVisible();
+      await profileMenuBtn.click();
+
+      // (c) ThePuffy assistant greets Sarah!
+      await page.locator("#puffy-launcher-btn").click();
+      const chatWindow = page.getByRole("dialog", {
+        name: "ThePuffy AI Chat Window",
+      });
+      await expect(chatWindow).toBeVisible();
+      await expect(chatWindow).toContainText("Online • Scoped: Sarah Connor");
+      await expect(chatWindow).toContainText("Hi Sarah!");
+      await page.getByRole("button", { name: "Close assistant" }).click();
+
+      // (d) Submitted Boo-Boo incident stamps Sarah Connor
+      await page.getByRole("button", { name: /log boo-boo/i }).click();
+      const booBooDialog = page.getByRole("dialog", {
+        name: /Log Minor Tumble or Boo-Boo/i,
+      });
+      await booBooDialog
+        .locator("#incident-notes")
+        .fill("Minor indoor mat slip logged by Sarah Connor.");
+      const incPostPromise = page.waitForResponse(
+        (res) =>
+          res.url().endsWith("/api/v1/incidents") &&
+          res.request().method() === "POST" &&
+          res.status() === 201,
+      );
+      await booBooDialog
+        .getByRole("button", { name: /save & notify guardian/i })
+        .click();
+      const incRes = await incPostPromise;
+      const incJson = (await incRes.json()) as {
+        data?: { incident_id?: string };
+      };
+      createdIncidentId = incJson.data?.incident_id ?? null;
+
+      await expect(
+        page.getByText("Incident Recorded & Dispatched!"),
+      ).toBeVisible();
+      await expect(booBooDialog).toBeHidden();
+      await expect(
+        page
+          .locator("section")
+          .filter({ hasText: "Minor Boo-Boo & Tumble Log" })
+          .getByText(/Sarah Connor/)
+          .first(),
+      ).toBeVisible();
+
+      expect(pageErrors).toEqual([]);
+    } finally {
+      if (createdIncidentId) {
+        await page.request.delete(
+          `http://127.0.0.1:8000/api/v1/incidents/${createdIncidentId}`,
+          { headers: { Authorization: `Bearer ${adminToken}` } },
+        );
+      }
+    }
+  });
 });

@@ -21,6 +21,8 @@ interface ThePuffyCaregiverAssistantProps {
   roomLabel?: string;
   pendingDosesCount?: number;
   unconfirmedRollCount?: number;
+  presentCount?: number;
+  incidentsCount?: number;
   onOpenBooBooModal?: () => void;
   onTriggerRollAudit?: () => void;
   onScrollToMedications?: () => void;
@@ -35,10 +37,12 @@ interface ChatMessage {
 }
 
 export function ThePuffyCaregiverAssistant({
-  caregiverName = "Clara Gomez",
-  roomLabel = "Sunflowers Toddler & Pre-K",
-  pendingDosesCount = 3,
-  unconfirmedRollCount = 2,
+  caregiverName = "Caregiver",
+  roomLabel = "Classroom",
+  pendingDosesCount = 0,
+  unconfirmedRollCount = 0,
+  presentCount = 0,
+  incidentsCount = 0,
   onOpenBooBooModal,
   onTriggerRollAudit,
   onScrollToMedications,
@@ -52,14 +56,18 @@ export function ThePuffyCaregiverAssistant({
     () => false,
   );
   const [inputText, setInputText] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "initial-1",
-      sender: "puffy",
-      text: `Hi ${caregiverName.split(" ")[0]}! I'm actively monitoring ${roomLabel}. ${pendingDosesCount} medication doses scheduled and ${unconfirmedRollCount} unconfirmed attendance roll checks pending. How can I assist you right now?`,
-      timestamp: "Just now",
-    },
-  ]);
+  const [extraMessages, setExtraMessages] = useState<ChatMessage[]>([]);
+  const [cleared, setCleared] = useState(false);
+
+  const initialGreeting: ChatMessage = {
+    id: cleared ? "init" : "initial-1",
+    sender: "puffy",
+    text: cleared
+      ? "Chat cleared. What can I help you check next?"
+      : `Hi ${caregiverName.split(" ")[0]}! I'm actively monitoring ${roomLabel}. ${pendingDosesCount} medication doses scheduled and ${unconfirmedRollCount} unconfirmed attendance roll checks pending. How can I assist you right now?`,
+    timestamp: "Just now",
+  };
+  const messages = [initialGreeting, ...extraMessages];
 
   const handleSend = () => {
     if (!inputText.trim()) return;
@@ -70,21 +78,27 @@ export function ThePuffyCaregiverAssistant({
       text: query,
       timestamp: "Just now",
     };
-    setMessages((prev) => [...prev, userMsg]);
+    setExtraMessages((prev) => [...prev, userMsg]);
     setInputText("");
 
     setTimeout(() => {
-      let reply = `Understood. Analyzing Room 1A records regarding "${query}". All records are strictly scoped under caregiver role policies.`;
+      let reply = `Understood. Analyzing ${roomLabel} records regarding "${query}". All records are strictly scoped under caregiver role policies.`;
       const qLower = query.toLowerCase();
       if (qLower.includes("dose") || qLower.includes("medication")) {
-        reply = `Active Prescription Schedule: Maya Lin (Amoxicillin 125mg/5mL at 11:30 AM) is pending nurse verification. Leo Vance (Salbutamol) was administered at 10:45 AM.`;
+        reply =
+          pendingDosesCount > 0
+            ? `Active Prescription Schedule: ${pendingDosesCount} medication ${pendingDosesCount === 1 ? "dose is" : "doses are"} pending nurse verification in ${roomLabel}.`
+            : `Active Prescription Schedule: No pending medication doses scheduled for ${roomLabel} right now.`;
       } else if (qLower.includes("attendance") || qLower.includes("roll")) {
-        reply = `Room 1A Roll Status: 14 checked in, 2 unconfirmed absences (Noah Parker, Charlotte Taylor). Roll modification window locks in 18 hours (Policy BR-03-01).`;
+        reply = `${roomLabel} Roll Status: ${presentCount} checked in, ${unconfirmedRollCount} unconfirmed ${unconfirmedRollCount === 1 ? "absence" : "absences"}. Roll modification window is governed by Policy BR-03-01.`;
       } else if (qLower.includes("boo-boo") || qLower.includes("injury")) {
-        reply = `Incident Log: 2 incidents registered today (Liam S. playground scrape, Zoe Zhao forehead bump). Both comply with 1-hour parent SLA notification requirements.`;
+        reply =
+          incidentsCount > 0
+            ? `Incident Log: ${incidentsCount} ${incidentsCount === 1 ? "incident" : "incidents"} registered today in ${roomLabel}. All entries comply with 1-hour parent SLA notification requirements.`
+            : `Incident Log: Zero boo-boos or incidents reported today in ${roomLabel}.`;
       }
 
-      setMessages((prev) => [
+      setExtraMessages((prev) => [
         ...prev,
         {
           id: `p-${Date.now()}`,
@@ -215,7 +229,7 @@ export function ThePuffyCaregiverAssistant({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSend();
                 }}
-                placeholder="Ask ThePuffy anything about Room 1A..."
+                placeholder={`Ask ThePuffy anything about ${roomLabel}...`}
                 className="flex-1 bg-transparent px-3 py-1.5 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none"
               />
               <button
@@ -234,16 +248,10 @@ export function ThePuffyCaregiverAssistant({
               </span>
               <button
                 type="button"
-                onClick={() =>
-                  setMessages([
-                    {
-                      id: "init",
-                      sender: "puffy",
-                      text: "Chat cleared. What can I help you check next?",
-                      timestamp: "Just now",
-                    },
-                  ])
-                }
+                onClick={() => {
+                  setCleared(true);
+                  setExtraMessages([]);
+                }}
                 className="font-semibold hover:underline"
               >
                 Clear

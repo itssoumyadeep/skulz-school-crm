@@ -145,6 +145,7 @@ export interface CaregiverQuickNote {
 
 export interface CaregiverOverviewData {
   caregiverName: string;
+  caregiverDisplayName?: string;
   caregiverRoleTitle: string;
   caregiverAvatarUrl?: string | null;
   roomLabel: string;

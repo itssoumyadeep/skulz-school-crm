@@ -2,7 +2,7 @@ import uuid
 import pytest
 from datetime import date
 from django.conf import settings
-from jose import jwt
+import jwt
 from core.models import Tenant, Student, Application, Parent, EmergencyContact, Document
 
 @pytest.fixture

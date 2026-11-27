@@ -229,8 +229,10 @@ export type TrialStatusSummary = {
 
 export type UserProfileResponse = {
   user_id: string;
+  user_name?: string | null;
   role: string;
   tenant_id: string;
+  tenant_name?: string | null;
   avatar_url: string | null;
   assigned_classes_label?: string | null;
   assigned_classes?: Array<{

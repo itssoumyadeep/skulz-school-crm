@@ -9,7 +9,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.utils import timezone
-from jose import jwt
+import jwt
 
 from core.models import AuditLog, CareEvent, CareMedia, Parent, Student, StudentAttendance, StudentHealth
 

@@ -6,7 +6,7 @@ import pytest
 from django.conf import settings
 from django.test import Client
 from django.utils import timezone
-from jose import jwt
+import jwt
 
 from core.models import (
     Event,

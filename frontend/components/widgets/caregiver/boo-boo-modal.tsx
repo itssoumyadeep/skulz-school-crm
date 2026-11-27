@@ -13,6 +13,7 @@ interface BooBooModalProps {
   onClose: () => void;
   toddlers: CaregiverToddler[];
   selectedToddlerId?: string;
+  caregiverName?: string;
   onSubmit: (incident: {
     studentId: string;
     studentName: string;
@@ -54,6 +55,7 @@ export function BooBooModal({
   onClose,
   toddlers,
   selectedToddlerId,
+  caregiverName,
   onSubmit,
 }: BooBooModalProps) {
   const isClient = useSyncExternalStore(
@@ -61,6 +63,7 @@ export function BooBooModal({
     () => true,
     () => false,
   );
+  const actorLabel = caregiverName?.trim() || "Caregiver";
 
   const [studentId, setStudentId] = useState(
     selectedToddlerId || (toddlers[0]?.studentId ?? ""),
@@ -89,8 +92,7 @@ export function BooBooModal({
       incidentType,
       severity,
       description: description || "Minor tumble during playroom session.",
-      actionsTaken:
-        "Treated with saline wash and soft plaster by Nurse Clara. Monitored for comfort.",
+      actionsTaken: `Treated with saline wash and soft plaster by ${actorLabel}. Monitored for comfort.`,
     });
 
     setSubmitted(true);
@@ -157,7 +159,7 @@ export function BooBooModal({
               Incident Recorded &amp; Dispatched!
             </h4>
             <p className="text-xs text-on-surface-variant max-w-xs">
-              Nurse Clara digital stamp signed. 1-Hour guardian SLA timer initiated with parental mobile receipt.
+              {actorLabel} digital stamp signed. 1-Hour guardian SLA timer initiated with parental mobile receipt.
             </p>
           </div>
         ) : (

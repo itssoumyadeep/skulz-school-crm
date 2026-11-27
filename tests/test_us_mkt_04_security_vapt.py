@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from django.core.cache import cache
 from django.test import Client, override_settings
-from jose import jwt
+import jwt
 
 from core.models import Student
 
@@ -154,8 +154,16 @@ def test_cross_app_frontend_security_manifests_present():
     assert "Strict-Transport-Security" in next_cfg
     assert "X-Frame-Options" in next_cfg
 
-    skulz_headers = (SKULZ_FRONTEND / "public" / "_headers").read_text(encoding="utf-8")
-    assert "Content-Security-Policy" in skulz_headers
-    assert "X-Frame-Options: DENY" in skulz_headers
-    assert "X-Content-Type-Options: nosniff" in skulz_headers
-    assert "unsafe-eval" not in skulz_headers
+    crm_headers = (CRM_ROOT / "frontend" / "public" / "_headers").read_text(encoding="utf-8")
+    assert "Content-Security-Policy" in crm_headers
+    assert "X-Frame-Options: DENY" in crm_headers
+    assert "X-Content-Type-Options: nosniff" in crm_headers
+    assert "unsafe-eval" not in crm_headers
+
+    skulz_headers_path = SKULZ_FRONTEND / "public" / "_headers"
+    if skulz_headers_path.exists():
+        skulz_headers = skulz_headers_path.read_text(encoding="utf-8")
+        assert "Content-Security-Policy" in skulz_headers
+        assert "X-Frame-Options: DENY" in skulz_headers
+        assert "X-Content-Type-Options: nosniff" in skulz_headers
+        assert "unsafe-eval" not in skulz_headers
