@@ -110,3 +110,30 @@ export function getClientSession(): SessionClaims | null {
   }
   return parseClaimsFromToken(token);
 }
+
+/**
+ * Resolves the authenticated caregiver's display name and greeting name from
+ * JWT claims / profile metadata without ever falling back to demo names.
+ */
+export function resolveCaregiverIdentity(
+  userName?: string | null,
+  email?: string | null,
+): { displayName: string; greetingName: string } {
+  const trimmed = userName?.trim();
+  if (trimmed) {
+    const greetingName = trimmed.replace(/^Nurse\s+/i, "").trim() || trimmed;
+    return { displayName: trimmed, greetingName };
+  }
+  const emailPrefix = email?.split("@")[0]?.trim();
+  if (emailPrefix) {
+    const formatted = emailPrefix
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+    if (formatted) {
+      return { displayName: formatted, greetingName: formatted };
+    }
+  }
+  return { displayName: "Caregiver", greetingName: "Caregiver" };
+}

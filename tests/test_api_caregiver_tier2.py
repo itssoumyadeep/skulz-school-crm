@@ -5,7 +5,7 @@ from datetime import date
 import pytest
 from django.conf import settings
 from django.test import Client
-from jose import jwt
+import jwt
 
 from core.models import AuditLog, CareEvent, LearningObservation, Message, Student
 

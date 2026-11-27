@@ -217,10 +217,10 @@ export function SignInScreen({
                         borderRadius: "9999px",
                         fontSize: "12px",
                         fontWeight: 600,
-                        background: "var(--surface-container, #f3ede7)",
-                        border: "1px solid var(--outline-variant, #c6c6ca)",
+                        background: "var(--surface-container)",
+                        border: "1px solid var(--outline-variant)",
                         cursor: "pointer",
-                        color: "var(--on-surface, #1d1b18)",
+                        color: "var(--on-surface)",
                       }}
                     >
                       👶 Quick Login: Nurse Clara Gomez (Caregiver)
@@ -236,10 +236,10 @@ export function SignInScreen({
                         borderRadius: "9999px",
                         fontSize: "12px",
                         fontWeight: 600,
-                        background: "var(--surface-container, #f3ede7)",
-                        border: "1px solid var(--outline-variant, #c6c6ca)",
+                        background: "var(--surface-container)",
+                        border: "1px solid var(--outline-variant)",
                         cursor: "pointer",
-                        color: "var(--on-surface, #1d1b18)",
+                        color: "var(--on-surface)",
                       }}
                     >
                       👩‍🏫 Sarah Jenkins (Teacher)

@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -32,7 +39,20 @@ import {
   usePortalViewMode,
 } from "@/components/pc/view-mode-preference";
 import { fetchMyProfile, updateMyProfilePicture } from "@/app/lib/api";
-import { getClientSession, type SessionClaims } from "@/app/lib/session";
+import {
+  getCookieValue,
+  parseClaimsFromToken,
+  resolveCaregiverIdentity,
+} from "@/app/lib/session";
+
+const emptySubscribe = () => () => {};
+
+interface RoutineAlertItem {
+  id: string;
+  title: string;
+  detail: string;
+  tone: "peach" | "butter";
+}
 
 interface CaregiverLayoutProps {
   children: ReactNode;
@@ -40,13 +60,26 @@ interface CaregiverLayoutProps {
 
 export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
   const router = useRouter();
-  const [session] = useState<SessionClaims | null>(() => getClientSession());
-  const userKey = session?.user_id || session?.email || "clara.gomez";
+  const rawSessionToken = useSyncExternalStore(
+    emptySubscribe,
+    () => getCookieValue("pc_session") ?? "",
+    () => "",
+  );
+  const session = useMemo(
+    () => (rawSessionToken ? parseClaimsFromToken(rawSessionToken) : null),
+    [rawSessionToken],
+  );
+  const userKey = session?.user_id || session?.email || "caregiver-default";
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const [routineAlerts, setRoutineAlerts] = useState<RoutineAlertItem[]>([]);
+  const [profileMeta, setProfileMeta] = useState<{
+    userName: string;
+    tenantName: string;
+  }>({ userName: "", tenantName: "" });
   const [avatarUrl, setAvatarUrl] = useState<string>(() =>
     getCachedProfilePicture(userKey, "caregiver"),
   );
@@ -99,14 +132,19 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
     async function loadProfilePicture() {
       try {
         const response = await fetchMyProfile();
-        if (
-          !isCancelled &&
-          response?.data?.avatar_url &&
-          response.data.avatar_url.trim().length > 0
-        ) {
-          const fetchedUrl = response.data.avatar_url.trim();
-          setCachedProfilePicture(userKey, "caregiver", fetchedUrl);
-          setAvatarUrl(fetchedUrl);
+        if (!isCancelled && response?.data) {
+          setProfileMeta({
+            userName: response.data.user_name?.trim() || "",
+            tenantName: response.data.tenant_name?.trim() || "",
+          });
+          if (
+            response.data.avatar_url &&
+            response.data.avatar_url.trim().length > 0
+          ) {
+            const fetchedUrl = response.data.avatar_url.trim();
+            setCachedProfilePicture(userKey, "caregiver", fetchedUrl);
+            setAvatarUrl(fetchedUrl);
+          }
         }
       } catch {
         // Fallback to local cached avatar if API is offline
@@ -132,6 +170,22 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
     };
   }, [userKey]);
 
+  // Sync live routine alerts from CaregiverPortalPage
+  useEffect(() => {
+    const handleAlertsSync = (event: Event) => {
+      const custom = event as CustomEvent<{
+        alerts?: RoutineAlertItem[];
+      }>;
+      if (Array.isArray(custom.detail?.alerts)) {
+        setRoutineAlerts(custom.detail.alerts);
+      }
+    };
+    window.addEventListener("pc:caregiver-alerts-sync", handleAlertsSync);
+    return () => {
+      window.removeEventListener("pc:caregiver-alerts-sync", handleAlertsSync);
+    };
+  }, []);
+
   const handleSaveAvatar = async (nextUrl: string | null) => {
     try {
       await updateMyProfilePicture(nextUrl);
@@ -152,7 +206,26 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
     router.push("/");
   };
 
-  const displayCaregiverName = "Nurse Clara Gomez";
+  const displayCaregiverName = useMemo(
+    () =>
+      resolveCaregiverIdentity(
+        session?.user_name || profileMeta.userName,
+        session?.email,
+      ).displayName,
+    [session?.user_name, session?.email, profileMeta.userName],
+  );
+  const campusSubtitle = profileMeta.tenantName
+    ? `${profileMeta.tenantName} • Early Years`
+    : "Early Years Campus";
+  const todayBadgeLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }),
+    [],
+  );
 
   return (
     <div className="min-h-screen bg-paper flex flex-col relative selection:bg-pastel-butter selection:text-crayon-charcoal">
@@ -205,7 +278,7 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
                       className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold text-crayon-charcoal bg-pastel-butter/40 transition-colors"
                     >
                       <Layers className="size-4 text-secondary" />
-                      <span>Sunflowers Room 1A</span>
+                      <span>Caregiver Classroom</span>
                     </Link>
                     <Link
                       href="/teacher"
@@ -247,11 +320,11 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
             <div className="h-6 w-px bg-outline-variant/40 hidden md:block" />
             <div className="hidden lg:flex items-center gap-1.5 bg-surface-container-low px-3.5 py-1 rounded-full text-xs font-medium text-on-surface border border-outline-variant/30">
               <Flower2 className="size-3.5 text-terracotta" />
-              <span>Little Sprout Campus • Early Years</span>
+              <span>{campusSubtitle}</span>
             </div>
             <div className="hidden xl:flex items-center gap-1.5 bg-pastel-butter/30 px-3 py-1 rounded-full text-xs font-bold text-secondary border border-pastel-butter/50">
               <Calendar className="size-3.5 text-secondary" />
-              <span>Spring Play Quest in 3 Days</span>
+              <span suppressHydrationWarning>{todayBadgeLabel}</span>
             </div>
           </div>
 
@@ -280,7 +353,12 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
                 className="w-9 h-9 rounded-full bg-paper-tint hover:bg-pastel-butter/50 border border-pastel-butter/80 transition-colors flex items-center justify-center relative text-crayon-charcoal cursor-pointer"
               >
                 <Bell className="size-4" />
-                <span className="w-2.5 h-2.5 rounded-full bg-terracotta absolute top-1.5 right-1.5 ring-2 ring-paper-card" />
+                {routineAlerts.length > 0 && (
+                  <span
+                    data-testid="caregiver-alerts-dot"
+                    className="w-2.5 h-2.5 rounded-full bg-terracotta absolute top-1.5 right-1.5 ring-2 ring-paper-card"
+                  />
+                )}
               </button>
 
               {notificationsOpen && (
@@ -289,26 +367,43 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
                     <span className="text-xs font-extrabold text-crayon-charcoal uppercase tracking-wider">
                       Caregiver Routine Alerts
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pastel-peach text-terracotta">
-                      2 Actions Due
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        routineAlerts.length > 0
+                          ? "bg-pastel-peach text-terracotta"
+                          : "bg-pastel-mint/40 text-pastel-mint-deep"
+                      }`}
+                    >
+                      {routineAlerts.length > 0
+                        ? `${routineAlerts.length} ${
+                            routineAlerts.length === 1 ? "Action" : "Actions"
+                          } Due`
+                        : "All Clear"}
                     </span>
                   </div>
-                  <div className="p-2.5 rounded-2xl bg-paper-tint border border-pastel-peach/50 text-xs">
-                    <p className="font-bold text-crayon-charcoal">
-                      Medication Schedule (11:30 AM)
-                    </p>
-                    <p className="text-[11px] text-crayon-espresso mt-0.5">
-                      Maya Lin • Amoxicillin 125mg/5mL pending nurse dose.
-                    </p>
-                  </div>
-                  <div className="p-2.5 rounded-2xl bg-paper-tint border border-pastel-butter/50 text-xs">
-                    <p className="font-bold text-crayon-charcoal">
-                      Unconfirmed Absences (BR-03-01)
-                    </p>
-                    <p className="text-[11px] text-crayon-espresso mt-0.5">
-                      Noah Parker &amp; Charlotte Taylor • Follow-up SLA active.
-                    </p>
-                  </div>
+                  {routineAlerts.length === 0 ? (
+                    <div className="p-3 rounded-2xl bg-paper-tint border border-pastel-butter/50 text-xs text-center text-crayon-espresso">
+                      No pending routine alerts. Everything on track!
+                    </div>
+                  ) : (
+                    routineAlerts.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-2.5 rounded-2xl bg-paper-tint border text-xs ${
+                          item.tone === "peach"
+                            ? "border-pastel-peach/50"
+                            : "border-pastel-butter/50"
+                        }`}
+                      >
+                        <p className="font-bold text-crayon-charcoal">
+                          {item.title}
+                        </p>
+                        <p className="text-[11px] text-crayon-espresso mt-0.5">
+                          {item.detail}
+                        </p>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -317,11 +412,12 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
             <button
               type="button"
               aria-label="Parent Discussions"
-              onClick={() => alert("Parent Discussions Feed: 1 unread message from Maya Lin's grandmother.")}
+              onClick={() =>
+                alert("Parent Discussions Feed: No unread parent messages.")
+              }
               className="w-9 h-9 rounded-full bg-paper-tint hover:bg-pastel-butter/50 border border-pastel-butter/80 transition-colors flex items-center justify-center relative text-crayon-charcoal cursor-pointer"
             >
               <MessageSquare className="size-4" />
-              <span className="w-2.5 h-2.5 rounded-full bg-cerulean absolute top-1.5 right-1.5 ring-2 ring-paper-card" />
             </button>
 
             <div className="h-6 w-px bg-outline-variant/40 mx-1 hidden sm:block" />
@@ -337,7 +433,7 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
                   setMenuOpen(false);
                 }}
                 className="relative rounded-full focus:outline-none cursor-pointer group"
-                title="Nurse Clara Gomez Profile"
+                title={`${displayCaregiverName} Profile`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -363,7 +459,7 @@ export default function CaregiverLayout({ children }: CaregiverLayoutProps) {
                         {displayCaregiverName}
                       </p>
                       <p className="text-[11px] font-medium text-crayon-muted truncate">
-                        Room 1A • Sunflowers Toddler
+                        Early Years Care
                       </p>
                     </div>
                   </div>

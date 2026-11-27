@@ -6,7 +6,7 @@ from unittest.mock import patch
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, override_settings
-from jose import jwt
+import jwt
 from core.models import (
     Student,
     Application,
@@ -382,7 +382,7 @@ class TestEnrollmentsAPI:
         assert "scheduled_at" not in assessment
 
     def test_parent_data_isolation_between_different_parents(self, tenant_a):
-        from jose import jwt
+        import jwt
         from django.conf import settings
 
         # Parent 1: Sarah Collins
@@ -929,7 +929,9 @@ class TestEnrollmentsAPI:
     def test_admissions_assessment_and_recommendation_handoff(
         self, tenant_a, admin_token_tenant_a, teacher_token_tenant_a
     ):
-        teacher_id = jwt.get_unverified_claims(teacher_token_tenant_a)["sub"]
+        teacher_id = jwt.decode(
+            teacher_token_tenant_a, options={"verify_signature": False}
+        )["sub"]
         student = Student.objects.create(
             tenant=tenant_a,
             student_number="OAK-2026-0310",

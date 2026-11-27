@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import Client
 from datetime import date
-from jose import jwt
+import jwt
 from django.conf import settings
 
 from core.models import PortalRoleMembership, Student
@@ -277,3 +277,32 @@ class TestLoginAPI:
 
         assert response.status_code == 200
         assert response.json()["data"] == []
+
+    def test_profile_and_login_include_user_name_and_tenant_name(self, tenant_a):
+        self.create_user(tenant_a)
+        login_res = self.login(tenant_a)
+        assert login_res.status_code == 200
+        access_token = login_res.json()["data"]["access_token"]
+        claims = jwt.decode(access_token, options={"verify_signature": False})
+        assert claims["user_name"] == "Taylor Teacher"
+
+        caregiver_token = jwt.encode(
+            {
+                "sub": "cg-subject",
+                "tenant_id": str(tenant_a.tenant_id),
+                "role": "CareGiver",
+                "user_id": "cg-user-id",
+                "user_name": "Sarah Connor",
+                "email": "sarah.connor@example.com",
+            },
+            settings.JWT_SECRET_KEY,
+            algorithm="HS256",
+        )
+        profile_res = self.client.get(
+            "/api/v1/auth/profile",
+            HTTP_AUTHORIZATION=f"Bearer {caregiver_token}",
+        )
+        assert profile_res.status_code == 200
+        body = profile_res.json()["data"]
+        assert body["user_name"] == "Sarah Connor"
+        assert body["tenant_name"] == tenant_a.name

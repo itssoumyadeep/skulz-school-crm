@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client, override_settings
-from jose import jwt
+import jwt
 
 from django.conf import settings
 from core.business_objects.trial import TrialSignupBO

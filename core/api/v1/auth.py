@@ -12,7 +12,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.http import JsonResponse
-from jose import jwt
+import jwt
 from ninja import Router
 
 from core.auth.bearer import JWTAuthBearer
@@ -593,7 +593,9 @@ def get_my_profile(request):
         build_response(
             data={
                 "user_id": user_id,
+                "user_name": str(getattr(request, "user_name", "") or ""),
                 "tenant_id": str(tenant.tenant_id),
+                "tenant_name": tenant.name,
                 "role": actor_role,
                 "avatar_url": avatar_url,
                 "assigned_classes_label": assigned_classes_label,

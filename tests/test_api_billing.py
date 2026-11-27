@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 from django.conf import settings
 from django.test import Client, override_settings
-from jose import jwt
+import jwt
 
 from core.models import Student, Parent, FeeStructure, Invoice, Payment
 

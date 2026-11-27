@@ -7,7 +7,8 @@ from uuid import UUID
 
 from django.conf import settings
 from django.db import connection
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 from ninja.security import HttpBearer
 
 from core.business_objects.trial import TrialExpiredError, TrialSignupBO
@@ -45,14 +46,14 @@ class JWTAuthBearer(HttpBearer):
             header = jwt.get_unverified_header(token)
             alg = str(header.get('alg') or '').strip()
             if alg != 'HS256':
-                raise JWTError('Disallowed JWT algorithm.')
+                raise PyJWTError('Disallowed JWT algorithm.')
             payload = jwt.decode(
                 token,
                 settings.JWT_SECRET_KEY,
                 algorithms=['HS256'],
-                options={'require_exp': require_exp},
+                options={'require': ['exp']} if require_exp else {},
             )
-        except JWTError:
+        except PyJWTError:
             if not settings.ALLOW_INSECURE_DEV_TOKENS:
                 return None
             # Explicitly opt-in local-demo compatibility for the session emulator.

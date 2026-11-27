@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from django.test import Client
 from django.conf import settings
-from jose import jwt
+import jwt
 
 from core.models import (
     Tenant, Student, Curriculum, AcademicCalendar,

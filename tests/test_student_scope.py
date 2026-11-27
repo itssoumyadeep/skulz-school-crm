@@ -3,7 +3,7 @@ import pytest
 from datetime import date
 from django.test import Client
 from django.conf import settings
-from jose import jwt
+import jwt
 
 from core.models import Tenant, Student, Parent, EmergencyContact
 

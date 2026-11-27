@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import {
   confirmAttendanceRollAudit,
   fetchAttendanceConfig,
   fetchAttendanceRollAudit,
   fetchClassroomMedicationLogs,
+  fetchMyProfile,
   fetchStudentAttendanceRoster,
   fetchStudentCareHistory,
   checkInStudent,
@@ -32,6 +39,11 @@ import {
   type CareRoomSummary,
 } from "@/app/lib/api";
 import {
+  getCookieValue,
+  parseClaimsFromToken,
+  resolveCaregiverIdentity,
+} from "@/app/lib/session";
+import {
   CaregiverOverviewWidget,
   type CaregiverOverviewData,
   type CaregiverToddler,
@@ -41,380 +53,48 @@ import {
   type SupervisorOverrideContext,
 } from "@/components/widgets/caregiver";
 
+const emptySubscribe = () => () => {};
+
 function toLocalIsoDate(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-const INITIAL_SEEDED_TODDLERS: CaregiverToddler[] = [
-  {
-    studentId: "00000000-0000-0000-0000-000000007101",
-    studentNumber: "SUN-1001",
-    name: "Maya Lin",
-    ageLabel: "Age 3.5",
-    cubbyLabel: "Cubby #04",
-    arrivalTime: "08:35 AM",
-    status: "Present",
-    guardian: {
-      name: "Grandmother Maria R.",
-      relation: "Grandmother",
-      authType: "PIN",
-      authCode: "8841",
-    },
-    mood: "Sunny",
-    hydration: { currentMl: 360, targetMl: 500 },
-    napStatus: "1:00 PM Target",
-    mealStatus: "Morning Fruit Eaten",
-    diaperStatus: { time: "09:30 AM", note: "Clean & dry", nextDueTime: "11:30 AM" },
-    healthAlert: {
-      title: "Active Prescription",
-      severity: "Medium",
-      badge: "Amoxicillin Schedule",
-    },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007102",
-    studentNumber: "SUN-1002",
-    name: "Leo Vance",
-    ageLabel: "Age 4",
-    cubbyLabel: "Cubby #07",
-    arrivalTime: "08:45 AM",
-    status: "Present",
-    guardian: {
-      name: "David Vance",
-      relation: "Father",
-      authType: "PIN",
-      authCode: "1092",
-    },
-    mood: "Playful",
-    hydration: { currentMl: 250, targetMl: 500 },
-    napStatus: "1:00 PM Target",
-    mealStatus: "100% Finished Snack",
-    diaperStatus: { time: "10:15 AM", note: "Dry Diaper", nextDueTime: "12:15 PM" },
-    healthAlert: {
-      title: "Asthma Protocol",
-      severity: "Low",
-      badge: "Salbutamol Inhaler",
-    },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007103",
-    studentNumber: "SUN-1003",
-    name: "Zoe Zhao",
-    ageLabel: "Age 3.8",
-    cubbyLabel: "Cubby #11",
-    arrivalTime: "08:20 AM",
-    status: "Present",
-    guardian: {
-      name: "Claire Zhao",
-      relation: "Aunt",
-      authType: "ID_Check",
-      authCode: "3390",
-    },
-    mood: "Resting",
-    hydration: { currentMl: 420, targetMl: 500 },
-    napStatus: "Quiet time 25m logged",
-    mealStatus: "Oats finished",
-    diaperStatus: { time: "09:45 AM", note: "Changed", nextDueTime: "11:45 AM" },
-    healthAlert: {
-      title: "Minor Bump",
-      severity: "Low",
-      badge: "Cold Pack Applied",
-    },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007104",
-    studentNumber: "SUN-1004",
-    name: "Noah Parker",
-    ageLabel: "Age 3.5",
-    cubbyLabel: "Cubby #09",
-    arrivalTime: null,
-    status: "Expected",
-    guardian: {
-      name: "Rachel Parker",
-      relation: "Mother",
-      authType: "PIN",
-      authCode: "5019",
-    },
-    mood: "Calm",
-    hydration: { currentMl: 0, targetMl: 500 },
-    followUpSla: "Expected (Cutoff 09:15)",
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007105",
-    studentNumber: "SUN-1005",
-    name: "Liam Scott",
-    ageLabel: "Age 3.6",
-    cubbyLabel: "Cubby #02",
-    arrivalTime: "08:30 AM",
-    status: "Present",
-    guardian: {
-      name: "Marcus Scott",
-      relation: "Father",
-      authType: "PIN",
-      authCode: "4421",
-    },
-    mood: "Sunny",
-    hydration: { currentMl: 310, targetMl: 500 },
-    napStatus: "Resting comfortably",
-    mealStatus: "Apple slices eaten",
-    diaperStatus: { time: "09:15 AM", note: "Clean", nextDueTime: "11:15 AM" },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007106",
-    studentNumber: "SUN-1006",
-    name: "Mia Anderson",
-    ageLabel: "Age 2.0",
-    cubbyLabel: "Cubby #01",
-    arrivalTime: "08:15 AM",
-    status: "Present",
-    guardian: {
-      name: "Sarah Anderson",
-      relation: "Mother",
-      authType: "PIN",
-      authCode: "9012",
-    },
-    mood: "Playful",
-    hydration: { currentMl: 280, targetMl: 500 },
-    napStatus: "Cot 2 ready",
-    mealStatus: "180ml milk finished",
-    diaperStatus: { time: "10:15 AM", note: "Dry Diaper", nextDueTime: "12:15 PM" },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007107",
-    studentNumber: "SUN-1007",
-    name: "Oliver Queen",
-    ageLabel: "Age 3.9",
-    cubbyLabel: "Cubby #03",
-    arrivalTime: "08:40 AM",
-    status: "Present",
-    guardian: {
-      name: "Moira Queen",
-      relation: "Mother",
-      authType: "PIN",
-      authCode: "3114",
-    },
-    mood: "Sunny",
-    hydration: { currentMl: 390, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007108",
-    studentNumber: "SUN-1008",
-    name: "Emma Watson",
-    ageLabel: "Age 3.7",
-    cubbyLabel: "Cubby #05",
-    arrivalTime: "08:50 AM",
-    status: "Present",
-    guardian: {
-      name: "Chris Watson",
-      relation: "Father",
-      authType: "PIN",
-      authCode: "7781",
-    },
-    mood: "Playful",
-    hydration: { currentMl: 340, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007109",
-    studentNumber: "SUN-1009",
-    name: "Lucas Miller",
-    ageLabel: "Age 3.4",
-    cubbyLabel: "Cubby #06",
-    arrivalTime: "08:25 AM",
-    status: "Present",
-    guardian: {
-      name: "Hannah Miller",
-      relation: "Mother",
-      authType: "PIN",
-      authCode: "5520",
-    },
-    mood: "Sunny",
-    hydration: { currentMl: 300, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007110",
-    studentNumber: "SUN-1010",
-    name: "Sophia Garcia",
-    ageLabel: "Age 3.5",
-    cubbyLabel: "Cubby #08",
-    arrivalTime: "08:35 AM",
-    status: "Present",
-    guardian: {
-      name: "Carlos Garcia",
-      relation: "Father",
-      authType: "PIN",
-      authCode: "1984",
-    },
-    mood: "Resting",
-    hydration: { currentMl: 330, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007111",
-    studentNumber: "SUN-1011",
-    name: "Ethan Brown",
-    ageLabel: "Age 3.6",
-    cubbyLabel: "Cubby #10",
-    arrivalTime: "08:42 AM",
-    status: "Present",
-    guardian: {
-      name: "Jessica Brown",
-      relation: "Mother",
-      authType: "PIN",
-      authCode: "6632",
-    },
-    mood: "Sunny",
-    hydration: { currentMl: 350, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007112",
-    studentNumber: "SUN-1012",
-    name: "Ava Johnson",
-    ageLabel: "Age 3.2",
-    cubbyLabel: "Cubby #12",
-    arrivalTime: "08:18 AM",
-    status: "Present",
-    guardian: {
-      name: "Robert Johnson",
-      relation: "Father",
-      authType: "PIN",
-      authCode: "8890",
-    },
-    mood: "Sunny",
-    hydration: { currentMl: 410, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007113",
-    studentNumber: "SUN-1013",
-    name: "Jackson Lee",
-    ageLabel: "Age 3.8",
-    cubbyLabel: "Cubby #13",
-    arrivalTime: "08:55 AM",
-    status: "Present",
-    guardian: {
-      name: "Grace Lee",
-      relation: "Mother",
-      authType: "PIN",
-      authCode: "2214",
-    },
-    mood: "Playful",
-    hydration: { currentMl: 320, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007114",
-    studentNumber: "SUN-1014",
-    name: "Isabella Davis",
-    ageLabel: "Age 3.6",
-    cubbyLabel: "Cubby #14",
-    arrivalTime: "08:32 AM",
-    status: "Present",
-    guardian: {
-      name: "Thomas Davis",
-      relation: "Father",
-      authType: "PIN",
-      authCode: "9931",
-    },
-    mood: "Sunny",
-    hydration: { currentMl: 370, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007115",
-    studentNumber: "SUN-1015",
-    name: "James Wilson",
-    ageLabel: "Age 3.9",
-    cubbyLabel: "Cubby #15",
-    arrivalTime: "09:00 AM",
-    status: "Present",
-    guardian: {
-      name: "Laura Wilson",
-      relation: "Mother",
-      authType: "PIN",
-      authCode: "4456",
-    },
-    mood: "Sunny",
-    hydration: { currentMl: 290, targetMl: 500 },
-  },
-  {
-    studentId: "00000000-0000-0000-0000-000000007116",
-    studentNumber: "SUN-1016",
-    name: "Charlotte Taylor",
-    ageLabel: "Age 3.4",
-    cubbyLabel: "Cubby #16",
-    arrivalTime: null,
-    status: "Expected",
-    guardian: {
-      name: "Emily Taylor",
-      relation: "Mother",
-      authType: "PIN",
-      authCode: "7103",
-    },
-    mood: "Calm",
-    hydration: { currentMl: 0, targetMl: 500 },
-    followUpSla: "Expected (Cutoff 09:15)",
-  },
-];
-
-const INITIAL_MEDICATIONS: MedicationDoseItem[] = [
-  {
-    id: "00000000-0000-0000-0000-000000007101-0",
-    studentId: "00000000-0000-0000-0000-000000007101",
-    studentName: "Maya Lin",
-    ageLabel: "Age 3.5",
-    medicineName: "Amoxicillin 125mg/5mL Suspension",
-    dosage: "5.0 mL with almond milk",
-    scheduledTime: "11:30 AM",
-    instructions: "5.0 mL with almond milk",
-    consentVerifiedBy: "Consent Verified by Elena R. (Mother)",
-    status: "Pending",
-    accentBorder: "terracotta",
-  },
-  {
-    id: "00000000-0000-0000-0000-000000007102-0",
-    studentId: "00000000-0000-0000-0000-000000007102",
-    studentName: "Leo Vance",
-    ageLabel: "Age 4",
-    medicineName: "Salbutamol Inhaler (100mcg)",
-    dosage: "2 puffs via spacer before nap",
-    scheduledTime: "01:00 PM",
-    instructions: "2 puffs via spacer before nap",
-    consentVerifiedBy: "Consent Verified by David Vance (Father)",
-    status: "Administered",
-    administeredTime: "10:45 AM",
-    accentBorder: "mint",
-  },
-];
-
-const INITIAL_INCIDENTS: BooBooIncident[] = [
-  {
-    id: "inc-1",
-    studentName: "Liam S.",
-    incidentType: "Playground Scrape",
-    location: "Garden Wing Sandbox",
-    bodyPart: "Right Knee",
-    parentStatus: "Acknowledged",
-    description:
-      "Tripped during sandbox relay. Washed with sterile saline, gentle dinosaur plaster applied by Nurse Clara. No swelling, resumed smiling play immediately.",
-    loggedTime: "10:14 AM",
-    staffStamp: "Nurse Stamp #CG-408",
-    slaNote: "Notice Delivered in 14m (SLA Met)",
-  },
-  {
-    id: "inc-2",
-    studentName: "Zoe Zhao",
-    incidentType: "Block Bump",
-    location: "Soft Foam Play Area",
-    bodyPart: "Forehead",
-    parentStatus: "SLA_Pending",
-    slaRemainingLabel: "34m Left",
-    description:
-      "Accidental bump against foam building set. Cold gel penguin pack applied for 5 mins. Skin intact, zero discoloration. Monitored for pupils and alertness.",
-    loggedTime: "11:22 AM",
-    staffStamp: "Caregiver Rosa K.",
-    slaNote: "Resend Direct SMS",
-  },
-];
+function formatCaregiverTermLabel(isoDate: string): string {
+  const parts = isoDate.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return isoDate;
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  return d.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 export default function CaregiverPortalPage() {
   const [, startTransition] = useTransition();
+  const rawSessionToken = useSyncExternalStore(
+    emptySubscribe,
+    () => getCookieValue("pc_session") ?? "",
+    () => "",
+  );
+  const session = useMemo(
+    () => (rawSessionToken ? parseClaimsFromToken(rawSessionToken) : null),
+    [rawSessionToken],
+  );
+  const [profileMeta, setProfileMeta] = useState<{
+    userName: string;
+    tenantName: string;
+  }>({ userName: "", tenantName: "" });
+  const resolvedIdentity = useMemo(
+    () =>
+      resolveCaregiverIdentity(
+        session?.user_name || profileMeta.userName,
+        session?.email,
+      ),
+    [session?.user_name, session?.email, profileMeta.userName],
+  );
   const [todayLocalIso] = useState(() => toLocalIsoDate(new Date()));
   const [yesterdayLocalIso] = useState(() => {
     const d = new Date();
@@ -439,37 +119,97 @@ export default function CaregiverPortalPage() {
   const [rollAuditSuccess, setRollAuditSuccess] = useState<string | null>(null);
 
   const [caregiverData, setCaregiverData] = useState<CaregiverOverviewData>({
-    caregiverName: "Clara Gomez",
-    caregiverRoleTitle: "Room 1A & Toddler Care Specialist",
+    caregiverName: "Caregiver",
+    caregiverDisplayName: "Caregiver",
+    caregiverRoleTitle: "Early Years Care Specialist",
     roomLabel: "Room 1A",
-    wingLabel: "Ground Floor Garden Wing",
-    termLabel: "Thursday, Term 2",
+    wingLabel: "Early Years",
+    termLabel: formatCaregiverTermLabel(todayLocalIso),
     selectedDate: todayLocalIso,
     todayDate: todayLocalIso,
     isHistoricalReadOnly: false,
     childHistoryByStudent: {},
-    toddlers: INITIAL_SEEDED_TODDLERS,
-    medications: INITIAL_MEDICATIONS,
+    toddlers: [],
+    medications: [],
     rollLock: {
-      lockedInHours: 18,
+      lockedInHours: 24,
       isLocked: false,
       rollCallCompletedTime: "09:15 AM",
-      completionPercent: 72,
-      unconfirmedAbsencesCount: 2,
+      completionPercent: 0,
+      unconfirmedAbsencesCount: 0,
       lockPolicyText:
         "Official roll modifications close automatically at cutoff + 24h.",
     },
-    incidents: INITIAL_INCIDENTS,
-    recentNotes: [
-      {
-        id: "n-1",
-        recipientLabel: "Maya Lin's Parents",
-        message: "Finger-painting masterwork finished for grandma!",
-        timestamp: "11:45 AM",
-        delivered: true,
-      },
-    ],
+    incidents: [],
+    recentNotes: [],
   });
+
+  const effectiveCaregiverData = useMemo<CaregiverOverviewData>(
+    () => ({
+      ...caregiverData,
+      caregiverName: resolvedIdentity.greetingName,
+      caregiverDisplayName: resolvedIdentity.displayName,
+      wingLabel: profileMeta.tenantName || caregiverData.wingLabel,
+      termLabel: formatCaregiverTermLabel(selectedDate),
+    }),
+    [caregiverData, resolvedIdentity, profileMeta.tenantName, selectedDate],
+  );
+
+  // Sync live routine alerts to CaregiverLayout header bell
+  useEffect(() => {
+    const pendingMeds = caregiverData.medications.filter(
+      (m) => m.status === "Pending",
+    );
+    const unconfirmed = caregiverData.toddlers.filter(
+      (t) =>
+        !t.checkOutAt &&
+        (t.status === "Absent" || t.status === "Expected"),
+    );
+
+    const alerts: Array<{
+      id: string;
+      title: string;
+      detail: string;
+      tone: "peach" | "butter";
+    }> = [];
+
+    if (pendingMeds.length > 0) {
+      alerts.push({
+        id: "pending-meds",
+        title: `Medication Schedule (${pendingMeds.length} Pending)`,
+        detail: pendingMeds
+          .slice(0, 2)
+          .map(
+            (m) =>
+              `${m.studentName} • ${m.medicineName}${
+                m.scheduledTime ? ` (${m.scheduledTime})` : ""
+              }`,
+          )
+          .join("; "),
+        tone: "peach",
+      });
+    }
+
+    if (unconfirmed.length > 0) {
+      const namesPreview = unconfirmed
+        .slice(0, 3)
+        .map((t) => t.name)
+        .join(", ");
+      const extraCount = unconfirmed.length - 3;
+      alerts.push({
+        id: "unconfirmed-absences",
+        title: "Unconfirmed Absences (BR-03-01)",
+        detail: `${namesPreview}${
+          extraCount > 0 ? ` +${extraCount} more` : ""
+        } • Follow-up SLA active.`,
+        tone: "butter",
+      });
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("pc:caregiver-alerts-sync", { detail: { alerts } }),
+    );
+  }, [caregiverData.medications, caregiverData.toddlers]);
 
   // Hydrate from PostgreSQL backend endpoints for active selectedDate
   useEffect(() => {
@@ -486,6 +226,7 @@ export default function CaregiverPortalPage() {
           careEventsRes,
           fwRes,
           rollAuditRes,
+          profileRes,
         ] = await Promise.allSettled([
           fetchStudentAttendanceRoster(targetDate),
           fetchAttendanceConfig(),
@@ -496,9 +237,18 @@ export default function CaregiverPortalPage() {
           fetchCareEvents(targetDate),
           fetchLearningFrameworks(),
           fetchAttendanceRollAudit(targetDate),
+          fetchMyProfile(),
         ]);
 
         if (isCancelled) return;
+
+        if (profileRes.status === "fulfilled" && profileRes.value?.data) {
+          const pData = profileRes.value.data;
+          setProfileMeta({
+            userName: pData.user_name?.trim() || "",
+            tenantName: pData.tenant_name?.trim() || "",
+          });
+        }
 
         const cfgRaw =
           attConfigRes.status === "fulfilled" ? attConfigRes.value?.data : null;
@@ -588,150 +338,132 @@ export default function CaregiverPortalPage() {
         // 1. Process attendance roster from database
         if (
           attRosterRes.status === "fulfilled" &&
-          Array.isArray(attRosterRes.value?.data) &&
-          attRosterRes.value.data.length > 0
+          Array.isArray(attRosterRes.value?.data)
         ) {
           const dbStudents = attRosterRes.value.data;
           const room1AStudents = dbStudents.filter(
             (s) => s.grade === "Toddler & Pre-K" || s.grade === "Toddler",
           );
+          const targetStudents =
+            room1AStudents.length > 0 ? room1AStudents : dbStudents;
 
-          if (room1AStudents.length > 0) {
-            const mappedToddlers: CaregiverToddler[] = room1AStudents.map(
-              (s, index) => {
-                const seedMatch = INITIAL_SEEDED_TODDLERS.find(
-                  (st) =>
-                    st.name.toLowerCase() === s.name.toLowerCase() ||
-                    st.studentId === s.student_id,
-                );
-                const formattedCheckIn = s.check_in_at
-                  ? new Date(s.check_in_at).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : null;
-                const evState = careSummary?.per_student?.[s.student_id];
-                const rawRow = s as unknown as {
-                  photo_consent?: boolean;
-                  topical_consent?: boolean;
-                };
-                return {
-                  studentId: s.student_id,
-                  studentNumber: s.student_number,
-                  name: s.name,
-                  ageLabel: seedMatch?.ageLabel || "Age 3.5",
-                  cubbyLabel:
-                    seedMatch?.cubbyLabel || `Cubby #${String(index + 1).padStart(2, "0")}`,
-                  arrivalTime: isHistorical
-                    ? formattedCheckIn
-                    : formattedCheckIn ||
-                      (s.status === "Present" || s.status === "Late"
-                        ? seedMatch?.arrivalTime || "08:30 AM"
-                        : null),
-                  checkInAt: s.check_in_at ?? null,
-                  checkOutAt: s.check_out_at ?? null,
-                  lateReason: s.late_reason ?? null,
-                  status: isHistorical
-                    ? ((s.status as CaregiverToddler["status"]) || "Expected")
-                    : (s.status as CaregiverToddler["status"]) || unarrivedStatus,
-                  guardian: seedMatch?.guardian || {
-                    name: `Guardian of ${s.name}`,
-                    relation: "Parent",
-                    authType: "PIN",
-                    authCode: "4321",
-                  },
-                  mood:
-                    (evState?.mood as CaregiverToddler["mood"]) ||
-                    (isHistorical ? "Calm" : seedMatch?.mood || "Sunny"),
-                  hydration: {
-                    currentMl: isHistorical
-                      ? evState?.hydration_ml ?? 0
-                      : evState && evState.hydration_ml > 0
-                        ? evState.hydration_ml
-                        : seedMatch?.hydration?.currentMl ?? 0,
-                    targetMl: 500,
-                  },
-                  napStatus: isHistorical
-                    ? evState?.nap_status || "No nap logged"
-                    : evState?.nap_status || seedMatch?.napStatus || "1:00 PM Target",
-                  isSleeping: evState?.is_sleeping ?? false,
-                  mealStatus: isHistorical
-                    ? evState?.meal_status || "No meal logged"
-                    : evState?.meal_status || seedMatch?.mealStatus || "Morning snack eaten",
-                  diaperStatus: evState?.last_diaper
-                    ? {
-                        time: evState.last_diaper.time,
-                        note: evState.last_diaper.note,
-                        nextDueTime: evState.last_diaper.next_due_time,
-                      }
-                    : isHistorical
-                      ? { time: "—", note: "No diaper logged" }
-                      : seedMatch?.diaperStatus || {
-                          time: "10:00 AM",
-                          note: "Dry Diaper",
-                          nextDueTime: "12:00 PM",
-                        },
-                  photoConsent: Boolean(rawRow.photo_consent),
-                  topicalConsent: Boolean(rawRow.topical_consent),
-                  recentEvents: (evState?.events ?? []).map((ev) => ({
-                    eventId: ev.event_id,
-                    eventType: ev.event_type,
-                    occurredAt: ev.occurred_at,
-                    createdAt: ev.created_at,
-                    payload: ev.payload,
-                    parentVisible: ev.parent_visible,
-                  })),
-                  healthAlert: s.medical_badge
-                    ? {
-                        title: s.medical_badge,
-                        severity:
-                          (s.medical_severity as
-                            | "Critical"
-                            | "High"
-                            | "Medium"
-                            | "Low") || "High",
-                        badge: s.medical_badge,
-                      }
+          const mappedToddlers: CaregiverToddler[] = targetStudents.map(
+            (s, index) => {
+              const formattedCheckIn = s.check_in_at
+                ? new Date(s.check_in_at).toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : null;
+              const evState = careSummary?.per_student?.[s.student_id];
+              const rawRow = s as unknown as {
+                photo_consent?: boolean;
+                topical_consent?: boolean;
+              };
+              return {
+                studentId: s.student_id,
+                studentNumber: s.student_number,
+                name: s.name,
+                ageLabel: s.grade || "Student",
+                cubbyLabel: `Cubby #${String(index + 1).padStart(2, "0")}`,
+                arrivalTime: isHistorical
+                  ? formattedCheckIn
+                  : formattedCheckIn ||
+                    (s.status === "Present" || s.status === "Late"
+                      ? "08:30 AM"
+                      : null),
+                checkInAt: s.check_in_at ?? null,
+                checkOutAt: s.check_out_at ?? null,
+                lateReason: s.late_reason ?? null,
+                status: isHistorical
+                  ? ((s.status as CaregiverToddler["status"]) || "Expected")
+                  : (s.status as CaregiverToddler["status"]) || unarrivedStatus,
+                guardian: {
+                  name: `Guardian of ${s.name}`,
+                  relation: "Parent",
+                  authType: "PIN",
+                  authCode: "—",
+                },
+                mood:
+                  (evState?.mood as CaregiverToddler["mood"]) ||
+                  (isHistorical ? "Calm" : "Sunny"),
+                hydration: {
+                  currentMl: evState?.hydration_ml ?? 0,
+                  targetMl: 500,
+                },
+                napStatus:
+                  evState?.nap_status ||
+                  (isHistorical ? "No nap logged" : "1:00 PM Target"),
+                isSleeping: evState?.is_sleeping ?? false,
+                mealStatus: evState?.meal_status || "No meal logged",
+                diaperStatus: evState?.last_diaper
+                  ? {
+                      time: evState.last_diaper.time,
+                      note: evState.last_diaper.note,
+                      nextDueTime: evState.last_diaper.next_due_time,
+                    }
+                  : { time: "—", note: "No diaper logged" },
+                photoConsent: Boolean(rawRow.photo_consent),
+                topicalConsent: Boolean(rawRow.topical_consent),
+                recentEvents: (evState?.events ?? []).map((ev) => ({
+                  eventId: ev.event_id,
+                  eventType: ev.event_type,
+                  occurredAt: ev.occurred_at,
+                  createdAt: ev.created_at,
+                  payload: ev.payload,
+                  parentVisible: ev.parent_visible,
+                })),
+                healthAlert: s.medical_badge
+                  ? {
+                      title: s.medical_badge,
+                      severity:
+                        (s.medical_severity as
+                          | "Critical"
+                          | "High"
+                          | "Medium"
+                          | "Low") || "High",
+                      badge: s.medical_badge,
+                    }
+                  : undefined,
+                followUpSla:
+                  !s.status || s.status === "Absent"
+                    ? dynamicSlaLabel
                     : undefined,
-                  followUpSla:
-                    !s.status || s.status === "Absent"
-                      ? dynamicSlaLabel
-                      : undefined,
-                };
-              },
-            );
+              };
+            },
+          );
 
-            const presentCount = mappedToddlers.filter(
-              (t) => !t.checkOutAt && (t.status === "Present" || t.status === "Late"),
-            ).length;
-            const unconfirmedAbsencesCount = mappedToddlers.filter(
-              (t) => !t.checkOutAt && (t.status === "Absent" || t.status === "Expected"),
-            ).length;
-            const completionPercent = Math.round(
-              (presentCount / mappedToddlers.length) * 100,
-            );
+          const presentCount = mappedToddlers.filter(
+            (t) => !t.checkOutAt && (t.status === "Present" || t.status === "Late"),
+          ).length;
+          const unconfirmedAbsencesCount = mappedToddlers.filter(
+            (t) => !t.checkOutAt && (t.status === "Absent" || t.status === "Expected"),
+          ).length;
+          const completionPercent =
+            mappedToddlers.length > 0
+              ? Math.round((presentCount / mappedToddlers.length) * 100)
+              : 0;
 
-            setCaregiverData((prev) => ({
-              ...prev,
-              toddlers: mappedToddlers,
-              roomCareSummary: careSummary
-                ? {
-                    hydrationPct: careSummary.hydration_pct,
-                    snackPct: careSummary.snack_pct,
-                    asleepCount: careSummary.asleep_count,
-                    diapersDueCount: careSummary.diapers_due_count,
-                    diapersLoggedCount: careSummary.diapers_logged_count,
-                  }
-                : prev.roomCareSummary,
-              rollLock: rollAuditRaw
-                ? prev.rollLock
-                : {
-                    ...prev.rollLock,
-                    completionPercent,
-                    unconfirmedAbsencesCount,
-                  },
-            }));
-          }
+          setCaregiverData((prev) => ({
+            ...prev,
+            toddlers: mappedToddlers,
+            roomCareSummary: careSummary
+              ? {
+                  hydrationPct: careSummary.hydration_pct,
+                  snackPct: careSummary.snack_pct,
+                  asleepCount: careSummary.asleep_count,
+                  diapersDueCount: careSummary.diapers_due_count,
+                  diapersLoggedCount: careSummary.diapers_logged_count,
+                }
+              : prev.roomCareSummary,
+            rollLock: rollAuditRaw
+              ? prev.rollLock
+              : {
+                  ...prev.rollLock,
+                  completionPercent,
+                  unconfirmedAbsencesCount,
+                },
+          }));
         }
 
         // 2. Process classroom medications from database (DEF-023 / US-CG-17 / US-AD-12)
@@ -752,7 +484,7 @@ export default function CaregiverPortalPage() {
               id: m.med_log_id,
               studentId: m.student_id,
               studentName: m.student_name,
-              ageLabel: m.grade || "Toddler & Pre-K",
+              ageLabel: m.grade || "Student",
               medicineName: m.medicine_name,
               dosage: m.dose || "Administered",
               scheduledTime: targetDate,
@@ -800,7 +532,7 @@ export default function CaregiverPortalPage() {
               id: m.id,
               studentId: m.student_id,
               studentName: m.student_name,
-              ageLabel: m.grade || "Toddler & Pre-K",
+              ageLabel: m.grade || "Student",
               medicineName: m.medicine_name,
               dosage: m.dosage || "Per prescription",
               scheduledTime: m.scheduled_time || "Today",
@@ -842,34 +574,32 @@ export default function CaregiverPortalPage() {
             ? incList.filter((item) => item.date === targetDate)
             : incList;
 
-          if (isHistorical || dateFilteredInc.length > 0) {
-            const mappedIncidents: BooBooIncident[] = dateFilteredInc.map(
-              (item, idx) => ({
-                id: item.incident_id || `inc-db-${idx}`,
-                studentName: item.students?.[0] || "Classroom Incident",
-                incidentType: item.incident_type || "Minor Tumble",
-                severity: (item.severity as IncidentSeverity) || "Low",
-                escalatedToPrincipal: Boolean(item.escalated_to_principal),
-                location: item.location || "Room 1A Playroom",
-                bodyPart: item.body_part || "Unspecified",
-                parentStatus: item.parent_notified
-                  ? "Acknowledged"
-                  : "SLA_Pending",
-                slaRemainingLabel: item.parent_notified ? undefined : "1h SLA",
-                description: item.description || "Minor tumble treated safely.",
-                loggedTime: item.time || "Just now",
-                staffStamp: item.staff?.[0] || "Caregiver",
-                slaNote: item.parent_notified
-                  ? "Notice Delivered (1h SLA Met)"
-                  : "Parent Notice Pending (1h SLA)",
-              }),
-            );
+          const mappedIncidents: BooBooIncident[] = dateFilteredInc.map(
+            (item, idx) => ({
+              id: item.incident_id || `inc-db-${idx}`,
+              studentName: item.students?.[0] || "Classroom Incident",
+              incidentType: item.incident_type || "Minor Tumble",
+              severity: (item.severity as IncidentSeverity) || "Low",
+              escalatedToPrincipal: Boolean(item.escalated_to_principal),
+              location: item.location || "Room 1A Playroom",
+              bodyPart: item.body_part || "Unspecified",
+              parentStatus: item.parent_notified
+                ? "Acknowledged"
+                : "SLA_Pending",
+              slaRemainingLabel: item.parent_notified ? undefined : "1h SLA",
+              description: item.description || "Minor tumble treated safely.",
+              loggedTime: item.time || "Just now",
+              staffStamp: item.staff?.[0] || "Caregiver",
+              slaNote: item.parent_notified
+                ? "Notice Delivered (1h SLA Met)"
+                : "Parent Notice Pending (1h SLA)",
+            }),
+          );
 
-            setCaregiverData((prev) => ({
-              ...prev,
-              incidents: mappedIncidents,
-            }));
-          }
+          setCaregiverData((prev) => ({
+            ...prev,
+            incidents: mappedIncidents,
+          }));
         }
       } catch {
         // Safe fallback to initial seeded data on network offline
@@ -1146,7 +876,21 @@ export default function CaregiverPortalPage() {
   };
 
   const handleCallUnchecked = () => {
-    alert("Calling emergency guardian contacts for Noah Parker & Charlotte Taylor...");
+    const uncheckedNames = caregiverData.toddlers
+      .filter(
+        (t) =>
+          !t.checkOutAt && (t.status === "Absent" || t.status === "Expected"),
+      )
+      .map((t) => t.name);
+    if (uncheckedNames.length === 0) {
+      alert(
+        "All enrolled learners are accounted for. No unchecked absences to call.",
+      );
+      return;
+    }
+    alert(
+      `Calling emergency guardian contacts for ${uncheckedNames.join(", ")}...`,
+    );
   };
 
   const handleOpenBooBooModal = () => {
@@ -1176,7 +920,7 @@ export default function CaregiverPortalPage() {
         description: incidentData.description,
         actions_taken: incidentData.actionsTaken,
         students: [incidentData.studentId || incidentData.studentName],
-        staff: ["Clara Gomez"],
+        staff: [resolvedIdentity.displayName],
       });
       const created = res?.data as
         | {
@@ -1206,7 +950,7 @@ export default function CaregiverPortalPage() {
             slaRemainingLabel: parentNotified ? undefined : "1h SLA",
             description: incidentData.description,
             loggedTime: nowTime,
-            staffStamp: "Nurse Clara Gomez",
+            staffStamp: resolvedIdentity.displayName,
             slaNote: parentNotified
               ? "Notice Delivered (BR-07-03 Auto-Escalation)"
               : "Parent Notice Pending (1h SLA)",
@@ -1685,7 +1429,7 @@ export default function CaregiverPortalPage() {
 
   return (
     <CaregiverOverviewWidget
-      data={caregiverData}
+      data={effectiveCaregiverData}
       capabilities={{
         canLogMedication: true,
         canMarkAttendance: true,

@@ -175,7 +175,16 @@ export function CaregiverOverviewWidget({
     useState<CaregiverToddler | null>(null);
 
   // Quick note state
-  const [noteRecipient, setNoteRecipient] = useState<string>("Maya Lin");
+  const [selectedNoteRecipient, setSelectedNoteRecipient] = useState<string>("");
+  const quickNoteOptions = useMemo(() => {
+    const studentNames = data.toddlers.slice(0, 3).map((t) => t.name);
+    const roomOption = data.roomLabel ? `Whole ${data.roomLabel}` : "Whole Room";
+    return [...studentNames, roomOption];
+  }, [data.toddlers, data.roomLabel]);
+  const noteRecipient =
+    selectedNoteRecipient && quickNoteOptions.includes(selectedNoteRecipient)
+      ? selectedNoteRecipient
+      : quickNoteOptions[0] || data.roomLabel || "Whole Room";
   const [noteMessage, setNoteMessage] = useState<string>("");
   const [noteStatus, setNoteStatus] = useState<string>("");
 
@@ -510,7 +519,9 @@ export function CaregiverOverviewWidget({
 
               <span className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-pastel-mint/30 text-green-800 text-xs font-bold border border-pastel-mint/50">
                 <Stethoscope className="w-4 h-4 text-green-700" />
-                <span>Nurse {data.caregiverName} &amp; caregiver team</span>
+                <span>
+                  {data.caregiverDisplayName || data.caregiverName} &amp; caregiver team
+                </span>
               </span>
 
               {onSelectDate && (
@@ -686,7 +697,12 @@ export function CaregiverOverviewWidget({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
-            {data.medications.map((med) => {
+            {data.medications.length === 0 ? (
+              <div className="col-span-full rounded-2xl bg-surface-container-low p-6 text-center text-xs font-medium text-on-surface-variant border border-outline-variant/20">
+                No medication administrations scheduled for this date.
+              </div>
+            ) : (
+              data.medications.map((med) => {
               const doseKey = `${medDoseDateKey}:${med.id}`;
               const isDone =
                 Boolean(administeredDoses[doseKey]) || med.status === "Administered";
@@ -815,7 +831,8 @@ export function CaregiverOverviewWidget({
                   </div>
                 </div>
               );
-            })}
+              })
+            )}
           </div>
         </div>
 
@@ -937,6 +954,16 @@ export function CaregiverOverviewWidget({
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {filteredToddlers.length === 0 && (
+              <div className="col-span-full rounded-3xl bg-surface-container-lowest p-8 text-center border border-outline-variant/30 shadow-xs">
+                <p className="text-sm font-bold text-on-surface">
+                  No students enrolled or assigned to this classroom session.
+                </p>
+                <p className="text-xs text-on-surface-variant mt-1">
+                  Enroll learners or adjust filters to view daily care boards.
+                </p>
+              </div>
+            )}
             {filteredToddlers.map((toddler) => {
               const effectiveStatus = getEffectiveToddlerStatus(
                 toddler,
@@ -1360,6 +1387,16 @@ export function CaregiverOverviewWidget({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/20">
+                  {filteredToddlers.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-8 px-4 text-center text-xs font-medium text-on-surface-variant"
+                      >
+                        No classroom learners found for this session.
+                      </td>
+                    </tr>
+                  )}
                   {filteredToddlers.map((toddler) => {
                     const effectiveStatus = getEffectiveToddlerStatus(
                       toddler,
@@ -1570,7 +1607,12 @@ export function CaregiverOverviewWidget({
             </div>
 
             <div className="flex flex-col gap-3 mt-2">
-              {data.incidents.map((incident) => {
+              {data.incidents.length === 0 ? (
+                <div className="rounded-2xl bg-surface-container-low p-6 text-center text-xs font-medium text-on-surface-variant border border-outline-variant/20">
+                  Zero boo-boos or incidents reported today. All safe!
+                </div>
+              ) : (
+                data.incidents.map((incident) => {
                 const isAck = incident.parentStatus === "Acknowledged";
                 const severityLevel = incident.severity || "Low";
                 const severityTone =
@@ -1644,7 +1686,8 @@ export function CaregiverOverviewWidget({
                     </div>
                   </div>
                 );
-              })}
+                })
+              )}
             </div>
           </div>
 
@@ -1689,13 +1732,13 @@ export function CaregiverOverviewWidget({
                 <span className="text-xs font-semibold text-on-surface-variant">
                   Quick Student Pick:
                 </span>
-                {["Maya Lin", "Leo Vance", "Zoe Zhao", "Whole Room 1A"].map((name) => {
+                {quickNoteOptions.map((name) => {
                   const isSelected = noteRecipient === name;
                   return (
                     <button
                       key={name}
                       type="button"
-                      onClick={() => setNoteRecipient(name)}
+                      onClick={() => setSelectedNoteRecipient(name)}
                       className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                         isSelected
                           ? "bg-pastel-butter text-on-surface font-bold shadow-xs"
@@ -1765,20 +1808,40 @@ export function CaregiverOverviewWidget({
 
           {/* Recent Log Stream */}
           <div className="flex flex-col gap-1.5 pt-1">
-            <span className="text-[11px] font-semibold text-on-surface-variant">
-              Last Dispatched Note (11:45 AM)
-            </span>
-            <div className="flex items-center justify-between p-3 bg-surface-container rounded-2xl text-xs">
-              <div className="flex items-center gap-2.5 truncate">
-                <div className="w-7 h-7 rounded-full bg-pastel-mint text-green-900 flex items-center justify-center font-bold text-xs shrink-0">
-                  ML
-                </div>
-                <p className="text-on-surface font-medium truncate">
-                  Maya Lin&apos;s Parents: &ldquo;Finger-painting masterwork finished for grandma!&rdquo;
-                </p>
+            {data.recentNotes.length > 0 ? (
+              (() => {
+                const latestNote = data.recentNotes[0];
+                const initials =
+                  latestNote.recipientLabel
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((w) => w[0]?.toUpperCase() ?? "")
+                    .join("") || "CN";
+                return (
+                  <>
+                    <span className="text-[11px] font-semibold text-on-surface-variant">
+                      Last Dispatched Note ({latestNote.timestamp})
+                    </span>
+                    <div className="flex items-center justify-between p-3 bg-surface-container rounded-2xl text-xs">
+                      <div className="flex items-center gap-2.5 truncate">
+                        <div className="w-7 h-7 rounded-full bg-pastel-mint text-green-900 flex items-center justify-center font-bold text-xs shrink-0">
+                          {initials}
+                        </div>
+                        <p className="text-on-surface font-medium truncate">
+                          {latestNote.recipientLabel}: &ldquo;{latestNote.message}&rdquo;
+                        </p>
+                      </div>
+                      <CheckCircle2 className="w-4 h-4 text-mint shrink-0 ml-2" />
+                    </div>
+                  </>
+                );
+              })()
+            ) : (
+              <div className="p-3 bg-surface-container rounded-2xl text-xs text-on-surface-variant text-center">
+                No caregiver notes dispatched yet today.
               </div>
-              <CheckCircle2 className="w-4 h-4 text-mint shrink-0 ml-2" />
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -1789,6 +1852,7 @@ export function CaregiverOverviewWidget({
         onClose={() => setIsBooBooOpen(false)}
         toddlers={data.toddlers}
         selectedToddlerId={selectedStudentForBooBoo}
+        caregiverName={data.caregiverDisplayName || data.caregiverName}
         onSubmit={(incident) => {
           if (onSubmitIncident) {
             void onSubmitIncident(incident);
@@ -1804,6 +1868,8 @@ export function CaregiverOverviewWidget({
         roomLabel={data.roomLabel}
         pendingDosesCount={pendingDosesCount}
         unconfirmedRollCount={unconfirmedCount}
+        presentCount={presentCount}
+        incidentsCount={data.incidents.length}
         isDrawerOpen={Boolean(selectedDrawerToddler) || isBooBooOpen}
         onOpenBooBooModal={() => setIsBooBooOpen(true)}
         onTriggerRollAudit={() => onTriggerRollAudit?.()}

@@ -1,10 +1,10 @@
-Django>=4.2,<5.1
+Django>=5.2,<5.3
 django-ninja>=1.1.0
-python-jose[cryptography]
+PyJWT>=2.10,<3.0
 psycopg2-binary
 pydantic[email]>=2.0
 stripe>=11.0,<14.0
 python-dotenv>=1.0,<2.0
 pytest
 pytest-django
-python-dotenv
+openpyxl>=3.1,<4.0
